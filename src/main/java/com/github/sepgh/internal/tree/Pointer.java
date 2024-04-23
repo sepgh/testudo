@@ -15,7 +15,7 @@ public record Pointer(byte type, long position, int chunk) {
         return new Pointer(
                 bytes[position],
                 BinaryUtils.bytesToLong(bytes, position + 1),
-                BinaryUtils.bytesToInteger(bytes, position + 1 + Long.SIZE)
+                BinaryUtils.bytesToInteger(bytes, position + 1 + Long.BYTES)
         );
     }
 

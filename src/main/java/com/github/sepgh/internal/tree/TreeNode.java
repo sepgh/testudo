@@ -7,6 +7,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 
+import static java.util.Collections.emptyIterator;
+
 // Todo: This isn't reactive, but should it be?
 // Todo: If AsyncFileChannels are used, do we need to use Futures here? (probably not?)
 
@@ -18,7 +20,7 @@ import java.util.Optional;
   [1 byte IS_LEAF] + ([LONG_SIZE bytes id] + [POINTER_SIZE bytes data]) * max node size) + [POINTER_SIZE bytes previous leaf node] + [POINTER_SIZE bytes next leaf node]
 */
 public class TreeNode {
-    public static byte IS_LEAF_NODE = 0x01;
+    public static byte TYPE_LEAF_NODE = 0x01;
 
     @Setter
     @Getter
@@ -31,7 +33,7 @@ public class TreeNode {
     }
 
     public boolean isLeaf(){
-        return getData()[0] == IS_LEAF_NODE;
+        return getData()[0] == TYPE_LEAF_NODE;
     }
 
     public Optional<Pointer> getChildAtIndex(int index){
@@ -42,6 +44,9 @@ public class TreeNode {
     }
 
     public Iterator<Pointer> children(){
+        if (this.isLeaf()){
+            return emptyIterator();
+        }
         return new TreeNodeChildrenIterator(this);
     }
 
