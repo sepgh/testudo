@@ -50,8 +50,8 @@ public class TreeNodeUtils {
 
     public static boolean hasKeyValuePointerAtIndex(TreeNode treeNode, int index){
         int keyStartIndex = getKeyStartIndex(treeNode, index);
-        return keyStartIndex + Long.BYTES + Pointer.POINTER_SIZE > treeNode.getData().length ||
-                treeNode.getData()[keyStartIndex + Long.BYTES + Pointer.POINTER_SIZE] != Pointer.TYPE_DATA;
+        return keyStartIndex + Long.BYTES + Pointer.POINTER_SIZE <= treeNode.getData().length &&
+                treeNode.getData()[keyStartIndex + Long.BYTES] == Pointer.TYPE_DATA;
     }
 
     public static Map.Entry<Long, Pointer> getKeyValuePointerAtIndex(TreeNode treeNode, int index) {

@@ -54,11 +54,11 @@ public class TreeNode {
         return new TreeNodeKeysIterator(this);
     }
 
-    public Optional<Iterator<Map.Entry<Long, Pointer>>> keyValues(){
+    public Iterator<Map.Entry<Long, Pointer>> keyValues(){
         if (!this.isLeaf()){
-            return Optional.empty();
+            return emptyIterator();
         }
-        return Optional.of(new TreeNodeKeyValueIterator(this));
+        return new TreeNodeKeyValueIterator(this);
     }
 
     private static class TreeNodeKeyValueIterator implements Iterator<Map.Entry<Long, Pointer>> {

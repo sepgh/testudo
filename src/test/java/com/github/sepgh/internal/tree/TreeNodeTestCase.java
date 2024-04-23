@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
 
 // Todo: add non-single key tests (refactor from single to multi)
@@ -140,13 +141,40 @@ public class TreeNodeTestCase {
     public void testSingleKeyLeafNodeKeysIteration(){
         TreeNode treeNode = new TreeNode(singleKeyLeafNodeRepresentation);
         Iterator<Long> iterator = treeNode.keys();
-        Assertions.assertTrue(iterator.hasNext());
 
+        Assertions.assertTrue(iterator.hasNext());
         Long value = iterator.next();
         Assertions.assertEquals(15, value);
 
         Assertions.assertTrue(iterator.hasNext());
         value = iterator.next();
         Assertions.assertEquals(16, value);
+
+        Assertions.assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testSingleKeyLeafNodeKeyValueIteration(){
+        TreeNode treeNode = new TreeNode(singleKeyLeafNodeRepresentation);
+        Iterator<Map.Entry<Long, Pointer>> iterator = treeNode.keyValues();
+
+        Assertions.assertTrue(iterator.hasNext());
+        Map.Entry<Long, Pointer> next = iterator.next();
+        Assertions.assertEquals(15, next.getKey());
+        Pointer pointer = next.getValue();
+        Assertions.assertFalse(pointer.isNodePointer());
+        Assertions.assertEquals(1, pointer.position());
+        Assertions.assertEquals(1, pointer.chunk());
+
+
+        Assertions.assertTrue(iterator.hasNext());
+        next = iterator.next();
+        Assertions.assertEquals(16, next.getKey());
+        pointer = next.getValue();
+        Assertions.assertFalse(pointer.isNodePointer());
+        Assertions.assertEquals(2, pointer.position());
+        Assertions.assertEquals(2, pointer.chunk());
+
+        Assertions.assertFalse(iterator.hasNext());
     }
 }
