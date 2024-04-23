@@ -1,17 +1,11 @@
 package com.github.sepgh.internal.utils;
 
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 // Todo: add less happy tests :D0
-@Slf4j
+
 public class BinaryUtilsTestCase {
-    @BeforeAll
-    static void setup() {
-        log.info("@BeforeAll - BinaryUtilsTestCase initialization");
-    }
 
     @Test
     public void testBytesToInteger(){
