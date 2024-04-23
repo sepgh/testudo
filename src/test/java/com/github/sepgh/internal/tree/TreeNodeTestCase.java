@@ -37,7 +37,7 @@ public class TreeNodeTestCase {
             0x00, 0x00, 0x00, 0x01, // chunk
             // >> End pointer to child 1
 
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F,  // Key 2
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,  // Key 2
 
             // >> Start pointer to child 2
             Pointer.TYPE_DATA,  // type
@@ -52,6 +52,7 @@ public class TreeNodeTestCase {
         TreeNode treeNode = new TreeNode(singleKeyInternalNodeRepresentation);
         Assertions.assertFalse(treeNode.isLeaf());
     }
+
     @Test
     public void testSingleKeyInternalTreeNodeChildren(){
         TreeNode treeNode = new TreeNode(singleKeyInternalNodeRepresentation);
@@ -78,6 +79,7 @@ public class TreeNodeTestCase {
             treeNode.getChildAtIndex(2);
         });
     }
+
     @Test
     public void testSingleKeyInternalTreeNodeChildrenIteration() {
         TreeNode treeNode = new TreeNode(singleKeyInternalNodeRepresentation);
@@ -100,6 +102,19 @@ public class TreeNodeTestCase {
         }
     }
 
+    @Test
+    public void testSingleKeyInternalNodeKeysIteration(){
+        TreeNode treeNode = new TreeNode(singleKeyInternalNodeRepresentation);
+        Iterator<Long> iterator = treeNode.keys();
+        Assertions.assertTrue(iterator.hasNext());
+
+        Long value = iterator.next();
+        Assertions.assertEquals(15, value);
+
+        Assertions.assertFalse(iterator.hasNext());
+    }
+
+
 
     @Test
     public void testSingleKeyLeafTreeNodeChildren(){
@@ -119,5 +134,19 @@ public class TreeNodeTestCase {
         }
 
         Assertions.assertFalse(iterated, "Expected the leaf node to not to be able to iterate over children");
+    }
+
+    @Test
+    public void testSingleKeyLeafNodeKeysIteration(){
+        TreeNode treeNode = new TreeNode(singleKeyLeafNodeRepresentation);
+        Iterator<Long> iterator = treeNode.keys();
+        Assertions.assertTrue(iterator.hasNext());
+
+        Long value = iterator.next();
+        Assertions.assertEquals(15, value);
+
+        Assertions.assertTrue(iterator.hasNext());
+        value = iterator.next();
+        Assertions.assertEquals(16, value);
     }
 }
