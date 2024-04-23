@@ -1,0 +1,60 @@
+package com.github.sepgh.internal.utils;
+
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+// Todo: add less happy tests :D0
+@Slf4j
+public class BinaryUtilsTestCase {
+    @BeforeAll
+    static void setup() {
+        log.info("@BeforeAll - BinaryUtilsTestCase initialization");
+    }
+
+    @Test
+    public void testBytesToInteger(){
+        byte[] oneByteRepresentation = new byte[]{(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x01};
+        Assertions.assertEquals(
+                1,
+                BinaryUtils.bytesToInteger(oneByteRepresentation, 0),
+                "The representation of int 1 and the 'binary to int' don't match.");
+    }
+
+    @Test
+    public void testBytesToIntegerFromPosition(){
+        byte[] oneByteRepresentation = new byte[]{(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x01};
+        Assertions.assertEquals(
+                1,
+                BinaryUtils.bytesToInteger(oneByteRepresentation, 1),
+                "The representation of int 1 and the 'binary to int' at position 1 don't match.");
+    }
+
+    @Test
+    public void testBytesToLong(){
+        byte[] oneByteRepresentation = new byte[]{
+                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
+                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x01
+        };
+        Assertions.assertEquals(
+                1,
+                BinaryUtils.bytesToLong(oneByteRepresentation, 0),
+                "The representation of int 1 and the 'binary to int' don't match.");
+    }
+
+    @Test
+    public void testBytesToLongFromPosition(){
+        byte[] oneByteRepresentation = new byte[]{
+                (byte)0x00,
+                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
+                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x01
+        };
+        Assertions.assertEquals(
+                1,
+                BinaryUtils.bytesToLong(oneByteRepresentation, 1),
+                "The representation of int 1 and the 'binary to int' at position 1 don't match.");
+    }
+
+
+}
