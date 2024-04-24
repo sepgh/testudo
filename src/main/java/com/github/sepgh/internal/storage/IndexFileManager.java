@@ -1,6 +1,7 @@
 package com.github.sepgh.internal.storage;
 
 import com.github.sepgh.internal.EngineConfig;
+import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.TreeNode;
 import com.github.sepgh.internal.utils.FileUtils;
 import lombok.SneakyThrows;
@@ -21,17 +22,17 @@ public class IndexFileManager {
     public static final String INDEX_FILE_NAME = "index";
     private final Path path;
     private final Map<Integer, AsynchronousFileChannel> pool = new HashMap<>(5); // Map of chunk to
-    private final Map<Integer, IndexHeader> indexHeaders = new HashMap<>(5);
-    private final HeaderReader headerReader = new HeaderReader();
+    private final HeaderManager headerManager;
     private final EngineConfig engineConfig;
 
-    public IndexFileManager(Path path, EngineConfig engineConfig) {
+    public IndexFileManager(Path path, EngineConfig engineConfig, HeaderManager headerManager) {
         this.path = path;
         this.engineConfig = engineConfig;
+        this.headerManager = headerManager;
     }
 
-    public IndexFileManager(Path path) {
-        this(path, EngineConfig.Default.getDefault());
+    public IndexFileManager(Path path, HeaderManager headerManager) {
+        this(path, EngineConfig.Default.getDefault(), headerManager);
     }
 
     @SneakyThrows
@@ -46,7 +47,6 @@ public class IndexFileManager {
         pool.put(chunk, channel);
 
         initializeFile(channel);
-        initializeHeader(chunk, channel);
         return channel;
     }
 
@@ -63,17 +63,11 @@ public class IndexFileManager {
 
     }
 
-    protected void initializeHeader(int chunk, AsynchronousFileChannel channel) throws ExecutionException, InterruptedException {
-        Future<byte[]> future = headerReader.readUntilChar(channel, IndexHeader.HEADER_ENDING_CHAR);
-        byte[] bytes = future.get();
-        indexHeaders.put(chunk, new IndexHeader(bytes));
-    }
-
     // Todo: Note that maybe this could be cached and kept until it changes? combination of table name and pointer can make it happen
     // Todo: maybe if some other thread is writing (modifying tree) we should not read. At least not if they are in same table?
     public Future<byte[]> readNode(int table, int position, int chunk){
         AsynchronousFileChannel asynchronousFileChannel = getAsynchronousFileChannel(chunk);
-        long filePosition = indexHeaders.get(chunk).getTableMetaData(table).get().getOffset() + position;
+        long filePosition = headerManager.getHeader().getTableOfId(table).get().getIndexChunk(chunk).get().getOffset() + position;
         return FileUtils.readBytes(asynchronousFileChannel, filePosition, engineConfig.getPaddedSize());
     }
 
@@ -90,15 +84,14 @@ public class IndexFileManager {
             We start by checking if there is already an empty allocated area in the BTree of current table in this chunk
             If there is, we return position of that area
          */
-        IndexHeader indexHeader = indexHeaders.get(chunk);
-        IndexHeader.TableMetaData tableMetaData = indexHeader.getTableMetaData(table).get();  // Table definitely exists
-        int indexOfTableMetaData = indexHeader.indexOf(tableMetaData);
 
-        boolean isLastTable = indexOfTableMetaData == indexHeader.size() - 1;
+        int indexOfTableMetaData = headerManager.getHeader().indexOfTable(table);
+
+        boolean isLastTable = indexOfTableMetaData == headerManager.getHeader().tablesCount() - 1;
         long position = isLastTable ?
                 asynchronousFileChannel.size() - engineConfig.indexGrowthAllocationSize()
                 :
-                indexHeader.getTableMetaData(indexOfTableMetaData + 1).get().getOffset() - engineConfig.indexGrowthAllocationSize();
+                headerManager.getHeader().getTableOfIndex(indexOfTableMetaData + 1).get().getIndexChunk(chunk).get().getOffset() - engineConfig.indexGrowthAllocationSize();
 
         Future<byte[]> future = FileUtils.readBytes(asynchronousFileChannel, position, engineConfig.indexGrowthAllocationSize());
         byte[] bytes = future.get();

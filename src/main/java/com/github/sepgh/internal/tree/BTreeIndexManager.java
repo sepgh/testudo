@@ -2,23 +2,15 @@ package com.github.sepgh.internal.tree;
 
 import com.github.sepgh.internal.storage.IndexFileManager;
 
-import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
 public class BTreeIndexManager implements IndexManager {
 
     private final IndexFileManager indexFileManager;
-    private final String tableName;
 
-    public BTreeIndexManager(Path path, String tableName, String tableName1) {
-        this.indexFileManager = new IndexFileManager(path);
-        this.tableName = tableName1;
-    }
-
-    public BTreeIndexManager(IndexFileManager indexFileManager, String tableName){
+    public BTreeIndexManager(IndexFileManager indexFileManager){
         this.indexFileManager = indexFileManager;
-        this.tableName = tableName;
     }
 
     @Override
