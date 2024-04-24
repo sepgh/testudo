@@ -12,10 +12,18 @@ public class EngineConfig {
 
     private final int bTreeNodeMaxKey;
     private final int bTreeGrowthNodeAllocationCount;
+    private long bTreeMaxFileSize = -1L;
+
 
     public EngineConfig(int bTreeNodeMaxKey, int bTreeGrowthNodeAllocationCount) {
         this.bTreeNodeMaxKey = bTreeNodeMaxKey;
         this.bTreeGrowthNodeAllocationCount = bTreeGrowthNodeAllocationCount;
+    }
+
+    public EngineConfig(int bTreeNodeMaxKey, int bTreeGrowthNodeAllocationCount, long bTreeMaxFileSize) {
+        this.bTreeNodeMaxKey = bTreeNodeMaxKey;
+        this.bTreeGrowthNodeAllocationCount = bTreeGrowthNodeAllocationCount;
+        this.bTreeMaxFileSize = bTreeMaxFileSize;
     }
 
     @Builder.Default
@@ -34,8 +42,11 @@ public class EngineConfig {
         return cachedPaddingSize;
     }
 
-    public long maxIndexFileSize() {
-        return Double.valueOf(Math.pow(1024, 3) * getPaddedSize()).longValue();
+    public long getBTreeMaxFileSize() {
+        if (this.bTreeMaxFileSize == -1)
+            return Double.valueOf(Math.pow(1024, 3) * getPaddedSize()).longValue();
+        else
+            return this.bTreeMaxFileSize;
     }
 
     public int indexGrowthAllocationSize() {

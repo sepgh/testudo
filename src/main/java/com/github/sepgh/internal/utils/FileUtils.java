@@ -117,16 +117,12 @@ public class FileUtils {
 
         ByteBuffer byteBuffer = ByteBuffer.allocate(content.length);
         byteBuffer.put(content);
+        byteBuffer.flip();
 
         asynchronousFileChannel.write(byteBuffer, position, null, new CompletionHandler<Integer, Object>() {
             @Override
             public void completed(Integer result, Object attachment) {
-                try {
-                    asynchronousFileChannel.force(true);
-                    future.complete(result);
-                } catch (IOException e) {
-                    future.completeExceptionally(e);
-                }
+                future.complete(result);
             }
 
             @Override

@@ -52,15 +52,9 @@ public class IndexFileManager {
         return channel;
     }
 
-    private void initializeFile(AsynchronousFileChannel channel) throws IOException {
+    private void initializeFile(AsynchronousFileChannel channel) throws IOException, ExecutionException, InterruptedException {
         if (channel.size() == 0) {
-            ByteBuffer buffer = ByteBuffer.allocate(1024 + (engineConfig.indexGrowthAllocationSize() + engineConfig.getPaddedSize()));
-            long position = 0;
-            Future<Integer> operation = channel.write(buffer, position);
-            buffer.clear();
-
-            while(!operation.isDone());
-            channel.force(true);
+            FileUtils.write(channel, 0, new byte[engineConfig.indexGrowthAllocationSize()]).get();
         }
 
     }
@@ -99,7 +93,8 @@ public class IndexFileManager {
         byte[] bytes = future.get();
         Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
         if (optionalAdditionalPosition.isPresent()){
-            return CompletableFuture.completedFuture(position + optionalAdditionalPosition.get());
+            return CompletableFuture.completedFuture(position + optionalAdditionalPosition.get());  // Todo: caller cant know we changed chunk
+            // Header may need an update, as this table may not have been available in another chunk but now will be available
         }
 
 
@@ -108,7 +103,7 @@ public class IndexFileManager {
             If it is, we won't be allocating and just move on to next chunk
                 through recursion till we reach to a chunk where we can allocate space
          */
-        if (asynchronousFileChannel.size() >= engineConfig.maxIndexFileSize()){
+        if (asynchronousFileChannel.size() >= engineConfig.getBTreeMaxFileSize()){
             return allocateForNewNode(table, chunk + 1);
         }
 
