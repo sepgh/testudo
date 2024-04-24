@@ -9,7 +9,7 @@ import com.github.sepgh.internal.utils.BinaryUtils;
 public record Pointer(byte type, long position, int chunk) {
     public static byte TYPE_DATA = 0x01;
     public static byte TYPE_NODE = 0x02;
-    public static int POINTER_SIZE = 13;
+    public static int POINTER_SIZE = 1 + Long.BYTES + Integer.BYTES;
 
     public static Pointer fromByteArray(byte[] bytes, int position){
         return new Pointer(

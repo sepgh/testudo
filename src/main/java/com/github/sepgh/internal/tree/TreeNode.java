@@ -17,10 +17,11 @@ import static java.util.Collections.emptyIterator;
   [1 byte IS_LEAF] + [POINTER_SIZE bytes child] + (([LONG_SIZE bytes id] + [POINTER_SIZE bytes child]) * max node size)
 
   Structure of a node in binary for leaf
-  [1 byte IS_LEAF] + ([LONG_SIZE bytes id] + [POINTER_SIZE bytes data]) * max node size) + [POINTER_SIZE bytes previous leaf node] + [POINTER_SIZE bytes next leaf node]
+  [1 byte IS_LEAF] + (([LONG_SIZE bytes id] + [POINTER_SIZE bytes data]) * max node size) + [POINTER_SIZE bytes previous leaf node] + [POINTER_SIZE bytes next leaf node]
 */
 public class TreeNode {
     public static byte TYPE_LEAF_NODE = 0x01;
+    public static byte TYPE_INTERNAL_NODE = 0x02;
 
     @Setter
     @Getter

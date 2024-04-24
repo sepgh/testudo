@@ -10,7 +10,7 @@ import java.util.Optional;
 // Todo: add non-single key tests (refactor from single to multi)
 public class TreeNodeTestCase {
     private final byte[] singleKeyInternalNodeRepresentation = {
-            0x00, // Not leaf
+            TreeNode.TYPE_INTERNAL_NODE, // Not leaf
 
             // >> Start pointer to child 1
             Pointer.TYPE_NODE,  // type
