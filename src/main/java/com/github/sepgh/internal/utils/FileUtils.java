@@ -111,4 +111,32 @@ public class FileUtils {
 
         return future;
     }
+
+    public static Future<Integer> write(AsynchronousFileChannel asynchronousFileChannel, long position, byte[] content){
+        CompletableFuture<Integer> future = new CompletableFuture<>();
+
+        ByteBuffer byteBuffer = ByteBuffer.allocate(content.length);
+        byteBuffer.put(content);
+
+        asynchronousFileChannel.write(byteBuffer, position, null, new CompletionHandler<Integer, Object>() {
+            @Override
+            public void completed(Integer result, Object attachment) {
+                try {
+                    asynchronousFileChannel.force(true);
+                    future.complete(result);
+                } catch (IOException e) {
+                    future.completeExceptionally(e);
+                }
+            }
+
+            @Override
+            public void failed(Throwable exc, Object attachment) {
+                future.completeExceptionally(exc);
+            }
+        });
+
+        return future;
+
+    }
+
 }
