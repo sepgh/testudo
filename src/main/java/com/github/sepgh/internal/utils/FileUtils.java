@@ -105,7 +105,7 @@ public class FileUtils {
 
             @Override
             public void failed(Throwable exc, Object attachment) {
-                System.out.println("Failed to read data from file: " + exc.getMessage());
+                future.completeExceptionally(exc);
             }
         });
 
