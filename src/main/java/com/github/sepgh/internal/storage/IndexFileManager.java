@@ -23,9 +23,15 @@ public class IndexFileManager {
     private final Map<Integer, AsynchronousFileChannel> pool = new HashMap<>(5); // Map of chunk to
     private final Map<Integer, IndexHeader> indexHeaders = new HashMap<>(5);
     private final HeaderReader headerReader = new HeaderReader();
+    private final EngineConfig engineConfig;
+
+    public IndexFileManager(Path path, EngineConfig engineConfig) {
+        this.path = path;
+        this.engineConfig = engineConfig;
+    }
 
     public IndexFileManager(Path path) {
-        this.path = path;
+        this(path, EngineConfig.Default.getDefault());
     }
 
     @SneakyThrows
@@ -46,7 +52,7 @@ public class IndexFileManager {
 
     private void initializeFile(AsynchronousFileChannel channel) throws IOException {
         if (channel.size() == 0) {
-            ByteBuffer buffer = ByteBuffer.allocate(1024 + (EngineConfig.BTREE_GROWTH_NODE_ALLOCATION_COUNT + EngineConfig.PaddedSize()));
+            ByteBuffer buffer = ByteBuffer.allocate(1024 + (engineConfig.indexGrowthAllocationSize() + engineConfig.getPaddedSize()));
             long position = 0;
             Future<Integer> operation = channel.write(buffer, position);
             buffer.clear();
@@ -68,7 +74,7 @@ public class IndexFileManager {
     public Future<byte[]> readNode(int table, int position, int chunk){
         AsynchronousFileChannel asynchronousFileChannel = getAsynchronousFileChannel(chunk);
         long filePosition = indexHeaders.get(chunk).getTableMetaData(table).get().getOffset() + position;
-        return FileUtils.readBytes(asynchronousFileChannel, filePosition, EngineConfig.PaddedSize());
+        return FileUtils.readBytes(asynchronousFileChannel, filePosition, engineConfig.getPaddedSize());
     }
 
     /*
@@ -90,11 +96,11 @@ public class IndexFileManager {
 
         boolean isLastTable = indexOfTableMetaData == indexHeader.size() - 1;
         long position = isLastTable ?
-                asynchronousFileChannel.size() - EngineConfig.indexGrowthAllocationSize()
+                asynchronousFileChannel.size() - engineConfig.indexGrowthAllocationSize()
                 :
-                indexHeader.getTableMetaData(indexOfTableMetaData + 1).get().getOffset() - EngineConfig.indexGrowthAllocationSize();
+                indexHeader.getTableMetaData(indexOfTableMetaData + 1).get().getOffset() - engineConfig.indexGrowthAllocationSize();
 
-        Future<byte[]> future = FileUtils.readBytes(asynchronousFileChannel, position, EngineConfig.indexGrowthAllocationSize());
+        Future<byte[]> future = FileUtils.readBytes(asynchronousFileChannel, position, engineConfig.indexGrowthAllocationSize());
         byte[] bytes = future.get();
         Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
         if (optionalAdditionalPosition.isPresent()){
@@ -107,7 +113,7 @@ public class IndexFileManager {
             If it is, we won't be allocating and just move on to next chunk
                 through recursion till we reach to a chunk where we can allocate space
          */
-        if (asynchronousFileChannel.size() >= EngineConfig.maxIndexFileSize()){
+        if (asynchronousFileChannel.size() >= engineConfig.maxIndexFileSize()){
             return allocateForNewNode(table, chunk + 1);
         }
 
@@ -115,15 +121,15 @@ public class IndexFileManager {
         /* Allocate space  */
 
         if (isLastTable){
-            return FileUtils.allocate(asynchronousFileChannel, EngineConfig.indexGrowthAllocationSize());
+            return FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize());
         }
-        return FileUtils.allocate(asynchronousFileChannel, position, EngineConfig.indexGrowthAllocationSize());
+        return FileUtils.allocate(asynchronousFileChannel, position, engineConfig.indexGrowthAllocationSize());
     }
 
 
     private Optional<Integer> getPossibleAllocationLocation(byte[] bytes){
-        for (int i = 0; i < EngineConfig.BTREE_GROWTH_NODE_ALLOCATION_COUNT; i++){
-            int position = i * EngineConfig.PaddedSize();
+        for (int i = 0; i < engineConfig.getBTreeGrowthNodeAllocationCount(); i++){
+            int position = i * engineConfig.getPaddedSize();
             if (bytes[position] != TreeNode.TYPE_LEAF_NODE && bytes[position] != TreeNode.TYPE_INTERNAL_NODE){
                 return Optional.of(position);
             }

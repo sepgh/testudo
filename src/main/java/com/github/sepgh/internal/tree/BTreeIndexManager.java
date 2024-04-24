@@ -12,7 +12,7 @@ public class BTreeIndexManager implements IndexManager {
     private final String tableName;
 
     public BTreeIndexManager(Path path, String tableName, String tableName1) {
-        this.indexFileManager = new IndexFileManager(path, 3);
+        this.indexFileManager = new IndexFileManager(path);
         this.tableName = tableName1;
     }
 
