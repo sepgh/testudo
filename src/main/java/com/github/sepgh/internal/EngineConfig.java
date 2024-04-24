@@ -25,12 +25,12 @@ public class EngineConfig {
         if (this.cachedPaddingSize != null){
             return this.cachedPaddingSize;
         }
-        int i = (this.getBTreeNodeMaxKey() + 8) % 8;
+        int i = (this.bTreeNodeSize() + 8) % 8;
         if (i == 0){
-            cachedPaddingSize = this.getBTreeNodeMaxKey();
+            cachedPaddingSize = this.bTreeNodeSize();
             return cachedPaddingSize;
         }
-        cachedPaddingSize = this.getBTreeNodeMaxKey() + 8 - i;
+        cachedPaddingSize = this.bTreeNodeSize() + 8 - i;
         return cachedPaddingSize;
     }
 

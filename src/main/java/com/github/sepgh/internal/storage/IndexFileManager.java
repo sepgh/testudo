@@ -5,6 +5,7 @@ import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.TreeNode;
 import com.github.sepgh.internal.utils.FileUtils;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -18,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+@Slf4j
 public class IndexFileManager {
     public static final String INDEX_FILE_NAME = "index";
     private final Path path;
@@ -42,7 +44,7 @@ public class IndexFileManager {
         }
 
         Path indexPath = Path.of(path.toString(), String.format("%s.%d", INDEX_FILE_NAME, chunk));
-        AsynchronousFileChannel channel = AsynchronousFileChannel.open(indexPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW);
+        AsynchronousFileChannel channel = AsynchronousFileChannel.open(indexPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 
         pool.put(chunk, channel);
 
@@ -128,6 +130,16 @@ public class IndexFileManager {
             }
         }
         return Optional.empty();
+    }
+
+    public void close() {
+        pool.forEach((integer, asynchronousFileChannel) -> {
+            try {
+                asynchronousFileChannel.close();
+            } catch (IOException e) {
+                log.error("Failed to close file channel for chunk " + integer, e);
+            }
+        });
     }
 
 }
