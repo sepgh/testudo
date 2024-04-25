@@ -56,7 +56,6 @@ public class IndexFileManager {
         if (channel.size() == 0) {
             FileUtils.write(channel, 0, new byte[engineConfig.indexGrowthAllocationSize()]).get();
         }
-
     }
 
     // Todo: Note that maybe this could be cached and kept until it changes? combination of table name and pointer can make it happen
@@ -116,6 +115,10 @@ public class IndexFileManager {
         return FileUtils.allocate(asynchronousFileChannel, position, engineConfig.indexGrowthAllocationSize());
     }
 
+    public boolean chunkHasSpaceForNode(int chunk) throws IOException {
+        AsynchronousFileChannel asynchronousFileChannel = this.getAsynchronousFileChannel(chunk);
+        return asynchronousFileChannel.size() + engineConfig.getPaddedSize() <= engineConfig.getBTreeMaxFileSize();
+    }
 
     private Optional<Integer> getPossibleAllocationLocation(byte[] bytes){
         for (int i = 0; i < engineConfig.getBTreeGrowthNodeAllocationCount(); i++){

@@ -98,7 +98,7 @@ public class IndexFileManagerTestCase {
         Assertions.assertTrue(header.getTableOfId(1).get().getIndexChunk(0).isPresent());
     }
 
-//    @AfterAll
+    @AfterAll
     public static void destroy() throws IOException {
         Path indexPath0 = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.delete(indexPath0);
