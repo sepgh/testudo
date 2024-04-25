@@ -189,13 +189,12 @@ public class IndexFileManagerTestCase {
             future.get();
             channel.close();
 
-            /* Forth allocation call should return 0 as beginning of a completely new chunk */
-            // Todo: caller dont know chunk is new, needs fix
+            /* Forth allocation call should throw exception since there is no space left in the chunk */
             Assertions.assertThrows(ChunkIsFullException.class, () -> {
-                Future<Long> longFuture = indexFileManager.allocateForNewNode(1, 0);
-                long position1 = longFuture.get();
-                Assertions.assertEquals(0, position1);
+               indexFileManager.allocateForNewNode(1, 0);
             });
+
+            Assertions.assertFalse(indexFileManager.chunkHasSpaceForNode(0));
 
         } catch (ChunkIsFullException e) {
             throw new RuntimeException(e);
