@@ -1,5 +1,8 @@
 package com.github.sepgh.internal.tree;
 
+import com.github.sepgh.internal.tree.node.AbstractTreeNode;
+import com.github.sepgh.internal.tree.node.InternalTreeNode;
+import com.github.sepgh.internal.tree.node.LeafTreeNode;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -10,7 +13,7 @@ import java.util.Optional;
 // Todo: add non-single key tests (refactor from single to multi)
 public class TreeNodeTestCase {
     private final byte[] singleKeyInternalNodeRepresentation = {
-            TreeNode.TYPE_INTERNAL_NODE, // Not leaf
+            AbstractTreeNode.TYPE_INTERNAL_NODE, // Not leaf
 
             // >> Start pointer to child 1
             Pointer.TYPE_NODE,  // type
@@ -28,7 +31,7 @@ public class TreeNodeTestCase {
     };
 
     private final byte[] singleKeyLeafNodeRepresentation = {
-            TreeNode.TYPE_LEAF_NODE, // Not leaf
+            AbstractTreeNode.TYPE_LEAF_NODE, // Not leaf
 
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F,  // Key 1
 
@@ -47,17 +50,12 @@ public class TreeNodeTestCase {
             // >> End pointer to child 2
     };
 
-
-    @Test
-    public void testInternalTreeNodeLeaf(){
-        TreeNode treeNode = new TreeNode(singleKeyInternalNodeRepresentation);
-        Assertions.assertFalse(treeNode.isLeaf());
-    }
-
     @Test
     public void testSingleKeyInternalTreeNodeChildren(){
-        TreeNode treeNode = new TreeNode(singleKeyInternalNodeRepresentation);
+        AbstractTreeNode node = AbstractTreeNode.fromBytes(singleKeyInternalNodeRepresentation);
 
+        Assertions.assertInstanceOf(InternalTreeNode.class, node);
+        InternalTreeNode treeNode = (InternalTreeNode) node;
 
         Optional<Pointer> optionalChild0Pointer = treeNode.getChildAtIndex(0);
         Assertions.assertTrue(optionalChild0Pointer.isPresent());
@@ -83,7 +81,10 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyInternalTreeNodeChildrenIteration() {
-        TreeNode treeNode = new TreeNode(singleKeyInternalNodeRepresentation);
+        AbstractTreeNode node = AbstractTreeNode.fromBytes(singleKeyInternalNodeRepresentation);
+
+        Assertions.assertInstanceOf(InternalTreeNode.class, node);
+        InternalTreeNode treeNode = (InternalTreeNode) node;
 
         int i = 0;
 
@@ -105,7 +106,11 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyInternalNodeKeysIteration(){
-        TreeNode treeNode = new TreeNode(singleKeyInternalNodeRepresentation);
+        AbstractTreeNode node = AbstractTreeNode.fromBytes(singleKeyInternalNodeRepresentation);
+
+        Assertions.assertInstanceOf(InternalTreeNode.class, node);
+        InternalTreeNode treeNode = (InternalTreeNode) node;
+
         Iterator<Long> iterator = treeNode.keys();
         Assertions.assertTrue(iterator.hasNext());
 
@@ -115,31 +120,13 @@ public class TreeNodeTestCase {
         Assertions.assertFalse(iterator.hasNext());
     }
 
-
-
-    @Test
-    public void testSingleKeyLeafTreeNodeChildren(){
-        TreeNode treeNode = new TreeNode(singleKeyLeafNodeRepresentation);
-
-        Optional<Pointer> optionalChild0Pointer = treeNode.getChildAtIndex(0);
-        Assertions.assertFalse(optionalChild0Pointer.isPresent());
-    }
-    @Test
-    public void testSingleKeyLeafTreeNodeChildrenIteration(){
-        TreeNode treeNode = new TreeNode(singleKeyLeafNodeRepresentation);
-
-        boolean iterated = false;
-        for (Iterator<Pointer> it = treeNode.children(); it.hasNext(); ) {
-            iterated = true;
-            break;
-        }
-
-        Assertions.assertFalse(iterated, "Expected the leaf node to not to be able to iterate over children");
-    }
-
     @Test
     public void testSingleKeyLeafNodeKeysIteration(){
-        TreeNode treeNode = new TreeNode(singleKeyLeafNodeRepresentation);
+        AbstractTreeNode node = AbstractTreeNode.fromBytes(singleKeyLeafNodeRepresentation);
+
+        Assertions.assertInstanceOf(LeafTreeNode.class, node);
+        LeafTreeNode treeNode = (LeafTreeNode) node;
+
         Iterator<Long> iterator = treeNode.keys();
 
         Assertions.assertTrue(iterator.hasNext());
@@ -155,7 +142,11 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyLeafNodeKeyValueIteration(){
-        TreeNode treeNode = new TreeNode(singleKeyLeafNodeRepresentation);
+        AbstractTreeNode node = AbstractTreeNode.fromBytes(singleKeyLeafNodeRepresentation);
+
+        Assertions.assertInstanceOf(LeafTreeNode.class, node);
+        LeafTreeNode treeNode = (LeafTreeNode) node;
+
         Iterator<Map.Entry<Long, Pointer>> iterator = treeNode.keyValues();
 
         Assertions.assertTrue(iterator.hasNext());

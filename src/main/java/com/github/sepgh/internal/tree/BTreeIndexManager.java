@@ -5,6 +5,8 @@ import com.github.sepgh.internal.storage.exception.ChunkIsFullException;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.exception.IllegalNodeAccess;
+import com.github.sepgh.internal.tree.node.AbstractTreeNode;
+import com.github.sepgh.internal.tree.node.LeafTreeNode;
 import lombok.SneakyThrows;
 
 import java.io.IOException;
@@ -18,7 +20,7 @@ public class BTreeIndexManager implements IndexManager {
     private final IndexStorageManager indexStorageManager;
     private final HeaderManager headerManager;
     private final int table;
-    private TreeNode root;
+    private AbstractTreeNode root;
 
     public BTreeIndexManager(int table, HeaderManager headerManager, IndexStorageManager indexStorageManager){
         this.table = table;
@@ -36,23 +38,22 @@ public class BTreeIndexManager implements IndexManager {
         Pointer pointer = optionalRootPointer.get();
         Future<byte[]> node = indexStorageManager.readNode(table, pointer);
         byte[] bytes = node.get();
-        this.root = new TreeNode(bytes);
+        this.root = AbstractTreeNode.fromBytes(bytes);
         this.root.setNodePointer(pointer);
     }
 
     @Override
-    public CompletableFuture<TreeNode> addIndex(long identifier, Pointer pointer) {
+    public CompletableFuture<AbstractTreeNode> addIndex(long identifier, Pointer pointer) {
 
         if (this.root == null){
             return this.fillRoot(identifier, pointer);
         }
 
-
         return null;
     }
 
     @Override
-    public CompletableFuture<Optional<TreeNode>> getIndex(long identifier) {
+    public CompletableFuture<Optional<AbstractTreeNode>> getIndex(long identifier) {
         return null;
     }
 
@@ -62,8 +63,8 @@ public class BTreeIndexManager implements IndexManager {
     }
 
 
-    private CompletableFuture<TreeNode> fillRoot(long identifier, Pointer pointer) {
-        CompletableFuture<TreeNode> answer = new CompletableFuture<>();
+    private CompletableFuture<AbstractTreeNode> fillRoot(long identifier, Pointer pointer) {
+        CompletableFuture<AbstractTreeNode> answer = new CompletableFuture<>();
 
         List<Header.IndexChunk> chunks = this.headerManager.getHeader().getTableOfId(table).get().getChunks();
         for (int i = 0; i < chunks.size(); i++){
@@ -85,8 +86,8 @@ public class BTreeIndexManager implements IndexManager {
                     return;
                 }
 
-                TreeNode treeNode = new TreeNode(new byte[allocationResult.size()]);
-                treeNode.setType(TreeNode.TYPE_LEAF_NODE);
+                LeafTreeNode treeNode = new LeafTreeNode(new byte[allocationResult.size()]);
+                treeNode.setType(AbstractTreeNode.TYPE_LEAF_NODE);
                 try {
                     treeNode.setKeyValue(0, identifier, pointer);
                 } catch (IllegalNodeAccess e) {

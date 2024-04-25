@@ -4,7 +4,7 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.storage.exception.ChunkIsFullException;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.Pointer;
-import com.github.sepgh.internal.tree.TreeNode;
+import com.github.sepgh.internal.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.utils.FileUtils;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -160,7 +160,7 @@ public class FileIndexStorageManager implements IndexStorageManager {
     private Optional<Integer> getPossibleAllocationLocation(byte[] bytes){
         for (int i = 0; i < engineConfig.getBTreeGrowthNodeAllocationCount(); i++){
             int position = i * engineConfig.getPaddedSize();
-            if (bytes[position] != TreeNode.TYPE_LEAF_NODE && bytes[position] != TreeNode.TYPE_INTERNAL_NODE){
+            if (bytes[position] != AbstractTreeNode.TYPE_LEAF_NODE && bytes[position] != AbstractTreeNode.TYPE_INTERNAL_NODE){
                 return Optional.of(position);
             }
         }

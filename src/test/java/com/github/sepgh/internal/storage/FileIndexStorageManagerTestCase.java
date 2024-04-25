@@ -5,7 +5,9 @@ import com.github.sepgh.internal.storage.exception.ChunkIsFullException;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.Pointer;
-import com.github.sepgh.internal.tree.TreeNode;
+import com.github.sepgh.internal.tree.node.AbstractTreeNode;
+import com.github.sepgh.internal.tree.node.InternalTreeNode;
+import com.github.sepgh.internal.tree.node.LeafTreeNode;
 import com.google.common.io.BaseEncoding;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -29,7 +31,7 @@ public class FileIndexStorageManagerTestCase {
     private static EngineConfig engineConfig;
     private static Header header;
     private static final byte[] singleKeyLeafNodeRepresentation = {
-            TreeNode.TYPE_LEAF_NODE, // Leaf
+            AbstractTreeNode.TYPE_LEAF_NODE, // Leaf
 
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F,  // Key 1
 
@@ -40,7 +42,7 @@ public class FileIndexStorageManagerTestCase {
             // >> End pointer to child 1
     };
     private static final byte[] singleKeyInternalNodeRepresentation = {
-            TreeNode.TYPE_INTERNAL_NODE, // Not leaf
+            AbstractTreeNode.TYPE_INTERNAL_NODE, // Not leaf
 
             // >> Start pointer to child 1
             Pointer.TYPE_NODE,  // type
@@ -119,8 +121,7 @@ public class FileIndexStorageManagerTestCase {
             System.out.println(BaseEncoding.base16().lowerCase().encode(bytes));
             Assertions.assertEquals(engineConfig.getPaddedSize(), bytes.length);
 
-            TreeNode treeNode = new TreeNode(bytes);
-            Assertions.assertTrue(treeNode.isLeaf());
+            AbstractTreeNode treeNode = new LeafTreeNode(bytes);
 
             Iterator<Long> keys = treeNode.keys();
 
@@ -133,10 +134,9 @@ public class FileIndexStorageManagerTestCase {
             System.out.println(BaseEncoding.base16().lowerCase().encode(bytes));
             Assertions.assertEquals(engineConfig.getPaddedSize(), bytes.length);
 
-            treeNode = new TreeNode(bytes);
-            Assertions.assertFalse(treeNode.isLeaf());
+            treeNode = new InternalTreeNode(bytes);
 
-            Iterator<Pointer> children = treeNode.children();
+            Iterator<Pointer> children = ((InternalTreeNode) treeNode).children();
 
             Assertions.assertTrue(children.hasNext());
             Pointer pointer = children.next();
