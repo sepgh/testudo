@@ -122,7 +122,18 @@ public class TreeNodeUtils {
         );
     }
 
-    public static int setKeyValue(AbstractTreeNode treeNode, long key, Pointer pointer) {
+
+    /**
+     * @param treeNode to read/write from/to
+     * @param key to add
+     * @param pointer to add
+     * @return index which key is added to
+     * Todo: performance improvements may be possible
+     *       linear search is used to sort the keys
+     *       binary search could be used
+     *       alternatively, we can hold a space for metadata which keeps track of the number of keys or values stored
+     */
+    public static int addKeyValueAndGetIndex(AbstractTreeNode treeNode, long key, Pointer pointer) {
 
         int indexToFill = 0;
         Map.Entry<Long, Pointer> keyValueAtIndex = null;
@@ -169,6 +180,15 @@ public class TreeNodeUtils {
 
     }
 
+    /**
+     * @param treeNode to read/write from/to
+     * @param key to add
+     * @return index which key is added to
+     * Todo: performance improvements may be possible
+     *       linear search is used to sort the keys
+     *       binary search could be used
+     *       alternatively, we can hold a space for metadata which keeps track of the number of keys or values stored
+     */
     public static int addKeyAndGetIndex(AbstractTreeNode treeNode, long key) {
         // Shall only be called on internal nodes
 

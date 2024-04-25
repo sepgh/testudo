@@ -3,8 +3,10 @@ package com.github.sepgh.internal.tree.node;
 import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.TreeNodeUtils;
 import com.github.sepgh.internal.tree.exception.IllegalNodeAccess;
+import com.google.common.collect.ImmutableList;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 
 public class InternalTreeNode extends AbstractTreeNode {
@@ -17,11 +19,15 @@ public class InternalTreeNode extends AbstractTreeNode {
     }
 
     public Optional<Pointer> getChildAtIndex(int index){
-        return Optional.of(TreeNodeUtils.getPointerAtIndex(this, index));
+        return Optional.of(TreeNodeUtils.getChildPointerAtIndex(this, index));
     }
 
     public Iterator<Pointer> children(){
         return new TreeNodeChildrenIterator(this);
+    }
+
+    public List<Pointer> childrenList(){
+        return ImmutableList.copyOf(children());
     }
 
     private static class TreeNodeChildrenIterator implements Iterator<Pointer> {
@@ -45,7 +51,7 @@ public class InternalTreeNode extends AbstractTreeNode {
 
         @Override
         public Pointer next() {
-            Pointer pointer = TreeNodeUtils.getPointerAtIndex(this.node, this.cursor);
+            Pointer pointer = TreeNodeUtils.getChildPointerAtIndex(this.node, this.cursor);
             this.cursor++;
             return pointer;
         }

@@ -118,6 +118,8 @@ public class TreeNodeTestCase {
         Assertions.assertEquals(15, value);
 
         Assertions.assertFalse(iterator.hasNext());
+
+        Assertions.assertEquals(15, treeNode.keyList().get(0));
     }
 
     @Test
@@ -138,6 +140,9 @@ public class TreeNodeTestCase {
         Assertions.assertEquals(16, value);
 
         Assertions.assertFalse(iterator.hasNext());
+
+        Assertions.assertEquals(15, treeNode.keyList().get(0));
+        Assertions.assertEquals(16, treeNode.keyList().get(1));
     }
 
     @Test

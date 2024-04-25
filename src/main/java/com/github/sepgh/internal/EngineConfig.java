@@ -54,7 +54,7 @@ public class EngineConfig {
     }
 
     public int bTreeNodeSize(){
-        return 1 + (this.getBTreeNodeMaxKey() * (Long.BYTES + Pointer.POINTER_SIZE)) + (3 * Pointer.POINTER_SIZE);
+        return 1 + (this.getBTreeNodeMaxKey() * (Long.BYTES + Pointer.BYTES)) + (3 * Pointer.BYTES);
     }
 
     public static class Default {

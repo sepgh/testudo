@@ -2,15 +2,12 @@ package com.github.sepgh.internal.tree.node;
 
 import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.TreeNodeUtils;
-import com.github.sepgh.internal.tree.exception.IllegalNodeAccess;
+import com.google.common.collect.ImmutableList;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
-
-import static java.util.Collections.emptyIterator;
+import java.util.List;
 
 // Todo: This isn't reactive, but should it be?
 // Todo: If AsyncFileChannels are used, do we need to use Futures here? (probably not?)
@@ -55,6 +52,14 @@ public abstract class AbstractTreeNode {
 
     public Iterator<Long> keys(){
         return new TreeNodeKeysIterator(this);
+    }
+
+    public List<Long> keyList(){
+        return ImmutableList.copyOf(keys());
+    }
+
+    public int addKey(long key) {
+        return TreeNodeUtils.addKeyAndGetIndex(this, key);
     }
 
     private static class TreeNodeKeysIterator implements Iterator<Long> {
