@@ -1,5 +1,6 @@
 package com.github.sepgh.internal.tree;
 
+import com.github.sepgh.internal.tree.exception.IllegalNodeAccess;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,8 +34,28 @@ public class TreeNode {
         this.data = data;
     }
 
+    public static TreeNode fromBytes(byte[] data){
+        return new TreeNode(data);
+    }
+
+    public byte[] toBytes(){
+        return data;
+    }
+
     public boolean isLeaf(){
         return getData()[0] == TYPE_LEAF_NODE;
+    }
+
+    public void setType(byte type) {
+        this.data[0] = type;
+    }
+
+    public void setChildAtIndex(int index, Pointer pointer) throws IllegalNodeAccess {
+        if (isLeaf()){
+            throw new IllegalNodeAccess("Can't set a child for a leaf node.");
+        }
+
+        TreeNodeUtils.setPointerToChild(this, index, pointer);
     }
 
     public Optional<Pointer> getChildAtIndex(int index){
@@ -60,6 +81,13 @@ public class TreeNode {
             return emptyIterator();
         }
         return new TreeNodeKeyValueIterator(this);
+    }
+
+    public void setKeyValue(int index, long identifier, Pointer pointer) throws IllegalNodeAccess {
+        if (!isLeaf()){
+            throw new IllegalNodeAccess("Can't set a key value for an internal node.");
+        }
+        TreeNodeUtils.setKeyValueAtIndex(this, index, identifier, pointer);
     }
 
     private static class TreeNodeKeyValueIterator implements Iterator<Map.Entry<Long, Pointer>> {

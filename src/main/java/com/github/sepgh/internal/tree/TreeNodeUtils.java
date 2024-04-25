@@ -1,6 +1,7 @@
 package com.github.sepgh.internal.tree;
 
 import com.github.sepgh.internal.utils.BinaryUtils;
+import com.google.common.primitives.Longs;
 
 import java.util.AbstractMap;
 import java.util.Map;
@@ -25,6 +26,20 @@ public class TreeNodeUtils {
 
     public static Pointer getPointerAtIndex(TreeNode treeNode, int index){
         return Pointer.fromByteArray(treeNode.getData(), TREE_NODE_FLAGS_END + (index * (Pointer.POINTER_SIZE + Long.BYTES)));
+    }
+
+    public static void setPointerToChild(TreeNode treeNode, int index, Pointer pointer){
+        if (index == 0){
+            System.arraycopy(pointer.toByteArray(), 0, treeNode.getData(), TREE_NODE_FLAGS_END, Pointer.POINTER_SIZE);
+        } else {
+            System.arraycopy(
+                    pointer.toByteArray(),
+                    0,
+                    treeNode.getData(),
+                    TREE_NODE_FLAGS_END + (index * (Pointer.POINTER_SIZE + Long.BYTES)),
+                    Pointer.POINTER_SIZE
+            );
+        }
     }
 
     private static int getKeyStartIndex(TreeNode treeNode, int index) {
@@ -62,4 +77,18 @@ public class TreeNodeUtils {
         );
     }
 
+    public static void setKeyValueAtIndex(TreeNode treeNode, int index, long identifier, Pointer pointer) {
+        System.arraycopy(
+                Longs.toByteArray(identifier),
+                0,
+                treeNode.getData(),
+                TREE_NODE_FLAGS_END + (index * (Long.BYTES + Pointer.POINTER_SIZE)),
+                Long.BYTES
+        );
+
+        pointer.fillByteArray(
+                treeNode.getData(),
+                TREE_NODE_FLAGS_END + (index * (Long.BYTES + Pointer.POINTER_SIZE)) + Long.BYTES
+        );
+    }
 }

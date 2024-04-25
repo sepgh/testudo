@@ -3,8 +3,10 @@ package com.github.sepgh.internal.storage;
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.storage.exception.ChunkIsFullException;
 import com.github.sepgh.internal.storage.header.HeaderManager;
+import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.TreeNode;
 import com.github.sepgh.internal.utils.FileUtils;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 
 @Slf4j
 public class FileIndexStorageManager implements IndexStorageManager {
@@ -25,6 +28,8 @@ public class FileIndexStorageManager implements IndexStorageManager {
     private final Path path;
     private final Map<Integer, AsynchronousFileChannel> pool = new HashMap<>(5); // Map of chunk to
     private final HeaderManager headerManager;
+
+    @Getter
     private final EngineConfig engineConfig;
 
     public FileIndexStorageManager(Path path, EngineConfig engineConfig, HeaderManager headerManager) {
@@ -58,9 +63,15 @@ public class FileIndexStorageManager implements IndexStorageManager {
         }
     }
 
+
+    @Override
+    public Optional<Pointer> getRoot(int table) {
+        return Optional.empty();  // Todo
+    }
+
     // Todo: Note that maybe this could be cached and kept until it changes? combination of table name and pointer can make it happen
     // Todo: maybe if some other thread is writing (modifying tree) we should not read. At least not if they are in same table?
-    public Future<byte[]> readNode(int table, int position, int chunk){
+    public CompletableFuture<byte[]> readNode(int table, long position, int chunk){
         AsynchronousFileChannel asynchronousFileChannel = getAsynchronousFileChannel(chunk);
         long filePosition = headerManager.getHeader().getTableOfId(table).get().getIndexChunk(chunk).get().getOffset() + position;
         return FileUtils.readBytes(asynchronousFileChannel, filePosition, engineConfig.getPaddedSize());
@@ -71,7 +82,8 @@ public class FileIndexStorageManager implements IndexStorageManager {
         Also, current file may no longer have capacity and allocating space for new node may mess up the data by collision between trees
         In that case we need to allocate space in specific location by pushing next tables forward (AND UPDATE HEADER)
     */
-    public Future<Long> allocateForNewNode(int table, int chunk) throws IOException, ChunkIsFullException {
+    @Override
+    public CompletableFuture<AllocationResult> allocateForNewNode(int table, int chunk) throws IOException, ChunkIsFullException {
 
         AsynchronousFileChannel asynchronousFileChannel = this.getAsynchronousFileChannel(chunk);
 
@@ -97,7 +109,7 @@ public class FileIndexStorageManager implements IndexStorageManager {
         }
         Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
         if (optionalAdditionalPosition.isPresent()){
-            return CompletableFuture.completedFuture(position + optionalAdditionalPosition.get());  // Todo: caller cant know we changed chunk
+            return CompletableFuture.completedFuture(new AllocationResult(position + optionalAdditionalPosition.get(), engineConfig.getPaddedSize()));  // Todo: caller cant know we changed chunk
             // Header may need an update, as this table may not have been available in another chunk but now will be available
         }
 
@@ -113,16 +125,36 @@ public class FileIndexStorageManager implements IndexStorageManager {
 
 
         /* Allocate space  */
+        CompletableFuture<AllocationResult> resultsCompletableFuture = new CompletableFuture<>();
+
+        BiConsumer<Long, Throwable> consumer = (aLong, throwable) -> {
+            resultsCompletableFuture.complete(
+                    new AllocationResult(
+                            aLong,
+                            engineConfig.getPaddedSize()
+                    )
+            );
+        };
 
         if (isLastTable){
-            return FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize());
+            FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).whenComplete(consumer);
+        }else {
+            FileUtils.allocate(asynchronousFileChannel, position, engineConfig.indexGrowthAllocationSize()).whenComplete(consumer);
         }
-        return FileUtils.allocate(asynchronousFileChannel, position, engineConfig.indexGrowthAllocationSize());
+        return resultsCompletableFuture;
     }
 
+    @Override
     public boolean chunkHasSpaceForNode(int chunk) throws IOException {
         AsynchronousFileChannel asynchronousFileChannel = this.getAsynchronousFileChannel(chunk);
         return asynchronousFileChannel.size() + engineConfig.getPaddedSize() <= engineConfig.getBTreeMaxFileSize();
+    }
+
+    @Override
+    public CompletableFuture<Integer> writeNode(int table, byte[] data, long position, int chunk) {
+        // Todo: maybe check if space is actually clear before writing, and have one method for write and other for overwrite
+        AsynchronousFileChannel asynchronousFileChannel = this.getAsynchronousFileChannel(chunk);
+        return FileUtils.write(asynchronousFileChannel, position, data);
     }
 
     private Optional<Integer> getPossibleAllocationLocation(byte[] bytes){

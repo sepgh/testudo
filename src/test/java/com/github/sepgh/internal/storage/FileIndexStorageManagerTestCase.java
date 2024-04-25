@@ -6,7 +6,6 @@ import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.TreeNode;
-import com.github.sepgh.internal.utils.FileUtils;
 import com.google.common.io.BaseEncoding;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -14,7 +13,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -152,42 +150,37 @@ public class FileIndexStorageManagerTestCase {
     }
 
     @Test
-    public void canAllocateSpaceSuccessfully() throws IOException, ExecutionException, InterruptedException {
+    public void canAllocateSpaceAndWriteSuccessfully() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, engineConfig, headerManager);
         try {
             /* First allocation would add to end of the file since there is no space, but we didn't reach max */
-            Future<Long> positionFuture = fileIndexStorageManager.allocateForNewNode(1, 0);
-            Long position = positionFuture.get();
+            Future<IndexStorageManager.AllocationResult> allocationResultFuture = fileIndexStorageManager.allocateForNewNode(1, 0);
+            IndexStorageManager.AllocationResult allocationResult = allocationResultFuture.get();
 
-            Assertions.assertEquals(2L * engineConfig.getPaddedSize(), position);
+            Assertions.assertEquals(2L * engineConfig.getPaddedSize(), allocationResult.position());
 
             /* Second allocation call should return the same, since we didnt fill the area */
-            positionFuture = fileIndexStorageManager.allocateForNewNode(1, 0);
-            position = positionFuture.get();
+            allocationResultFuture = fileIndexStorageManager.allocateForNewNode(1, 0);
+            allocationResult = allocationResultFuture.get();
 
-            Assertions.assertEquals(2L * engineConfig.getPaddedSize(), position);
+            Assertions.assertEquals(2L * engineConfig.getPaddedSize(), allocationResult.position());
 
-            Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
 
             /* Write a node */
-            AsynchronousFileChannel channel = AsynchronousFileChannel.open(indexPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-            Future<Integer> future = FileUtils.write(channel, position, singleKeyLeafNodeRepresentation);
-            future.get();
-            channel.close();
+            Future<Integer> writeFuture =fileIndexStorageManager.writeNode(1, singleKeyLeafNodeRepresentation, allocationResult.position(), 0);
+            writeFuture.get();
 
             /* Third allocation call should return next spot */
-            positionFuture = fileIndexStorageManager.allocateForNewNode(1, 0);
-            position = positionFuture.get();
-            Assertions.assertEquals(3L * engineConfig.getPaddedSize(), position);
+            allocationResultFuture = fileIndexStorageManager.allocateForNewNode(1, 0);
+            allocationResult = allocationResultFuture.get();
+            Assertions.assertEquals(3L * engineConfig.getPaddedSize(), allocationResult.position());
 
 
             /* Write a second node */
-            channel = AsynchronousFileChannel.open(indexPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-            future = FileUtils.write(channel, position, singleKeyLeafNodeRepresentation);
-            future.get();
-            channel.close();
+            writeFuture =fileIndexStorageManager.writeNode(1, singleKeyLeafNodeRepresentation, allocationResult.position(), 0);
+            writeFuture.get();
 
             /* Forth allocation call should throw exception since there is no space left in the chunk */
             Assertions.assertThrows(ChunkIsFullException.class, () -> {

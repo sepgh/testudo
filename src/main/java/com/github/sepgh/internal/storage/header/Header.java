@@ -47,6 +47,7 @@ public class Header {
         private String name;
         private int id;
         private List<IndexChunk> chunks;
+        private IndexChunk root;
 
         public Optional<IndexChunk> getIndexChunk(int id){
             return getChunks().stream().filter(indexChunk -> indexChunk.chunk == id).findFirst();

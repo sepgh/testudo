@@ -8,7 +8,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 public class FileUtils {
-    public static Future<byte[]> readBytes(AsynchronousFileChannel asynchronousFileChannel, long position, int size){
+    public static CompletableFuture<byte[]> readBytes(AsynchronousFileChannel asynchronousFileChannel, long position, int size){
         CompletableFuture<byte[]> future = new CompletableFuture<>();
         ByteBuffer buffer = ByteBuffer.allocate(size);
         asynchronousFileChannel.read(
@@ -34,7 +34,7 @@ public class FileUtils {
     }
 
 
-    public static Future<Long> allocate(AsynchronousFileChannel asynchronousFileChannel, int size) throws IOException {
+    public static CompletableFuture<Long> allocate(AsynchronousFileChannel asynchronousFileChannel, int size) throws IOException {
         CompletableFuture<Long> future = new CompletableFuture<>();
         long fileSize = asynchronousFileChannel.size();
         asynchronousFileChannel.write(ByteBuffer.allocate(size), fileSize, null, new CompletionHandler<Integer, Object>() {
@@ -56,7 +56,7 @@ public class FileUtils {
         return future;
     }
 
-    public static Future<Long> allocate(AsynchronousFileChannel asynchronousFileChannel, long position, int size) throws IOException {
+    public static CompletableFuture<Long> allocate(AsynchronousFileChannel asynchronousFileChannel, long position, int size) throws IOException {
         CompletableFuture<Long> future = new CompletableFuture<>();
 
         int capacity = (int) Math.subtractExact(
@@ -112,7 +112,7 @@ public class FileUtils {
         return future;
     }
 
-    public static Future<Integer> write(AsynchronousFileChannel asynchronousFileChannel, long position, byte[] content){
+    public static CompletableFuture<Integer> write(AsynchronousFileChannel asynchronousFileChannel, long position, byte[] content){
         CompletableFuture<Integer> future = new CompletableFuture<>();
 
         ByteBuffer byteBuffer = ByteBuffer.allocate(content.length);
