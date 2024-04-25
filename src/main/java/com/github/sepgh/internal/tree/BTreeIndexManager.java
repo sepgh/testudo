@@ -1,16 +1,16 @@
 package com.github.sepgh.internal.tree;
 
-import com.github.sepgh.internal.storage.IndexFileManager;
+import com.github.sepgh.internal.storage.FileIndexStorageManager;
 
 import java.util.Optional;
 import java.util.concurrent.Future;
 
 public class BTreeIndexManager implements IndexManager {
 
-    private final IndexFileManager indexFileManager;
+    private final FileIndexStorageManager fileIndexStorageManager;
 
-    public BTreeIndexManager(IndexFileManager indexFileManager){
-        this.indexFileManager = indexFileManager;
+    public BTreeIndexManager(FileIndexStorageManager fileIndexStorageManager){
+        this.fileIndexStorageManager = fileIndexStorageManager;
     }
 
     @Override

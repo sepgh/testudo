@@ -24,9 +24,9 @@ import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.github.sepgh.internal.storage.IndexFileManager.INDEX_FILE_NAME;
+import static com.github.sepgh.internal.storage.FileIndexStorageManager.INDEX_FILE_NAME;
 
-public class IndexFileManagerTestCase {
+public class FileIndexStorageManagerTestCase {
     private static Path dbPath;
     private static EngineConfig engineConfig;
     private static Header header;
@@ -113,9 +113,9 @@ public class IndexFileManagerTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
-        IndexFileManager indexFileManager = new IndexFileManager(dbPath, engineConfig, headerManager);
+        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, engineConfig, headerManager);
         try {
-            Future<byte[]> future = indexFileManager.readNode(1, 0, 0);
+            Future<byte[]> future = fileIndexStorageManager.readNode(1, 0, 0);
 
             byte[] bytes = future.get();
             System.out.println(BaseEncoding.base16().lowerCase().encode(bytes));
@@ -130,7 +130,7 @@ public class IndexFileManagerTestCase {
             Assertions.assertEquals(15, keys.next());
 
 
-            future = indexFileManager.readNode(1, engineConfig.getPaddedSize(), 0);
+            future = fileIndexStorageManager.readNode(1, engineConfig.getPaddedSize(), 0);
             bytes = future.get();
             System.out.println(BaseEncoding.base16().lowerCase().encode(bytes));
             Assertions.assertEquals(engineConfig.getPaddedSize(), bytes.length);
@@ -146,7 +146,7 @@ public class IndexFileManagerTestCase {
             Assertions.assertEquals(1, pointer.position());
             Assertions.assertEquals(1, pointer.chunk());
         } finally {
-            indexFileManager.close();
+            fileIndexStorageManager.close();
         }
 
     }
@@ -155,16 +155,16 @@ public class IndexFileManagerTestCase {
     public void canAllocateSpaceSuccessfully() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
-        IndexFileManager indexFileManager = new IndexFileManager(dbPath, engineConfig, headerManager);
+        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, engineConfig, headerManager);
         try {
             /* First allocation would add to end of the file since there is no space, but we didn't reach max */
-            Future<Long> positionFuture = indexFileManager.allocateForNewNode(1, 0);
+            Future<Long> positionFuture = fileIndexStorageManager.allocateForNewNode(1, 0);
             Long position = positionFuture.get();
 
             Assertions.assertEquals(2L * engineConfig.getPaddedSize(), position);
 
             /* Second allocation call should return the same, since we didnt fill the area */
-            positionFuture = indexFileManager.allocateForNewNode(1, 0);
+            positionFuture = fileIndexStorageManager.allocateForNewNode(1, 0);
             position = positionFuture.get();
 
             Assertions.assertEquals(2L * engineConfig.getPaddedSize(), position);
@@ -178,7 +178,7 @@ public class IndexFileManagerTestCase {
             channel.close();
 
             /* Third allocation call should return next spot */
-            positionFuture = indexFileManager.allocateForNewNode(1, 0);
+            positionFuture = fileIndexStorageManager.allocateForNewNode(1, 0);
             position = positionFuture.get();
             Assertions.assertEquals(3L * engineConfig.getPaddedSize(), position);
 
@@ -191,15 +191,15 @@ public class IndexFileManagerTestCase {
 
             /* Forth allocation call should throw exception since there is no space left in the chunk */
             Assertions.assertThrows(ChunkIsFullException.class, () -> {
-               indexFileManager.allocateForNewNode(1, 0);
+               fileIndexStorageManager.allocateForNewNode(1, 0);
             });
 
-            Assertions.assertFalse(indexFileManager.chunkHasSpaceForNode(0));
+            Assertions.assertFalse(fileIndexStorageManager.chunkHasSpaceForNode(0));
 
         } catch (ChunkIsFullException e) {
             throw new RuntimeException(e);
         } finally {
-            indexFileManager.close();
+            fileIndexStorageManager.close();
         }
     }
 

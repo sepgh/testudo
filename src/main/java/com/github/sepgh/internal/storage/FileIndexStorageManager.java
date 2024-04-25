@@ -20,25 +20,25 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 @Slf4j
-public class IndexFileManager {
+public class FileIndexStorageManager implements IndexStorageManager {
     public static final String INDEX_FILE_NAME = "index";
     private final Path path;
     private final Map<Integer, AsynchronousFileChannel> pool = new HashMap<>(5); // Map of chunk to
     private final HeaderManager headerManager;
     private final EngineConfig engineConfig;
 
-    public IndexFileManager(Path path, EngineConfig engineConfig, HeaderManager headerManager) {
+    public FileIndexStorageManager(Path path, EngineConfig engineConfig, HeaderManager headerManager) {
         this.path = path;
         this.engineConfig = engineConfig;
         this.headerManager = headerManager;
     }
 
-    public IndexFileManager(Path path, HeaderManager headerManager) {
+    public FileIndexStorageManager(Path path, HeaderManager headerManager) {
         this(path, EngineConfig.Default.getDefault(), headerManager);
     }
 
     @SneakyThrows
-    private synchronized AsynchronousFileChannel getAsynchronousFileChannel(int chunk){
+    private synchronized AsynchronousFileChannel getAsynchronousFileChannel(int chunk) {
         if (pool.containsKey(chunk)){
             return pool.get(chunk);
         }
@@ -71,7 +71,7 @@ public class IndexFileManager {
         Also, current file may no longer have capacity and allocating space for new node may mess up the data by collision between trees
         In that case we need to allocate space in specific location by pushing next tables forward (AND UPDATE HEADER)
     */
-    public Future<Long> allocateForNewNode(int table, int chunk) throws IOException, ExecutionException, InterruptedException, ChunkIsFullException {
+    public Future<Long> allocateForNewNode(int table, int chunk) throws IOException, ChunkIsFullException {
 
         AsynchronousFileChannel asynchronousFileChannel = this.getAsynchronousFileChannel(chunk);
 
@@ -89,7 +89,12 @@ public class IndexFileManager {
                 headerManager.getHeader().getTableOfIndex(indexOfTableMetaData + 1).get().getIndexChunk(chunk).get().getOffset() - engineConfig.indexGrowthAllocationSize();
 
         Future<byte[]> future = FileUtils.readBytes(asynchronousFileChannel, position, engineConfig.indexGrowthAllocationSize());
-        byte[] bytes = future.get();
+        byte[] bytes = new byte[0];
+        try {
+            bytes = future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new IOException(e);
+        }
         Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
         if (optionalAdditionalPosition.isPresent()){
             return CompletableFuture.completedFuture(position + optionalAdditionalPosition.get());  // Todo: caller cant know we changed chunk
