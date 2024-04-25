@@ -1,6 +1,7 @@
 package com.github.sepgh.internal.storage;
 
 import com.github.sepgh.internal.EngineConfig;
+import com.github.sepgh.internal.storage.exception.ChunkIsFullException;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.Pointer;
@@ -190,10 +191,14 @@ public class IndexFileManagerTestCase {
 
             /* Forth allocation call should return 0 as beginning of a completely new chunk */
             // Todo: caller dont know chunk is new, needs fix
-            positionFuture = indexFileManager.allocateForNewNode(1, 0);
-            position = positionFuture.get();
-            Assertions.assertEquals(0, position);
+            Assertions.assertThrows(ChunkIsFullException.class, () -> {
+                Future<Long> longFuture = indexFileManager.allocateForNewNode(1, 0);
+                long position1 = longFuture.get();
+                Assertions.assertEquals(0, position1);
+            });
 
+        } catch (ChunkIsFullException e) {
+            throw new RuntimeException(e);
         } finally {
             indexFileManager.close();
         }

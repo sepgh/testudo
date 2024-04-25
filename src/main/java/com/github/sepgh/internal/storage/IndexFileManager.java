@@ -1,6 +1,7 @@
 package com.github.sepgh.internal.storage;
 
 import com.github.sepgh.internal.EngineConfig;
+import com.github.sepgh.internal.storage.exception.ChunkIsFullException;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.TreeNode;
 import com.github.sepgh.internal.utils.FileUtils;
@@ -8,7 +9,6 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -72,7 +72,7 @@ public class IndexFileManager {
         Also, current file may no longer have capacity and allocating space for new node may mess up the data by collision between trees
         In that case we need to allocate space in specific location by pushing next tables forward (AND UPDATE HEADER)
     */
-    public Future<Long> allocateForNewNode(int table, int chunk) throws IOException, ExecutionException, InterruptedException {
+    public Future<Long> allocateForNewNode(int table, int chunk) throws IOException, ExecutionException, InterruptedException, ChunkIsFullException {
 
         AsynchronousFileChannel asynchronousFileChannel = this.getAsynchronousFileChannel(chunk);
 
@@ -104,7 +104,7 @@ public class IndexFileManager {
                 through recursion till we reach to a chunk where we can allocate space
          */
         if (asynchronousFileChannel.size() >= engineConfig.getBTreeMaxFileSize()){
-            return allocateForNewNode(table, chunk + 1);
+            throw new ChunkIsFullException();
         }
 
 
