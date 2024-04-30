@@ -1,66 +1,51 @@
 package com.github.sepgh.internal.tree;
 
 import com.github.sepgh.internal.storage.IndexStorageManager;
-import com.github.sepgh.internal.storage.exception.ChunkIsFullException;
-import com.github.sepgh.internal.storage.header.Header;
-import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.exception.IllegalNodeAccess;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
-import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 public class BTreeIndexManager implements IndexManager {
 
     private final IndexStorageManager indexStorageManager;
-    private final HeaderManager headerManager;
-    private final int table;
     private final int order;
-    private BaseTreeNode root;
 
-    public BTreeIndexManager(int table, int order, HeaderManager headerManager, IndexStorageManager indexStorageManager){
-        this.table = table;
+    public BTreeIndexManager(int order, IndexStorageManager indexStorageManager){
         this.order = order;
         this.indexStorageManager = indexStorageManager;
-        this.headerManager = headerManager;
-        initialize();
     }
 
-    @SneakyThrows
-    private void initialize(){
-        Optional<Pointer> optionalRootPointer = this.indexStorageManager.getRoot(table);
-        if (optionalRootPointer.isEmpty())
-            return;
-
-        Pointer pointer = optionalRootPointer.get();
-        Future<byte[]> node = indexStorageManager.readNode(table, pointer);
-        byte[] bytes = node.get();
-        this.root = BaseTreeNode.fromBytes(bytes);
-        this.root.setNodePointer(pointer);
-    }
-
-    // Todo: the current way we maintain root is not good. If data is manipulated and location of root is changed (allocation happened for previous table)
-    //       then we no longer have updated root
-    // Todo: as a result, whenever allocation happens we should update possible roots that are messed up in the header
-    //       also, we should always read root position fresh from header
-
-    @Override
-    public CompletableFuture<BaseTreeNode> addIndex(long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IllegalNodeAccess {
-
-        if (this.root == null){
-            return this.generateRoot(identifier, pointer);
+    private BaseTreeNode getRoot(int table) throws ExecutionException, InterruptedException, IOException {
+        CompletableFuture<Optional<IndexStorageManager.NodeData>> completableFuture = indexStorageManager.getRoot(table);
+        Optional<IndexStorageManager.NodeData> optionalNodeData = completableFuture.get();
+        if (optionalNodeData.isPresent()){
+            BaseTreeNode root = BaseTreeNode.fromBytes(optionalNodeData.get().bytes());
+            root.setNodePointer(optionalNodeData.get().pointer());
         }
 
-        CompletableFuture<BaseTreeNode> output = new CompletableFuture<>();
+        byte[] emptyNode = indexStorageManager.getEmptyNode();
+        LeafTreeNode leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(emptyNode, BaseTreeNode.NodeType.LEAF);
+        leafTreeNode.setAsRoot();
+
+        IndexStorageManager.NodeData nodeData = indexStorageManager.writeNewNode(table, leafTreeNode.getData()).get();
+
+        leafTreeNode.setNodePointer(nodeData.pointer());
+        return leafTreeNode;
+    }
+
+    @Override
+    public BaseTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IllegalNodeAccess, IOException {
+
+        BaseTreeNode root = getRoot(table);
 
         List<BaseTreeNode> path = new LinkedList<>();
-        getPathToResponsibleNode(path, root, identifier);
+        getPathToResponsibleNode(table, path, root, identifier);
 
 
         /* variables to fill and use in while */
@@ -77,23 +62,13 @@ public class BTreeIndexManager implements IndexManager {
                 /* If current node has space, store and exit */
                 if (currentNode.keyList().size() < order){
                     ((LeafTreeNode) currentNode).addKeyValue(identifier, pointer);
-                    indexStorageManager.writeNode(table, currentNode.toBytes(), currentNode.getNodePointer()).whenComplete((integer, throwable) -> {
-                        if (throwable != null) {
-                            output.completeExceptionally(throwable);
-                        }
-                        output.complete(currentNode);
-                    });
-
-                    return output;
+                    indexStorageManager.updateNode(currentNode.toBytes(), currentNode.getNodePointer()).get();
+                    return currentNode;
                 }
 
                 /* Current node didn't have any space, so let's create a sibling and split */
-                IndexStorageManager.AllocationResult allocationResult = this.allocateNodeAtAnyExistingChunk(table).get();
-                BaseTreeNode newTreeNode = BaseTreeNode.fromBytes(
-                        indexStorageManager.readNode(table, allocationResult.position(), allocationResult.chunk()).get()
-                );
-                newTreeNode.setType(BaseTreeNode.NodeType.LEAF);
-                LeafTreeNode newLeafTreeNode = (LeafTreeNode) newTreeNode;
+                byte[] emptyNode = indexStorageManager.getEmptyNode();
+                LeafTreeNode newLeafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(emptyNode, BaseTreeNode.NodeType.LEAF);
 
                 List<Map.Entry<Long, Pointer>> movingKeyValues = this.splitKeyValues((LeafTreeNode) currentNode, identifier, pointer);
                 for (int z = 0; z < movingKeyValues.size(); z++){
@@ -104,39 +79,21 @@ public class BTreeIndexManager implements IndexManager {
 
                 fixSiblingPointers((LeafTreeNode) currentNode, newLeafTreeNode);
 
+                indexStorageManager.updateNode(currentNode.getData(), currentNode.getNodePointer()).get();
+                IndexStorageManager.NodeData newLeafNodeData = indexStorageManager.writeNewNode(table, newLeafTreeNode.toBytes()).get();
+                newLeafTreeNode.setNodePointer(newLeafNodeData.pointer());
+
                 /* this leaf doesn't have a parent! create one and deal with it right here! */
                 if (path.size() == 1) {
-                    allocationResult = this.allocateNodeAtAnyExistingChunk(table).get();
-                    BaseTreeNode newParent = BaseTreeNode.fromBytes(
-                            indexStorageManager.readNode(table, allocationResult.position(), allocationResult.chunk()).get()
-                    );
+                    InternalTreeNode parentInternalTreeNode = (InternalTreeNode) BaseTreeNode.fromBytes(indexStorageManager.getEmptyNode(), BaseTreeNode.NodeType.INTERNAL);
                     currentNode.unsetAsRoot();
-                    newParent.setAsRoot();
-                    InternalTreeNode parentInternalTreeNode = (InternalTreeNode) newParent;
+                    parentInternalTreeNode.setAsRoot();
                     parentInternalTreeNode.addKey(movingKeyValues.get(0).getKey());
                     parentInternalTreeNode.setChildAtIndex(0, currentNode.getNodePointer());
                     parentInternalTreeNode.setChildAtIndex(1, newLeafTreeNode.getNodePointer());
-                    indexStorageManager.writeNode(table, parentInternalTreeNode.toBytes(), newTreeNode.getNodePointer()).whenComplete((integer, throwable) -> {
-                        if (throwable != null){
-                            output.completeExceptionally(throwable);
-                        }
-                    });
+                    indexStorageManager.writeNewNode(table, parentInternalTreeNode.toBytes(), true);
+                    return currentNode;
                 }
-
-                indexStorageManager.writeNode(table, currentNode.toBytes(), currentNode.getNodePointer()).whenComplete((integer, throwable) -> {
-                    if (throwable != null){
-                        output.completeExceptionally(throwable);
-                    }
-                    indexStorageManager.writeNode(table, newLeafTreeNode.toBytes(), currentNode.getNodePointer()).whenComplete((integer1, throwable1) -> {
-                        if (throwable1 != null){
-                            output.completeExceptionally(throwable);
-                        }
-                    });
-                });
-
-                // We are done already
-                if (path.size() == 1)
-                    return output;
 
                 newChildForParent = newLeafTreeNode;
                 idForParentToStore = movingKeyValues.get(0).getKey();
@@ -155,12 +112,8 @@ public class BTreeIndexManager implements IndexManager {
                     } else {
                         currentInternalTreeNode.setChildAtIndex(indexOfNewKey + 1, newChildForParent.getNodePointer());
                     }
-                    indexStorageManager.writeNode(table, currentNode.toBytes(), currentNode.getNodePointer()).whenComplete((integer, throwable) -> {
-                        if (throwable != null){
-                            output.completeExceptionally(throwable);
-                        }
-                        output.complete(path.getFirst());
-                    });
+                    indexStorageManager.updateNode(currentNode.getData(), currentNode.getNodePointer()).get();
+                    return path.getFirst();
                 } else {
                     /* current internal node cant store the key */
                     List<Map.Entry<Long, Pointer>> splitChildren = this.splitChildren(
@@ -168,8 +121,8 @@ public class BTreeIndexManager implements IndexManager {
                             idForParentToStore,
                             newChildForParent.getNodePointer()
                     );
-                    IndexStorageManager.AllocationResult allocationResult = this.allocateNodeAtAnyExistingChunk(table).get();
-                    InternalTreeNode newSiblingInternalNode = (InternalTreeNode) BaseTreeNode.fromAllocationResult(allocationResult, BaseTreeNode.NodeType.INTERNAL);
+
+                    InternalTreeNode newSiblingInternalNode = (InternalTreeNode) BaseTreeNode.fromBytes(indexStorageManager.getEmptyNode(), BaseTreeNode.NodeType.INTERNAL);
 
                     idForParentToStore = splitChildren.get(0).getKey();
                     List<Map.Entry<Long, Pointer>> forSibling = splitChildren.subList(1, splitChildren.size() - 1);
@@ -183,21 +136,13 @@ public class BTreeIndexManager implements IndexManager {
                         }
                     }
 
-                    indexStorageManager.writeNode(table, currentNode.toBytes(), currentNode.getNodePointer()).whenComplete((integer, throwable) -> {
-                        if (throwable != null){
-                            output.completeExceptionally(throwable);
-                        }
-                        indexStorageManager.writeNode(table, newSiblingInternalNode.toBytes(), currentNode.getNodePointer()).whenComplete((integer1, throwable1) -> {
-                            if (throwable1 != null){
-                                output.completeExceptionally(throwable);
-                            }
-                        });
-                    });
+                    indexStorageManager.updateNode(currentNode.toBytes(), currentNode.getNodePointer()).get();
+                    IndexStorageManager.NodeData nodeData = indexStorageManager.writeNewNode(table, newSiblingInternalNode.toBytes()).get();
+                    newSiblingInternalNode.setNodePointer(nodeData.pointer());
 
                     // Current node was root and needs a new parent
                     if (i == path.size() - 1){
-                        allocationResult = this.allocateNodeAtAnyExistingChunk(table).get();
-                        InternalTreeNode newParentInternalNode = (InternalTreeNode) BaseTreeNode.fromAllocationResult(allocationResult, BaseTreeNode.NodeType.INTERNAL);
+                        InternalTreeNode newParentInternalNode = (InternalTreeNode) BaseTreeNode.fromBytes(indexStorageManager.getEmptyNode(), BaseTreeNode.NodeType.INTERNAL);
                         newParentInternalNode.setAsRoot();
                         currentNode.unsetAsRoot();
 
@@ -205,17 +150,10 @@ public class BTreeIndexManager implements IndexManager {
                         newParentInternalNode.setChildAtIndex(0, currentNode.getNodePointer());
                         newParentInternalNode.setChildAtIndex(1, newSiblingInternalNode.getNodePointer());
 
-                        indexStorageManager.writeNode(table, currentNode.toBytes(), currentNode.getNodePointer()).whenComplete((integer, throwable) -> {
-                            if (throwable != null){
-                                output.completeExceptionally(throwable);
-                            }
-                            indexStorageManager.writeNode(table, newParentInternalNode.toBytes(), currentNode.getNodePointer()).whenComplete((integer1, throwable1) -> {
-                                if (throwable1 != null){
-                                    output.completeExceptionally(throwable);
-                                }
-                            });
-                        });
-                        return output;
+                        indexStorageManager.updateNode(currentNode.getData(), currentNode.getNodePointer()).get();
+                        indexStorageManager.writeNewNode(table, newParentInternalNode.toBytes(), true).get();
+
+                        return path.getFirst();
                     } else {
                         // Tell parent what new node to store
                         newChildForParent = currentNode;
@@ -227,7 +165,7 @@ public class BTreeIndexManager implements IndexManager {
         }
 
 
-        return output;
+        throw new RuntimeException("Logic error: probably failed to store index?");
     }
 
     private List<Map.Entry<Long, Pointer>> splitChildren(InternalTreeNode node, long idForParentToStore, Pointer nodePointer) {
@@ -279,12 +217,12 @@ public class BTreeIndexManager implements IndexManager {
     }
 
     @Override
-    public CompletableFuture<Optional<BaseTreeNode>> getIndex(long identifier) {
+    public CompletableFuture<Optional<BaseTreeNode>> getIndex(int table, long identifier) {
         return null;
     }
 
     @Override
-    public CompletableFuture<Void> removeIndex(long identifier) {
+    public CompletableFuture<Void> removeIndex(int table, long identifier) {
         return null;
     }
 
@@ -293,7 +231,7 @@ public class BTreeIndexManager implements IndexManager {
         newLeafTreeNode.setPrevious(currentNode.getNodePointer());
     }
 
-    private void getPathToResponsibleNode(List<BaseTreeNode> path, BaseTreeNode node, long identifier) throws ExecutionException, InterruptedException {
+    private void getPathToResponsibleNode(int table, List<BaseTreeNode> path, BaseTreeNode node, long identifier) throws ExecutionException, InterruptedException {
         path.addFirst(node);
 
         if (node.isLeaf()){
@@ -315,10 +253,10 @@ public class BTreeIndexManager implements IndexManager {
             }
 
             if (pointer.isPresent()){
-                byte[] bytes = indexStorageManager.readNode(table, pointer.get()).get();
-                BaseTreeNode baseTreeNode = BaseTreeNode.fromBytes(bytes);
+                IndexStorageManager.NodeData nodeData = indexStorageManager.readNode(table, pointer.get()).get();
+                BaseTreeNode baseTreeNode = BaseTreeNode.fromBytes(nodeData.bytes());
                 baseTreeNode.setNodePointer(pointer.get());
-                getPathToResponsibleNode(path, baseTreeNode, identifier);
+                getPathToResponsibleNode(table, path, baseTreeNode, identifier);
             }
 
             i++;
@@ -326,72 +264,4 @@ public class BTreeIndexManager implements IndexManager {
 
     }
 
-    private CompletableFuture<IndexStorageManager.AllocationResult> allocateNodeAtAnyExistingChunk(int table) {
-
-        List<Header.IndexChunk> chunks = this.headerManager.getHeader().getTableOfId(table).get().getChunks();
-        CompletableFuture<IndexStorageManager.AllocationResult> output = new CompletableFuture<>();
-
-        for (int i = 0; i < chunks.size(); i++){
-            CompletableFuture<IndexStorageManager.AllocationResult> allocationFuture = null;
-
-            try {
-                allocationFuture = this.indexStorageManager.allocateForNewNode(this.table, chunks.get(i).getChunk());
-            } catch (IOException e) {
-                output.completeExceptionally(e);
-                return output;
-            } catch (ChunkIsFullException e) {
-                continue;
-            }
-
-            allocationFuture.whenComplete((allocationResult, throwable) -> {
-                if (throwable != null){
-                    output.completeExceptionally(throwable);
-                    return;
-                }
-
-                output.complete(allocationResult);
-
-            });
-            return output;
-        }
-
-        // Todo: make new chunk and try again?
-        return null;
-    }
-
-    private CompletableFuture<BaseTreeNode> generateRoot(long identifier, Pointer pointer) {
-        CompletableFuture<BaseTreeNode> answer = new CompletableFuture<>();
-
-        this.allocateNodeAtAnyExistingChunk(table).whenComplete((allocationResult, throwable) -> {
-            if (throwable != null){
-                answer.completeExceptionally(throwable);
-            }
-
-            LeafTreeNode treeNode = new LeafTreeNode(new byte[allocationResult.size()]);
-            treeNode.setType(BaseTreeNode.NodeType.LEAF);
-            treeNode.setAsRoot();
-            try {
-                treeNode.setKeyValue(0, identifier, pointer);
-            } catch (IllegalNodeAccess e) {
-                answer.completeExceptionally(e);
-            }
-
-            indexStorageManager.writeNode(table, treeNode.toBytes(), allocationResult.position(), allocationResult.chunk()).whenComplete((integer, throwable1) -> {
-                if (throwable1 != null){
-                    answer.completeExceptionally(throwable1);
-                    return;
-                }
-                headerManager.getHeader().getTableOfId(this.table).get().setRoot(
-                        Header.IndexChunk.builder()
-                                .offset(pointer.position())
-                                .chunk(pointer.chunk())
-                                .build()
-                );
-                root = treeNode;  // Todo: check above long todo about this not being the best way to do about root
-                answer.complete(treeNode);
-            });
-        });
-
-        return answer;
-    }
 }

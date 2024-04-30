@@ -1,100 +1,190 @@
 package com.github.sepgh.internal.storage;
 
 import com.github.sepgh.internal.EngineConfig;
-import com.github.sepgh.internal.storage.exception.ChunkIsFullException;
+import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.utils.FileUtils;
-import lombok.Getter;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.function.BiConsumer;
 
 import static com.github.sepgh.internal.tree.node.BaseTreeNode.TYPE_LEAF_NODE_BIT;
 
-@Slf4j
 public class FileIndexStorageManager implements IndexStorageManager {
-    public static final String INDEX_FILE_NAME = "index";
     private final Path path;
-    private final Map<Integer, AsynchronousFileChannel> pool = new HashMap<>(5); // Map of chunk to
     private final HeaderManager headerManager;
-
-    @Getter
     private final EngineConfig engineConfig;
+    public static final String INDEX_FILE_NAME = "index";
+    private final List<AsynchronousFileChannel> pool = new ArrayList<>(5);
 
-    public FileIndexStorageManager(Path path, EngineConfig engineConfig, HeaderManager headerManager) {
+    public FileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig) throws IOException, ExecutionException, InterruptedException {
         this.path = path;
-        this.engineConfig = engineConfig;
         this.headerManager = headerManager;
+        this.engineConfig = engineConfig;
+        this.initialize();
     }
 
-    public FileIndexStorageManager(Path path, HeaderManager headerManager) {
-        this(path, EngineConfig.Default.getDefault(), headerManager);
+    // Todo: temporarily this is the solution for allocating space for new tables
+    //       alternatively, previous state of the database and new state should be compared, some data may need removal
+    private void initialize() throws IOException, ExecutionException, InterruptedException {
+        Header header = this.headerManager.getHeader();
+        int chunkId = 0;
+        for (Header.Table table : header.getTables()) {
+            if (!table.isInitialized()) {
+                boolean stored = false;
+                while (!stored){
+                    AsynchronousFileChannel asynchronousFileChannel = getAsynchronousFileChannel(chunkId);
+                    if (asynchronousFileChannel.size() != engineConfig.getBTreeMaxFileSize()){
+                        long position = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
+                        table.setChunks(Collections.singletonList(new Header.IndexChunk(chunkId, position)));
+                        table.setInitialized(true);
+                    } else {
+                        chunkId++;
+                    }
+                }
+            }
+        }
+        this.headerManager.update(header);
     }
 
     @SneakyThrows
-    private synchronized AsynchronousFileChannel getAsynchronousFileChannel(int chunk) {
-        if (pool.containsKey(chunk)){
+    private AsynchronousFileChannel getAsynchronousFileChannel(int chunk) {
+        if (pool.get(chunk) != null){
             return pool.get(chunk);
         }
 
         Path indexPath = Path.of(path.toString(), String.format("%s.%d", INDEX_FILE_NAME, chunk));
-        AsynchronousFileChannel channel = AsynchronousFileChannel.open(indexPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+        AsynchronousFileChannel channel = AsynchronousFileChannel.open(
+                indexPath,
+                StandardOpenOption.READ,
+                StandardOpenOption.WRITE,
+                StandardOpenOption.CREATE
+        );
 
-        pool.put(chunk, channel);
+        pool.set(chunk, channel);
 
-        initializeFile(channel);
         return channel;
     }
 
-    private void initializeFile(AsynchronousFileChannel channel) throws IOException, ExecutionException, InterruptedException {
-        if (channel.size() == 0) {
-            FileUtils.write(channel, 0, new byte[engineConfig.indexGrowthAllocationSize()]).get();
-        }
-    }
+    @Override
+    public CompletableFuture<Optional<NodeData>> getRoot(int table) {
+        CompletableFuture<Optional<NodeData>> output = new CompletableFuture<>();
 
+        Optional<Header.Table> optionalTable = headerManager.getHeader().getTableOfId(table);
+        if (optionalTable.isEmpty() || optionalTable.get().getRoot() == null){
+            output.complete(Optional.empty());
+            return output;
+        }
+
+        Header.IndexChunk root = optionalTable.get().getRoot();
+        FileUtils.readBytes(
+                getAsynchronousFileChannel(root.getChunk()),
+                root.getOffset(),
+                engineConfig.getPaddedSize()
+        ).whenComplete((bytes, throwable) -> {
+            if (throwable != null){
+                output.completeExceptionally(throwable);
+                return;
+            }
+
+            output.complete(
+                    Optional.of(
+                            new NodeData(new Pointer(Pointer.TYPE_NODE, root.getOffset(), root.getChunk()), bytes)
+                    )
+            );
+        });
+
+        return output;
+    }
 
     @Override
-    public Optional<Pointer> getRoot(int table) {
-        return Optional.empty();  // Todo
+    public byte[] getEmptyNode() {
+        return new byte[engineConfig.getPaddedSize()];
     }
 
-    // Todo: Note that maybe this could be cached and kept until it changes? combination of table name and pointer can make it happen
-    // Todo: maybe if some other thread is writing (modifying tree) we should not read. At least not if they are in same table?
-    public CompletableFuture<byte[]> readNode(int table, long position, int chunk){
+    @Override
+    public CompletableFuture<NodeData> readNode(int table, long position, int chunk) {
+        CompletableFuture<NodeData> output = new CompletableFuture<>();
         AsynchronousFileChannel asynchronousFileChannel = getAsynchronousFileChannel(chunk);
         long filePosition = headerManager.getHeader().getTableOfId(table).get().getIndexChunk(chunk).get().getOffset() + position;
-        return FileUtils.readBytes(asynchronousFileChannel, filePosition, engineConfig.getPaddedSize());
+        FileUtils.readBytes(asynchronousFileChannel, filePosition, engineConfig.getPaddedSize()).whenComplete((bytes, throwable) -> {
+            if (throwable != null){
+                output.completeExceptionally(throwable);
+                return;
+            }
+            output.complete(
+                    new NodeData(
+                            new Pointer(Pointer.TYPE_NODE, position, chunk),
+                            bytes
+                    )
+            );
+        });
+        return output;
     }
 
-    /*
-        This is where everything gets more complicated! A new chunk may be required if maximum file size is exceeded
-        Also, current file may no longer have capacity and allocating space for new node may mess up the data by collision between trees
-        In that case we need to allocate space in specific location by pushing next tables forward (AND UPDATE HEADER)
-    */
     @Override
-    public CompletableFuture<AllocationResult> allocateForNewNode(int table, int chunk) throws IOException, ChunkIsFullException {
+    public CompletableFuture<NodeData> writeNewNode(int table, byte[] data, boolean isRoot) throws IOException, ExecutionException, InterruptedException {
+        CompletableFuture<NodeData> output = new CompletableFuture<>();
+        Pointer pointer = this.getAllocatedSpaceForNewNode(table, Optional.empty());
+
+        if (data.length < engineConfig.getPaddedSize()){
+            byte[] finalData = new byte[engineConfig.getPaddedSize()];
+            System.arraycopy(data, 0, finalData, 0, engineConfig.getPaddedSize());
+            data = finalData;
+        }
+
+        byte[] finalData1 = data;
+        FileUtils.write(getAsynchronousFileChannel(pointer.chunk()), pointer.position(), data).whenComplete((size, throwable) -> {
+            if (throwable != null){
+                output.completeExceptionally(throwable);
+            }
+
+            output.complete(
+                    new NodeData(pointer, finalData1)
+            );
+        });
+        if (isRoot){
+            headerManager.getHeader().getTableOfId(table).get().setRoot(new Header.IndexChunk(pointer.chunk(), pointer.position()));
+            headerManager.update();
+        }
+        return output;
+    }
+
+    private Pointer getAllocatedSpaceForNewNode(int tableId, Optional<Integer> optionalIndexChunkId) throws IOException, ExecutionException, InterruptedException {
+        int chunk = 0;
+        int indexChunkId = 0;
+        Header.Table table = headerManager.getHeader().getTableOfIndex(tableId).get();
+        if (optionalIndexChunkId.isPresent()){
+            Integer i = optionalIndexChunkId.get();
+            Optional<Header.IndexChunk> optionalIndexChunk = table.getIndexChunk(i);
+            if (optionalIndexChunk.isPresent()){
+                indexChunkId = i;
+                chunk = optionalIndexChunk.get().getChunk();
+            } else {
+                Header.IndexChunk previousIndexChunk = table.getIndexChunk(i - 1).get();
+                chunk = previousIndexChunk.getChunk() + 1;
+            }
+
+        }else {
+            if (table.getChunks().size() > 0){
+                chunk = table.getChunks().get(0).getChunk();
+            }
+        }
 
         AsynchronousFileChannel asynchronousFileChannel = this.getAsynchronousFileChannel(chunk);
-
-        /*
-            We start by checking if there is already an empty allocated area in the BTree of current table in this chunk
-            If there is, we return position of that area
-         */
-
-        int indexOfTableMetaData = headerManager.getHeader().indexOfTable(table);
+        int indexOfTableMetaData = headerManager.getHeader().indexOfTable(tableId);
 
         boolean isLastTable = indexOfTableMetaData == headerManager.getHeader().tablesCount() - 1;
         long position = isLastTable ?
@@ -109,10 +199,11 @@ public class FileIndexStorageManager implements IndexStorageManager {
         } catch (InterruptedException | ExecutionException e) {
             throw new IOException(e);
         }
+
         Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
         if (optionalAdditionalPosition.isPresent()){
-            return CompletableFuture.completedFuture(new AllocationResult(position + optionalAdditionalPosition.get(), engineConfig.getPaddedSize(), chunk));  // Todo: caller cant know we changed chunk
-            // Header may need an update, as this table may not have been available in another chunk but now will be available
+            long finalPosition = position + optionalAdditionalPosition.get();
+            return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
         }
 
 
@@ -122,41 +213,18 @@ public class FileIndexStorageManager implements IndexStorageManager {
                 through recursion till we reach to a chunk where we can allocate space
          */
         if (asynchronousFileChannel.size() >= engineConfig.getBTreeMaxFileSize()){
-            throw new ChunkIsFullException();
+            return getAllocatedSpaceForNewNode(tableId, Optional.of(indexChunkId + 1));
         }
 
-
-        /* Allocate space  */
-        CompletableFuture<AllocationResult> resultsCompletableFuture = new CompletableFuture<>();
-
-        BiConsumer<Long, Throwable> consumer = (aLong, throwable) -> {
-            resultsCompletableFuture.complete(
-                    new AllocationResult(
-                            aLong,
-                            engineConfig.getPaddedSize(),
-                            chunk
-                    )
-            );
-        };
-
+        Long finalPosition;
         if (isLastTable){
-            FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).whenComplete(consumer);
+            finalPosition = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
         }else {
-            FileUtils.allocate(asynchronousFileChannel, position, engineConfig.indexGrowthAllocationSize()).whenComplete(consumer);
+            finalPosition = FileUtils.allocate(asynchronousFileChannel, position, engineConfig.indexGrowthAllocationSize()).get();
         }
-        return resultsCompletableFuture;
-    }
-
-    @Override
-    public boolean chunkHasSpaceForNode(int chunk) throws IOException {
-        AsynchronousFileChannel asynchronousFileChannel = this.getAsynchronousFileChannel(chunk);
-        return asynchronousFileChannel.size() + engineConfig.getPaddedSize() <= engineConfig.getBTreeMaxFileSize();
-    }
-
-    @Override
-    public CompletableFuture<Integer> writeNode(int table, byte[] data, long position, int chunk) {
-        AsynchronousFileChannel asynchronousFileChannel = this.getAsynchronousFileChannel(chunk);
-        return FileUtils.write(asynchronousFileChannel, position, data);
+        table.getChunks().add(new Header.IndexChunk(chunk, finalPosition));
+        headerManager.update();
+        return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
     }
 
     private Optional<Integer> getPossibleAllocationLocation(byte[] bytes){
@@ -169,14 +237,15 @@ public class FileIndexStorageManager implements IndexStorageManager {
         return Optional.empty();
     }
 
-    public void close() {
-        pool.forEach((integer, asynchronousFileChannel) -> {
-            try {
-                asynchronousFileChannel.close();
-            } catch (IOException e) {
-                log.error("Failed to close file channel for chunk " + integer, e);
-            }
-        });
+    @Override
+    public CompletableFuture<Integer> updateNode(byte[] data, Pointer pointer) {
+        return FileUtils.write(getAsynchronousFileChannel(pointer.chunk()), pointer.position(), data);
     }
 
+    @Override
+    public void close() throws IOException {
+        for (AsynchronousFileChannel asynchronousFileChannel : this.pool) {
+            asynchronousFileChannel.close();
+        }
+    }
 }

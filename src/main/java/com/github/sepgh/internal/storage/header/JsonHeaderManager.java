@@ -41,4 +41,9 @@ public class JsonHeaderManager implements HeaderManager {
         gson.toJson(header, new FileWriter(this.path.toFile()));
         headerAtomicReference.set(header);
     }
+
+    @Override
+    public void update() throws IOException {
+        gson.toJson(headerAtomicReference.get(), new FileWriter(this.path.toFile()));
+    }
 }

@@ -1,28 +1,28 @@
 package com.github.sepgh.internal.storage;
 
-import com.github.sepgh.internal.storage.exception.ChunkIsFullException;
 import com.github.sepgh.internal.tree.Pointer;
 
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public interface IndexStorageManager {
-    Optional<Pointer> getRoot(int table);
-    default CompletableFuture<byte[]> readNode(int table, Pointer pointer) {
+    CompletableFuture<Optional<NodeData>> getRoot(int table);
+
+    byte[] getEmptyNode();
+    default CompletableFuture<NodeData> readNode(int table, Pointer pointer) {
         return this.readNode(table, pointer.position(), pointer.chunk());
     }
-    CompletableFuture<byte[]> readNode(int table, long position, int chunk);
-    CompletableFuture<AllocationResult> allocateForNewNode(int table, int chunk) throws IOException, ChunkIsFullException;
-    boolean chunkHasSpaceForNode(int chunk) throws IOException;
+    CompletableFuture<NodeData> readNode(int table, long position, int chunk);
 
-    CompletableFuture<Integer> writeNode(int table, byte[] data, long position, int chunk);
-    default CompletableFuture<Integer> writeNode(int table, byte[] data, Pointer pointer){
-        return writeNode(table, data, pointer.position(), pointer.chunk());
+    CompletableFuture<NodeData> writeNewNode(int table, byte[] data, boolean isRoot) throws IOException, ExecutionException, InterruptedException;
+    default CompletableFuture<NodeData> writeNewNode(int table, byte[] data) throws IOException, ExecutionException, InterruptedException {
+        return this.writeNewNode(table, data, false);
     }
+    CompletableFuture<Integer> updateNode(byte[] data, Pointer pointer);
 
-    void close();
+    void close() throws IOException;
 
-    record AllocationResult(long position, int size, int chunk) {
-    }
+    record NodeData(Pointer pointer, byte[] bytes){}
 }

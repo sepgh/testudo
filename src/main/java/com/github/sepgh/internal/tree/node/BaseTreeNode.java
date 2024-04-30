@@ -38,7 +38,6 @@ public abstract class BaseTreeNode {
         return (data[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT;
     }
 
-
     // Todo: use this where its needed, than fromBytes
     public static BaseTreeNode fromBytes(byte[] data, NodeType type){
         if (type == NodeType.INTERNAL){
@@ -95,6 +94,10 @@ public abstract class BaseTreeNode {
 
     public int addKey(long key) {
         return TreeNodeUtils.addKeyAndGetIndex(this, key);
+    }
+
+    public boolean isRoot() {
+        return (data[0] & ROOT_BIT) == ROOT_BIT;
     }
 
     public enum NodeType {

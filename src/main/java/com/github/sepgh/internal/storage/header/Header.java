@@ -1,14 +1,18 @@
 package com.github.sepgh.internal.storage.header;
 
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.Optional;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Header {
     private String database;
     private List<Table> tables;
@@ -43,11 +47,14 @@ public class Header {
 
     @Data
     @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class Table {
         private String name;
         private int id;
         private List<IndexChunk> chunks;
         private IndexChunk root;
+        private boolean initialized;
 
         public Optional<IndexChunk> getIndexChunk(int id){
             return getChunks().stream().filter(indexChunk -> indexChunk.chunk == id).findFirst();
@@ -56,6 +63,8 @@ public class Header {
 
     @Data
     @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class IndexChunk {
         private int chunk;
         private long offset;

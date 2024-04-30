@@ -25,4 +25,7 @@ public class InMemoryHeaderManager implements HeaderManager {
     public void update(Header header) throws IOException {
         atomicReference.set(header);
     }
+
+    @Override
+    public void update() throws IOException {}
 }
