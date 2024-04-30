@@ -1,6 +1,6 @@
 package com.github.sepgh.internal.tree;
 
-import com.github.sepgh.internal.tree.node.AbstractTreeNode;
+import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
 import org.junit.jupiter.api.Assertions;
@@ -13,7 +13,7 @@ import java.util.Optional;
 // Todo: add non-single key tests (refactor from single to multi)
 public class TreeNodeTestCase {
     private final byte[] singleKeyInternalNodeRepresentation = {
-            AbstractTreeNode.TYPE_INTERNAL_NODE, // Not leaf
+            ((byte) (0x00 | BaseTreeNode.TYPE_INTERNAL_NODE_BIT)), // Not leaf
 
             // >> Start pointer to child 1
             Pointer.TYPE_NODE,  // type
@@ -31,7 +31,7 @@ public class TreeNodeTestCase {
     };
 
     private final byte[] singleKeyLeafNodeRepresentation = {
-            AbstractTreeNode.TYPE_LEAF_NODE, // Not leaf
+            ((byte) (0x00 | BaseTreeNode.TYPE_LEAF_NODE_BIT)), // leaf
 
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F,  // Key 1
 
@@ -52,7 +52,7 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyInternalTreeNodeChildren(){
-        AbstractTreeNode node = AbstractTreeNode.fromBytes(singleKeyInternalNodeRepresentation);
+        BaseTreeNode node = BaseTreeNode.fromBytes(singleKeyInternalNodeRepresentation);
 
         Assertions.assertInstanceOf(InternalTreeNode.class, node);
         InternalTreeNode treeNode = (InternalTreeNode) node;
@@ -81,7 +81,7 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyInternalTreeNodeChildrenIteration() {
-        AbstractTreeNode node = AbstractTreeNode.fromBytes(singleKeyInternalNodeRepresentation);
+        BaseTreeNode node = BaseTreeNode.fromBytes(singleKeyInternalNodeRepresentation);
 
         Assertions.assertInstanceOf(InternalTreeNode.class, node);
         InternalTreeNode treeNode = (InternalTreeNode) node;
@@ -106,7 +106,7 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyInternalNodeKeysIteration(){
-        AbstractTreeNode node = AbstractTreeNode.fromBytes(singleKeyInternalNodeRepresentation);
+        BaseTreeNode node = BaseTreeNode.fromBytes(singleKeyInternalNodeRepresentation);
 
         Assertions.assertInstanceOf(InternalTreeNode.class, node);
         InternalTreeNode treeNode = (InternalTreeNode) node;
@@ -124,7 +124,7 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyLeafNodeKeysIteration(){
-        AbstractTreeNode node = AbstractTreeNode.fromBytes(singleKeyLeafNodeRepresentation);
+        BaseTreeNode node = BaseTreeNode.fromBytes(singleKeyLeafNodeRepresentation);
 
         Assertions.assertInstanceOf(LeafTreeNode.class, node);
         LeafTreeNode treeNode = (LeafTreeNode) node;
@@ -147,7 +147,7 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyLeafNodeKeyValueIteration(){
-        AbstractTreeNode node = AbstractTreeNode.fromBytes(singleKeyLeafNodeRepresentation);
+        BaseTreeNode node = BaseTreeNode.fromBytes(singleKeyLeafNodeRepresentation);
 
         Assertions.assertInstanceOf(LeafTreeNode.class, node);
         LeafTreeNode treeNode = (LeafTreeNode) node;

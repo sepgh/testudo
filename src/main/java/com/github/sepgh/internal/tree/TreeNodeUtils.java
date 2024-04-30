@@ -1,11 +1,12 @@
 package com.github.sepgh.internal.tree;
 
-import com.github.sepgh.internal.tree.node.AbstractTreeNode;
+import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.utils.BinaryUtils;
 import com.google.common.primitives.Longs;
 
 import java.util.AbstractMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class TreeNodeUtils {
     private static final int OFFSET_TREE_NODE_FLAGS_END = 1;
@@ -21,7 +22,7 @@ public class TreeNodeUtils {
      * @return bool true, if the first byte of the current cursor position is not 0x00
      *         Note that index is the index of the pointer object we want to refer to, not the byte position in byte array
      */
-    public static boolean hasChildPointerAtIndex(AbstractTreeNode treeNode, int index){
+    public static boolean hasChildPointerAtIndex(BaseTreeNode treeNode, int index){
         if (OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + Long.BYTES)) > treeNode.getData().length)
             return false;
 
@@ -34,8 +35,18 @@ public class TreeNodeUtils {
      * @param treeNode node to read/write from/to
      * @param index to check child pointer
      * @return Pointer to child node at index
-     */public static Pointer getChildPointerAtIndex(AbstractTreeNode treeNode, int index){
+     */public static Pointer getChildPointerAtIndex(BaseTreeNode treeNode, int index){
         return Pointer.fromByteArray(treeNode.getData(), OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + Long.BYTES)));
+    }
+
+    public static void removeChildAtIndex(BaseTreeNode treeNode, int index) {
+        System.arraycopy(
+                new byte[Pointer.BYTES],
+                0,
+                treeNode.getData(),
+                OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + Long.BYTES)),
+                Pointer.BYTES
+        );
     }
 
     /**
@@ -43,7 +54,7 @@ public class TreeNodeUtils {
      * @param index index of the pointer to set
      * @param pointer object to set
      */
-    public static void setPointerToChild(AbstractTreeNode treeNode, int index, Pointer pointer){
+    public static void setPointerToChild(BaseTreeNode treeNode, int index, Pointer pointer){
         if (index == 0){
             System.arraycopy(pointer.toByteArray(), 0, treeNode.getData(), OFFSET_TREE_NODE_FLAGS_END, Pointer.BYTES);
         } else {
@@ -62,7 +73,7 @@ public class TreeNodeUtils {
      * @param index of the key we are looking for
      * @return the offset where the key is found at
      */
-    private static int getKeyStartOffset(AbstractTreeNode treeNode, int index) {
+    private static int getKeyStartOffset(BaseTreeNode treeNode, int index) {
         if (!treeNode.isLeaf()){
             return OFFSET_INTERNAL_NODE_KEY_BEGIN + (index * (Long.BYTES + Pointer.BYTES));
         } else {
@@ -75,7 +86,7 @@ public class TreeNodeUtils {
      * @param index of the key to check existence
      * @return boolean state of existence of a key in index
      */
-    public static boolean hasKeyAtIndex(AbstractTreeNode treeNode, int index){
+    public static boolean hasKeyAtIndex(BaseTreeNode treeNode, int index){
         int keyStartIndex = getKeyStartOffset(treeNode, index);
         if (keyStartIndex + Long.BYTES > treeNode.getData().length)
             return false;
@@ -88,18 +99,28 @@ public class TreeNodeUtils {
      * @param index to read they key at
      * @return key value at index
      */
-    public static long getKeyAtIndex(AbstractTreeNode treeNode, int index) {
+    public static long getKeyAtIndex(BaseTreeNode treeNode, int index) {
         int keyStartIndex = getKeyStartOffset(treeNode, index);
         return BinaryUtils.bytesToLong(treeNode.getData(), keyStartIndex);
     }
 
-    public static boolean hasKeyValuePointerAtIndex(AbstractTreeNode treeNode, int index){
+    public static void removeKeyAtIndex(BaseTreeNode treeNode, int index) {
+        System.arraycopy(
+                new byte[Long.BYTES],
+                0,
+                treeNode.getData(),
+                getKeyStartOffset(treeNode, index),
+                Long.BYTES
+        );
+    }
+
+    public static boolean hasKeyValuePointerAtIndex(BaseTreeNode treeNode, int index){
         int keyStartIndex = getKeyStartOffset(treeNode, index);
         return keyStartIndex + SIZE_LEAF_NODE_KEY_POINTER <= treeNode.getData().length &&
                 treeNode.getData()[keyStartIndex + Long.BYTES] == Pointer.TYPE_DATA;
     }
 
-    public static Map.Entry<Long, Pointer> getKeyValuePointerAtIndex(AbstractTreeNode treeNode, int index) {
+    public static Map.Entry<Long, Pointer> getKeyValuePointerAtIndex(BaseTreeNode treeNode, int index) {
         int keyStartIndex = getKeyStartOffset(treeNode, index);
         return new AbstractMap.SimpleImmutableEntry<>(
             BinaryUtils.bytesToLong(treeNode.getData(), keyStartIndex),
@@ -107,7 +128,7 @@ public class TreeNodeUtils {
         );
     }
 
-    public static void setKeyValueAtIndex(AbstractTreeNode treeNode, int index, long key, Pointer pointer) {
+    public static void setKeyValueAtIndex(BaseTreeNode treeNode, int index, long key, Pointer pointer) {
         System.arraycopy(
                 Longs.toByteArray(key),
                 0,
@@ -133,7 +154,7 @@ public class TreeNodeUtils {
      *       binary search could be used
      *       alternatively, we can hold a space for metadata which keeps track of the number of keys or values stored
      */
-    public static int addKeyValueAndGetIndex(AbstractTreeNode treeNode, long key, Pointer pointer) {
+    public static int addKeyValueAndGetIndex(BaseTreeNode treeNode, long key, Pointer pointer) {
 
         int indexToFill = 0;
         Map.Entry<Long, Pointer> keyValueAtIndex = null;
@@ -180,6 +201,16 @@ public class TreeNodeUtils {
 
     }
 
+    public static void removeKeyValueAtIndex(BaseTreeNode treeNode, int index) {
+        System.arraycopy(
+                new byte[Long.BYTES + Pointer.BYTES],
+                0,
+                treeNode.getData(),
+                getKeyStartOffset(treeNode, index),
+                Long.BYTES + Pointer.BYTES
+        );
+    }
+
     /**
      * @param treeNode to read/write from/to
      * @param key to add
@@ -189,7 +220,7 @@ public class TreeNodeUtils {
      *       binary search could be used
      *       alternatively, we can hold a space for metadata which keeps track of the number of keys or values stored
      */
-    public static int addKeyAndGetIndex(AbstractTreeNode treeNode, long key) {
+    public static int addKeyAndGetIndex(BaseTreeNode treeNode, long key) {
         // Shall only be called on internal nodes
 
         int indexToFill = 0;
@@ -244,5 +275,43 @@ public class TreeNodeUtils {
         }
 
         return indexToFill;
+    }
+
+    public static Optional<Pointer> getPreviousPointer(BaseTreeNode treeNode){
+        if (treeNode.getData()[treeNode.getData().length - (2*Pointer.BYTES)] == (byte) 0x0){
+            return Optional.empty();
+        }
+
+        return Optional.of(
+                Pointer.fromByteArray(treeNode.getData(), treeNode.getData().length - (2*Pointer.BYTES))
+        );
+    }
+
+    public static void setPreviousPointer(BaseTreeNode treeNode, Pointer pointer) {
+        System.arraycopy(
+                pointer.toByteArray(),
+                0,
+                treeNode.getData(),
+                treeNode.getData().length - (2*Pointer.BYTES), Pointer.BYTES
+        );
+    }
+
+    public static Optional<Pointer> getNextPointer(BaseTreeNode treeNode){
+        if (treeNode.getData()[treeNode.getData().length - (Pointer.BYTES)] == (byte) 0x0){
+            return Optional.empty();
+        }
+
+        return Optional.of(
+                Pointer.fromByteArray(treeNode.getData(), treeNode.getData().length - (Pointer.BYTES))
+        );
+    }
+
+    public static void setNextPointer(BaseTreeNode treeNode, Pointer pointer) {
+        System.arraycopy(
+                pointer.toByteArray(),
+                0,
+                treeNode.getData(),
+                treeNode.getData().length - Pointer.BYTES, Pointer.BYTES
+        );
     }
 }

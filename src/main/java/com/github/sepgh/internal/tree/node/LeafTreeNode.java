@@ -8,11 +8,12 @@ import com.google.common.collect.ImmutableList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-public class LeafTreeNode extends AbstractTreeNode {
+public class LeafTreeNode extends BaseTreeNode {
     public LeafTreeNode(byte[] data) {
         super(data);
-        assert data[0] == AbstractTreeNode.TYPE_LEAF_NODE;
+        setType(NodeType.LEAF);
     }
 
     public Iterator<Map.Entry<Long, Pointer>> keyValues(){
@@ -23,6 +24,10 @@ public class LeafTreeNode extends AbstractTreeNode {
         TreeNodeUtils.setKeyValueAtIndex(this, index, key, pointer);
     }
 
+    public void removeKeyValueAtIndex(int index) {
+        TreeNodeUtils.removeKeyValueAtIndex(this, index);
+    }
+
     public int addKeyValue(long key, Pointer pointer) {
         return TreeNodeUtils.addKeyValueAndGetIndex(this, key, pointer);
     }
@@ -31,12 +36,29 @@ public class LeafTreeNode extends AbstractTreeNode {
         return ImmutableList.copyOf(keyValues());
     }
 
+
+    public void setPrevious(Pointer pointer) {
+        TreeNodeUtils.setPreviousPointer(this, pointer);
+    }
+
+    public Optional<Pointer> getPrevious(){
+        return TreeNodeUtils.getPreviousPointer(this);
+    }
+
+    public void setNext(Pointer pointer) {
+        TreeNodeUtils.setNextPointer(this, pointer);
+    }
+
+    public Optional<Pointer> getNext(){
+        return TreeNodeUtils.getNextPointer(this);
+    }
+
     private static class TreeNodeKeyValueIterator implements Iterator<Map.Entry<Long, Pointer>> {
-        private final AbstractTreeNode node;
+        private final BaseTreeNode node;
         private int cursor; // Cursor points to current key index, not current byte
         private boolean hasNext = true;
 
-        private TreeNodeKeyValueIterator(AbstractTreeNode node) {
+        private TreeNodeKeyValueIterator(BaseTreeNode node) {
             this.node = node;
         }
 

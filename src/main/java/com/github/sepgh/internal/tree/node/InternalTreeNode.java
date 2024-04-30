@@ -9,9 +9,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
-public class InternalTreeNode extends AbstractTreeNode {
+public class InternalTreeNode extends BaseTreeNode {
     public InternalTreeNode(byte[] data) {
         super(data);
+        setType(NodeType.INTERNAL);
     }
 
     public void setChildAtIndex(int index, Pointer pointer) throws IllegalNodeAccess {
@@ -30,13 +31,21 @@ public class InternalTreeNode extends AbstractTreeNode {
         return ImmutableList.copyOf(children());
     }
 
+    public void removeChildAtIndex(int index) {
+        TreeNodeUtils.removeChildAtIndex(this, index);
+    }
+
+    public void removeKeyAtIndex(int index) {
+        TreeNodeUtils.removeKeyAtIndex(this, index);
+    }
+
     private static class TreeNodeChildrenIterator implements Iterator<Pointer> {
 
-        private final AbstractTreeNode node;
+        private final BaseTreeNode node;
         private int cursor;  // Cursor points to current pointer index, not current byte
         private boolean hasNext = true;
 
-        public TreeNodeChildrenIterator(AbstractTreeNode node) {
+        public TreeNodeChildrenIterator(BaseTreeNode node) {
             this.node = node;
         }
 

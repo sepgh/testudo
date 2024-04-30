@@ -4,7 +4,7 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.storage.exception.ChunkIsFullException;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.Pointer;
-import com.github.sepgh.internal.tree.node.AbstractTreeNode;
+import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.utils.FileUtils;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -21,6 +21,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
+
+import static com.github.sepgh.internal.tree.node.BaseTreeNode.TYPE_LEAF_NODE_BIT;
 
 @Slf4j
 public class FileIndexStorageManager implements IndexStorageManager {
@@ -109,7 +111,7 @@ public class FileIndexStorageManager implements IndexStorageManager {
         }
         Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
         if (optionalAdditionalPosition.isPresent()){
-            return CompletableFuture.completedFuture(new AllocationResult(position + optionalAdditionalPosition.get(), engineConfig.getPaddedSize()));  // Todo: caller cant know we changed chunk
+            return CompletableFuture.completedFuture(new AllocationResult(position + optionalAdditionalPosition.get(), engineConfig.getPaddedSize(), chunk));  // Todo: caller cant know we changed chunk
             // Header may need an update, as this table may not have been available in another chunk but now will be available
         }
 
@@ -131,7 +133,8 @@ public class FileIndexStorageManager implements IndexStorageManager {
             resultsCompletableFuture.complete(
                     new AllocationResult(
                             aLong,
-                            engineConfig.getPaddedSize()
+                            engineConfig.getPaddedSize(),
+                            chunk
                     )
             );
         };
@@ -152,7 +155,6 @@ public class FileIndexStorageManager implements IndexStorageManager {
 
     @Override
     public CompletableFuture<Integer> writeNode(int table, byte[] data, long position, int chunk) {
-        // Todo: maybe check if space is actually clear before writing, and have one method for write and other for overwrite
         AsynchronousFileChannel asynchronousFileChannel = this.getAsynchronousFileChannel(chunk);
         return FileUtils.write(asynchronousFileChannel, position, data);
     }
@@ -160,7 +162,7 @@ public class FileIndexStorageManager implements IndexStorageManager {
     private Optional<Integer> getPossibleAllocationLocation(byte[] bytes){
         for (int i = 0; i < engineConfig.getBTreeGrowthNodeAllocationCount(); i++){
             int position = i * engineConfig.getPaddedSize();
-            if (bytes[position] != AbstractTreeNode.TYPE_LEAF_NODE && bytes[position] != AbstractTreeNode.TYPE_INTERNAL_NODE){
+            if ((bytes[position] & TYPE_LEAF_NODE_BIT) != 0 && bytes[position] != BaseTreeNode.TYPE_INTERNAL_NODE_BIT){
                 return Optional.of(position);
             }
         }

@@ -17,9 +17,12 @@ public interface IndexStorageManager {
     boolean chunkHasSpaceForNode(int chunk) throws IOException;
 
     CompletableFuture<Integer> writeNode(int table, byte[] data, long position, int chunk);
+    default CompletableFuture<Integer> writeNode(int table, byte[] data, Pointer pointer){
+        return writeNode(table, data, pointer.position(), pointer.chunk());
+    }
 
     void close();
 
-    record AllocationResult(long position, int size) {
+    record AllocationResult(long position, int size, int chunk) {
     }
 }

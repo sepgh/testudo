@@ -5,7 +5,7 @@ import com.github.sepgh.internal.storage.exception.ChunkIsFullException;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.Pointer;
-import com.github.sepgh.internal.tree.node.AbstractTreeNode;
+import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
 import com.google.common.io.BaseEncoding;
@@ -31,7 +31,7 @@ public class FileIndexStorageManagerTestCase {
     private static EngineConfig engineConfig;
     private static Header header;
     private static final byte[] singleKeyLeafNodeRepresentation = {
-            AbstractTreeNode.TYPE_LEAF_NODE, // Leaf
+            ((byte) (0x00 | BaseTreeNode.ROOT_BIT | BaseTreeNode.TYPE_LEAF_NODE_BIT)), // Leaf
 
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F,  // Key 1
 
@@ -42,7 +42,7 @@ public class FileIndexStorageManagerTestCase {
             // >> End pointer to child 1
     };
     private static final byte[] singleKeyInternalNodeRepresentation = {
-            AbstractTreeNode.TYPE_INTERNAL_NODE, // Not leaf
+            ((byte) (0x00 | BaseTreeNode.ROOT_BIT | BaseTreeNode.TYPE_INTERNAL_NODE_BIT)), // Not leaf
 
             // >> Start pointer to child 1
             Pointer.TYPE_NODE,  // type
@@ -121,7 +121,7 @@ public class FileIndexStorageManagerTestCase {
             System.out.println(BaseEncoding.base16().lowerCase().encode(bytes));
             Assertions.assertEquals(engineConfig.getPaddedSize(), bytes.length);
 
-            AbstractTreeNode treeNode = new LeafTreeNode(bytes);
+            BaseTreeNode treeNode = new LeafTreeNode(bytes);
 
             Iterator<Long> keys = treeNode.keys();
 
@@ -159,7 +159,7 @@ public class FileIndexStorageManagerTestCase {
             Future<IndexStorageManager.AllocationResult> allocationResultFuture = fileIndexStorageManager.allocateForNewNode(1, 0);
             IndexStorageManager.AllocationResult allocationResult = allocationResultFuture.get();
 
-            Assertions.assertEquals(2L * engineConfig.getPaddedSize(), allocationResult.position());
+            Assertions.assertEquals(2L * engineConfig.getPaddedSize(), allocationResult.size());
 
             /* Second allocation call should return the same, since we didnt fill the area */
             allocationResultFuture = fileIndexStorageManager.allocateForNewNode(1, 0);
