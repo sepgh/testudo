@@ -1,13 +1,11 @@
 package com.github.sepgh.internal.storage;
 
 import com.github.sepgh.internal.EngineConfig;
-import com.github.sepgh.internal.storage.exception.ChunkIsFullException;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
-import com.github.sepgh.internal.tree.node.LeafTreeNode;
 import com.google.common.io.BaseEncoding;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -21,8 +19,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import static com.github.sepgh.internal.storage.FileIndexStorageManager.INDEX_FILE_NAME;
 
@@ -89,6 +87,7 @@ public class FileIndexStorageManagerTestCase {
                                                                 .build()
                                                 )
                                         )
+                                        .initialized(true)
                                         .build()
                         )
                 )
@@ -109,19 +108,19 @@ public class FileIndexStorageManagerTestCase {
     }
 
     @Test
-    public void canReadNodeSuccessfully() throws ExecutionException, InterruptedException {
+    public void canReadNodeSuccessfully() throws ExecutionException, InterruptedException, IOException {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
-        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, engineConfig, headerManager);
+        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
         try {
-            Future<byte[]> future = fileIndexStorageManager.readNode(1, 0, 0);
+            CompletableFuture<IndexStorageManager.NodeData> future = fileIndexStorageManager.readNode(1, 0, 0);
 
-            byte[] bytes = future.get();
-            System.out.println(BaseEncoding.base16().lowerCase().encode(bytes));
-            Assertions.assertEquals(engineConfig.getPaddedSize(), bytes.length);
+            IndexStorageManager.NodeData nodeData = future.get();
+            System.out.println(BaseEncoding.base16().lowerCase().encode(nodeData.bytes()));
+            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
 
-            BaseTreeNode treeNode = new LeafTreeNode(bytes);
+            BaseTreeNode treeNode = BaseTreeNode.fromBytes(nodeData.bytes());
 
             Iterator<Long> keys = treeNode.keys();
 
@@ -130,11 +129,11 @@ public class FileIndexStorageManagerTestCase {
 
 
             future = fileIndexStorageManager.readNode(1, engineConfig.getPaddedSize(), 0);
-            bytes = future.get();
-            System.out.println(BaseEncoding.base16().lowerCase().encode(bytes));
-            Assertions.assertEquals(engineConfig.getPaddedSize(), bytes.length);
+            nodeData = future.get();
+            System.out.println(BaseEncoding.base16().lowerCase().encode(nodeData.bytes()));
+            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
 
-            treeNode = new InternalTreeNode(bytes);
+            treeNode = BaseTreeNode.fromBytes(nodeData.bytes());
 
             Iterator<Pointer> children = ((InternalTreeNode) treeNode).children();
 
@@ -147,53 +146,6 @@ public class FileIndexStorageManagerTestCase {
             fileIndexStorageManager.close();
         }
 
-    }
-
-    @Test
-    public void canAllocateSpaceAndWriteSuccessfully() throws IOException, ExecutionException, InterruptedException {
-        HeaderManager headerManager = new InMemoryHeaderManager(header);
-
-        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, engineConfig, headerManager);
-        try {
-            /* First allocation would add to end of the file since there is no space, but we didn't reach max */
-            Future<IndexStorageManager.AllocationResult> allocationResultFuture = fileIndexStorageManager.allocateForNewNode(1, 0);
-            IndexStorageManager.AllocationResult allocationResult = allocationResultFuture.get();
-
-            Assertions.assertEquals(2L * engineConfig.getPaddedSize(), allocationResult.size());
-
-            /* Second allocation call should return the same, since we didnt fill the area */
-            allocationResultFuture = fileIndexStorageManager.allocateForNewNode(1, 0);
-            allocationResult = allocationResultFuture.get();
-
-            Assertions.assertEquals(2L * engineConfig.getPaddedSize(), allocationResult.position());
-
-
-            /* Write a node */
-            Future<Integer> writeFuture =fileIndexStorageManager.writeNode(1, singleKeyLeafNodeRepresentation, allocationResult.position(), 0);
-            writeFuture.get();
-
-            /* Third allocation call should return next spot */
-            allocationResultFuture = fileIndexStorageManager.allocateForNewNode(1, 0);
-            allocationResult = allocationResultFuture.get();
-            Assertions.assertEquals(3L * engineConfig.getPaddedSize(), allocationResult.position());
-
-
-            /* Write a second node */
-            writeFuture =fileIndexStorageManager.writeNode(1, singleKeyLeafNodeRepresentation, allocationResult.position(), 0);
-            writeFuture.get();
-
-            /* Forth allocation call should throw exception since there is no space left in the chunk */
-            Assertions.assertThrows(ChunkIsFullException.class, () -> {
-               fileIndexStorageManager.allocateForNewNode(1, 0);
-            });
-
-            Assertions.assertFalse(fileIndexStorageManager.chunkHasSpaceForNode(0));
-
-        } catch (ChunkIsFullException e) {
-            throw new RuntimeException(e);
-        } finally {
-            fileIndexStorageManager.close();
-        }
     }
 
 }

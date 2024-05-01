@@ -50,6 +50,7 @@ public class FileIndexStorageManager implements IndexStorageManager {
                         long position = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
                         table.setChunks(Collections.singletonList(new Header.IndexChunk(chunkId, position)));
                         table.setInitialized(true);
+                        stored = true;
                     } else {
                         chunkId++;
                     }
@@ -61,7 +62,7 @@ public class FileIndexStorageManager implements IndexStorageManager {
 
     @SneakyThrows
     private AsynchronousFileChannel getAsynchronousFileChannel(int chunk) {
-        if (pool.get(chunk) != null){
+        if (pool.size() > chunk){
             return pool.get(chunk);
         }
 
@@ -73,7 +74,7 @@ public class FileIndexStorageManager implements IndexStorageManager {
                 StandardOpenOption.CREATE
         );
 
-        pool.set(chunk, channel);
+        pool.add(chunk, channel);
 
         return channel;
     }

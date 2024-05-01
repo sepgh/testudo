@@ -46,17 +46,6 @@ public abstract class BaseTreeNode {
         return new LeafTreeNode(data);
     }
 
-    public static BaseTreeNode fromAllocationResult(IndexStorageManager.AllocationResult allocationResult, NodeType type){
-        BaseTreeNode output;
-        if (type == NodeType.INTERNAL){
-            output = new InternalTreeNode(new byte[allocationResult.size()]);
-        }else {
-            output = new LeafTreeNode(new byte[allocationResult.size()]);
-        }
-        output.setNodePointer(new Pointer(Pointer.TYPE_NODE, allocationResult.position(), allocationResult.chunk()));
-        return output;
-    }
-
     public static BaseTreeNode fromBytes(byte[] data){
         if ((data[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT)
             return new LeafTreeNode(data);
