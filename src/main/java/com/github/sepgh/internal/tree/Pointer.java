@@ -5,6 +5,8 @@ import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import lombok.ToString;
 
+import java.util.Objects;
+
 /*
    A pointer may point to where data begins (on table) or to another node
    Binary size of pointer:  1byte type  +  8bytes position   +  4bytes chunk  = 13bytes
@@ -57,5 +59,18 @@ public record Pointer(byte type, long position, int chunk) {
                 ", position=" + position +
                 ", chunk=" + chunk +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Pointer pointer = (Pointer) o;
+        return type == pointer.type && position == pointer.position && chunk == pointer.chunk;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, position, chunk);
     }
 }

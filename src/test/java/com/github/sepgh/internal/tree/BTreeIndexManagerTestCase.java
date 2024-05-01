@@ -10,7 +10,6 @@ import com.github.sepgh.internal.tree.exception.IllegalNodeAccess;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
-import com.google.common.io.BaseEncoding;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -152,11 +151,16 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(testIdentifiers.get(0), keyValueList.get(0).getKey());
         Assertions.assertEquals(testIdentifiers.get(1), keyValueList.get(1).getKey());
         //Second child
-        childLeafTreeNode = new LeafTreeNode(fileIndexStorageManager.readNode(1, children.get(1)).get().bytes());
-        keyValueList = childLeafTreeNode.keyValueList();
+        LeafTreeNode secondChildLeafTreeNode = new LeafTreeNode(fileIndexStorageManager.readNode(1, children.get(1)).get().bytes());
+        keyValueList = secondChildLeafTreeNode.keyValueList();
         Assertions.assertEquals(testIdentifiers.get(2), keyValueList.get(0).getKey());
         Assertions.assertEquals(testIdentifiers.get(3), keyValueList.get(1).getKey());
 
+        Assertions.assertTrue(childLeafTreeNode.getNext().isPresent());
+        Assertions.assertEquals(children.get(1), childLeafTreeNode.getNext().get());
+
+        Assertions.assertTrue(secondChildLeafTreeNode.getPrevious().isPresent());
+        Assertions.assertEquals(children.get(0), secondChildLeafTreeNode.getPrevious().get());
 
     }
 

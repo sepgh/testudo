@@ -87,6 +87,7 @@ public class BTreeIndexManager implements IndexManager {
                 newLeafTreeNode.setNodePointer(newLeafNodeData.pointer());
                 fixSiblingPointers((LeafTreeNode) currentNode, newLeafTreeNode);
                 indexStorageManager.updateNode(currentNode.getData(), currentNode.getNodePointer()).get();
+                indexStorageManager.updateNode(newLeafTreeNode.getData(), newLeafTreeNode.getNodePointer()).get();
 
                 /* this leaf doesn't have a parent! create one and deal with it right here! */
                 if (path.size() == 1) {
