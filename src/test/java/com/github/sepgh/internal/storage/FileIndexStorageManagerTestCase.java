@@ -186,7 +186,7 @@ public class FileIndexStorageManagerTestCase {
     }
 
     @Test
-    public void canWriteNewNode() throws IOException, ExecutionException, InterruptedException {
+    public void canWriteNewNodeAndAllocate() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);

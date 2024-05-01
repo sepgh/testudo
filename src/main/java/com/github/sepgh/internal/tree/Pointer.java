@@ -3,6 +3,7 @@ package com.github.sepgh.internal.tree;
 import com.github.sepgh.internal.utils.BinaryUtils;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
+import lombok.ToString;
 
 /*
    A pointer may point to where data begins (on table) or to another node
@@ -49,4 +50,12 @@ public record Pointer(byte type, long position, int chunk) {
         return type == TYPE_NODE;
     }
 
+    @Override
+    public String toString() {
+        return "Pointer{" +
+                "type=" + type +
+                ", position=" + position +
+                ", chunk=" + chunk +
+                '}';
+    }
 }

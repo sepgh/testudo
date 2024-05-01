@@ -156,46 +156,39 @@ public class TreeNodeUtils {
      */
     public static int addKeyValueAndGetIndex(BaseTreeNode treeNode, long key, Pointer pointer) {
 
-        int indexToFill = 0;
-        Map.Entry<Long, Pointer> keyValueAtIndex = null;
-        for (int i = 0; i < ((treeNode.getData().length - 1) / (Long.BYTES + Pointer.BYTES)); i++){
-            keyValueAtIndex = getKeyValuePointerAtIndex(treeNode, i);
+        int indexToFill = -1;
+        for (int i = 0; i < ((treeNode.getData().length - 1 - (2 * Pointer.BYTES)) / (Long.BYTES + Pointer.BYTES)); i++){
+            long keyAtIndex = getKeyAtIndex(treeNode, i);
 
-            if (keyValueAtIndex.getKey() == 0 || key < keyValueAtIndex.getKey()){
+            if (keyAtIndex == 0 || keyAtIndex > key){
                 indexToFill = i;
                 break;
             }
-
         }
 
-        if (keyValueAtIndex == null || keyValueAtIndex.getKey() == 0){
-            setKeyValueAtIndex(treeNode, indexToFill, key, pointer);
-        } else {
-            byte[] temp = new byte[treeNode.getData().length - (OFFSET_LEAF_NODE_KEY_BEGIN + (indexToFill * (SIZE_LEAF_NODE_KEY_POINTER)))];
-            System.arraycopy(
-                    treeNode.getData(),
-                    OFFSET_LEAF_NODE_KEY_BEGIN + (indexToFill * (SIZE_LEAF_NODE_KEY_POINTER)),
-                    temp,
-                    0,
-                    temp.length
-            );
-
-            System.arraycopy(
-                    Longs.toByteArray(key),
-                    0,
-                    treeNode.getData(),
-                    OFFSET_TREE_NODE_FLAGS_END + (indexToFill * (SIZE_LEAF_NODE_KEY_POINTER)),
-                    Long.BYTES
-            );
-
-            System.arraycopy(
-                    temp,
-                    0,
-                    treeNode.getData(),
-                    OFFSET_TREE_NODE_FLAGS_END + ((indexToFill + 1) * (SIZE_LEAF_NODE_KEY_POINTER)),
-                    Long.BYTES
-            );
+        if (indexToFill == -1){
+            return -1;
         }
+
+        byte[] temp = new byte[treeNode.getData().length - (OFFSET_LEAF_NODE_KEY_BEGIN + (indexToFill * (SIZE_LEAF_NODE_KEY_POINTER)))];
+        System.arraycopy(
+                treeNode.getData(),
+                OFFSET_LEAF_NODE_KEY_BEGIN + (indexToFill * (SIZE_LEAF_NODE_KEY_POINTER)),
+                temp,
+                0,
+                temp.length
+        );
+
+        setKeyValueAtIndex(treeNode, indexToFill, key, pointer);
+
+        System.arraycopy(
+                temp,
+                0,
+                treeNode.getData(),
+                OFFSET_TREE_NODE_FLAGS_END + ((indexToFill + 1) * (SIZE_LEAF_NODE_KEY_POINTER)),
+                temp.length - SIZE_LEAF_NODE_KEY_POINTER
+        );
+
 
         return indexToFill;
 

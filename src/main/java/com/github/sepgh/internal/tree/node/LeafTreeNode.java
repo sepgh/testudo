@@ -20,7 +20,7 @@ public class LeafTreeNode extends BaseTreeNode {
         return new TreeNodeKeyValueIterator(this);
     }
 
-    public void setKeyValue(int index, long key, Pointer pointer) throws IllegalNodeAccess {
+    public void setKeyValue(int index, long key, Pointer pointer) {
         TreeNodeUtils.setKeyValueAtIndex(this, index, key, pointer);
     }
 
