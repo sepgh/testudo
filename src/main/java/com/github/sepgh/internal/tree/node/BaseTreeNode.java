@@ -57,7 +57,7 @@ public abstract class BaseTreeNode {
 
     public void setType(NodeType type) {
         // Only can be called if the node is empty, otherwise changing type of already constructed node will F things up
-        this.data[0] = (byte) (data[0] & type.getSign());
+        this.data[0] = (byte) (data[0] | type.getSign());
     }
 
     public NodeType getType(){

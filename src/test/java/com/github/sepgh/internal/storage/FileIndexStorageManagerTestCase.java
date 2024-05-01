@@ -4,8 +4,10 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.Pointer;
+import com.github.sepgh.internal.tree.exception.IllegalNodeAccess;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
+import com.github.sepgh.internal.tree.node.LeafTreeNode;
 import com.google.common.io.BaseEncoding;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -62,7 +64,7 @@ public class FileIndexStorageManagerTestCase {
         dbPath = Files.createTempDirectory("TEST_IndexFileManagerTestCase");
         engineConfig = EngineConfig.builder()
                 .bTreeNodeMaxKey(1)
-                .bTreeGrowthNodeAllocationCount(2)
+                .bTreeGrowthNodeAllocationCount(1)
                 .build();
         engineConfig.setBTreeMaxFileSize(3L * engineConfig.getPaddedSize());
 
@@ -124,6 +126,7 @@ public class FileIndexStorageManagerTestCase {
 
             Iterator<Long> keys = treeNode.keys();
 
+            Assertions.assertTrue(treeNode.isRoot());
             Assertions.assertTrue(keys.hasNext());
             Assertions.assertEquals(15, keys.next());
 
@@ -146,6 +149,72 @@ public class FileIndexStorageManagerTestCase {
             fileIndexStorageManager.close();
         }
 
+    }
+
+    @Test
+    public void canReadAndUpdateNodeSuccessfully() throws IOException, ExecutionException, InterruptedException, IllegalNodeAccess {
+        HeaderManager headerManager = new InMemoryHeaderManager(header);
+
+        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
+        try {
+            CompletableFuture<IndexStorageManager.NodeData> future = fileIndexStorageManager.readNode(1, 0, 0);
+
+            IndexStorageManager.NodeData nodeData = future.get();
+            System.out.println("initial: " + BaseEncoding.base16().lowerCase().encode(nodeData.bytes()));
+            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
+
+            LeafTreeNode leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(nodeData.bytes());
+            leafTreeNode.setKeyValue(0, 10L, new Pointer(Pointer.TYPE_DATA, 100, 100));
+
+            System.out.println("update:  " + BaseEncoding.base16().lowerCase().encode(nodeData.bytes()));
+            fileIndexStorageManager.updateNode(leafTreeNode.getData(), nodeData.pointer()).get();
+
+            future = fileIndexStorageManager.readNode(1, 0, 0);
+            nodeData = future.get();
+            System.out.println("re-read: " + BaseEncoding.base16().lowerCase().encode(nodeData.bytes()));
+            leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(nodeData.bytes());
+
+            Assertions.assertTrue(leafTreeNode.keyValues().hasNext());
+
+            Assertions.assertEquals(10L, leafTreeNode.keyValueList().get(0).getKey());
+            Assertions.assertEquals(100, leafTreeNode.keyValueList().get(0).getValue().chunk());
+            Assertions.assertEquals(100, leafTreeNode.keyValueList().get(0).getValue().position());
+
+        } finally {
+            fileIndexStorageManager.close();
+        }
+    }
+
+    @Test
+    public void canWriteNewNode() throws IOException, ExecutionException, InterruptedException {
+        HeaderManager headerManager = new InMemoryHeaderManager(header);
+
+        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
+        try {
+
+            byte[] emptyNode = fileIndexStorageManager.getEmptyNode();
+            BaseTreeNode baseTreeNode = BaseTreeNode.fromBytes(emptyNode, BaseTreeNode.NodeType.INTERNAL);
+            baseTreeNode.addKey(10);
+            baseTreeNode.setAsRoot();
+
+            IndexStorageManager.NodeData nodeData = fileIndexStorageManager.writeNewNode(1, baseTreeNode.getData()).get();
+            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
+            Assertions.assertEquals(2L * engineConfig.getPaddedSize(), nodeData.pointer().position());
+            Assertions.assertEquals(0, nodeData.pointer().chunk());
+
+            nodeData = fileIndexStorageManager.writeNewNode(1, baseTreeNode.getData()).get();
+            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
+            Assertions.assertEquals(0, nodeData.pointer().position());
+            Assertions.assertEquals(1, nodeData.pointer().chunk());
+
+            nodeData = fileIndexStorageManager.writeNewNode(1, baseTreeNode.getData()).get();
+            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
+            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.pointer().position());
+            Assertions.assertEquals(1, nodeData.pointer().chunk());
+
+        } finally {
+            fileIndexStorageManager.close();
+        }
     }
 
 }

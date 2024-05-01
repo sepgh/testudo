@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.github.sepgh.internal.tree.node.BaseTreeNode.TYPE_INTERNAL_NODE_BIT;
 import static com.github.sepgh.internal.tree.node.BaseTreeNode.TYPE_LEAF_NODE_BIT;
 
 public class FileIndexStorageManager implements IndexStorageManager {
@@ -138,7 +139,8 @@ public class FileIndexStorageManager implements IndexStorageManager {
     @Override
     public CompletableFuture<NodeData> writeNewNode(int table, byte[] data, boolean isRoot) throws IOException, ExecutionException, InterruptedException {
         CompletableFuture<NodeData> output = new CompletableFuture<>();
-        Pointer pointer = this.getAllocatedSpaceForNewNode(table, Optional.empty());
+        Header.Table headerTable = headerManager.getHeader().getTableOfIndex(table).get();
+        Pointer pointer = this.getAllocatedSpaceForNewNode(table, headerTable.getChunks().getLast().getChunk());
 
         if (data.length < engineConfig.getPaddedSize()){
             byte[] finalData = new byte[engineConfig.getPaddedSize()];
@@ -163,75 +165,71 @@ public class FileIndexStorageManager implements IndexStorageManager {
         return output;
     }
 
-    private Pointer getAllocatedSpaceForNewNode(int tableId, Optional<Integer> optionalIndexChunkId) throws IOException, ExecutionException, InterruptedException {
-        int chunk = 0;
-        int indexChunkId = 0;
+    private Pointer getAllocatedSpaceForNewNode(int tableId, int chunk) throws IOException, ExecutionException, InterruptedException {
         Header.Table table = headerManager.getHeader().getTableOfIndex(tableId).get();
-        if (optionalIndexChunkId.isPresent()){
-            Integer i = optionalIndexChunkId.get();
-            Optional<Header.IndexChunk> optionalIndexChunk = table.getIndexChunk(i);
-            if (optionalIndexChunk.isPresent()){
-                indexChunkId = i;
-                chunk = optionalIndexChunk.get().getChunk();
-            } else {
-                Header.IndexChunk previousIndexChunk = table.getIndexChunk(i - 1).get();
-                chunk = previousIndexChunk.getChunk() + 1;
-            }
-
-        }else {
-            if (table.getChunks().size() > 0){
-                chunk = table.getChunks().get(0).getChunk();
-            }
-        }
+        Optional<Header.IndexChunk> optional = table.getIndexChunk(chunk);
+        boolean newChunkCreated = optional.isEmpty();
 
         AsynchronousFileChannel asynchronousFileChannel = this.getAsynchronousFileChannel(chunk);
         int indexOfTableMetaData = headerManager.getHeader().indexOfTable(tableId);
 
         boolean isLastTable = indexOfTableMetaData == headerManager.getHeader().tablesCount() - 1;
-        long position = isLastTable ?
-                asynchronousFileChannel.size() - engineConfig.indexGrowthAllocationSize()
-                :
-                headerManager.getHeader().getTableOfIndex(indexOfTableMetaData + 1).get().getIndexChunk(chunk).get().getOffset() - engineConfig.indexGrowthAllocationSize();
+        long fileSize = asynchronousFileChannel.size();
+        long position = 0;
+        if (fileSize != 0){
+            position = isLastTable ?
+                    fileSize - engineConfig.indexGrowthAllocationSize()
+                    :
+                    headerManager.getHeader().getTableOfIndex(indexOfTableMetaData + 1).get().getIndexChunk(chunk).get().getOffset() - engineConfig.indexGrowthAllocationSize();
 
-        Future<byte[]> future = FileUtils.readBytes(asynchronousFileChannel, position, engineConfig.indexGrowthAllocationSize());
-        byte[] bytes = new byte[0];
-        try {
-            bytes = future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new IOException(e);
-        }
+            Future<byte[]> future = FileUtils.readBytes(asynchronousFileChannel, position, engineConfig.indexGrowthAllocationSize());
+            byte[] bytes = new byte[0];
+            try {
+                bytes = future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new IOException(e);
+            }
 
-        Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
-        if (optionalAdditionalPosition.isPresent()){
-            long finalPosition = position + optionalAdditionalPosition.get();
-            return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
-        }
+            Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
+            if (optionalAdditionalPosition.isPresent()){
+                long finalPosition = position + optionalAdditionalPosition.get();
+                return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
+            }
 
 
-        /*
-            If there isn't an empty allocated location, we check if maximum size is reached.
-            If it is, we won't be allocating and just move on to next chunk
-                through recursion till we reach to a chunk where we can allocate space
-         */
-        if (asynchronousFileChannel.size() >= engineConfig.getBTreeMaxFileSize()){
-            return getAllocatedSpaceForNewNode(tableId, Optional.of(indexChunkId + 1));
+            /*
+                If there isn't an empty allocated location, we check if maximum size is reached.
+                If it is, we won't be allocating and just move on to next chunk
+                    through recursion till we reach to a chunk where we can allocate space
+             */
+            if (fileSize >= engineConfig.getBTreeMaxFileSize()){
+                return getAllocatedSpaceForNewNode(tableId, chunk + 1);
+            }
+
+
         }
 
         Long finalPosition;
-        if (isLastTable){
+        if (isLastTable || position == 0){
             finalPosition = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
         }else {
             finalPosition = FileUtils.allocate(asynchronousFileChannel, position, engineConfig.indexGrowthAllocationSize()).get();
         }
-        table.getChunks().add(new Header.IndexChunk(chunk, finalPosition));
-        headerManager.update();
+
+        if (newChunkCreated){
+            List<Header.IndexChunk> newChunks = new ArrayList<>(table.getChunks());
+            newChunks.add(new Header.IndexChunk(chunk, finalPosition));
+            table.setChunks(newChunks);
+            headerManager.update();
+        }
+
         return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
     }
 
     private Optional<Integer> getPossibleAllocationLocation(byte[] bytes){
         for (int i = 0; i < engineConfig.getBTreeGrowthNodeAllocationCount(); i++){
             int position = i * engineConfig.getPaddedSize();
-            if ((bytes[position] & TYPE_LEAF_NODE_BIT) != 0 && bytes[position] != BaseTreeNode.TYPE_INTERNAL_NODE_BIT){
+            if ((bytes[position] & TYPE_LEAF_NODE_BIT) != TYPE_LEAF_NODE_BIT && (bytes[position] & TYPE_INTERNAL_NODE_BIT) != TYPE_INTERNAL_NODE_BIT){
                 return Optional.of(position);
             }
         }
