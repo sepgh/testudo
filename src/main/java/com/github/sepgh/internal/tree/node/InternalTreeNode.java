@@ -15,7 +15,7 @@ public class InternalTreeNode extends BaseTreeNode {
         setType(NodeType.INTERNAL);
     }
 
-    public void setChildAtIndex(int index, Pointer pointer) throws IllegalNodeAccess {
+    public void setChildAtIndex(int index, Pointer pointer) {
         TreeNodeUtils.setPointerToChild(this, index, pointer);
     }
 
@@ -37,6 +37,10 @@ public class InternalTreeNode extends BaseTreeNode {
 
     public void removeKeyAtIndex(int index) {
         TreeNodeUtils.removeKeyAtIndex(this, index);
+    }
+
+    public void setKeyAtIndex(int index, Long identifier) {
+        TreeNodeUtils.setKeyAtIndex(this, index, identifier);
     }
 
     private static class TreeNodeChildrenIterator implements Iterator<Pointer> {

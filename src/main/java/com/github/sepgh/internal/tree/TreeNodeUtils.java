@@ -1,6 +1,7 @@
 package com.github.sepgh.internal.tree;
 
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
+import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.utils.BinaryUtils;
 import com.google.common.primitives.Longs;
 
@@ -92,6 +93,18 @@ public class TreeNodeUtils {
             return false;
 
         return BinaryUtils.bytesToLong(treeNode.getData(), keyStartIndex) != 0;
+    }
+
+
+    public static void setKeyAtIndex(BaseTreeNode treeNode, int index, Long identifier) {
+        int keyStartIndex = getKeyStartOffset(treeNode, index);
+        System.arraycopy(
+                Longs.toByteArray(identifier),
+                0,
+                treeNode.getData(),
+                keyStartIndex,
+                Long.BYTES
+        );
     }
 
     /**
@@ -307,4 +320,5 @@ public class TreeNodeUtils {
                 treeNode.getData().length - Pointer.BYTES, Pointer.BYTES
         );
     }
+
 }

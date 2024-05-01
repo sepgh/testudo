@@ -178,27 +178,48 @@ public class BTreeIndexManager implements IndexManager {
         throw new RuntimeException("Logic error: probably failed to store index?");
     }
 
-    private List<Map.Entry<Long, Pointer>> splitChildren(InternalTreeNode node, long idForParentToStore, Pointer nodePointer) {
+    private List<Map.Entry<Long, Pointer>> splitChildren(InternalTreeNode node, long identifier, Pointer pointer) {
         List<Map.Entry<Long, Pointer>> entries = new LinkedList<>();
 
         int mid = order / 2;
-        List<Pointer> childrenList = node.childrenList().reversed();
-        List<Long> keyList = node.keyList().reversed();
 
-        for (int i = 0; i < mid; i++){
-            int childIndex = childrenList.size() - i - 1;
 
-            Pointer child = childrenList.get(childIndex);
-            long key = keyList.get(childIndex - 1);
-            entries.add(new AbstractMap.SimpleEntry<>(key, child));
+        List<Long> allKeys = new ArrayList<>(node.keyList());
+        allKeys.add(identifier);
+        allKeys.sort(Long::compareTo);
 
-            node.removeChildAtIndex(childIndex);
-            node.removeKeyAtIndex(childIndex - 1);
+        List<Long> keysToKeep = allKeys.subList(0, mid + 1);
+        List<Long> keysToPass = allKeys.subList(mid + 1, allKeys.size());
+
+        int indexOfNewKey = allKeys.indexOf(identifier);
+
+        List<Pointer> allChildren = new ArrayList<>(node.childrenList());
+
+        if (identifier < allKeys.get(indexOfNewKey))
+            allChildren.addFirst(pointer);
+        else
+            allChildren.add(1, pointer);
+
+        List<Pointer> childrenToKeep = allChildren.subList(0, mid + 2);
+        List<Pointer> childrenToPass = allChildren.subList(mid + 2, allKeys.size());
+
+        for (int i = 0; i < keysToPass.size(); i++){
+            entries.add(new AbstractMap.SimpleEntry<>(keysToPass.get(i), childrenToPass.get(i)));
         }
 
-        entries.add(new AbstractMap.SimpleEntry<>(idForParentToStore, nodePointer));
-        entries.sort(Comparator.comparingLong(Map.Entry::getKey));
+        node.setChildAtIndex(0, childrenToKeep.get(0));
+        int size = node.keyList().size();
+        for (int i=0; i < size; i++){
+            if (i > childrenToKeep.size() - 1){
+                node.removeKeyAtIndex(i);
+                node.removeChildAtIndex(i+1);
+            }else {
+                node.setChildAtIndex(i+1, childrenToKeep.get(i+1));
+                node.setKeyAtIndex(i, keysToKeep.get(i));
+            }
+        }
 
+        entries.sort(Comparator.comparingLong(Map.Entry::getKey));
         return entries;
     }
 
