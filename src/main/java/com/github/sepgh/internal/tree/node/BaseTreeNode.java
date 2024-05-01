@@ -1,6 +1,5 @@
 package com.github.sepgh.internal.tree.node;
 
-import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.TreeNodeUtils;
 import com.google.common.collect.ImmutableList;
