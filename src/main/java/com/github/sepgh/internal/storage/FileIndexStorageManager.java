@@ -4,7 +4,6 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.Pointer;
-import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.utils.FileUtils;
 import lombok.SneakyThrows;
 
@@ -149,7 +148,9 @@ public class FileIndexStorageManager implements IndexStorageManager {
         }
 
         byte[] finalData1 = data;
-        FileUtils.write(getAsynchronousFileChannel(pointer.chunk()), pointer.position(), data).whenComplete((size, throwable) -> {
+        long offset = pointer.getPosition();
+        pointer.setPosition(offset - headerManager.getHeader().getTableOfId(table).get().getIndexChunk(pointer.getChunk()).get().getOffset());
+        FileUtils.write(getAsynchronousFileChannel(pointer.getChunk()), offset, data).whenComplete((size, throwable) -> {
             if (throwable != null){
                 output.completeExceptionally(throwable);
             }
@@ -159,12 +160,13 @@ public class FileIndexStorageManager implements IndexStorageManager {
             );
         });
         if (isRoot){
-            headerManager.getHeader().getTableOfId(table).get().setRoot(new Header.IndexChunk(pointer.chunk(), pointer.position()));
+            headerManager.getHeader().getTableOfId(table).get().setRoot(new Header.IndexChunk(pointer.getChunk(), pointer.getPosition()));
             headerManager.update();
         }
         return output;
     }
 
+    // Todo: as currently written in README, after allocating space, the chunk offset of tables after the tableId should be updated
     private Pointer getAllocatedSpaceForNewNode(int tableId, int chunk) throws IOException, ExecutionException, InterruptedException {
         Header.Table table = headerManager.getHeader().getTableOfIndex(tableId).get();
         Optional<Header.IndexChunk> optional = table.getIndexChunk(chunk);
@@ -237,8 +239,9 @@ public class FileIndexStorageManager implements IndexStorageManager {
     }
 
     @Override
-    public CompletableFuture<Integer> updateNode(byte[] data, Pointer pointer) {
-        return FileUtils.write(getAsynchronousFileChannel(pointer.chunk()), pointer.position(), data);
+    public CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer) {
+        long offset = headerManager.getHeader().getTableOfId(table).get().getIndexChunk(pointer.getChunk()).get().getOffset() + pointer.getPosition();
+        return FileUtils.write(getAsynchronousFileChannel(pointer.getChunk()), offset, data);
     }
 
     @Override

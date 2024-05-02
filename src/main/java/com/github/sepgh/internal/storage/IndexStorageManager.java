@@ -12,7 +12,7 @@ public interface IndexStorageManager {
 
     byte[] getEmptyNode();
     default CompletableFuture<NodeData> readNode(int table, Pointer pointer) {
-        return this.readNode(table, pointer.position(), pointer.chunk());
+        return this.readNode(table, pointer.getPosition(), pointer.getChunk());
     }
     CompletableFuture<NodeData> readNode(int table, long position, int chunk);
 
@@ -20,7 +20,7 @@ public interface IndexStorageManager {
     default CompletableFuture<NodeData> writeNewNode(int table, byte[] data) throws IOException, ExecutionException, InterruptedException {
         return this.writeNewNode(table, data, false);
     }
-    CompletableFuture<Integer> updateNode(byte[] data, Pointer pointer);
+    CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer);
 
     void close() throws IOException;
 

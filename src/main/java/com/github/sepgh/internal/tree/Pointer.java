@@ -3,7 +3,8 @@ package com.github.sepgh.internal.tree;
 import com.github.sepgh.internal.utils.BinaryUtils;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 import java.util.Objects;
 
@@ -12,10 +13,16 @@ import java.util.Objects;
    Binary size of pointer:  1byte type  +  8bytes position   +  4bytes chunk  = 13bytes
 */
 
-public record Pointer(byte type, long position, int chunk) {
+@AllArgsConstructor
+@Data
+public class Pointer {
     public static byte TYPE_DATA = 0x01;
     public static byte TYPE_NODE = 0x02;
     public static int BYTES = 1 + Long.BYTES + Integer.BYTES;
+
+    private final byte type;
+    private long position;
+    private int chunk;
 
     public static Pointer fromByteArray(byte[] bytes, int position){
         return new Pointer(

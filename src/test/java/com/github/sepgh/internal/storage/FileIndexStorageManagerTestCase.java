@@ -143,8 +143,8 @@ public class FileIndexStorageManagerTestCase {
             Assertions.assertTrue(children.hasNext());
             Pointer pointer = children.next();
             Assertions.assertTrue(pointer.isNodePointer());
-            Assertions.assertEquals(1, pointer.position());
-            Assertions.assertEquals(1, pointer.chunk());
+            Assertions.assertEquals(1, pointer.getPosition());
+            Assertions.assertEquals(1, pointer.getChunk());
         } finally {
             fileIndexStorageManager.close();
         }
@@ -167,7 +167,7 @@ public class FileIndexStorageManagerTestCase {
             leafTreeNode.setKeyValue(0, 10L, new Pointer(Pointer.TYPE_DATA, 100, 100));
 
             System.out.println("update:  " + BaseEncoding.base16().lowerCase().encode(nodeData.bytes()));
-            fileIndexStorageManager.updateNode(leafTreeNode.getData(), nodeData.pointer()).get();
+            fileIndexStorageManager.updateNode(1, leafTreeNode.getData(), nodeData.pointer()).get();
 
             future = fileIndexStorageManager.readNode(1, 0, 0);
             nodeData = future.get();
@@ -177,8 +177,8 @@ public class FileIndexStorageManagerTestCase {
             Assertions.assertTrue(leafTreeNode.keyValues().hasNext());
 
             Assertions.assertEquals(10L, leafTreeNode.keyValueList().get(0).getKey());
-            Assertions.assertEquals(100, leafTreeNode.keyValueList().get(0).getValue().chunk());
-            Assertions.assertEquals(100, leafTreeNode.keyValueList().get(0).getValue().position());
+            Assertions.assertEquals(100, leafTreeNode.keyValueList().get(0).getValue().getChunk());
+            Assertions.assertEquals(100, leafTreeNode.keyValueList().get(0).getValue().getPosition());
 
         } finally {
             fileIndexStorageManager.close();
@@ -199,18 +199,18 @@ public class FileIndexStorageManagerTestCase {
 
             IndexStorageManager.NodeData nodeData = fileIndexStorageManager.writeNewNode(1, baseTreeNode.getData()).get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
-            Assertions.assertEquals(2L * engineConfig.getPaddedSize(), nodeData.pointer().position());
-            Assertions.assertEquals(0, nodeData.pointer().chunk());
+            Assertions.assertEquals(2L * engineConfig.getPaddedSize(), nodeData.pointer().getPosition());
+            Assertions.assertEquals(0, nodeData.pointer().getChunk());
 
             nodeData = fileIndexStorageManager.writeNewNode(1, baseTreeNode.getData()).get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
-            Assertions.assertEquals(0, nodeData.pointer().position());
-            Assertions.assertEquals(1, nodeData.pointer().chunk());
+            Assertions.assertEquals(0, nodeData.pointer().getPosition());
+            Assertions.assertEquals(1, nodeData.pointer().getChunk());
 
             nodeData = fileIndexStorageManager.writeNewNode(1, baseTreeNode.getData()).get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
-            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.pointer().position());
-            Assertions.assertEquals(1, nodeData.pointer().chunk());
+            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.pointer().getPosition());
+            Assertions.assertEquals(1, nodeData.pointer().getChunk());
 
         } finally {
             fileIndexStorageManager.close();

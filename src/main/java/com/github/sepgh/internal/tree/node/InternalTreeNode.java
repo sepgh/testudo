@@ -2,7 +2,6 @@ package com.github.sepgh.internal.tree.node;
 
 import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.TreeNodeUtils;
-import com.github.sepgh.internal.tree.exception.IllegalNodeAccess;
 import com.google.common.collect.ImmutableList;
 
 import java.util.Iterator;

@@ -62,8 +62,8 @@ public class TreeNodeTestCase {
         Pointer child0Pointer = optionalChild0Pointer.get();
 
         Assertions.assertTrue(child0Pointer.isNodePointer());
-        Assertions.assertEquals(1, child0Pointer.position());
-        Assertions.assertEquals(1, child0Pointer.chunk());
+        Assertions.assertEquals(1, child0Pointer.getPosition());
+        Assertions.assertEquals(1, child0Pointer.getChunk());
 
 
         Optional<Pointer> optionalChild1Pointer = treeNode.getChildAtIndex(1);
@@ -71,8 +71,8 @@ public class TreeNodeTestCase {
         Pointer child1Pointer = optionalChild1Pointer.get();
 
         Assertions.assertTrue(child1Pointer.isNodePointer());
-        Assertions.assertEquals(2, child1Pointer.position());
-        Assertions.assertEquals(2, child1Pointer.chunk());
+        Assertions.assertEquals(2, child1Pointer.getPosition());
+        Assertions.assertEquals(2, child1Pointer.getChunk());
 
         Assertions.assertThrows(ArrayIndexOutOfBoundsException.class, () -> {
             treeNode.getChildAtIndex(2);
@@ -92,13 +92,13 @@ public class TreeNodeTestCase {
             Pointer pointer = it.next();
             if (i == 0){
                 Assertions.assertTrue(pointer.isNodePointer());
-                Assertions.assertEquals(1, pointer.position());
-                Assertions.assertEquals(1, pointer.chunk());
+                Assertions.assertEquals(1, pointer.getPosition());
+                Assertions.assertEquals(1, pointer.getChunk());
             }
             if (i == 1){
                 Assertions.assertTrue(pointer.isNodePointer());
-                Assertions.assertEquals(2, pointer.position());
-                Assertions.assertEquals(2, pointer.chunk());
+                Assertions.assertEquals(2, pointer.getPosition());
+                Assertions.assertEquals(2, pointer.getChunk());
             }
             i++;
         }
@@ -159,8 +159,8 @@ public class TreeNodeTestCase {
         Assertions.assertEquals(15, next.getKey());
         Pointer pointer = next.getValue();
         Assertions.assertFalse(pointer.isNodePointer());
-        Assertions.assertEquals(1, pointer.position());
-        Assertions.assertEquals(1, pointer.chunk());
+        Assertions.assertEquals(1, pointer.getPosition());
+        Assertions.assertEquals(1, pointer.getChunk());
 
 
         Assertions.assertTrue(iterator.hasNext());
@@ -168,8 +168,8 @@ public class TreeNodeTestCase {
         Assertions.assertEquals(16, next.getKey());
         pointer = next.getValue();
         Assertions.assertFalse(pointer.isNodePointer());
-        Assertions.assertEquals(2, pointer.position());
-        Assertions.assertEquals(2, pointer.chunk());
+        Assertions.assertEquals(2, pointer.getPosition());
+        Assertions.assertEquals(2, pointer.getChunk());
 
         Assertions.assertFalse(iterator.hasNext());
     }
