@@ -9,9 +9,9 @@ import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
 import com.google.common.io.BaseEncoding;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -27,10 +27,10 @@ import java.util.concurrent.ExecutionException;
 import static com.github.sepgh.internal.storage.FileIndexStorageManager.INDEX_FILE_NAME;
 
 public class FileIndexStorageManagerTestCase {
-    private static Path dbPath;
-    private static EngineConfig engineConfig;
-    private static Header header;
-    private static final byte[] singleKeyLeafNodeRepresentation = {
+    private Path dbPath;
+    private EngineConfig engineConfig;
+    private Header header;
+    private final byte[] singleKeyLeafNodeRepresentation = {
             ((byte) (0x00 | BaseTreeNode.ROOT_BIT | BaseTreeNode.TYPE_LEAF_NODE_BIT)), // Leaf
 
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F,  // Key 1
@@ -41,7 +41,7 @@ public class FileIndexStorageManagerTestCase {
             0x00, 0x00, 0x00, 0x01, // chunk
             // >> End pointer to child 1
     };
-    private static final byte[] singleKeyInternalNodeRepresentation = {
+    private final byte[] singleKeyInternalNodeRepresentation = {
             ((byte) (0x00 | BaseTreeNode.ROOT_BIT | BaseTreeNode.TYPE_INTERNAL_NODE_BIT)), // Not leaf
 
             // >> Start pointer to child 1
@@ -59,8 +59,8 @@ public class FileIndexStorageManagerTestCase {
             // >> End pointer to child 2
     };
 
-    @BeforeAll
-    public static void setUp() throws IOException {
+    @BeforeEach
+    public void setUp() throws IOException {
         dbPath = Files.createTempDirectory("TEST_IndexFileManagerTestCase");
         engineConfig = EngineConfig.builder()
                 .bTreeNodeMaxKey(1)
@@ -99,8 +99,8 @@ public class FileIndexStorageManagerTestCase {
         Assertions.assertTrue(header.getTableOfId(1).get().getIndexChunk(0).isPresent());
     }
 
-    @AfterAll
-    public static void destroy() throws IOException {
+    @AfterEach
+    public void destroy() throws IOException {
         Path indexPath0 = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.delete(indexPath0);
         try {

@@ -10,9 +10,9 @@ import com.github.sepgh.internal.tree.exception.IllegalNodeAccess;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -26,13 +26,13 @@ import java.util.concurrent.ExecutionException;
 import static com.github.sepgh.internal.storage.FileIndexStorageManager.INDEX_FILE_NAME;
 
 public class BTreeIndexManagerTestCase {
-    private static Path dbPath;
-    private static EngineConfig engineConfig;
-    private static Header header;
-    private static int order = 3;
+    private Path dbPath;
+    private EngineConfig engineConfig;
+    private Header header;
+    private int order = 3;
 
-    @BeforeAll
-    public static void setUp() throws IOException {
+    @BeforeEach
+    public void setUp() throws IOException {
         dbPath = Files.createTempDirectory("TEST_BTreeIndexManagerTestCase");
         engineConfig = EngineConfig.builder()
                 .bTreeNodeMaxKey(order)
@@ -69,8 +69,9 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertTrue(header.getTableOfId(1).get().getIndexChunk(0).isPresent());
     }
 
-    @AfterAll
-    public static void destroy() throws IOException {
+    @AfterEach
+    public void destroy() throws IOException {
+        System.out.println("DESTROY");
         Path indexPath0 = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.delete(indexPath0);
         try {
