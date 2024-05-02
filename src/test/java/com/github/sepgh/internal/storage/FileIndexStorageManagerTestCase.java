@@ -119,7 +119,6 @@ public class FileIndexStorageManagerTestCase {
             CompletableFuture<IndexStorageManager.NodeData> future = fileIndexStorageManager.readNode(1, 0, 0);
 
             IndexStorageManager.NodeData nodeData = future.get();
-            System.out.println(BaseEncoding.base16().lowerCase().encode(nodeData.bytes()));
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
 
             BaseTreeNode treeNode = BaseTreeNode.fromBytes(nodeData.bytes());
@@ -133,7 +132,6 @@ public class FileIndexStorageManagerTestCase {
 
             future = fileIndexStorageManager.readNode(1, engineConfig.getPaddedSize(), 0);
             nodeData = future.get();
-            System.out.println(BaseEncoding.base16().lowerCase().encode(nodeData.bytes()));
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
 
             treeNode = BaseTreeNode.fromBytes(nodeData.bytes());
@@ -160,18 +158,15 @@ public class FileIndexStorageManagerTestCase {
             CompletableFuture<IndexStorageManager.NodeData> future = fileIndexStorageManager.readNode(1, 0, 0);
 
             IndexStorageManager.NodeData nodeData = future.get();
-            System.out.println("initial: " + BaseEncoding.base16().lowerCase().encode(nodeData.bytes()));
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
 
             LeafTreeNode leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(nodeData.bytes());
             leafTreeNode.setKeyValue(0, 10L, new Pointer(Pointer.TYPE_DATA, 100, 100));
 
-            System.out.println("update:  " + BaseEncoding.base16().lowerCase().encode(nodeData.bytes()));
             fileIndexStorageManager.updateNode(1, leafTreeNode.getData(), nodeData.pointer()).get();
 
             future = fileIndexStorageManager.readNode(1, 0, 0);
             nodeData = future.get();
-            System.out.println("re-read: " + BaseEncoding.base16().lowerCase().encode(nodeData.bytes()));
             leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(nodeData.bytes());
 
             Assertions.assertTrue(leafTreeNode.keyValues().hasNext());

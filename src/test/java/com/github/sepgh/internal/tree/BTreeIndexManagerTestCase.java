@@ -71,7 +71,6 @@ public class BTreeIndexManagerTestCase {
 
     @AfterEach
     public void destroy() throws IOException {
-        System.out.println("DESTROY");
         Path indexPath0 = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.delete(indexPath0);
         try {
