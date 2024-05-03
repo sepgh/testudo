@@ -35,14 +35,8 @@ public class Header {
         return -1;
     }
 
-    public Optional<Table> getTableOfIndex(int tableId){
-        for (int i = 0; i < tables.size(); i++){
-            Table table = tables.get(i);
-            if (tableId == table.id){
-                return Optional.of(table);
-            }
-        }
-        return Optional.empty();
+    public Optional<Table> getTableOfIndex(int index){
+        return index < tables.size() ? Optional.of(tables.get(index)) : Optional.empty();
     }
 
     @Data

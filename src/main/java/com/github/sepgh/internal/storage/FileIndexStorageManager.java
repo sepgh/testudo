@@ -84,15 +84,16 @@ public class FileIndexStorageManager implements IndexStorageManager {
         CompletableFuture<Optional<NodeData>> output = new CompletableFuture<>();
 
         Optional<Header.Table> optionalTable = headerManager.getHeader().getTableOfId(table);
-        if (optionalTable.isEmpty() || optionalTable.get().getRoot() == null){
+        Header.Table headerTable = optionalTable.get();
+        if (optionalTable.isEmpty() || headerTable.getRoot() == null){
             output.complete(Optional.empty());
             return output;
         }
 
-        Header.IndexChunk root = optionalTable.get().getRoot();
+        Header.IndexChunk root = headerTable.getRoot();
         FileUtils.readBytes(
                 getAsynchronousFileChannel(root.getChunk()),
-                root.getOffset(),
+                headerTable.getIndexChunk(root.getChunk()).get().getOffset()  + root.getOffset(),
                 engineConfig.getPaddedSize()
         ).whenComplete((bytes, throwable) -> {
             if (throwable != null){
@@ -138,7 +139,7 @@ public class FileIndexStorageManager implements IndexStorageManager {
     @Override
     public CompletableFuture<NodeData> writeNewNode(int table, byte[] data, boolean isRoot) throws IOException, ExecutionException, InterruptedException {
         CompletableFuture<NodeData> output = new CompletableFuture<>();
-        Header.Table headerTable = headerManager.getHeader().getTableOfIndex(table).get();
+        Header.Table headerTable = headerManager.getHeader().getTableOfId(table).get();
         Pointer pointer = this.getAllocatedSpaceForNewNode(table, headerTable.getChunks().getLast().getChunk());
 
         if (data.length < engineConfig.getPaddedSize()){
@@ -149,6 +150,8 @@ public class FileIndexStorageManager implements IndexStorageManager {
 
         byte[] finalData1 = data;
         long offset = pointer.getPosition();
+
+        // setting pointer position according to the offset. Reading table again since a new chunk may have been created
         pointer.setPosition(offset - headerManager.getHeader().getTableOfId(table).get().getIndexChunk(pointer.getChunk()).get().getOffset());
         FileUtils.write(getAsynchronousFileChannel(pointer.getChunk()), offset, data).whenComplete((size, throwable) -> {
             if (throwable != null){
@@ -168,7 +171,7 @@ public class FileIndexStorageManager implements IndexStorageManager {
 
     // Todo: as currently written in README, after allocating space, the chunk offset of tables after the tableId should be updated
     private Pointer getAllocatedSpaceForNewNode(int tableId, int chunk) throws IOException, ExecutionException, InterruptedException {
-        Header.Table table = headerManager.getHeader().getTableOfIndex(tableId).get();
+        Header.Table table = headerManager.getHeader().getTableOfId(tableId).get();
         Optional<Header.IndexChunk> optional = table.getIndexChunk(chunk);
         boolean newChunkCreated = optional.isEmpty();
 

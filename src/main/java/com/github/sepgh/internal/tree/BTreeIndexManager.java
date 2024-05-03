@@ -340,7 +340,6 @@ public class BTreeIndexManager implements IndexManager {
         BaseTreeNode baseTreeNode = BaseTreeNode.fromBytes(nodeData.bytes());
         baseTreeNode.setNodePointer(nodeData.pointer());
         getPathToResponsibleNode(table, path, baseTreeNode, identifier);
-
     }
 
 

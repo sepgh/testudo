@@ -250,10 +250,10 @@ public class TreeNodeUtils {
             );
         } else {
             // Copy existing bytes to a temporary location
-            byte[] temp = new byte[treeNode.getData().length - (OFFSET_TREE_NODE_FLAGS_END + (indexToFill * (SIZE_LEAF_NODE_KEY_POINTER)))];
+            byte[] temp = new byte[treeNode.getData().length - (OFFSET_INTERNAL_NODE_KEY_BEGIN + (indexToFill * (SIZE_LEAF_NODE_KEY_POINTER)))];
             System.arraycopy(
                     treeNode.getData(),
-                    OFFSET_INTERNAL_NODE_KEY_BEGIN + (indexToFill * (SIZE_LEAF_NODE_KEY_POINTER)),
+                    OFFSET_INTERNAL_NODE_KEY_BEGIN + (indexToFill * (SIZE_INTERNAL_NODE_KEY_POINTER)),
                     temp,
                     0,
                     temp.length
@@ -264,7 +264,7 @@ public class TreeNodeUtils {
                     Longs.toByteArray(key),
                     0,
                     treeNode.getData(),
-                    OFFSET_INTERNAL_NODE_KEY_BEGIN + (indexToFill * (Long.BYTES + Pointer.BYTES)),
+                    OFFSET_INTERNAL_NODE_KEY_BEGIN + (indexToFill * (SIZE_INTERNAL_NODE_KEY_POINTER)),
                     Long.BYTES
             );
 
@@ -273,8 +273,8 @@ public class TreeNodeUtils {
                     temp,
                     0,
                     treeNode.getData(),
-                    OFFSET_INTERNAL_NODE_KEY_BEGIN + ((indexToFill + 1) * (Long.BYTES + Pointer.BYTES)),
-                    Long.BYTES
+                    OFFSET_INTERNAL_NODE_KEY_BEGIN + ((indexToFill + 1) * (SIZE_INTERNAL_NODE_KEY_POINTER)),
+                    temp.length - SIZE_INTERNAL_NODE_KEY_POINTER
             );
 
         }
