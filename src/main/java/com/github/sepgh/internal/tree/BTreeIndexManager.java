@@ -1,7 +1,6 @@
 package com.github.sepgh.internal.tree;
 
 import com.github.sepgh.internal.storage.IndexStorageManager;
-import com.github.sepgh.internal.tree.exception.IllegalNodeAccess;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
@@ -45,7 +44,7 @@ public class BTreeIndexManager implements IndexManager {
     }
 
     @Override
-    public BaseTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IllegalNodeAccess, IOException {
+    public BaseTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
 
         BaseTreeNode root = getRoot(table);
 

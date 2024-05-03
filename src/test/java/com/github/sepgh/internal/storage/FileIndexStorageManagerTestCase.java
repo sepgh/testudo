@@ -4,11 +4,9 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.Pointer;
-import com.github.sepgh.internal.tree.exception.IllegalNodeAccess;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
-import com.google.common.io.BaseEncoding;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -150,7 +148,7 @@ public class FileIndexStorageManagerTestCase {
     }
 
     @Test
-    public void canReadAndUpdateNodeSuccessfully() throws IOException, ExecutionException, InterruptedException, IllegalNodeAccess {
+    public void canReadAndUpdateNodeSuccessfully() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
