@@ -2,6 +2,7 @@ package com.github.sepgh.internal.tree;
 
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.utils.BinaryUtils;
+import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
 
 import java.util.AbstractMap;
@@ -167,7 +168,6 @@ public class TreeNodeUtils {
      *       alternatively, we can hold a space for metadata which keeps track of the number of keys or values stored
      */
     public static int addKeyValueAndGetIndex(BaseTreeNode treeNode, long key, Pointer pointer) {
-
         int indexToFill = -1;
         for (int i = 0; i < ((treeNode.getData().length - 1 - (2 * Pointer.BYTES)) / (Long.BYTES + Pointer.BYTES)); i++){
             long keyAtIndex = getKeyAtIndex(treeNode, i);
@@ -182,7 +182,7 @@ public class TreeNodeUtils {
             return -1;
         }
 
-        byte[] temp = new byte[treeNode.getData().length - (OFFSET_LEAF_NODE_KEY_BEGIN + (indexToFill * (SIZE_LEAF_NODE_KEY_POINTER)))];
+        byte[] temp = new byte[treeNode.getData().length - (OFFSET_LEAF_NODE_KEY_BEGIN + (indexToFill * (SIZE_LEAF_NODE_KEY_POINTER))) - (2*Pointer.BYTES)];
         System.arraycopy(
                 treeNode.getData(),
                 OFFSET_LEAF_NODE_KEY_BEGIN + (indexToFill * (SIZE_LEAF_NODE_KEY_POINTER)),
@@ -227,6 +227,9 @@ public class TreeNodeUtils {
      */
     public static int addKeyAndGetIndex(BaseTreeNode treeNode, long key) {
         // Shall only be called on internal nodes
+        if (treeNode.isLeaf()){
+            throw new RuntimeException();  // Todo: not runtime
+        }
 
         int indexToFill = 0;
         long keyAtIndex = 0;
@@ -297,7 +300,8 @@ public class TreeNodeUtils {
                 pointer.toByteArray(),
                 0,
                 treeNode.getData(),
-                treeNode.getData().length - (2*Pointer.BYTES), Pointer.BYTES
+                treeNode.getData().length - (2*Pointer.BYTES),
+                Pointer.BYTES
         );
     }
 
@@ -316,7 +320,8 @@ public class TreeNodeUtils {
                 pointer.toByteArray(),
                 0,
                 treeNode.getData(),
-                treeNode.getData().length - Pointer.BYTES, Pointer.BYTES
+                treeNode.getData().length - Pointer.BYTES,
+                Pointer.BYTES
         );
     }
 

@@ -73,7 +73,7 @@ public class FileUtils {
                 dataAfterPosition.put(buffer);
 
                 // Write the empty area at the desired position
-                ByteBuffer emptyBuffer = ByteBuffer.allocate((int) size);
+                ByteBuffer emptyBuffer = ByteBuffer.allocate(size);
                 asynchronousFileChannel.write(emptyBuffer, position, null, new CompletionHandler<Integer, Object>() {
                     @Override
                     public void completed(Integer result, Object attachment) {

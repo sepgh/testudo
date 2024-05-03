@@ -377,8 +377,8 @@ public class MultiTableBTreeIndexManagerTestCase {
 
             //3rd leaf
             nextPointer = currentLeaf.getNext();
-//            Assertions.assertTrue(nextPointer.isPresent());
-//            Assertions.assertEquals(nextPointer.get(), leftChildInternalNodeChildren.get(2));  // Todo
+            Assertions.assertTrue(nextPointer.isPresent());
+            Assertions.assertEquals(nextPointer.get(), leftChildInternalNodeChildren.get(2));  // Todo
 
             currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
                     fileIndexStorageManager.readNode(
@@ -408,8 +408,8 @@ public class MultiTableBTreeIndexManagerTestCase {
 
             // 4th leaf
             nextPointer = currentLeaf.getNext();
-//            Assertions.assertTrue(nextPointer.isPresent());  //Todo
-//            Assertions.assertEquals(nextPointer.get(), rightChildInternalNodeChildren.get(0));
+            Assertions.assertTrue(nextPointer.isPresent());  //Todo
+            Assertions.assertEquals(nextPointer.get(), rightChildInternalNodeChildren.get(0));
 
             currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
                     fileIndexStorageManager.readNode(
@@ -425,8 +425,8 @@ public class MultiTableBTreeIndexManagerTestCase {
 
             // 5th leaf
             nextPointer = currentLeaf.getNext();
-//            Assertions.assertTrue(nextPointer.isPresent());
-//            Assertions.assertEquals(nextPointer.get(), rightChildInternalNodeChildren.get(1));  //Todo
+            Assertions.assertTrue(nextPointer.isPresent());
+            Assertions.assertEquals(nextPointer.get(), rightChildInternalNodeChildren.get(1));  //Todo
 
             currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
                     fileIndexStorageManager.readNode(

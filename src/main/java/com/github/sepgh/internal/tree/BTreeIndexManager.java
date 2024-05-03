@@ -5,6 +5,7 @@ import com.github.sepgh.internal.tree.exception.IllegalNodeAccess;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
+import com.google.common.io.BaseEncoding;
 
 import java.io.IOException;
 import java.util.*;
@@ -283,9 +284,8 @@ public class BTreeIndexManager implements IndexManager {
             IndexStorageManager.NodeData nodeData = indexStorageManager.readNode(table, optionalCurrentNext.get()).get();
             BaseTreeNode baseTreeNode = BaseTreeNode.fromBytes(nodeData.bytes());
             ((LeafTreeNode) baseTreeNode).setPrevious(newLeafTreeNode.getNodePointer());
-            indexStorageManager.updateNode(table, baseTreeNode.getData(), baseTreeNode.getNodePointer()).get();
+            indexStorageManager.updateNode(table, baseTreeNode.getData(), nodeData.pointer()).get();
         }
-
     }
 
     private Optional<LeafTreeNode> getResponsibleNode(int table, BaseTreeNode node, long identifier) throws ExecutionException, InterruptedException {
