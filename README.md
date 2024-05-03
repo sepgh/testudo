@@ -1,13 +1,20 @@
 # Testudo
+
+<div>
+  <img width="200px" src="https://github.com/sepgh/testudo/blob/main/.docs/assets/Testudo.png" align="left" />
+  
 Simple embedded java database
 
 This project implements a simple embedded database engine for java programs.
 
-For now, the purpose of making this library is to practice below items00:
+For now, the purpose of making this library is to practice below items:
 
-- Reactivity (non-blocking API)
 - B+ Tree
 - Bloom filters
+
+
+</div>
+
 
 
 ## Currently working on
