@@ -5,7 +5,6 @@ import com.github.sepgh.internal.tree.exception.IllegalNodeAccess;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
-import com.google.common.io.BaseEncoding;
 
 import java.io.IOException;
 import java.util.*;
