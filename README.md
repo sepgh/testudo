@@ -1,19 +1,14 @@
 # Testudo
 
-<div>
-  <img width="200px" src="https://github.com/sepgh/testudo/blob/main/.docs/assets/Testudo.png" align="left" />
+<p>
+  <img width="300px" src="https://github.com/sepgh/testudo/blob/main/.docs/assets/Testudo.png" align="left" />
   
-Simple embedded java database
+**Simple database embedded to java application**
 
-This project implements a simple embedded database engine for java programs.
+This project is implemented to practice a B+Tree implementation to index data on database, Bloom Trees to quickly determine existence state of an identifier, and other goodies TBD.
 
-For now, the purpose of making this library is to practice below items:
-
-- B+ Tree
-- Bloom filters
-
-
-</div>
+<br clear="left"/>
+</p>
 
 
 
@@ -21,7 +16,7 @@ For now, the purpose of making this library is to practice below items:
 
 - Storage: storing indexes into files
 - Header management
-- BTree
+- B+Tree
 
 ## Todo
 
