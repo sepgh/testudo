@@ -4,6 +4,7 @@ import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
+import com.google.common.hash.HashCode;
 
 import java.io.IOException;
 import java.util.*;
@@ -20,9 +21,8 @@ public class BTreeIndexManager implements IndexManager {
         this.indexStorageManager = indexStorageManager;
     }
 
-    private BaseTreeNode getRoot(int table) throws ExecutionException, InterruptedException, IOException {
-        CompletableFuture<Optional<IndexStorageManager.NodeData>> completableFuture = indexStorageManager.getRoot(table);
-        Optional<IndexStorageManager.NodeData> optionalNodeData = completableFuture.get();
+    private BaseTreeNode getRoot(int table) throws ExecutionException, InterruptedException {
+        Optional<IndexStorageManager.NodeData> optionalNodeData = indexStorageManager.getRoot(table).get();
         if (optionalNodeData.isPresent()){
             BaseTreeNode root = BaseTreeNode.fromBytes(optionalNodeData.get().bytes());
             root.setNodePointer(optionalNodeData.get().pointer());
@@ -95,7 +95,7 @@ public class BTreeIndexManager implements IndexManager {
                     parentInternalTreeNode.setChildAtIndex(0, currentNode.getNodePointer());
                     parentInternalTreeNode.setChildAtIndex(1, newLeafTreeNode.getNodePointer());
                     indexStorageManager.writeNewNode(table, parentInternalTreeNode.toBytes(), true).get();
-                    indexStorageManager.updateNode(table, currentNode.getData(), currentNode.getNodePointer());
+                    indexStorageManager.updateNode(table, currentNode.getData(), currentNode.getNodePointer()).get();
                     return newLeafTreeNode;
                 }
 

@@ -1,5 +1,7 @@
 package com.github.sepgh.internal.utils;
 
+import com.google.common.hash.HashCode;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
@@ -39,12 +41,7 @@ public class FileUtils {
         asynchronousFileChannel.write(ByteBuffer.allocate(size), fileSize, null, new CompletionHandler<Integer, Object>() {
             @Override
             public void completed(Integer result, Object attachment) {
-                try {
-                    asynchronousFileChannel.force(true);
-                    future.complete(fileSize);
-                } catch (IOException e) {
-                    future.completeExceptionally(e);
-                }
+                future.complete(fileSize);
             }
 
             @Override
@@ -58,54 +55,31 @@ public class FileUtils {
     public static CompletableFuture<Long> allocate(AsynchronousFileChannel asynchronousFileChannel, long position, int size) throws IOException {
         CompletableFuture<Long> future = new CompletableFuture<>();
 
-        int capacity = (int) Math.subtractExact(
-                asynchronousFileChannel.size(),
-                position
-        );
-
-        ByteBuffer buffer = ByteBuffer.allocate(capacity);
-
-        asynchronousFileChannel.read(buffer, position, null, new CompletionHandler<Integer, Object>() {
-            @Override
-            public void completed(Integer result, Object attachment) {
-                buffer.flip();
-                ByteBuffer dataAfterPosition = ByteBuffer.allocate(capacity);
-                dataAfterPosition.put(buffer);
-
-                // Write the empty area at the desired position
-                ByteBuffer emptyBuffer = ByteBuffer.allocate(size);
-                asynchronousFileChannel.write(emptyBuffer, position, null, new CompletionHandler<Integer, Object>() {
-                    @Override
-                    public void completed(Integer result, Object attachment) {
-                        asynchronousFileChannel.write(dataAfterPosition, position + size, null, new CompletionHandler<Integer, Object>() {
-                            @Override
-                            public void completed(Integer result, Object attachment) {
-                                try {
-                                    asynchronousFileChannel.force(true);
-                                    future.complete(position);
-                                } catch (IOException e){
-                                    future.completeExceptionally(e);
-                                }
-                            }
-
-                            @Override
-                            public void failed(Throwable exc, Object attachment) {
-                                future.completeExceptionally(exc);
-                            }
-                        });
+        int readSize = (int) (asynchronousFileChannel.size() - position);
+        allocate(asynchronousFileChannel, size).whenComplete((allocatedBeginningPosition, throwable) -> {
+            if (throwable != null){
+                future.completeExceptionally(throwable);
+                return;
+            }
+            FileUtils.readBytes(asynchronousFileChannel, position, readSize).whenComplete((readBytes, throwable1) -> {
+                if (throwable1 != null){
+                    future.completeExceptionally(throwable1);
+                    return;
+                }
+                FileUtils.write(asynchronousFileChannel, position, new byte[readBytes.length]).whenComplete((integer, throwable2) -> {
+                    if (throwable2 != null){
+                        future.completeExceptionally(throwable2);
+                        return;
                     }
-
-                    @Override
-                    public void failed(Throwable exc, Object attachment) {
-                        future.completeExceptionally(exc);
-                    }
+                    FileUtils.write(asynchronousFileChannel, position + size, readBytes).whenComplete((integer1, throwable3) -> {
+                        if (throwable3 != null){
+                            future.completeExceptionally(throwable3);
+                            return;
+                        }
+                        future.complete(position);
+                    });
                 });
-            }
-
-            @Override
-            public void failed(Throwable exc, Object attachment) {
-                future.completeExceptionally(exc);
-            }
+            });
         });
 
         return future;

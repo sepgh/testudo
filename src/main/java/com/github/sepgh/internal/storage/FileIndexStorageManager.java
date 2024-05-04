@@ -90,7 +90,8 @@ public class FileIndexStorageManager implements IndexStorageManager {
             return output;
         }
 
-        FileUtils.write(getAsynchronousFileChannel(optionalTable.get().getRoot().getChunk()), optionalTable.get().getRoot().getOffset(), data).whenComplete((size, throwable) -> {
+        long rootAbsolutePosition = headerTable.getIndexChunk(headerTable.getRoot().getChunk()).get().getOffset() + headerTable.getRoot().getOffset();
+        FileUtils.write(getAsynchronousFileChannel(headerTable.getRoot().getChunk()),rootAbsolutePosition, data).whenComplete((size, throwable) -> {
             if (throwable != null){
                 output.completeExceptionally(throwable);
             }
@@ -115,12 +116,12 @@ public class FileIndexStorageManager implements IndexStorageManager {
         CompletableFuture<Optional<NodeData>> output = new CompletableFuture<>();
 
         Optional<Header.Table> optionalTable = headerManager.getHeader().getTableOfId(table);
-        Header.Table headerTable = optionalTable.get();
-        if (optionalTable.isEmpty() || headerTable.getRoot() == null){
+        if (optionalTable.isEmpty() || optionalTable.get().getRoot() == null){
             output.complete(Optional.empty());
             return output;
         }
 
+        Header.Table headerTable = optionalTable.get();
         Header.IndexChunk root = headerTable.getRoot();
         FileUtils.readBytes(
                 getAsynchronousFileChannel(root.getChunk()),
@@ -192,6 +193,7 @@ public class FileIndexStorageManager implements IndexStorageManager {
         FileUtils.write(getAsynchronousFileChannel(pointer.getChunk()), offset, data).whenComplete((size, throwable) -> {
             if (throwable != null){
                 output.completeExceptionally(throwable);
+                return;
             }
 
             output.complete(
@@ -268,7 +270,7 @@ public class FileIndexStorageManager implements IndexStorageManager {
                             :
                             tablesIncludingChunk.get(indexOfTable + 1).getIndexChunk(chunk).get().getOffset() - engineConfig.indexGrowthAllocationSize();
 
-            if (positionToCheck > 0) {
+            if (positionToCheck > 0 && positionToCheck > tablesIncludingChunk.get(indexOfTable).getIndexChunk(chunk).get().getOffset()) {
                 byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, engineConfig.indexGrowthAllocationSize()).get();
                 Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
                 if (optionalAdditionalPosition.isPresent()){
@@ -294,15 +296,12 @@ public class FileIndexStorageManager implements IndexStorageManager {
 
             for (int i = indexOfTable + 1; i < tablesIncludingChunk.size(); i++){
                 Header.Table nextTable = tablesIncludingChunk.get(i);
-                if (nextTable.getRoot().getChunk() == chunk) {
-                    nextTable.getRoot().setOffset(
-                            nextTable.getRoot().getOffset() + engineConfig.indexGrowthAllocationSize()
-                    );
-                }
                 Header.IndexChunk indexChunk = nextTable.getIndexChunk(chunk).get();
                 indexChunk.setOffset(indexChunk.getOffset() + engineConfig.indexGrowthAllocationSize());
             }
+            headerManager.update();
         }
+
         return new Pointer(Pointer.TYPE_NODE, allocatedOffset, chunk);
     }
 

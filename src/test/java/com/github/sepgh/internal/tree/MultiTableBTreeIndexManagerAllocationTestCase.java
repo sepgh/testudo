@@ -1,6 +1,7 @@
 package com.github.sepgh.internal.tree;
 
 import com.github.sepgh.internal.EngineConfig;
+import com.github.sepgh.internal.helper.IndexFileDescriptor;
 import com.github.sepgh.internal.storage.FileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -43,9 +45,9 @@ public class MultiTableBTreeIndexManagerAllocationTestCase {
                 .bTreeNodeMaxKey(order)
                 .bTreeGrowthNodeAllocationCount(2)
                 .build();
-        engineConfig.setBTreeMaxFileSize(2 * 15L * engineConfig.getPaddedSize());
+        engineConfig.setBTreeMaxFileSize(15L * 2 * engineConfig.getPaddedSize());
 
-        byte[] writingBytes = new byte[10 * engineConfig.getPaddedSize()];
+        byte[] writingBytes = new byte[6 * engineConfig.getPaddedSize()];
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 
@@ -86,7 +88,7 @@ public class MultiTableBTreeIndexManagerAllocationTestCase {
                                         .root(
                                                 Header.IndexChunk.builder()
                                                         .chunk(0)
-                                                        .offset(3L * engineConfig.getPaddedSize())
+                                                        .offset(0)
                                                         .build()
                                         )
                                         .initialized(true)
@@ -143,11 +145,12 @@ public class MultiTableBTreeIndexManagerAllocationTestCase {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        for (int tableId = 1; tableId <= 2; tableId++){
-            HeaderManager headerManager = new InMemoryHeaderManager(header);
-            FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
-            IndexManager indexManager = new BTreeIndexManager(order, fileIndexStorageManager);
+        HeaderManager headerManager = new InMemoryHeaderManager(header);
+        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexManager indexManager = new BTreeIndexManager(order, fileIndexStorageManager);
 
+
+        for (int tableId = 1; tableId <= 2; tableId++){
 
             for (long testIdentifier : testIdentifiers) {
                 indexManager.addIndex(tableId, testIdentifier, samplePointer);
@@ -282,6 +285,179 @@ public class MultiTableBTreeIndexManagerAllocationTestCase {
             Assertions.assertEquals(2, currentLeafKeys.size());
             Assertions.assertEquals(11, currentLeafKeys.get(0));
             Assertions.assertEquals(12, currentLeafKeys.get(1));
+
+        }
+
+    }
+
+
+    @Test
+    public void testMultiSplitAddIndexDifferentAddOrders() throws IOException, ExecutionException, InterruptedException {
+
+        List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
+        Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
+
+        HeaderManager headerManager = new InMemoryHeaderManager(header);
+        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexManager indexManager = new BTreeIndexManager(order, fileIndexStorageManager);
+
+        IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
+                AsynchronousFileChannel.open(
+                        Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0)),
+                        StandardOpenOption.READ,
+                        StandardOpenOption.WRITE,
+                        StandardOpenOption.CREATE
+                ),
+                headerManager,
+                engineConfig
+        );
+
+        int index = 0;
+        int runs = 0;
+        while (runs < testIdentifiers.size()){
+            indexManager.addIndex(1, testIdentifiers.get(index), samplePointer);
+            indexManager.addIndex(2, testIdentifiers.get(index) * 10, samplePointer);
+            index++;
+            runs++;
+            indexFileDescriptor.describe();
+        }
+
+
+        for (int tableId = 1; tableId <= 2; tableId++) {
+
+            int multi = 1;
+            if (tableId == 2){
+                multi = 10;
+            }
+
+            Optional<IndexStorageManager.NodeData> optional = fileIndexStorageManager.getRoot(tableId).get();
+            Assertions.assertTrue(optional.isPresent());
+            BaseTreeNode rootNode = BaseTreeNode.fromBytes(optional.get().bytes());
+            Assertions.assertTrue(rootNode.isRoot());
+            Assertions.assertFalse(rootNode.isLeaf());
+
+            Assertions.assertEquals(multi * 7, rootNode.keys().next());
+
+            // Checking root child at left
+            BaseTreeNode leftChildInternalNode = BaseTreeNode.fromBytes(
+                    fileIndexStorageManager.readNode(
+                            tableId,
+                            ((InternalTreeNode) rootNode
+                            ).getChildAtIndex(0).get()).get().bytes()
+            );
+            List<Long> leftChildInternalNodeKeys = leftChildInternalNode.keyList();
+            List<Pointer> leftChildInternalNodeChildren = ((InternalTreeNode)leftChildInternalNode).childrenList();
+            Assertions.assertEquals( 2, leftChildInternalNodeKeys.size());
+            Assertions.assertEquals(multi * 3, leftChildInternalNodeKeys.get(0));
+            Assertions.assertEquals(multi * 5, leftChildInternalNodeKeys.get(1));
+
+            // Far left leaf
+            LeafTreeNode currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
+                    fileIndexStorageManager.readNode(
+                            tableId,
+                            leftChildInternalNodeChildren.get(0)
+                    ).get().bytes()
+            );
+            List<Long> currentLeafKeys = currentLeaf.keyList();
+            Assertions.assertEquals(2, currentLeafKeys.size());
+            Assertions.assertEquals(multi * 1, currentLeafKeys.get(0));
+            Assertions.assertEquals(multi * 2, currentLeafKeys.get(1));
+
+            // 2nd Leaf
+            Optional<Pointer> nextPointer = currentLeaf.getNext();
+            Assertions.assertTrue(nextPointer.isPresent());
+            Assertions.assertEquals(nextPointer.get(), leftChildInternalNodeChildren.get(1));
+
+            currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
+                    fileIndexStorageManager.readNode(
+                            tableId,
+                            leftChildInternalNodeChildren.get(1)
+                    ).get().bytes()
+            );
+            currentLeafKeys = currentLeaf.keyList();
+            Assertions.assertEquals(2, currentLeafKeys.size());
+            Assertions.assertEquals(multi * 3, currentLeafKeys.get(0));
+            Assertions.assertEquals(multi * 4, currentLeafKeys.get(1));
+
+            //3rd leaf
+            nextPointer = currentLeaf.getNext();
+            Assertions.assertTrue(nextPointer.isPresent());
+            Assertions.assertEquals(nextPointer.get(), leftChildInternalNodeChildren.get(2));  // Todo
+
+            currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
+                    fileIndexStorageManager.readNode(
+                            tableId,
+                            leftChildInternalNodeChildren.get(2)
+                    ).get().bytes()
+            );
+            currentLeafKeys = currentLeaf.keyList();
+            Assertions.assertEquals(2, currentLeafKeys.size());
+            Assertions.assertEquals(multi * 5, currentLeafKeys.get(0));
+            Assertions.assertEquals(multi * 6, currentLeafKeys.get(1));
+
+
+            // Checking root child at right
+            BaseTreeNode rightChildInternalNode = BaseTreeNode.fromBytes(
+                    fileIndexStorageManager.readNode(
+                            tableId,
+                            ((InternalTreeNode) rootNode
+                            ).getChildAtIndex(1).get()).get().bytes()
+            );
+            List<Long> rightChildInternalNodeKeys = rightChildInternalNode.keyList();
+            List<Pointer> rightChildInternalNodeChildren = ((InternalTreeNode)rightChildInternalNode).childrenList();
+            Assertions.assertEquals(2, rightChildInternalNodeKeys.size());
+            Assertions.assertEquals(multi * 9, rightChildInternalNodeKeys.get(0));
+            Assertions.assertEquals(multi * 11, rightChildInternalNodeKeys.get(1));
+
+            // 4th leaf
+            nextPointer = currentLeaf.getNext();
+            Assertions.assertTrue(nextPointer.isPresent());
+            Assertions.assertEquals(nextPointer.get(), rightChildInternalNodeChildren.get(0));
+
+            currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
+                    fileIndexStorageManager.readNode(
+                            tableId,
+                            rightChildInternalNodeChildren.get(0)
+                    ).get().bytes()
+            );
+            currentLeafKeys = currentLeaf.keyList();
+            Assertions.assertEquals(2, currentLeafKeys.size());
+            Assertions.assertEquals(multi * 7, currentLeafKeys.get(0));
+            Assertions.assertEquals(multi * 8, currentLeafKeys.get(1));
+
+
+            // 5th leaf
+            nextPointer = currentLeaf.getNext();
+            Assertions.assertTrue(nextPointer.isPresent());
+            Assertions.assertEquals(nextPointer.get(), rightChildInternalNodeChildren.get(1));
+
+            currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
+                    fileIndexStorageManager.readNode(
+                            tableId,
+                            rightChildInternalNodeChildren.get(1)
+                    ).get().bytes()
+            );
+            currentLeafKeys = currentLeaf.keyList();
+            Assertions.assertEquals(2, currentLeafKeys.size());
+            Assertions.assertEquals(multi * 9, currentLeafKeys.get(0));
+            Assertions.assertEquals(multi * 10, currentLeafKeys.get(1));
+
+
+            // 6th node
+            nextPointer = currentLeaf.getNext();
+            Assertions.assertTrue(nextPointer.isPresent());
+            Assertions.assertEquals(nextPointer.get(), rightChildInternalNodeChildren.get(2));
+
+            currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
+                    fileIndexStorageManager.readNode(
+                            tableId,
+                            rightChildInternalNodeChildren.get(2)
+                    ).get().bytes()
+            );
+            currentLeafKeys = currentLeaf.keyList();
+            Assertions.assertEquals(2, currentLeafKeys.size());
+            Assertions.assertEquals(multi * 11, currentLeafKeys.get(0));
+            Assertions.assertEquals(multi * 12, currentLeafKeys.get(1));
 
         }
 
