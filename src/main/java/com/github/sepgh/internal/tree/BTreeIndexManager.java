@@ -33,12 +33,7 @@ public class BTreeIndexManager implements IndexManager {
         LeafTreeNode leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(emptyNode, BaseTreeNode.NodeType.LEAF);
         leafTreeNode.setAsRoot();
 
-        IndexStorageManager.NodeData nodeData = indexStorageManager.writeNewNode(
-                table,
-                leafTreeNode.getData(),
-                true
-        ).get();
-
+        IndexStorageManager.NodeData nodeData = indexStorageManager.fillRoot(table, leafTreeNode.getData()).get();
         leafTreeNode.setNodePointer(nodeData.pointer());
         return leafTreeNode;
     }

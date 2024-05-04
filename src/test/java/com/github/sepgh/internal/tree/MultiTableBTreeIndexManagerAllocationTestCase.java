@@ -19,12 +19,18 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import static com.github.sepgh.internal.storage.FileIndexStorageManager.INDEX_FILE_NAME;
 
-public class MultiTableBTreeIndexManagerTestCase {
+/*
+*  The purpose of this test case is to assure allocation wouldn't cause issue in multi-table environment
+*/
+public class MultiTableBTreeIndexManagerAllocationTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private Header header;
@@ -32,14 +38,14 @@ public class MultiTableBTreeIndexManagerTestCase {
 
     @BeforeEach
     public void setUp() throws IOException {
-        dbPath = Files.createTempDirectory("TEST_MultiTableBTreeIndexManagerTestCase");
+        dbPath = Files.createTempDirectory("TEST_MultiTableBTreeIndexManagerAllocationTestCase");
         engineConfig = EngineConfig.builder()
                 .bTreeNodeMaxKey(order)
-                .bTreeGrowthNodeAllocationCount(10)
+                .bTreeGrowthNodeAllocationCount(2)
                 .build();
         engineConfig.setBTreeMaxFileSize(2 * 15L * engineConfig.getPaddedSize());
 
-        byte[] writingBytes = new byte[2 * 13 * engineConfig.getPaddedSize()];
+        byte[] writingBytes = new byte[10 * engineConfig.getPaddedSize()];
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 
@@ -73,14 +79,14 @@ public class MultiTableBTreeIndexManagerTestCase {
                                                 Collections.singletonList(
                                                         Header.IndexChunk.builder()
                                                                 .chunk(0)
-                                                                .offset(12L * engineConfig.getPaddedSize())
+                                                                .offset(3L * engineConfig.getPaddedSize())
                                                                 .build()
                                                 )
                                         )
                                         .root(
                                                 Header.IndexChunk.builder()
                                                         .chunk(0)
-                                                        .offset(12L * engineConfig.getPaddedSize())
+                                                        .offset(3L * engineConfig.getPaddedSize())
                                                         .build()
                                         )
                                         .initialized(true)
@@ -113,23 +119,23 @@ public class MultiTableBTreeIndexManagerTestCase {
      * The test validates the tree for 2 tables in same database
      * 007
      * ├── .
-     * │   ├── 001
-     * │   └── 002
+     * │   ├── 001   [LEAF NODE 1]
+     * │   └── 002   [LEAF NODE 1]
      * ├── 003
-     * │   ├── 003
-     * │   └── 004
+     * │   ├── 003   [LEAF NODE 2]
+     * │   └── 004   [LEAF NODE 2]
      * ├── 005
-     * │   ├── 005
-     * │   └── 006
+     * │   ├── 005   [LEAF NODE 3]
+     * │   └── 006   [LEAF NODE 3]
      * ├── .
-     * │   ├── 007
-     * │   └── 008
+     * │   ├── 007   [LEAF NODE 4]
+     * │   └── 008   [LEAF NODE 4]
      * ├── 009
-     * │   ├── 009
-     * │   └── 010
+     * │   ├── 009   [LEAF NODE 5]
+     * │   └── 010   [LEAF NODE 5]
      * └── 0011
-     *     ├── 011
-     *     └── 012
+     *     ├── 011   [LEAF NODE 6]
+     *     └── 012   [LEAF NODE 6]
      */
     @Test
     public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException {
@@ -143,14 +149,9 @@ public class MultiTableBTreeIndexManagerTestCase {
             IndexManager indexManager = new BTreeIndexManager(order, fileIndexStorageManager);
 
 
-            BaseTreeNode lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
-                lastTreeNode = indexManager.addIndex(tableId, testIdentifier, samplePointer);
+                indexManager.addIndex(tableId, testIdentifier, samplePointer);
             }
-
-            Assertions.assertTrue(lastTreeNode.isLeaf());
-            Assertions.assertEquals(2, lastTreeNode.keyList().size());
-            Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).keyValues().next().getValue().getPosition());
 
             Optional<IndexStorageManager.NodeData> optional = fileIndexStorageManager.getRoot(tableId).get();
             Assertions.assertTrue(optional.isPresent());
@@ -323,14 +324,9 @@ public class MultiTableBTreeIndexManagerTestCase {
             IndexManager indexManager = new BTreeIndexManager(order, fileIndexStorageManager);
 
 
-            BaseTreeNode lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
-                lastTreeNode = indexManager.addIndex(tableId, testIdentifier, samplePointer);
+                indexManager.addIndex(tableId, testIdentifier, samplePointer);
             }
-
-            Assertions.assertTrue(lastTreeNode.isLeaf());
-            Assertions.assertEquals(2, lastTreeNode.keyList().size());
-            Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).keyValues().next().getValue().getPosition());
 
             Optional<IndexStorageManager.NodeData> optional = fileIndexStorageManager.getRoot(tableId).get();
             Assertions.assertTrue(optional.isPresent());

@@ -9,10 +9,7 @@ import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -58,6 +55,12 @@ public class BTreeIndexManagerTestCase {
                                                                 .build()
                                                 )
                                         )
+                                        .root(
+                                                Header.IndexChunk.builder()
+                                                        .chunk(0)
+                                                        .offset(0)
+                                                        .build()
+                                        )
                                         .initialized(true)
                                         .build()
                         )
@@ -80,6 +83,7 @@ public class BTreeIndexManagerTestCase {
 
 
     @Test
+    @Timeout(value = 2)
     public void addIndex() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
@@ -102,6 +106,7 @@ public class BTreeIndexManagerTestCase {
     }
 
     @Test
+    @Timeout(value = 2)
     public void testSingleSplitAddIndex() throws IOException, ExecutionException, InterruptedException {
         Random random = new Random();
 
@@ -188,6 +193,7 @@ public class BTreeIndexManagerTestCase {
      *     └── 012
      */
     @Test
+    @Timeout(value = 2)
     public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);

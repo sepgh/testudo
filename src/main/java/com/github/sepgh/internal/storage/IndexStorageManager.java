@@ -8,6 +8,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public interface IndexStorageManager {
+    CompletableFuture<NodeData> fillRoot(int table, byte[] data);
+
     CompletableFuture<Optional<NodeData>> getRoot(int table);
 
     byte[] getEmptyNode();
