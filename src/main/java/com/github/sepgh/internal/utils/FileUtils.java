@@ -1,7 +1,5 @@
 package com.github.sepgh.internal.utils;
 
-import com.google.common.hash.HashCode;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;

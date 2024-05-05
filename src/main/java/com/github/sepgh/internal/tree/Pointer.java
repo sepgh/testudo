@@ -24,7 +24,7 @@ public class Pointer {
     private long position;
     private int chunk;
 
-    public static Pointer fromByteArray(byte[] bytes, int position){
+    public static Pointer fromBytes(byte[] bytes, int position){
         return new Pointer(
                 bytes[position],
                 BinaryUtils.bytesToLong(bytes, position + 1),
@@ -32,11 +32,11 @@ public class Pointer {
         );
     }
 
-    public static Pointer fromByteArray(byte[] bytes){
-        return Pointer.fromByteArray(bytes, 0);
+    public static Pointer fromBytes(byte[] bytes){
+        return Pointer.fromBytes(bytes, 0);
     }
 
-    public byte[] toByteArray() {
+    public byte[] toBytes() {
         byte[] bytes = new byte[BYTES];
         bytes[0] = type;
         System.arraycopy(Longs.toByteArray(position), 0, bytes, 1, Long.BYTES);
@@ -45,7 +45,7 @@ public class Pointer {
     }
 
     // A quick way to write the current pointer into a specific position of a byte array (which is node itself)
-    public void fillByteArrayWithPointer(byte[] source, int position) {
+    public void fillBytes(byte[] source, int position) {
         source[position] = type;
         System.arraycopy(Longs.toByteArray(this.position), 0, source, position + 1, Long.BYTES);
         System.arraycopy(Ints.toByteArray(chunk), 0, source, position + 1 + Long.BYTES, Integer.BYTES);

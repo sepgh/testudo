@@ -36,7 +36,7 @@ public class TreeNodeUtils {
      * @param index to check child pointer
      * @return Pointer to child node at index
      */public static Pointer getChildPointerAtIndex(BaseTreeNode treeNode, int index){
-        return Pointer.fromByteArray(treeNode.getData(), OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + Long.BYTES)));
+        return Pointer.fromBytes(treeNode.getData(), OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + Long.BYTES)));
     }
 
     public static void removeChildAtIndex(BaseTreeNode treeNode, int index) {
@@ -56,10 +56,10 @@ public class TreeNodeUtils {
      */
     public static void setPointerToChild(BaseTreeNode treeNode, int index, Pointer pointer){
         if (index == 0){
-            System.arraycopy(pointer.toByteArray(), 0, treeNode.getData(), OFFSET_TREE_NODE_FLAGS_END, Pointer.BYTES);
+            System.arraycopy(pointer.toBytes(), 0, treeNode.getData(), OFFSET_TREE_NODE_FLAGS_END, Pointer.BYTES);
         } else {
             System.arraycopy(
-                    pointer.toByteArray(),
+                    pointer.toBytes(),
                     0,
                     treeNode.getData(),
                     OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + Long.BYTES)),
@@ -136,7 +136,7 @@ public class TreeNodeUtils {
         int keyStartIndex = getKeyStartOffset(treeNode, index);
         return new AbstractMap.SimpleImmutableEntry<>(
             BinaryUtils.bytesToLong(treeNode.getData(), keyStartIndex),
-            Pointer.fromByteArray(treeNode.getData(), keyStartIndex + Long.BYTES)
+            Pointer.fromBytes(treeNode.getData(), keyStartIndex + Long.BYTES)
         );
     }
 
@@ -149,7 +149,7 @@ public class TreeNodeUtils {
                 Long.BYTES
         );
 
-        pointer.fillByteArrayWithPointer(
+        pointer.fillBytes(
                 treeNode.getData(),
                 OFFSET_LEAF_NODE_KEY_BEGIN + (index * (SIZE_LEAF_NODE_KEY_POINTER)) + Long.BYTES
         );
@@ -290,13 +290,13 @@ public class TreeNodeUtils {
         }
 
         return Optional.of(
-                Pointer.fromByteArray(treeNode.getData(), treeNode.getData().length - (2*Pointer.BYTES))
+                Pointer.fromBytes(treeNode.getData(), treeNode.getData().length - (2*Pointer.BYTES))
         );
     }
 
     public static void setPreviousPointer(BaseTreeNode treeNode, Pointer pointer) {
         System.arraycopy(
-                pointer.toByteArray(),
+                pointer.toBytes(),
                 0,
                 treeNode.getData(),
                 treeNode.getData().length - (2*Pointer.BYTES),
@@ -310,13 +310,13 @@ public class TreeNodeUtils {
         }
 
         return Optional.of(
-                Pointer.fromByteArray(treeNode.getData(), treeNode.getData().length - (Pointer.BYTES))
+                Pointer.fromBytes(treeNode.getData(), treeNode.getData().length - (Pointer.BYTES))
         );
     }
 
     public static void setNextPointer(BaseTreeNode treeNode, Pointer pointer) {
         System.arraycopy(
-                pointer.toByteArray(),
+                pointer.toBytes(),
                 0,
                 treeNode.getData(),
                 treeNode.getData().length - Pointer.BYTES,

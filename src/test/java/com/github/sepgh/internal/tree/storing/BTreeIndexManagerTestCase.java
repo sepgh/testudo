@@ -270,7 +270,7 @@ public class BTreeIndexManagerTestCase {
         //3rd leaf
         nextPointer = currentLeaf.getNext();
         Assertions.assertTrue(nextPointer.isPresent());
-        Assertions.assertEquals(nextPointer.get(), leftChildInternalNodeChildren.get(2));  // Todo
+        Assertions.assertEquals(nextPointer.get(), leftChildInternalNodeChildren.get(2));
 
         currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
                 fileIndexStorageManager.readNode(

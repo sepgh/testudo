@@ -10,10 +10,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 
-// Todo: add non-single key tests (refactor from single to multi)
 public class TreeNodeTestCase {
     private final byte[] singleKeyInternalNodeRepresentation = {
-            ((byte) (0x00 | BaseTreeNode.TYPE_INTERNAL_NODE_BIT)), // Not leaf
+            BaseTreeNode.TYPE_INTERNAL_NODE_BIT, // Not leaf
 
             // >> Start pointer to child 1
             Pointer.TYPE_NODE,  // type
@@ -31,7 +30,7 @@ public class TreeNodeTestCase {
     };
 
     private final byte[] singleKeyLeafNodeRepresentation = {
-            ((byte) (0x00 | BaseTreeNode.TYPE_LEAF_NODE_BIT)), // leaf
+            BaseTreeNode.TYPE_LEAF_NODE_BIT, // leaf
 
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F,  // Key 1
 
@@ -74,9 +73,7 @@ public class TreeNodeTestCase {
         Assertions.assertEquals(2, child1Pointer.getPosition());
         Assertions.assertEquals(2, child1Pointer.getChunk());
 
-        Assertions.assertThrows(ArrayIndexOutOfBoundsException.class, () -> {
-            treeNode.getChildAtIndex(2);
-        });
+        Assertions.assertThrows(ArrayIndexOutOfBoundsException.class, () -> treeNode.getChildAtIndex(2));
     }
 
     @Test
@@ -119,7 +116,7 @@ public class TreeNodeTestCase {
 
         Assertions.assertFalse(iterator.hasNext());
 
-        Assertions.assertEquals(15, treeNode.keyList().get(0));
+        Assertions.assertEquals(15, treeNode.keyList().getFirst());
     }
 
     @Test

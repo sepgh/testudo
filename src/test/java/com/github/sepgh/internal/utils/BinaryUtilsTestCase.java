@@ -3,8 +3,6 @@ package com.github.sepgh.internal.utils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-// Todo: add less happy tests :D0
-
 public class BinaryUtilsTestCase {
 
     @Test

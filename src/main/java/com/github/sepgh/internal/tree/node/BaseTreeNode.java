@@ -9,9 +9,6 @@ import lombok.Setter;
 import java.util.Iterator;
 import java.util.List;
 
-// Todo: This isn't reactive, but should it be?
-// Todo: If AsyncFileChannels are used, do we need to use Futures here? (probably not?)
-
 /*
   Structure of a node in binary for non-leaf
   [1 byte -6 empty bits- IS_ROOT | IS_LEAF] + [POINTER_SIZE bytes child] + (([LONG_SIZE bytes id] + [POINTER_SIZE bytes child]) * max node size)
@@ -37,7 +34,6 @@ public abstract class BaseTreeNode {
         return (data[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT;
     }
 
-    // Todo: use this where its needed, than fromBytes
     public static BaseTreeNode fromBytes(byte[] data, NodeType type){
         if (type == NodeType.INTERNAL){
             return new InternalTreeNode(data);

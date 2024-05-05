@@ -4,11 +4,9 @@ import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
-import com.google.common.hash.HashCode;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class BTreeIndexManager implements IndexManager {
@@ -76,7 +74,6 @@ public class BTreeIndexManager implements IndexManager {
                 }
 
 
-                // Todo: fixing siblings could potentially be faster. We could write new node, and "onComplete" update current node
                 IndexStorageManager.NodeData newLeafNodeData = indexStorageManager.writeNewNode(table, newLeafTreeNode.toBytes()).get();
                 newLeafTreeNode.setNodePointer(newLeafNodeData.pointer());
                 fixSiblingPointers(table, (LeafTreeNode) currentNode, newLeafTreeNode);
@@ -275,7 +272,7 @@ public class BTreeIndexManager implements IndexManager {
         if (optionalCurrentNext.isPresent()){
             newLeafTreeNode.setNext(optionalCurrentNext.get());
             IndexStorageManager.NodeData nodeData = indexStorageManager.readNode(table, optionalCurrentNext.get()).get();
-            BaseTreeNode baseTreeNode = BaseTreeNode.fromBytes(nodeData.bytes());
+            BaseTreeNode baseTreeNode = BaseTreeNode.fromBytes(nodeData.bytes(), BaseTreeNode.NodeType.LEAF);
             ((LeafTreeNode) baseTreeNode).setPrevious(newLeafTreeNode.getNodePointer());
             indexStorageManager.updateNode(table, baseTreeNode.getData(), nodeData.pointer()).get();
         }
