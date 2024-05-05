@@ -249,7 +249,7 @@ public class BTreeIndexManager implements IndexManager {
     }
 
     @Override
-    public Optional<Pointer> getIndex(int table, long identifier) throws IOException, ExecutionException, InterruptedException {
+    public Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException {
         Optional<LeafTreeNode> optionalBaseTreeNode = this.getResponsibleNode(table, getRoot(table), identifier);
         if (optionalBaseTreeNode.isPresent()){
             for (Map.Entry<Long, Pointer> entry : optionalBaseTreeNode.get().keyValueList()) {
