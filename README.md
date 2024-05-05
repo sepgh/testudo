@@ -1,7 +1,7 @@
 # Testudo
 
 <p>
-  <img width="300px" src="https://github.com/sepgh/testudo/blob/main/.docs/assets/Testudo.png" align="left" />
+  <img width="30%" src="https://github.com/sepgh/testudo/blob/main/.docs/assets/Testudo.png" align="left" />
   
 **Simple database embedded to java application**
 
