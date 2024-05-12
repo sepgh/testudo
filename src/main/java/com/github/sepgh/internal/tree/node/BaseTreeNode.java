@@ -1,5 +1,6 @@
 package com.github.sepgh.internal.tree.node;
 
+import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.TreeNodeUtils;
 import com.google.common.collect.ImmutableList;
@@ -34,6 +35,12 @@ public abstract class BaseTreeNode {
         return (data[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT;
     }
 
+
+    public static BaseTreeNode fromNodeData(IndexStorageManager.NodeData nodeData) {
+        BaseTreeNode treeNode = BaseTreeNode.fromBytes(nodeData.bytes());
+        treeNode.setNodePointer(nodeData.pointer());
+        return treeNode;
+    }
     public static BaseTreeNode fromBytes(byte[] data, NodeType type){
         if (type == NodeType.INTERNAL){
             return new InternalTreeNode(data);

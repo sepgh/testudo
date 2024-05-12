@@ -19,23 +19,6 @@ public class BTreeIndexManager implements IndexManager {
         this.indexStorageManager = indexStorageManager;
     }
 
-    private BaseTreeNode getRoot(int table) throws ExecutionException, InterruptedException {
-        Optional<IndexStorageManager.NodeData> optionalNodeData = indexStorageManager.getRoot(table).get();
-        if (optionalNodeData.isPresent()){
-            BaseTreeNode root = BaseTreeNode.fromBytes(optionalNodeData.get().bytes());
-            root.setNodePointer(optionalNodeData.get().pointer());
-            return root;
-        }
-
-        byte[] emptyNode = indexStorageManager.getEmptyNode();
-        LeafTreeNode leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(emptyNode, BaseTreeNode.NodeType.LEAF);
-        leafTreeNode.setAsRoot();
-
-        IndexStorageManager.NodeData nodeData = indexStorageManager.fillRoot(table, leafTreeNode.getData()).get();
-        leafTreeNode.setNodePointer(nodeData.pointer());
-        return leafTreeNode;
-    }
-
     @Override
     public BaseTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
 
@@ -174,6 +157,93 @@ public class BTreeIndexManager implements IndexManager {
         throw new RuntimeException("Logic error: probably failed to store index?");
     }
 
+    @Override
+    public Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException {
+        Optional<LeafTreeNode> optionalBaseTreeNode = this.getResponsibleNode(table, getRoot(table), identifier);
+        if (optionalBaseTreeNode.isPresent()){
+            for (Map.Entry<Long, Pointer> entry : optionalBaseTreeNode.get().keyValueList()) {
+                if (entry.getKey() == identifier)
+                    return Optional.of(entry.getValue());
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public boolean removeIndex(int table, long identifier) throws ExecutionException, InterruptedException {
+        BaseTreeNode root = getRoot(table);
+
+        List<BaseTreeNode> path = new LinkedList<>();
+        getPathToResponsibleNode(table, path, root, identifier);
+
+
+        for (int i = 0; i < path.size(); i++){
+            if (i == 0){
+                /*
+                    We are at the leaf which holds the key
+                    Lets loop over key values, and see if we find a key matching the identifier
+                    If we do, we remove it, otherwise, we return false since apparently the identifier does not exist
+                */
+                LeafTreeNode leafNode = (LeafTreeNode) path.get(i);
+                boolean deletedAny = false;
+                int j = 0;
+                List<Map.Entry<Long, Pointer>> keyValueList = leafNode.keyValueList();
+                for (Map.Entry<Long, Pointer> entry : keyValueList) {
+                    if (entry.getKey().equals(identifier)) {
+                        leafNode.removeKeyValueAtIndex(j);
+                        keyValueList.remove(i);
+                        deletedAny = true;
+                        break;
+                    }
+                    j++;
+                }
+
+                if (!deletedAny)
+                    return false;
+
+
+                /*
+                    If size of the key values size is now one, then we went under the minimum number of keys
+                    If this leaf is a root, it's ok, we are finished since there was only one node in the tree
+                    Otherwise, we should remove this node and move the key to another node
+                */
+                if (leafNode.isRoot())
+                    return true;
+
+                if (keyValueList.size() == 1) {
+                    Optional<Pointer> optionalPointer = leafNode.getPrevious();
+                    if (optionalPointer.isPresent()){
+                        LeafTreeNode previousLeafNode = (LeafTreeNode) BaseTreeNode.fromNodeData(
+                                indexStorageManager.readNode(table, optionalPointer.get()).get()
+                        );
+                        if (previousLeafNode.keyList().size() == order) {
+                            // Previous key is full
+                        }
+                    }
+
+                }
+
+            }
+        }
+        return false;
+    }
+
+    private BaseTreeNode getRoot(int table) throws ExecutionException, InterruptedException {
+        Optional<IndexStorageManager.NodeData> optionalNodeData = indexStorageManager.getRoot(table).get();
+        if (optionalNodeData.isPresent()){
+            BaseTreeNode root = BaseTreeNode.fromBytes(optionalNodeData.get().bytes());
+            root.setNodePointer(optionalNodeData.get().pointer());
+            return root;
+        }
+
+        byte[] emptyNode = indexStorageManager.getEmptyNode();
+        LeafTreeNode leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(emptyNode, BaseTreeNode.NodeType.LEAF);
+        leafTreeNode.setAsRoot();
+
+        IndexStorageManager.NodeData nodeData = indexStorageManager.fillRoot(table, leafTreeNode.getData()).get();
+        leafTreeNode.setNodePointer(nodeData.pointer());
+        return leafTreeNode;
+    }
     private ChildSplitResults splitChildren(InternalTreeNode node, long identifier, Pointer pointer) {
 
         int mid = order / 2;
@@ -246,23 +316,6 @@ public class BTreeIndexManager implements IndexManager {
         }
 
         return pass;
-    }
-
-    @Override
-    public Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException {
-        Optional<LeafTreeNode> optionalBaseTreeNode = this.getResponsibleNode(table, getRoot(table), identifier);
-        if (optionalBaseTreeNode.isPresent()){
-            for (Map.Entry<Long, Pointer> entry : optionalBaseTreeNode.get().keyValueList()) {
-                if (entry.getKey() == identifier)
-                    return Optional.of(entry.getValue());
-            }
-        }
-        return Optional.empty();
-    }
-
-    @Override
-    public boolean removeIndex(int table, long identifier) {
-        return false;
     }
 
     private void fixSiblingPointers(int table, LeafTreeNode currentNode, LeafTreeNode newLeafTreeNode) throws ExecutionException, InterruptedException {
