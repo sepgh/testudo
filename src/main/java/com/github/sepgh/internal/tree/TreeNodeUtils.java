@@ -43,6 +43,7 @@ public class TreeNodeUtils {
 
     // Todo: this function will shift the remaining space after next child to current child (which we wanted to remove) despite other children existing.
     //       The performance could improve (reduce copy call) by checking if next child exists at all first.
+    // Todo: additional to above Todo, currently this function is always called at latest index first, so the whole size check is unnecessary for now
     public static void removeChildAtIndex(BaseTreeNode treeNode, int index) {
         int nextIndexOffset = OFFSET_TREE_NODE_FLAGS_END + ((index + 1) * (Pointer.BYTES + Long.BYTES));
         if (nextIndexOffset < treeNode.getData().length){
