@@ -5,6 +5,7 @@ import com.github.sepgh.internal.utils.BinaryUtils;
 import com.google.common.primitives.Longs;
 
 import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
@@ -14,6 +15,7 @@ public class TreeNodeUtils {
     private static final int OFFSET_LEAF_NODE_KEY_BEGIN = OFFSET_TREE_NODE_FLAGS_END;
     private static final int SIZE_INTERNAL_NODE_KEY_POINTER = Long.BYTES + Pointer.BYTES;
     private static final int SIZE_LEAF_NODE_KEY_POINTER = Long.BYTES + Pointer.BYTES;
+    private static final int SIZE_LEAF_NODE_SIBLING_POINTERS = 2 * Pointer.BYTES;
 
     /**
      *
@@ -206,13 +208,31 @@ public class TreeNodeUtils {
     }
 
     public static void removeKeyValueAtIndex(BaseTreeNode treeNode, int index) {
-        System.arraycopy(
-                new byte[Long.BYTES + Pointer.BYTES],
-                0,
-                treeNode.getData(),
-                getKeyStartOffset(treeNode, index),
-                Long.BYTES + Pointer.BYTES
-        );
+        int nextIndexOffset = getKeyStartOffset(treeNode, index + 1);
+        if (nextIndexOffset < treeNode.getData().length - SIZE_LEAF_NODE_SIBLING_POINTERS){
+            System.arraycopy(
+                    new byte[Long.BYTES + Pointer.BYTES],
+                    0,
+                    treeNode.getData(),
+                    getKeyStartOffset(treeNode, index),
+                    Long.BYTES + Pointer.BYTES
+            );
+        } else {
+            System.arraycopy(
+                    treeNode.getData(),
+                    nextIndexOffset,
+                    treeNode.getData(),
+                    getKeyStartOffset(treeNode, index),
+                    nextIndexOffset - SIZE_LEAF_NODE_SIBLING_POINTERS
+            );
+            System.arraycopy(
+                    new byte[SIZE_LEAF_NODE_KEY_POINTER],
+                    0,
+                    treeNode.getData(),
+                    treeNode.getData().length - SIZE_LEAF_NODE_SIBLING_POINTERS,
+                    SIZE_LEAF_NODE_KEY_POINTER
+            );
+        }
     }
 
     /**
