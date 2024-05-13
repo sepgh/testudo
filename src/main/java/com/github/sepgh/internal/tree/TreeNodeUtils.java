@@ -41,14 +41,34 @@ public class TreeNodeUtils {
         return Pointer.fromBytes(treeNode.getData(), OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + Long.BYTES)));
     }
 
+    // Todo: this function will shift the remaining space after next child to current child (which we wanted to remove) despite other children existing.
+    //       The performance could improve (reduce copy call) by checking if next child exists at all first.
     public static void removeChildAtIndex(BaseTreeNode treeNode, int index) {
-        System.arraycopy(
-                new byte[Pointer.BYTES],
-                0,
-                treeNode.getData(),
-                OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + Long.BYTES)),
-                Pointer.BYTES
-        );
+        int nextIndexOffset = OFFSET_TREE_NODE_FLAGS_END + ((index + 1) * (Pointer.BYTES + Long.BYTES));
+        if (nextIndexOffset < treeNode.getData().length){
+            System.arraycopy(
+                    new byte[Pointer.BYTES],
+                    0,
+                    treeNode.getData(),
+                    OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + Long.BYTES)),
+                    Pointer.BYTES
+            );
+        } else {
+            System.arraycopy(
+                    treeNode.getData(),
+                    nextIndexOffset,
+                    treeNode.getData(),
+                    OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + Long.BYTES)),
+                    treeNode.getData().length - nextIndexOffset
+            );
+            System.arraycopy(
+                    new byte[SIZE_INTERNAL_NODE_KEY_POINTER],
+                    0,
+                    treeNode.getData(),
+                    treeNode.getData().length - SIZE_INTERNAL_NODE_KEY_POINTER,
+                    SIZE_INTERNAL_NODE_KEY_POINTER
+            );
+        }
     }
 
     /**
@@ -207,6 +227,8 @@ public class TreeNodeUtils {
 
     }
 
+    // Todo: this function will shift the remaining space after next KV to current KV (which we wanted to remove) despite other KV existing.
+    //       The performance could improve (reduce copy call) by checking if next KV exists at all first.
     public static void removeKeyValueAtIndex(BaseTreeNode treeNode, int index) {
         int nextIndexOffset = getKeyStartOffset(treeNode, index + 1);
         if (nextIndexOffset < treeNode.getData().length - SIZE_LEAF_NODE_SIBLING_POINTERS){
@@ -229,7 +251,7 @@ public class TreeNodeUtils {
                     new byte[SIZE_LEAF_NODE_KEY_POINTER],
                     0,
                     treeNode.getData(),
-                    treeNode.getData().length - SIZE_LEAF_NODE_SIBLING_POINTERS,
+                    treeNode.getData().length - SIZE_LEAF_NODE_SIBLING_POINTERS - SIZE_LEAF_NODE_KEY_POINTER,
                     SIZE_LEAF_NODE_KEY_POINTER
             );
         }
