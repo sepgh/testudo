@@ -1,7 +1,9 @@
 package com.github.sepgh.internal.tree;
 
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
+import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.utils.BinaryUtils;
+import com.google.common.hash.HashCode;
 import com.google.common.primitives.Longs;
 
 import java.util.AbstractMap;
@@ -327,44 +329,63 @@ public class TreeNodeUtils {
         return indexToFill;
     }
 
-    public static Optional<Pointer> getPreviousPointer(BaseTreeNode treeNode){
-        if (treeNode.getData()[treeNode.getData().length - (2*Pointer.BYTES)] == (byte) 0x0){
+    public static Optional<Pointer> getPreviousPointer(BaseTreeNode treeNode, int degree){
+        if (treeNode.getData()[OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER)] == (byte) 0x0){
             return Optional.empty();
         }
 
         return Optional.of(
-                Pointer.fromBytes(treeNode.getData(), treeNode.getData().length - (2*Pointer.BYTES))
+                Pointer.fromBytes(treeNode.getData(), OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER))
         );
     }
 
-    public static void setPreviousPointer(BaseTreeNode treeNode, Pointer pointer) {
+    public static void setPreviousPointer(BaseTreeNode treeNode, int degree, Pointer pointer) {
         System.arraycopy(
                 pointer.toBytes(),
                 0,
                 treeNode.getData(),
-                treeNode.getData().length - (2*Pointer.BYTES),
+                OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER),
                 Pointer.BYTES
         );
     }
 
-    public static Optional<Pointer> getNextPointer(BaseTreeNode treeNode){
-        if (treeNode.getData()[treeNode.getData().length - (Pointer.BYTES)] == (byte) 0x0){
+    public static Optional<Pointer> getNextPointer(BaseTreeNode treeNode, int degree) {
+        System.out.println("getNextPointer is called on " + treeNode.getPointer() + " with keys:" + treeNode.getKeyList());
+        System.out.println("get results: " + HashCode.fromBytes(Arrays.copyOfRange(treeNode.getData(), OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER) + Pointer.BYTES, OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER) + Pointer.BYTES + Pointer.BYTES)));
+        System.out.println("get results full: " + HashCode.fromBytes(treeNode.getData()));
+
+        if (treeNode.getData()[OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER) + Pointer.BYTES] == (byte) 0x0){
             return Optional.empty();
         }
 
         return Optional.of(
-                Pointer.fromBytes(treeNode.getData(), treeNode.getData().length - (Pointer.BYTES))
+                Pointer.fromBytes(treeNode.getData(), OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER) + Pointer.BYTES)
         );
     }
 
-    public static void setNextPointer(BaseTreeNode treeNode, Pointer pointer) {
+    public static void setNextPointer(BaseTreeNode treeNode, int degree, Pointer pointer) {
+        System.out.println("Called setNextPointer on node: " + treeNode.getPointer() + " to set " + pointer);
         System.arraycopy(
                 pointer.toBytes(),
                 0,
                 treeNode.getData(),
-                treeNode.getData().length - Pointer.BYTES,
+                OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER) + Pointer.BYTES,
                 Pointer.BYTES
         );
+        System.out.println("pointer as bytes " + HashCode.fromBytes(pointer.toBytes()));
+        System.out.println("OFFSET_LEAF_NODE_KEY_BEGIN: " + OFFSET_LEAF_NODE_KEY_BEGIN + ", SIZE_LEAF_NODE_KEY_POINTER: " + SIZE_LEAF_NODE_KEY_POINTER + ", Pointer.BYTES: " + Pointer.BYTES + ", DEGREE: " + degree);
+        System.out.println("Location to copy:" + (OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER) + Pointer.BYTES));
+        System.out.println("Post arraycopy results: " + HashCode.fromBytes(Arrays.copyOfRange(treeNode.getData(), OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER) + Pointer.BYTES, OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER) + Pointer.BYTES + Pointer.BYTES)));
     }
 
+    public static void cleanChildrenPointers(InternalTreeNode treeNode, int degree) {
+        byte[] cleanup = new byte[((degree - 1) * (SIZE_INTERNAL_NODE_KEY_POINTER) + Pointer.BYTES)];
+        System.arraycopy(
+                cleanup,
+                0,
+                treeNode.getData(),
+                OFFSET_TREE_NODE_FLAGS_END,
+                cleanup.length
+        );
+    }
 }

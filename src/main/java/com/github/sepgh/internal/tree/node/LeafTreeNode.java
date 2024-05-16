@@ -4,52 +4,73 @@ import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.TreeNodeUtils;
 import com.google.common.collect.ImmutableList;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class LeafTreeNode extends BaseTreeNode {
     public LeafTreeNode(byte[] data) {
         super(data);
-        setType(NodeType.LEAF);
+        setType(Type.LEAF);
     }
 
-    public Iterator<Map.Entry<Long, Pointer>> keyValues(){
-        return new TreeNodeKeyValueIterator(this);
+    public void setNextSiblingPointer(Pointer pointer, int degree){
+        modified();
+        TreeNodeUtils.setNextPointer(this, degree, pointer);
     }
 
-    public void setKeyValue(int index, long key, Pointer pointer) {
-        TreeNodeUtils.setKeyValueAtIndex(this, index, key, pointer);
+    public void setPreviousSiblingPointer(Pointer pointer, int degree){
+        modified();
+        TreeNodeUtils.setPreviousPointer(this, degree, pointer);
     }
 
-    public void removeKeyValueAtIndex(int index) {
-        TreeNodeUtils.removeKeyValueAtIndex(this, index);
+    public Optional<Pointer> getPreviousSiblingPointer(int degree){
+        return TreeNodeUtils.getPreviousPointer(this, degree);
     }
 
-    public int addKeyValue(long key, Pointer pointer) {
-        return TreeNodeUtils.addKeyValueAndGetIndex(this, key, pointer);
+    public Optional<Pointer> getNextSiblingPointer(int degree){
+        return TreeNodeUtils.getNextPointer(this, degree);
     }
 
-    public List<Map.Entry<Long, Pointer>> keyValueList(){
-        return ImmutableList.copyOf(keyValues());
+    public Iterator<KeyValue> getKeyValues(){
+        return new KeyValueIterator(this);
     }
 
-
-    public void setPrevious(Pointer pointer) {
-        TreeNodeUtils.setPreviousPointer(this, pointer);
+    public List<KeyValue> getKeyValueList() {
+        return ImmutableList.copyOf(getKeyValues());
     }
 
-    public Optional<Pointer> getPrevious(){
-        return TreeNodeUtils.getPreviousPointer(this);
+    public void setKeyValues(List<KeyValue> keyValueList, int degree){
+        modified();
+        for (int i = 0; i < keyValueList.size(); i++){
+            KeyValue keyValue = keyValueList.get(i);
+            TreeNodeUtils.setKeyValueAtIndex(this, i, keyValue.key(), keyValue.value());
+        }
+        for (int i = keyValueList.size(); i < (degree - 1); i++){
+            TreeNodeUtils.removeKeyValueAtIndex(this, i);
+        }
     }
 
-    public void setNext(Pointer pointer) {
-        TreeNodeUtils.setNextPointer(this, pointer);
+    public void setKeyValue(int index, KeyValue keyValue){
+        TreeNodeUtils.setKeyValueAtIndex(this, index, keyValue.key(), keyValue.value());
     }
 
-    public Optional<Pointer> getNext(){
-        return TreeNodeUtils.getNextPointer(this);
+    public List<KeyValue> split(long identifier, Pointer pointer, int degree){
+        int mid = (degree - 1) / 2;
+
+        List<KeyValue> allKeyValues = new ArrayList<>(getKeyValueList());
+        allKeyValues.add(new KeyValue(identifier, pointer));
+        Collections.sort(allKeyValues);
+
+        List<KeyValue> toKeep = allKeyValues.subList(0, mid + 1);
+        this.setKeyValues(toKeep, degree);
+        return allKeyValues.subList(mid + 1, allKeyValues.size());
+    }
+
+    public int addKeyValue(long identifier, Pointer pointer) {
+        return TreeNodeUtils.addKeyValueAndGetIndex(this, identifier, pointer);
+    }
+
+    public int addKeyValue(KeyValue keyValue) {
+        return TreeNodeUtils.addKeyValueAndGetIndex(this, keyValue.key, keyValue.value);
     }
 
     private static class TreeNodeKeyValueIterator implements Iterator<Map.Entry<Long, Pointer>> {
@@ -75,6 +96,37 @@ public class LeafTreeNode extends BaseTreeNode {
             Map.Entry<Long, Pointer> value = TreeNodeUtils.getKeyValuePointerAtIndex(this.node, cursor);
             cursor++;
             return value;
+        }
+    }
+
+
+    public record KeyValue(long key, Pointer value) implements Comparable<KeyValue> {
+
+        @Override
+        public int compareTo(KeyValue o) {
+            return Long.compare(this.key, o.key);
+        }
+    }
+
+    public class KeyValueIterator implements Iterator<KeyValue>{
+        private int cursor = 0;
+
+        private final LeafTreeNode node;
+
+        public KeyValueIterator(LeafTreeNode node) {
+            this.node = node;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return TreeNodeUtils.hasKeyAtIndex(node, cursor);
+        }
+
+        @Override
+        public KeyValue next() {
+            Map.Entry<Long, Pointer> keyValuePointerAtIndex = TreeNodeUtils.getKeyValuePointerAtIndex(node, cursor);
+            cursor++;
+            return new KeyValue(keyValuePointerAtIndex.getKey(), keyValuePointerAtIndex.getValue());
         }
     }
 

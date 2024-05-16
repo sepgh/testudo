@@ -2,7 +2,6 @@ package com.github.sepgh.internal.helper;
 
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.storage.header.HeaderManager;
-import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
@@ -13,7 +12,6 @@ import lombok.AllArgsConstructor;
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 
@@ -36,10 +34,12 @@ public class IndexFileDescriptor {
             }
 
             BaseTreeNode baseTreeNode = BaseTreeNode.fromBytes(bytes);
-            if (baseTreeNode.isLeaf())
+            if (baseTreeNode.getType() == BaseTreeNode.Type.LEAF)
                 this.printLeafNode((LeafTreeNode) baseTreeNode, offset);
-            else
+            else if (baseTreeNode.getType() == BaseTreeNode.Type.INTERNAL)
                 this.printInternalNode((InternalTreeNode) baseTreeNode, offset);
+            else
+                System.out.println("Bro wtf?");
         }
 
     }
@@ -49,8 +49,9 @@ public class IndexFileDescriptor {
         System.out.println(HashCode.fromBytes(node.toBytes()));
         System.out.printf("Offset: %d%n", offset);
         System.out.printf("Node Header:  root(%s) [internal] %n", node.isRoot() ? "T" : "F");
-        System.out.println("Keys:" + node.keyList());
-        System.out.println("Children:" + node.childrenList());
+        System.out.println("Keys:" + node.getKeyList());
+        System.out.println("Children:" + node.getKeyPointersList());
+        System.out.println();
         System.out.println("===========================");
     }
 
@@ -58,6 +59,7 @@ public class IndexFileDescriptor {
         System.out.println();
         System.out.printf("Offset: %d%n", offset);
         System.out.println("EMPTY");
+        System.out.println();
         System.out.println("===========================");
     }
 
@@ -67,15 +69,15 @@ public class IndexFileDescriptor {
         System.out.printf("Offset: %d%n", offset);
         System.out.printf("Node Header:  root(%s) [leaf] %n", node.isRoot() ? "T" : "F");
         StringBuilder stringBuilder = new StringBuilder();
-        Iterator<Map.Entry<Long, Pointer>> entryIterator = node.keyValues();
+        Iterator<LeafTreeNode.KeyValue> entryIterator = node.getKeyValues();
         while (entryIterator.hasNext()) {
-            Map.Entry<Long, Pointer> next = entryIterator.next();
+            LeafTreeNode.KeyValue next = entryIterator.next();
             stringBuilder
                     .append("\t")
                     .append("K: ")
-                    .append(next.getKey())
+                    .append(next.key())
                     .append(" V: ")
-                    .append(next.getValue())
+                    .append(next.value())
                     .append(" OFFSET: TBD")
                     .append("\n")
             ;

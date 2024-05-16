@@ -12,6 +12,7 @@ public class EngineConfig {
 
     private final int bTreeNodeMaxKey;
     private final int bTreeGrowthNodeAllocationCount;
+    @Builder.Default
     private long bTreeMaxFileSize = -1L;
 
 

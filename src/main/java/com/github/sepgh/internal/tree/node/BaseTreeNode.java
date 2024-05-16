@@ -19,13 +19,15 @@ import java.util.List;
 */
 @Getter
 public abstract class BaseTreeNode {
-    public static byte TYPE_LEAF_NODE_BIT = 0x03; // 0 0 1 0
+    public static byte TYPE_LEAF_NODE_BIT = 0x02; // 0 0 1 0
     public static byte TYPE_INTERNAL_NODE_BIT = 0x01; // 0 0 0 1
     public static byte ROOT_BIT = 0x04; // 0 1 0 0
 
     @Setter
-    private Pointer nodePointer;
+    private Pointer pointer;
     private final byte[] data;
+    @Getter
+    private boolean modified = false;
 
     public BaseTreeNode(byte[] data) {
         this.data = data;
@@ -35,14 +37,18 @@ public abstract class BaseTreeNode {
         return (data[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT;
     }
 
+    protected void modified(){
+        this.modified = true;
+    }
+
 
     public static BaseTreeNode fromNodeData(IndexStorageManager.NodeData nodeData) {
         BaseTreeNode treeNode = BaseTreeNode.fromBytes(nodeData.bytes());
-        treeNode.setNodePointer(nodeData.pointer());
+        treeNode.setPointer(nodeData.pointer());
         return treeNode;
     }
-    public static BaseTreeNode fromBytes(byte[] data, NodeType type){
-        if (type == NodeType.INTERNAL){
+    public static BaseTreeNode fromBytes(byte[] data, Type type){
+        if (type == Type.INTERNAL){
             return new InternalTreeNode(data);
         }
         return new LeafTreeNode(data);
@@ -58,44 +64,47 @@ public abstract class BaseTreeNode {
         return data;
     }
 
-    public void setType(NodeType type) {
+    public void setType(Type type) {
+        modified();
         // Only can be called if the node is empty, otherwise changing type of already constructed node will F things up
         this.data[0] = (byte) (data[0] | type.getSign());
     }
 
-    public NodeType getType(){
-        return isLeaf() ? NodeType.LEAF : NodeType.INTERNAL;
+    public Type getType(){
+        if ((data[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT)
+            return Type.LEAF;
+        if ((data[0] & TYPE_INTERNAL_NODE_BIT) == TYPE_INTERNAL_NODE_BIT)
+            return Type.INTERNAL;
+        return null;
     }
 
     public void setAsRoot(){
+        modified();
         this.data[0] = (byte) (data[0] | ROOT_BIT);
     }
 
     public void unsetAsRoot(){
+        modified();
         this.data[0] = (byte) (data[0] & ~ROOT_BIT);
     }
 
-    public Iterator<Long> keys(){
+    public Iterator<Long> getKeys(){
         return new TreeNodeKeysIterator(this);
     }
 
-    public List<Long> keyList(){
-        return ImmutableList.copyOf(keys());
-    }
-
-    public int addKey(long key) {
-        return TreeNodeUtils.addKeyAndGetIndex(this, key);
+    public List<Long> getKeyList(){
+        return ImmutableList.copyOf(getKeys());
     }
 
     public boolean isRoot() {
         return (data[0] & ROOT_BIT) == ROOT_BIT;
     }
 
-    public enum NodeType {
+    public enum Type {
         LEAF(TYPE_LEAF_NODE_BIT), INTERNAL(TYPE_INTERNAL_NODE_BIT);
         private final byte sign;
 
-        NodeType(byte sign) {
+        Type(byte sign) {
             this.sign = sign;
         }
 

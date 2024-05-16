@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -56,24 +57,22 @@ public class TreeNodeTestCase {
         Assertions.assertInstanceOf(InternalTreeNode.class, node);
         InternalTreeNode treeNode = (InternalTreeNode) node;
 
-        Optional<Pointer> optionalChild0Pointer = treeNode.getChildAtIndex(0);
-        Assertions.assertTrue(optionalChild0Pointer.isPresent());
-        Pointer child0Pointer = optionalChild0Pointer.get();
+        Pointer child0Pointer = TreeNodeUtils.getChildPointerAtIndex(treeNode, 0);
+        Assertions.assertNotNull(child0Pointer);
 
         Assertions.assertTrue(child0Pointer.isNodePointer());
         Assertions.assertEquals(1, child0Pointer.getPosition());
         Assertions.assertEquals(1, child0Pointer.getChunk());
 
 
-        Optional<Pointer> optionalChild1Pointer = treeNode.getChildAtIndex(1);
-        Assertions.assertTrue(optionalChild1Pointer.isPresent());
-        Pointer child1Pointer = optionalChild1Pointer.get();
+        Pointer child1Pointer = TreeNodeUtils.getChildPointerAtIndex(treeNode, 1);
+        Assertions.assertNotNull(child1Pointer);
 
         Assertions.assertTrue(child1Pointer.isNodePointer());
         Assertions.assertEquals(2, child1Pointer.getPosition());
         Assertions.assertEquals(2, child1Pointer.getChunk());
 
-        Assertions.assertThrows(ArrayIndexOutOfBoundsException.class, () -> treeNode.getChildAtIndex(2));
+        Assertions.assertThrows(ArrayIndexOutOfBoundsException.class, () -> TreeNodeUtils.getChildPointerAtIndex(treeNode, 2));
     }
 
     @Test
@@ -83,22 +82,16 @@ public class TreeNodeTestCase {
         Assertions.assertInstanceOf(InternalTreeNode.class, node);
         InternalTreeNode treeNode = (InternalTreeNode) node;
 
-        int i = 0;
+        List<InternalTreeNode.KeyPointers> keyPointersList = treeNode.getKeyPointersList();
+        Assertions.assertEquals(1, keyPointersList.size());
 
-        for (Iterator<Pointer> it = treeNode.children(); it.hasNext(); ) {
-            Pointer pointer = it.next();
-            if (i == 0){
-                Assertions.assertTrue(pointer.isNodePointer());
-                Assertions.assertEquals(1, pointer.getPosition());
-                Assertions.assertEquals(1, pointer.getChunk());
-            }
-            if (i == 1){
-                Assertions.assertTrue(pointer.isNodePointer());
-                Assertions.assertEquals(2, pointer.getPosition());
-                Assertions.assertEquals(2, pointer.getChunk());
-            }
-            i++;
-        }
+        Assertions.assertTrue(keyPointersList.get(0).getLeft().isNodePointer());
+        Assertions.assertEquals(1, keyPointersList.get(0).getLeft().getPosition());
+        Assertions.assertEquals(1, keyPointersList.get(0).getLeft().getChunk());
+
+        Assertions.assertTrue(keyPointersList.get(0).getRight().isNodePointer());
+        Assertions.assertEquals(2, keyPointersList.get(0).getRight().getPosition());
+        Assertions.assertEquals(2, keyPointersList.get(0).getRight().getChunk());
     }
 
     @Test
@@ -108,7 +101,7 @@ public class TreeNodeTestCase {
         Assertions.assertInstanceOf(InternalTreeNode.class, node);
         InternalTreeNode treeNode = (InternalTreeNode) node;
 
-        Iterator<Long> iterator = treeNode.keys();
+        Iterator<Long> iterator = treeNode.getKeys();
         Assertions.assertTrue(iterator.hasNext());
 
         Long value = iterator.next();
@@ -116,7 +109,7 @@ public class TreeNodeTestCase {
 
         Assertions.assertFalse(iterator.hasNext());
 
-        Assertions.assertEquals(15, treeNode.keyList().getFirst());
+        Assertions.assertEquals(15, treeNode.getKeyList().getFirst());
     }
 
     @Test
@@ -126,7 +119,7 @@ public class TreeNodeTestCase {
         Assertions.assertInstanceOf(LeafTreeNode.class, node);
         LeafTreeNode treeNode = (LeafTreeNode) node;
 
-        Iterator<Long> iterator = treeNode.keys();
+        Iterator<Long> iterator = treeNode.getKeys();
 
         Assertions.assertTrue(iterator.hasNext());
         Long value = iterator.next();
@@ -138,8 +131,8 @@ public class TreeNodeTestCase {
 
         Assertions.assertFalse(iterator.hasNext());
 
-        Assertions.assertEquals(15, treeNode.keyList().get(0));
-        Assertions.assertEquals(16, treeNode.keyList().get(1));
+        Assertions.assertEquals(15, treeNode.getKeyList().get(0));
+        Assertions.assertEquals(16, treeNode.getKeyList().get(1));
     }
 
     @Test
@@ -149,12 +142,12 @@ public class TreeNodeTestCase {
         Assertions.assertInstanceOf(LeafTreeNode.class, node);
         LeafTreeNode treeNode = (LeafTreeNode) node;
 
-        Iterator<Map.Entry<Long, Pointer>> iterator = treeNode.keyValues();
+        Iterator<LeafTreeNode.KeyValue> iterator = treeNode.getKeyValues();
 
         Assertions.assertTrue(iterator.hasNext());
-        Map.Entry<Long, Pointer> next = iterator.next();
-        Assertions.assertEquals(15, next.getKey());
-        Pointer pointer = next.getValue();
+        LeafTreeNode.KeyValue next = iterator.next();
+        Assertions.assertEquals(15, next.key());
+        Pointer pointer = next.value();
         Assertions.assertFalse(pointer.isNodePointer());
         Assertions.assertEquals(1, pointer.getPosition());
         Assertions.assertEquals(1, pointer.getChunk());
@@ -162,8 +155,8 @@ public class TreeNodeTestCase {
 
         Assertions.assertTrue(iterator.hasNext());
         next = iterator.next();
-        Assertions.assertEquals(16, next.getKey());
-        pointer = next.getValue();
+        Assertions.assertEquals(16, next.key());
+        pointer = next.value();
         Assertions.assertFalse(pointer.isNodePointer());
         Assertions.assertEquals(2, pointer.getPosition());
         Assertions.assertEquals(2, pointer.getChunk());

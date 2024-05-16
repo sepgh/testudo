@@ -12,10 +12,10 @@ import java.util.concurrent.ExecutionException;
 public class BTreeIndexManager implements IndexManager {
 
     private final IndexStorageManager indexStorageManager;
-    private final int order;
+    private final int degree;
 
-    public BTreeIndexManager(int order, IndexStorageManager indexStorageManager){
-        this.order = order;
+    public BTreeIndexManager(int degree, IndexStorageManager indexStorageManager){
+        this.degree = degree;
         this.indexStorageManager = indexStorageManager;
     }
 
@@ -25,7 +25,7 @@ public class BTreeIndexManager implements IndexManager {
         BaseTreeNode root = getRoot(table);
 
         List<BaseTreeNode> path = new LinkedList<>();
-        getPathToResponsibleNode(table, path, root, identifier);
+        getPathToResponsibleNode(path, root, identifier, table);
 
 
         /* variables to fill and use in while */
@@ -40,114 +40,87 @@ public class BTreeIndexManager implements IndexManager {
                 /* current node is a leaf which should handle storing the data */
 
                 /* If current node has space, store and exit */
-                if (currentNode.keyList().size() < order){
+                if (currentNode.getKeyList().size() < (degree - 1)){
                     ((LeafTreeNode) currentNode).addKeyValue(identifier, pointer);
-                    indexStorageManager.updateNode(table, currentNode.toBytes(), currentNode.getNodePointer()).get();
+                    TreeNodeIO.write(currentNode, indexStorageManager, table).get();
                     return currentNode;
                 }
 
                 /* Current node didn't have any space, so let's create a sibling and split */
-                byte[] emptyNode = indexStorageManager.getEmptyNode();
-                LeafTreeNode newLeafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(emptyNode, BaseTreeNode.NodeType.LEAF);
+                LeafTreeNode newSiblingLeafNode = new LeafTreeNode(indexStorageManager.getEmptyNode());
+                List<LeafTreeNode.KeyValue> passingKeyValues = ((LeafTreeNode) currentNode).split(identifier, pointer, degree);
+                newSiblingLeafNode.setKeyValues(passingKeyValues, degree);
+                System.out.println("Passed to new sibling leaf: " + passingKeyValues);
+                TreeNodeIO.write(newSiblingLeafNode, indexStorageManager, table).get(); // we want the node to have a pointer so that we can fix siblings
+                System.out.println("Location of new sibling leaf: " + newSiblingLeafNode.getPointer());
+                /* Fix sibling pointers */
+                fixSiblingPointers((LeafTreeNode) currentNode, newSiblingLeafNode, table);
+                TreeNodeIO.write(newSiblingLeafNode, indexStorageManager, table).get();
+                TreeNodeIO.write(currentNode, indexStorageManager, table).get();
 
-                List<Map.Entry<Long, Pointer>> movingKeyValues = this.splitKeyValues((LeafTreeNode) currentNode, identifier, pointer);
-                for (int z = 0; z < movingKeyValues.size(); z++){
-                    Map.Entry<Long, Pointer> entry = movingKeyValues.get(z);
-                    newLeafTreeNode.setKeyValue(z, entry.getKey(), entry.getValue());
-                }
-
-
-                IndexStorageManager.NodeData newLeafNodeData = indexStorageManager.writeNewNode(table, newLeafTreeNode.toBytes()).get();
-                newLeafTreeNode.setNodePointer(newLeafNodeData.pointer());
-                fixSiblingPointers(table, (LeafTreeNode) currentNode, newLeafTreeNode);
-                indexStorageManager.updateNode(table, currentNode.getData(), currentNode.getNodePointer()).get();
-                indexStorageManager.updateNode(table, newLeafTreeNode.getData(), newLeafTreeNode.getNodePointer()).get();
+                answer = currentNode.getKeyList().contains(identifier) ? currentNode : newSiblingLeafNode;
 
                 /* this leaf doesn't have a parent! create one and deal with it right here! */
                 if (path.size() == 1) {
-                    InternalTreeNode parentInternalTreeNode = (InternalTreeNode) BaseTreeNode.fromBytes(
-                            indexStorageManager.getEmptyNode(),
-                            BaseTreeNode.NodeType.INTERNAL
-                    );
+
                     currentNode.unsetAsRoot();
-                    parentInternalTreeNode.setAsRoot();
-                    parentInternalTreeNode.addKey(movingKeyValues.get(0).getKey());
-                    parentInternalTreeNode.setChildAtIndex(0, currentNode.getNodePointer());
-                    parentInternalTreeNode.setChildAtIndex(1, newLeafTreeNode.getNodePointer());
-                    indexStorageManager.writeNewNode(table, parentInternalTreeNode.toBytes(), true).get();
-                    indexStorageManager.updateNode(table, currentNode.getData(), currentNode.getNodePointer()).get();
-                    return newLeafTreeNode;
+                    InternalTreeNode newRoot = new InternalTreeNode(indexStorageManager.getEmptyNode());
+                    newRoot.setAsRoot();
+                    newRoot.addKeyPointers(
+                            passingKeyValues.get(0).key(),
+                            currentNode.getPointer(),
+                            newSiblingLeafNode.getPointer(),
+                            false
+                    );
+                    TreeNodeIO.write(newRoot, indexStorageManager, table).get();
+                    TreeNodeIO.write(currentNode, indexStorageManager, table).get();
+
+                    return answer;
                 }
 
-                answer = newLeafTreeNode;
-                newChildForParent = newLeafTreeNode;
-                idForParentToStore = movingKeyValues.get(0).getKey();
+                newChildForParent = newSiblingLeafNode;
+                idForParentToStore = passingKeyValues.get(0).key();
             } else {
-                /* current node is an internal node */
-                InternalTreeNode currentInternalTreeNode = (InternalTreeNode) currentNode;
-                List<Long> keys = currentInternalTreeNode.keyList();
 
-                if (keys.size() < order){
+                /* current node is an internal node */
+
+                InternalTreeNode currentInternalTreeNode = (InternalTreeNode) currentNode;
+                if (currentInternalTreeNode.getKeyList().size() < degree - 1) {
                     /* current internal node can store the key */
-                    int indexOfNewKey = currentInternalTreeNode.addKey(idForParentToStore);
-                    Long firstKeyInChild = newChildForParent.keys().next();
-                    if (firstKeyInChild < idForParentToStore){
-                        currentInternalTreeNode.setChildAtIndex(indexOfNewKey, newChildForParent.getNodePointer());
-                    } else {
-                        currentInternalTreeNode.setChildAtIndex(indexOfNewKey + 1, newChildForParent.getNodePointer());
-                    }
-                    indexStorageManager.updateNode(table, currentNode.getData(), currentNode.getNodePointer()).get();
+                    currentInternalTreeNode.addKeyPointers(idForParentToStore, null, newChildForParent.getPointer(), false);
+                    TreeNodeIO.write(currentInternalTreeNode, indexStorageManager, table).get();
+                    return answer;
+                }
+
+
+                /* current internal node cant store the key, split and ask parent */
+                List<InternalTreeNode.KeyPointers> passingKeyPointers = currentInternalTreeNode.addAndSplit(idForParentToStore, newChildForParent.getPointer(), degree);
+                InternalTreeNode.KeyPointers firstPassingKeyPointers = passingKeyPointers.getFirst();
+                idForParentToStore = firstPassingKeyPointers.getKey();
+                passingKeyPointers.remove(0);
+
+                InternalTreeNode newInternalSibling = new InternalTreeNode(indexStorageManager.getEmptyNode());
+                newInternalSibling.setKeyPointers(passingKeyPointers, degree, true);
+                TreeNodeIO.write(newInternalSibling, indexStorageManager, table).get();
+
+
+                // Current node was root and needs a new parent
+                if (currentInternalTreeNode.isRoot()){
+                    currentInternalTreeNode.unsetAsRoot();
+                    InternalTreeNode newRoot = new InternalTreeNode(indexStorageManager.getEmptyNode());
+                    newRoot.setAsRoot();
+
+                    newRoot.addKeyPointers(
+                            idForParentToStore,
+                            currentNode.getPointer(),
+                            newInternalSibling.getPointer(),
+                            false
+                    );
+                    TreeNodeIO.write(newRoot, indexStorageManager, table).get();
+                    TreeNodeIO.write(currentInternalTreeNode, indexStorageManager, table).get();
                     return answer;
                 } else {
-                    /* current internal node cant store the key */
-                    ChildSplitResults childSplitResults = this.splitChildren(
-                            (InternalTreeNode) currentNode,
-                            idForParentToStore,
-                            newChildForParent.getNodePointer()
-                    );
-
-                    InternalTreeNode newSiblingInternalNode = (InternalTreeNode) BaseTreeNode.fromBytes(
-                            indexStorageManager.getEmptyNode(),
-                            BaseTreeNode.NodeType.INTERNAL
-                    );
-
-
-                    List<Pointer> newNodeChildren = childSplitResults.children();
-                    for (int z = 0; z < newNodeChildren.size(); z++) {
-                        newSiblingInternalNode.setChildAtIndex(z, newNodeChildren.get(z));
-                    }
-                    List<Long> newNodeKeys = childSplitResults.keys();
-                    for (int z = 0; z < newNodeKeys.size(); z++) {
-                        newSiblingInternalNode.setKeyAtIndex(z, newNodeKeys.get(z));
-                    }
-
-                    indexStorageManager.updateNode(table, currentNode.toBytes(), currentNode.getNodePointer()).get();
-                    IndexStorageManager.NodeData nodeData = indexStorageManager.writeNewNode(table, newSiblingInternalNode.toBytes()).get();
-                    newSiblingInternalNode.setNodePointer(nodeData.pointer());
-
-                    newChildForParent = newSiblingInternalNode;
-                    idForParentToStore = childSplitResults.idForParent();
-
-
-                    // Current node was root and needs a new parent
-                    if (i == path.size() - 1){
-                        InternalTreeNode newParentInternalNode = (InternalTreeNode) BaseTreeNode.fromBytes(
-                                indexStorageManager.getEmptyNode(),
-                                BaseTreeNode.NodeType.INTERNAL
-                        );
-                        newParentInternalNode.setAsRoot();
-                        currentNode.unsetAsRoot();
-
-                        newParentInternalNode.addKey(idForParentToStore);
-                        newParentInternalNode.setChildAtIndex(0, currentNode.getNodePointer());
-                        newParentInternalNode.setChildAtIndex(1, newSiblingInternalNode.getNodePointer());
-
-                        indexStorageManager.updateNode(table, currentNode.getData(), currentNode.getNodePointer()).get();
-                        indexStorageManager.writeNewNode(table, newParentInternalNode.toBytes(), true).get();
-
-                        return answer;
-                    }
-
+                    TreeNodeIO.write(currentInternalTreeNode, indexStorageManager, table).get();
                 }
 
             }
@@ -159,11 +132,11 @@ public class BTreeIndexManager implements IndexManager {
 
     @Override
     public Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException {
-        Optional<LeafTreeNode> optionalBaseTreeNode = this.getResponsibleNode(table, getRoot(table), identifier);
+        Optional<LeafTreeNode> optionalBaseTreeNode = this.getResponsibleNode(getRoot(table), identifier, table);
         if (optionalBaseTreeNode.isPresent()){
-            for (Map.Entry<Long, Pointer> entry : optionalBaseTreeNode.get().keyValueList()) {
-                if (entry.getKey() == identifier)
-                    return Optional.of(entry.getValue());
+            for (LeafTreeNode.KeyValue entry : optionalBaseTreeNode.get().getKeyValueList()) {
+                if (entry.key() == identifier)
+                    return Optional.of(entry.value());
             }
         }
         return Optional.empty();
@@ -171,218 +144,92 @@ public class BTreeIndexManager implements IndexManager {
 
     @Override
     public boolean removeIndex(int table, long identifier) throws ExecutionException, InterruptedException {
-        BaseTreeNode root = getRoot(table);
-
-        List<BaseTreeNode> path = new LinkedList<>();
-        getPathToResponsibleNode(table, path, root, identifier);
-
-
-        for (int i = 0; i < path.size(); i++){
-            if (i == 0){
-                /*
-                    We are at the leaf which holds the key
-                    Lets loop over key values, and see if we find a key matching the identifier
-                    If we do, we remove it, otherwise, we return false since apparently the identifier does not exist
-                */
-                LeafTreeNode leafNode = (LeafTreeNode) path.get(i);
-                boolean deletedAny = false;
-                int j = 0;
-                List<Map.Entry<Long, Pointer>> keyValueList = leafNode.keyValueList();
-                for (Map.Entry<Long, Pointer> entry : keyValueList) {
-                    if (entry.getKey().equals(identifier)) {
-                        leafNode.removeKeyValueAtIndex(j);
-                        keyValueList.remove(i);
-                        deletedAny = true;
-                        break;
-                    }
-                    j++;
-                }
-
-                if (!deletedAny)
-                    return false;
-
-
-                /*
-                    If size of the key values size is now one, then we went under the minimum number of keys
-                    If this leaf is a root, it's ok, we are finished since there was only one node in the tree
-                    Otherwise, we should remove this node and move the key to another node
-                */
-                if (leafNode.isRoot())
-                    return true;
-
-                if (keyValueList.size() == 1) {
-                    Optional<Pointer> optionalPointer = leafNode.getPrevious();
-                    if (optionalPointer.isPresent()){
-                        LeafTreeNode previousLeafNode = (LeafTreeNode) BaseTreeNode.fromNodeData(
-                                indexStorageManager.readNode(table, optionalPointer.get()).get()
-                        );
-                        if (previousLeafNode.keyList().size() == order) {
-                            // Previous key is full
-                        }
-                    }
-
-                }
-
-            }
-        }
         return false;
     }
 
     private BaseTreeNode getRoot(int table) throws ExecutionException, InterruptedException {
         Optional<IndexStorageManager.NodeData> optionalNodeData = indexStorageManager.getRoot(table).get();
         if (optionalNodeData.isPresent()){
-            BaseTreeNode root = BaseTreeNode.fromBytes(optionalNodeData.get().bytes());
-            root.setNodePointer(optionalNodeData.get().pointer());
-            return root;
+            return TreeNodeIO.read(indexStorageManager, table, optionalNodeData.get().pointer());
         }
 
         byte[] emptyNode = indexStorageManager.getEmptyNode();
-        LeafTreeNode leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(emptyNode, BaseTreeNode.NodeType.LEAF);
+        LeafTreeNode leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(emptyNode, BaseTreeNode.Type.LEAF);
         leafTreeNode.setAsRoot();
 
         IndexStorageManager.NodeData nodeData = indexStorageManager.fillRoot(table, leafTreeNode.getData()).get();
-        leafTreeNode.setNodePointer(nodeData.pointer());
+        leafTreeNode.setPointer(nodeData.pointer());
         return leafTreeNode;
     }
-    private ChildSplitResults splitChildren(InternalTreeNode node, long identifier, Pointer pointer) {
 
-        int mid = order / 2;
+    private void fixSiblingPointers(LeafTreeNode currentNode, LeafTreeNode newLeafTreeNode, int table) throws ExecutionException, InterruptedException, IOException {
+        Optional<Pointer> currentNodeNextSiblingPointer = currentNode.getNextSiblingPointer(degree);
+        currentNode.setNextSiblingPointer(newLeafTreeNode.getPointer(), degree);
+        newLeafTreeNode.setPreviousSiblingPointer(currentNode.getPointer(), degree);
+        if (currentNodeNextSiblingPointer.isPresent()){
+            newLeafTreeNode.setNextSiblingPointer(currentNodeNextSiblingPointer.get(), degree);
 
-        List<Long> nodeKeyList = node.keyList();
-        List<Long> allKeys = new ArrayList<>(nodeKeyList);
-        allKeys.add(identifier);
-        allKeys.sort(Long::compareTo);
-
-
-        int indexOfNewKey = allKeys.indexOf(identifier);
-
-        List<Pointer> nodeChildrenList = node.childrenList();
-        List<Pointer> allChildren = new ArrayList<>(nodeChildrenList);
-
-
-        if (identifier < allKeys.get(indexOfNewKey))
-            allChildren.add(indexOfNewKey, pointer);
-        else
-            allChildren.add(indexOfNewKey + 1, pointer);
-
-
-        List<Long> keysToKeep = allKeys.subList(0, mid + 1);
-        List<Long> keysToPass = allKeys.subList(mid + 1, allKeys.size());
-
-        List<Pointer> childrenToKeep = allChildren.subList(0, mid + 2);
-        List<Pointer> childrenToPass = allChildren.subList(mid + 2, allChildren.size());
-
-
-        for (int i = 0; i < nodeKeyList.size(); i++){
-            if (i < keysToKeep.size()){
-                node.setKeyAtIndex(i, keysToKeep.get(i));
-            } else {
-                node.removeKeyAtIndex(i);
-            }
-        }
-
-        for (int i = 0; i < nodeChildrenList.size(); i++){
-            if (i < childrenToKeep.size()){
-                node.setChildAtIndex(i, childrenToKeep.get(i));
-            } else {
-                node.removeChildAtIndex(i);
-            }
-        }
-
-        return new ChildSplitResults(keysToPass.get(0), keysToPass.subList(1, keysToPass.size()), childrenToPass);
-    }
-
-    /**
-     * Splits node key values and returns a list of key values which should be moved.
-     * The new list is sorted and includes new id and pointer
-     */
-    private List<Map.Entry<Long, Pointer>> splitKeyValues(LeafTreeNode node, long identifier, Pointer pointer) {
-
-        int mid = order / 2;
-
-        List<Map.Entry<Long, Pointer>> keyValues = new ArrayList<>(node.keyValueList());
-        keyValues.add(new AbstractMap.SimpleEntry<>(identifier, pointer));
-        keyValues.sort(Comparator.comparingLong(Map.Entry::getKey));
-
-        List<Map.Entry<Long, Pointer>> keep = keyValues.subList(0, mid + 1);
-        List<Map.Entry<Long, Pointer>> pass = keyValues.subList(mid + 1, keyValues.size());
-
-        for (int i = mid; i < order; i++){
-            node.removeKeyValueAtIndex(i);
-        }
-        for (int i = 0; i < keep.size(); i++){
-            Map.Entry<Long, Pointer> entry = keep.get(i);
-            node.setKeyValue(i, entry.getKey(), entry.getValue());
-        }
-
-        return pass;
-    }
-
-    private void fixSiblingPointers(int table, LeafTreeNode currentNode, LeafTreeNode newLeafTreeNode) throws ExecutionException, InterruptedException {
-        Optional<Pointer> optionalCurrentNext = currentNode.getNext();
-        currentNode.setNext(newLeafTreeNode.getNodePointer());
-        newLeafTreeNode.setPrevious(currentNode.getNodePointer());
-        if (optionalCurrentNext.isPresent()){
-            newLeafTreeNode.setNext(optionalCurrentNext.get());
-            IndexStorageManager.NodeData nodeData = indexStorageManager.readNode(table, optionalCurrentNext.get()).get();
-            BaseTreeNode baseTreeNode = BaseTreeNode.fromBytes(nodeData.bytes(), BaseTreeNode.NodeType.LEAF);
-            ((LeafTreeNode) baseTreeNode).setPrevious(newLeafTreeNode.getNodePointer());
-            indexStorageManager.updateNode(table, baseTreeNode.getData(), nodeData.pointer()).get();
+            LeafTreeNode currentNextSibling = (LeafTreeNode) TreeNodeIO.read(indexStorageManager, table, currentNodeNextSiblingPointer.get());
+            currentNextSibling.setPreviousSiblingPointer(newLeafTreeNode.getPointer(), degree);
+            TreeNodeIO.write(currentNextSibling, indexStorageManager, table).get();
         }
     }
 
-    private Optional<LeafTreeNode> getResponsibleNode(int table, BaseTreeNode node, long identifier) throws ExecutionException, InterruptedException {
+    private Optional<LeafTreeNode> getResponsibleNode(BaseTreeNode node, long identifier, int table) throws ExecutionException, InterruptedException {
         if (node.isLeaf()){
             return Optional.of((LeafTreeNode) node);
         }
-
-        InternalTreeNode internalTreeNode = (InternalTreeNode) node;
-        Iterator<Long> keys = internalTreeNode.keys();
-        int i = 0;
-        while(keys.hasNext()){
-            long key = keys.next();
-            Optional<Pointer> pointer;
-            if (i == 0 && identifier < key){
-                pointer = internalTreeNode.getChildAtIndex(0);
-            }else if (identifier >= key) {
-                pointer = internalTreeNode.getChildAtIndex(i + 1);
-            } else {
-                pointer = Optional.empty();
+        List<InternalTreeNode.KeyPointers> keyPointersList = ((InternalTreeNode) node).getKeyPointersList();
+        for (int i = 0; i < keyPointersList.size(); i++){
+            InternalTreeNode.KeyPointers keyPointers = keyPointersList.get(i);
+            if (keyPointers.getKey() > identifier && keyPointers.getLeft() != null){
+                return getResponsibleNode(
+                        TreeNodeIO.read(indexStorageManager, table, keyPointers.getLeft()),
+                        identifier,
+                        table
+                );
             }
-
-            if (pointer.isPresent()){
-                IndexStorageManager.NodeData nodeData = indexStorageManager.readNode(table, pointer.get()).get();
-                BaseTreeNode baseTreeNode = BaseTreeNode.fromBytes(nodeData.bytes());
-                baseTreeNode.setNodePointer(nodeData.pointer());
-                return getResponsibleNode(table, baseTreeNode, identifier);
+            if (i == keyPointersList.size() - 1 && keyPointers.getRight() != null){
+                return getResponsibleNode(
+                        TreeNodeIO.read(indexStorageManager, table, keyPointers.getRight()),
+                        identifier,
+                        table
+                );
             }
-
-            i++;
         }
         return Optional.empty();
     }
 
-    private void getPathToResponsibleNode(int table, List<BaseTreeNode> path, BaseTreeNode node, long identifier) throws ExecutionException, InterruptedException {
-        path.addFirst(node);
-
-        if (node.isLeaf()){
+    private void getPathToResponsibleNode(List<BaseTreeNode> path, BaseTreeNode node, long identifier, int table) throws ExecutionException, InterruptedException {
+        if (node.getType() == BaseTreeNode.Type.LEAF){
+            path.addFirst(node);
             return;
         }
 
-        InternalTreeNode internalTreeNode = (InternalTreeNode) node;
-        List<Long> keyList = internalTreeNode.keyList();
-
-        int childIndex = keyList.size();
-        for (long l : keyList.reversed()) {
-            if (l < identifier)
-                break;
-            childIndex--;
+        List<InternalTreeNode.KeyPointers> keyPointersList = ((InternalTreeNode) node).getKeyPointersList();
+        for (int i = 0; i < keyPointersList.size(); i++){
+            InternalTreeNode.KeyPointers keyPointers = keyPointersList.get(i);
+            if (keyPointers.getKey() > identifier && keyPointers.getLeft() != null){
+                path.addFirst(node);
+                getPathToResponsibleNode(
+                        path,
+                        TreeNodeIO.read(indexStorageManager, table, keyPointers.getLeft()),
+                        identifier,
+                        table
+                );
+                return;
+            }
+            if (i == keyPointersList.size() - 1 && keyPointers.getRight() != null){
+                path.addFirst(node);
+                getPathToResponsibleNode(
+                        path,
+                        TreeNodeIO.read(indexStorageManager, table, keyPointers.getRight()),
+                        identifier,
+                        table
+                );
+                return;
+            }
         }
-        Pointer pointer = internalTreeNode.getChildAtIndex(childIndex).get();
-        IndexStorageManager.NodeData nodeData = indexStorageManager.readNode(table, pointer).get();
-        BaseTreeNode baseTreeNode = BaseTreeNode.fromBytes(nodeData.bytes());
-        baseTreeNode.setNodePointer(nodeData.pointer());
-        getPathToResponsibleNode(table, path, baseTreeNode, identifier);
     }
 
 
