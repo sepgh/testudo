@@ -152,8 +152,8 @@ public class MultiTableBTreeIndexManagerTestCase {
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());
-            Assertions.assertEquals(2, lastTreeNode.getKeyList().size());
-            Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).getKeyValues().next().value().getPosition());
+            Assertions.assertEquals(2, lastTreeNode.getKeyList(degree).size());
+            Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
             StoredTreeStructureVerifier.testOrderedTreeStructure(fileIndexStorageManager, tableId, 1, degree);
         }
@@ -203,8 +203,8 @@ public class MultiTableBTreeIndexManagerTestCase {
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());
-            Assertions.assertEquals(2, lastTreeNode.getKeyList().size());
-            Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).getKeyValues().next().value().getPosition());
+            Assertions.assertEquals(2, lastTreeNode.getKeyList(degree).size());
+            Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
             StoredTreeStructureVerifier.testUnOrderedTreeStructure1(fileIndexStorageManager, tableId, 1, degree);
 

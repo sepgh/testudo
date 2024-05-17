@@ -82,7 +82,7 @@ public class TreeNodeTestCase {
         Assertions.assertInstanceOf(InternalTreeNode.class, node);
         InternalTreeNode treeNode = (InternalTreeNode) node;
 
-        List<InternalTreeNode.KeyPointers> keyPointersList = treeNode.getKeyPointersList();
+        List<InternalTreeNode.KeyPointers> keyPointersList = treeNode.getKeyPointersList(3);
         Assertions.assertEquals(1, keyPointersList.size());
 
         Assertions.assertTrue(keyPointersList.get(0).getLeft().isNodePointer());
@@ -101,7 +101,7 @@ public class TreeNodeTestCase {
         Assertions.assertInstanceOf(InternalTreeNode.class, node);
         InternalTreeNode treeNode = (InternalTreeNode) node;
 
-        Iterator<Long> iterator = treeNode.getKeys();
+        Iterator<Long> iterator = treeNode.getKeys(3);
         Assertions.assertTrue(iterator.hasNext());
 
         Long value = iterator.next();
@@ -109,7 +109,7 @@ public class TreeNodeTestCase {
 
         Assertions.assertFalse(iterator.hasNext());
 
-        Assertions.assertEquals(15, treeNode.getKeyList().getFirst());
+        Assertions.assertEquals(15, treeNode.getKeyList(3).getFirst());
     }
 
     @Test
@@ -119,7 +119,7 @@ public class TreeNodeTestCase {
         Assertions.assertInstanceOf(LeafTreeNode.class, node);
         LeafTreeNode treeNode = (LeafTreeNode) node;
 
-        Iterator<Long> iterator = treeNode.getKeys();
+        Iterator<Long> iterator = treeNode.getKeys(3);
 
         Assertions.assertTrue(iterator.hasNext());
         Long value = iterator.next();
@@ -131,8 +131,8 @@ public class TreeNodeTestCase {
 
         Assertions.assertFalse(iterator.hasNext());
 
-        Assertions.assertEquals(15, treeNode.getKeyList().get(0));
-        Assertions.assertEquals(16, treeNode.getKeyList().get(1));
+        Assertions.assertEquals(15, treeNode.getKeyList(3).get(0));
+        Assertions.assertEquals(16, treeNode.getKeyList(3).get(1));
     }
 
     @Test
@@ -142,7 +142,7 @@ public class TreeNodeTestCase {
         Assertions.assertInstanceOf(LeafTreeNode.class, node);
         LeafTreeNode treeNode = (LeafTreeNode) node;
 
-        Iterator<LeafTreeNode.KeyValue> iterator = treeNode.getKeyValues();
+        Iterator<LeafTreeNode.KeyValue> iterator = treeNode.getKeyValues(3);
 
         Assertions.assertTrue(iterator.hasNext());
         LeafTreeNode.KeyValue next = iterator.next();

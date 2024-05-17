@@ -101,7 +101,7 @@ public class BTreeIndexManagerTestCase {
         IndexStorageManager.NodeData nodeData = fileIndexStorageManager.readNode(1, baseTreeNode.getPointer()).get();
         LeafTreeNode leafTreeNode = new LeafTreeNode(nodeData.bytes());
         Assertions.assertTrue(leafTreeNode.isRoot());
-        Iterator<LeafTreeNode.KeyValue> entryIterator = leafTreeNode.getKeyValues();
+        Iterator<LeafTreeNode.KeyValue> entryIterator = leafTreeNode.getKeyValues(degree);
         Assertions.assertTrue(entryIterator.hasNext());
         LeafTreeNode.KeyValue pointerEntry = entryIterator.next();
         Assertions.assertEquals(pointerEntry.key(), 10);
@@ -134,8 +134,8 @@ public class BTreeIndexManagerTestCase {
         }
 
         Assertions.assertTrue(lastTreeNode.isLeaf());
-        Assertions.assertEquals(2, lastTreeNode.getKeyList().size());
-        Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).getKeyValues().next().value().getPosition());
+        Assertions.assertEquals(2, lastTreeNode.getKeyList(degree).size());
+        Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
         Optional<IndexStorageManager.NodeData> optional = fileIndexStorageManager.getRoot(1).get();
         Assertions.assertTrue(optional.isPresent());
@@ -144,25 +144,25 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertTrue(rootNode.isRoot());
         Assertions.assertFalse(rootNode.isLeaf());
 
-        Assertions.assertEquals(1, rootNode.getKeyList().size());
+        Assertions.assertEquals(1, rootNode.getKeyList(degree).size());
 
         testIdentifiers.sort(Long::compareTo);
 
-        List<InternalTreeNode.KeyPointers> children = ((InternalTreeNode) rootNode).getKeyPointersList();
+        List<InternalTreeNode.KeyPointers> children = ((InternalTreeNode) rootNode).getKeyPointersList(degree);
         Assertions.assertEquals(1, children.size());
         Assertions.assertNotNull(children.get(0).getLeft());
         Assertions.assertNotNull(children.get(0).getRight());
-        Assertions.assertEquals(testIdentifiers.get(2), rootNode.getKeyList().get(0));
+        Assertions.assertEquals(testIdentifiers.get(2), rootNode.getKeyList(degree).get(0));
 
         // First child
         LeafTreeNode childLeafTreeNode = new LeafTreeNode(fileIndexStorageManager.readNode(1, children.get(0).getLeft()).get().bytes());
-        List<LeafTreeNode.KeyValue> keyValueList = childLeafTreeNode.getKeyValueList();
+        List<LeafTreeNode.KeyValue> keyValueList = childLeafTreeNode.getKeyValueList(degree);
         Assertions.assertEquals(testIdentifiers.get(0), keyValueList.get(0).key());
         Assertions.assertEquals(testIdentifiers.get(1), keyValueList.get(1).key());
 
         //Second child
         LeafTreeNode secondChildLeafTreeNode = new LeafTreeNode(fileIndexStorageManager.readNode(1, children.get(0).getRight()).get().bytes());
-        keyValueList = secondChildLeafTreeNode.getKeyValueList();
+        keyValueList = secondChildLeafTreeNode.getKeyValueList(degree);
         Assertions.assertEquals(testIdentifiers.get(2), keyValueList.get(0).key());
         Assertions.assertEquals(testIdentifiers.get(3), keyValueList.get(1).key());
 
@@ -217,8 +217,8 @@ public class BTreeIndexManagerTestCase {
         }
 
         Assertions.assertTrue(lastTreeNode.isLeaf());
-        Assertions.assertEquals(2, lastTreeNode.getKeyList().size());
-        Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).getKeyValues().next().value().getPosition());
+        Assertions.assertEquals(2, lastTreeNode.getKeyList(degree).size());
+        Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
         StoredTreeStructureVerifier.testOrderedTreeStructure(fileIndexStorageManager, 1, 1, degree);
 

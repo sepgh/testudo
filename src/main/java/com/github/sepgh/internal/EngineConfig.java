@@ -34,7 +34,7 @@ public class EngineConfig {
         if (this.cachedPaddingSize != null){
             return this.cachedPaddingSize;
         }
-        int i = (this.bTreeNodeSize() + 8) % 8;
+        int i = this.bTreeNodeSize() % 8;
         if (i == 0){
             cachedPaddingSize = this.bTreeNodeSize();
             return cachedPaddingSize;
@@ -55,7 +55,7 @@ public class EngineConfig {
     }
 
     public int bTreeNodeSize(){
-        return 1 + (this.getBTreeNodeMaxKey() * (Long.BYTES + Pointer.BYTES)) + (3 * Pointer.BYTES);
+        return 1 + (this.getBTreeNodeMaxKey() * (Long.BYTES + Pointer.BYTES)) + (2 * Pointer.BYTES);
     }
 
     public static class Default {

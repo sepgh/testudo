@@ -3,11 +3,9 @@ package com.github.sepgh.internal.tree;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.utils.BinaryUtils;
-import com.google.common.hash.HashCode;
 import com.google.common.primitives.Longs;
 
 import java.util.AbstractMap;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
@@ -111,7 +109,10 @@ public class TreeNodeUtils {
      * @param index of the key to check existence
      * @return boolean state of existence of a key in index
      */
-    public static boolean hasKeyAtIndex(BaseTreeNode treeNode, int index){
+    public static boolean hasKeyAtIndex(BaseTreeNode treeNode, int index, int degree){
+        if (index >= degree - 1)
+            return false;
+
         int keyStartIndex = getKeyStartOffset(treeNode, index);
         if (keyStartIndex + Long.BYTES > treeNode.getData().length)
             return false;
@@ -191,11 +192,11 @@ public class TreeNodeUtils {
      *       binary search could be used
      *       alternatively, we can hold a space for metadata which keeps track of the number of keys or values stored
      */
-    public static int addKeyValueAndGetIndex(BaseTreeNode treeNode, long key, Pointer pointer) {
+    public static int addKeyValueAndGetIndex(BaseTreeNode treeNode, long key, Pointer pointer, int degree) {
         int indexToFill = -1;
-        for (int i = 0; i < ((treeNode.getData().length - 1 - (2 * Pointer.BYTES)) / (Long.BYTES + Pointer.BYTES)); i++){
-            long keyAtIndex = getKeyAtIndex(treeNode, i);
-
+        long keyAtIndex = 0;
+        for (int i = 0; i < degree - 1; i++){
+            keyAtIndex = getKeyAtIndex(treeNode, i);
             if (keyAtIndex == 0 || keyAtIndex > key){
                 indexToFill = i;
                 break;
@@ -203,10 +204,14 @@ public class TreeNodeUtils {
         }
 
         if (indexToFill == -1){
-            return -1;
+            throw new RuntimeException("F..ed up"); // Todo
         }
 
-        byte[] temp = new byte[treeNode.getData().length - (OFFSET_LEAF_NODE_KEY_BEGIN + (indexToFill * (SIZE_LEAF_NODE_KEY_POINTER))) - (2*Pointer.BYTES)];
+
+        int max = degree - 1;
+        int bufferSize = ((max - indexToFill - 1) * SIZE_LEAF_NODE_KEY_POINTER);
+
+        byte[] temp = new byte[bufferSize];
         System.arraycopy(
                 treeNode.getData(),
                 OFFSET_LEAF_NODE_KEY_BEGIN + (indexToFill * (SIZE_LEAF_NODE_KEY_POINTER)),
@@ -221,8 +226,8 @@ public class TreeNodeUtils {
                 temp,
                 0,
                 treeNode.getData(),
-                OFFSET_TREE_NODE_FLAGS_END + ((indexToFill + 1) * (SIZE_LEAF_NODE_KEY_POINTER)),
-                temp.length - SIZE_LEAF_NODE_KEY_POINTER
+                OFFSET_LEAF_NODE_KEY_BEGIN + ((indexToFill + 1) * (SIZE_LEAF_NODE_KEY_POINTER)),
+                temp.length
         );
 
 
@@ -269,7 +274,7 @@ public class TreeNodeUtils {
      *       binary search could be used
      *       alternatively, we can hold a space for metadata which keeps track of the number of keys or values stored
      */
-    public static int addKeyAndGetIndex(BaseTreeNode treeNode, long key) {
+    public static int addKeyAndGetIndex(BaseTreeNode treeNode, long key, int degree) {
         // Shall only be called on internal nodes
         if (treeNode.isLeaf()){
             throw new RuntimeException();  // Todo: not runtime
@@ -277,14 +282,12 @@ public class TreeNodeUtils {
 
         int indexToFill = 0;
         long keyAtIndex = 0;
-        for (int i = 0; i < ((treeNode.getData().length - 1) / (Long.BYTES + Pointer.BYTES)); i++){
+        for (int i = 0; i < degree - 1; i++){
             keyAtIndex = getKeyAtIndex(treeNode, i);
-
-            if (keyAtIndex == 0 || key < keyAtIndex){
+            if (keyAtIndex == 0 || keyAtIndex > key){
                 indexToFill = i;
                 break;
             }
-
         }
 
         if (keyAtIndex == 0){
@@ -292,39 +295,41 @@ public class TreeNodeUtils {
                     Longs.toByteArray(key),
                     0,
                     treeNode.getData(),
-                    OFFSET_INTERNAL_NODE_KEY_BEGIN + (indexToFill * (SIZE_LEAF_NODE_KEY_POINTER)),
-                    Long.BYTES
-            );
-        } else {
-            // Copy existing bytes to a temporary location
-            byte[] temp = new byte[treeNode.getData().length - (OFFSET_INTERNAL_NODE_KEY_BEGIN + (indexToFill * (SIZE_LEAF_NODE_KEY_POINTER)))];
-            System.arraycopy(
-                    treeNode.getData(),
-                    OFFSET_INTERNAL_NODE_KEY_BEGIN + (indexToFill * (SIZE_INTERNAL_NODE_KEY_POINTER)),
-                    temp,
-                    0,
-                    temp.length
-            );
-
-            // Write
-            System.arraycopy(
-                    Longs.toByteArray(key),
-                    0,
-                    treeNode.getData(),
                     OFFSET_INTERNAL_NODE_KEY_BEGIN + (indexToFill * (SIZE_INTERNAL_NODE_KEY_POINTER)),
                     Long.BYTES
             );
-
-            // Copy temp bytes back to valid position
-            System.arraycopy(
-                    temp,
-                    0,
-                    treeNode.getData(),
-                    OFFSET_INTERNAL_NODE_KEY_BEGIN + ((indexToFill + 1) * (SIZE_INTERNAL_NODE_KEY_POINTER)),
-                    temp.length - SIZE_INTERNAL_NODE_KEY_POINTER
-            );
-
+            return indexToFill;
         }
+
+
+        int max = degree - 1;
+        int fullSize = (max * SIZE_INTERNAL_NODE_KEY_POINTER) + OFFSET_INTERNAL_NODE_KEY_BEGIN;
+        int bufferSize = fullSize - ((indexToFill + 1) * SIZE_INTERNAL_NODE_KEY_POINTER) - OFFSET_INTERNAL_NODE_KEY_BEGIN;
+
+        byte[] temp = new byte[bufferSize];
+        System.arraycopy(
+                treeNode.getData(),
+                OFFSET_INTERNAL_NODE_KEY_BEGIN + (indexToFill * SIZE_INTERNAL_NODE_KEY_POINTER),
+                temp,
+                0,
+                temp.length
+        );
+
+        System.arraycopy(
+                Longs.toByteArray(key),
+                0,
+                treeNode.getData(),
+                OFFSET_INTERNAL_NODE_KEY_BEGIN + (indexToFill * SIZE_INTERNAL_NODE_KEY_POINTER),
+                Long.BYTES
+        );
+
+        System.arraycopy(
+                temp,
+                0,
+                treeNode.getData(),
+                OFFSET_INTERNAL_NODE_KEY_BEGIN + ((indexToFill + 1) * SIZE_INTERNAL_NODE_KEY_POINTER),
+                temp.length
+        );
 
         return indexToFill;
     }
@@ -350,10 +355,6 @@ public class TreeNodeUtils {
     }
 
     public static Optional<Pointer> getNextPointer(BaseTreeNode treeNode, int degree) {
-        System.out.println("getNextPointer is called on " + treeNode.getPointer() + " with keys:" + treeNode.getKeyList());
-        System.out.println("get results: " + HashCode.fromBytes(Arrays.copyOfRange(treeNode.getData(), OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER) + Pointer.BYTES, OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER) + Pointer.BYTES + Pointer.BYTES)));
-        System.out.println("get results full: " + HashCode.fromBytes(treeNode.getData()));
-
         if (treeNode.getData()[OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER) + Pointer.BYTES] == (byte) 0x0){
             return Optional.empty();
         }
@@ -364,7 +365,6 @@ public class TreeNodeUtils {
     }
 
     public static void setNextPointer(BaseTreeNode treeNode, int degree, Pointer pointer) {
-        System.out.println("Called setNextPointer on node: " + treeNode.getPointer() + " to set " + pointer);
         System.arraycopy(
                 pointer.toBytes(),
                 0,
@@ -372,10 +372,6 @@ public class TreeNodeUtils {
                 OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER) + Pointer.BYTES,
                 Pointer.BYTES
         );
-        System.out.println("pointer as bytes " + HashCode.fromBytes(pointer.toBytes()));
-        System.out.println("OFFSET_LEAF_NODE_KEY_BEGIN: " + OFFSET_LEAF_NODE_KEY_BEGIN + ", SIZE_LEAF_NODE_KEY_POINTER: " + SIZE_LEAF_NODE_KEY_POINTER + ", Pointer.BYTES: " + Pointer.BYTES + ", DEGREE: " + degree);
-        System.out.println("Location to copy:" + (OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER) + Pointer.BYTES));
-        System.out.println("Post arraycopy results: " + HashCode.fromBytes(Arrays.copyOfRange(treeNode.getData(), OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER) + Pointer.BYTES, OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * SIZE_LEAF_NODE_KEY_POINTER) + Pointer.BYTES + Pointer.BYTES)));
     }
 
     public static void cleanChildrenPointers(InternalTreeNode treeNode, int degree) {

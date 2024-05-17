@@ -6,7 +6,9 @@ import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 public class BTreeIndexManager implements IndexManager {
@@ -40,8 +42,8 @@ public class BTreeIndexManager implements IndexManager {
                 /* current node is a leaf which should handle storing the data */
 
                 /* If current node has space, store and exit */
-                if (currentNode.getKeyList().size() < (degree - 1)){
-                    ((LeafTreeNode) currentNode).addKeyValue(identifier, pointer);
+                if (currentNode.getKeyList(degree).size() < (degree - 1)){
+                    ((LeafTreeNode) currentNode).addKeyValue(identifier, pointer, degree);
                     TreeNodeIO.write(currentNode, indexStorageManager, table).get();
                     return currentNode;
                 }
@@ -50,15 +52,13 @@ public class BTreeIndexManager implements IndexManager {
                 LeafTreeNode newSiblingLeafNode = new LeafTreeNode(indexStorageManager.getEmptyNode());
                 List<LeafTreeNode.KeyValue> passingKeyValues = ((LeafTreeNode) currentNode).split(identifier, pointer, degree);
                 newSiblingLeafNode.setKeyValues(passingKeyValues, degree);
-                System.out.println("Passed to new sibling leaf: " + passingKeyValues);
                 TreeNodeIO.write(newSiblingLeafNode, indexStorageManager, table).get(); // we want the node to have a pointer so that we can fix siblings
-                System.out.println("Location of new sibling leaf: " + newSiblingLeafNode.getPointer());
                 /* Fix sibling pointers */
                 fixSiblingPointers((LeafTreeNode) currentNode, newSiblingLeafNode, table);
                 TreeNodeIO.write(newSiblingLeafNode, indexStorageManager, table).get();
                 TreeNodeIO.write(currentNode, indexStorageManager, table).get();
 
-                answer = currentNode.getKeyList().contains(identifier) ? currentNode : newSiblingLeafNode;
+                answer = currentNode.getKeyList(degree).contains(identifier) ? currentNode : newSiblingLeafNode;
 
                 /* this leaf doesn't have a parent! create one and deal with it right here! */
                 if (path.size() == 1) {
@@ -70,6 +70,7 @@ public class BTreeIndexManager implements IndexManager {
                             passingKeyValues.get(0).key(),
                             currentNode.getPointer(),
                             newSiblingLeafNode.getPointer(),
+                            degree,
                             false
                     );
                     TreeNodeIO.write(newRoot, indexStorageManager, table).get();
@@ -85,9 +86,9 @@ public class BTreeIndexManager implements IndexManager {
                 /* current node is an internal node */
 
                 InternalTreeNode currentInternalTreeNode = (InternalTreeNode) currentNode;
-                if (currentInternalTreeNode.getKeyList().size() < degree - 1) {
+                if (currentInternalTreeNode.getKeyList(degree).size() < degree - 1) {
                     /* current internal node can store the key */
-                    currentInternalTreeNode.addKeyPointers(idForParentToStore, null, newChildForParent.getPointer(), false);
+                    currentInternalTreeNode.addKeyPointers(idForParentToStore, null, newChildForParent.getPointer(), degree, false);
                     TreeNodeIO.write(currentInternalTreeNode, indexStorageManager, table).get();
                     return answer;
                 }
@@ -114,6 +115,7 @@ public class BTreeIndexManager implements IndexManager {
                             idForParentToStore,
                             currentNode.getPointer(),
                             newInternalSibling.getPointer(),
+                            degree,
                             false
                     );
                     TreeNodeIO.write(newRoot, indexStorageManager, table).get();
@@ -126,7 +128,6 @@ public class BTreeIndexManager implements IndexManager {
             }
         }
 
-
         throw new RuntimeException("Logic error: probably failed to store index?");
     }
 
@@ -134,7 +135,7 @@ public class BTreeIndexManager implements IndexManager {
     public Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException {
         Optional<LeafTreeNode> optionalBaseTreeNode = this.getResponsibleNode(getRoot(table), identifier, table);
         if (optionalBaseTreeNode.isPresent()){
-            for (LeafTreeNode.KeyValue entry : optionalBaseTreeNode.get().getKeyValueList()) {
+            for (LeafTreeNode.KeyValue entry : optionalBaseTreeNode.get().getKeyValueList(degree)) {
                 if (entry.key() == identifier)
                     return Optional.of(entry.value());
             }
@@ -179,7 +180,7 @@ public class BTreeIndexManager implements IndexManager {
         if (node.isLeaf()){
             return Optional.of((LeafTreeNode) node);
         }
-        List<InternalTreeNode.KeyPointers> keyPointersList = ((InternalTreeNode) node).getKeyPointersList();
+        List<InternalTreeNode.KeyPointers> keyPointersList = ((InternalTreeNode) node).getKeyPointersList(degree);
         for (int i = 0; i < keyPointersList.size(); i++){
             InternalTreeNode.KeyPointers keyPointers = keyPointersList.get(i);
             if (keyPointers.getKey() > identifier && keyPointers.getLeft() != null){
@@ -206,7 +207,7 @@ public class BTreeIndexManager implements IndexManager {
             return;
         }
 
-        List<InternalTreeNode.KeyPointers> keyPointersList = ((InternalTreeNode) node).getKeyPointersList();
+        List<InternalTreeNode.KeyPointers> keyPointersList = ((InternalTreeNode) node).getKeyPointersList(degree);
         for (int i = 0; i < keyPointersList.size(); i++){
             InternalTreeNode.KeyPointers keyPointers = keyPointersList.get(i);
             if (keyPointers.getKey() > identifier && keyPointers.getLeft() != null){

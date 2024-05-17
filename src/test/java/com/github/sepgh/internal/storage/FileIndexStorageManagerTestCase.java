@@ -121,7 +121,7 @@ public class FileIndexStorageManagerTestCase {
 
             BaseTreeNode treeNode = BaseTreeNode.fromBytes(nodeData.bytes());
 
-            Iterator<Long> keys = treeNode.getKeys();
+            Iterator<Long> keys = treeNode.getKeys(2);
 
             Assertions.assertTrue(treeNode.isRoot());
             Assertions.assertTrue(keys.hasNext());
@@ -134,7 +134,7 @@ public class FileIndexStorageManagerTestCase {
 
             treeNode = BaseTreeNode.fromBytes(nodeData.bytes());
 
-            Iterator<InternalTreeNode.KeyPointers> children = ((InternalTreeNode) treeNode).getKeyPointers();
+            Iterator<InternalTreeNode.KeyPointers> children = ((InternalTreeNode) treeNode).getKeyPointers(2);
 
             Assertions.assertTrue(children.hasNext());
             InternalTreeNode.KeyPointers keyPointers = children.next();
@@ -167,11 +167,11 @@ public class FileIndexStorageManagerTestCase {
             nodeData = future.get();
             leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(nodeData.bytes());
 
-            Assertions.assertTrue(leafTreeNode.getKeyValues().hasNext());
+            Assertions.assertTrue(leafTreeNode.getKeyValues(2).hasNext());
 
-            Assertions.assertEquals(10L, leafTreeNode.getKeyValueList().get(0).key());
-            Assertions.assertEquals(100, leafTreeNode.getKeyValueList().get(0).value().getChunk());
-            Assertions.assertEquals(100, leafTreeNode.getKeyValueList().get(0).value().getPosition());
+            Assertions.assertEquals(10L, leafTreeNode.getKeyValueList(2).get(0).key());
+            Assertions.assertEquals(100, leafTreeNode.getKeyValueList(2).get(0).value().getChunk());
+            Assertions.assertEquals(100, leafTreeNode.getKeyValueList(2).get(0).value().getPosition());
 
         } finally {
             fileIndexStorageManager.close();

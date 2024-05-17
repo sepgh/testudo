@@ -246,39 +246,11 @@ public class MultiTableBTreeIndexManagerAllocationAndChunkTestCase {
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
         IndexManager indexManager = new BTreeIndexManager(degree, fileIndexStorageManager);
 
-        IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
-                AsynchronousFileChannel.open(
-                        Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0)),
-                        StandardOpenOption.READ,
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.CREATE
-                ),
-                headerManager,
-                engineConfig
-        );
-        IndexFileDescriptor indexFileDescriptor2 = new IndexFileDescriptor(
-                AsynchronousFileChannel.open(
-                        Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 1)),
-                        StandardOpenOption.READ,
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.CREATE
-                ),
-                headerManager,
-                engineConfig
-        );
-
         for (int tableId = 1; tableId <= 2; tableId++){
 
             for (long testIdentifier : testIdentifiers) {
-                System.out.println("ADDING " + testIdentifier + " to table " + tableId);
                 indexManager.addIndex(tableId, testIdentifier, samplePointer);
-                System.out.println("\nchunk 0");
-                indexFileDescriptor.describe();
-
-                System.out.println("\nchunk 1");
-                indexFileDescriptor2.describe();
             }
-
 
             StoredTreeStructureVerifier.testUnOrderedTreeStructure1(fileIndexStorageManager, tableId, 1, degree);
 

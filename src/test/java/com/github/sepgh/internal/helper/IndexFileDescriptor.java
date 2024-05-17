@@ -49,8 +49,8 @@ public class IndexFileDescriptor {
         System.out.println(HashCode.fromBytes(node.toBytes()));
         System.out.printf("Offset: %d%n", offset);
         System.out.printf("Node Header:  root(%s) [internal] %n", node.isRoot() ? "T" : "F");
-        System.out.println("Keys:" + node.getKeyList());
-        System.out.println("Children:" + node.getKeyPointersList());
+        System.out.println("Keys:" + node.getKeyList(engineConfig.getBTreeNodeMaxKey() + 1));
+        System.out.println("Children:" + node.getKeyPointersList(engineConfig.getBTreeNodeMaxKey() + 1));
         System.out.println();
         System.out.println("===========================");
     }
@@ -69,7 +69,7 @@ public class IndexFileDescriptor {
         System.out.printf("Offset: %d%n", offset);
         System.out.printf("Node Header:  root(%s) [leaf] %n", node.isRoot() ? "T" : "F");
         StringBuilder stringBuilder = new StringBuilder();
-        Iterator<LeafTreeNode.KeyValue> entryIterator = node.getKeyValues();
+        Iterator<LeafTreeNode.KeyValue> entryIterator = node.getKeyValues(engineConfig.getBTreeNodeMaxKey() + 1);
         while (entryIterator.hasNext()) {
             LeafTreeNode.KeyValue next = entryIterator.next();
             stringBuilder

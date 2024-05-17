@@ -88,12 +88,12 @@ public abstract class BaseTreeNode {
         this.data[0] = (byte) (data[0] & ~ROOT_BIT);
     }
 
-    public Iterator<Long> getKeys(){
-        return new TreeNodeKeysIterator(this);
+    public Iterator<Long> getKeys(int degree){
+        return new TreeNodeKeysIterator(this, degree);
     }
 
-    public List<Long> getKeyList(){
-        return ImmutableList.copyOf(getKeys());
+    public List<Long> getKeyList(int degree){
+        return ImmutableList.copyOf(getKeys(degree));
     }
 
     public boolean isRoot() {
@@ -115,11 +115,13 @@ public abstract class BaseTreeNode {
 
     private static class TreeNodeKeysIterator implements Iterator<Long> {
         private final BaseTreeNode node;
+        private final int degree;
         private int cursor; // Cursor points to current key index, not current byte
         private boolean hasNext = true;
 
-        private TreeNodeKeysIterator(BaseTreeNode node) {
+        private TreeNodeKeysIterator(BaseTreeNode node, int degree) {
             this.node = node;
+            this.degree = degree;
         }
 
         @Override
@@ -127,7 +129,7 @@ public abstract class BaseTreeNode {
             if (!hasNext)
                 return false;
 
-            hasNext = TreeNodeUtils.hasKeyAtIndex(this.node, cursor);
+            hasNext = TreeNodeUtils.hasKeyAtIndex(this.node, cursor, degree);
             return hasNext;
         }
 

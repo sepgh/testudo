@@ -30,12 +30,12 @@ public class LeafTreeNode extends BaseTreeNode {
         return TreeNodeUtils.getNextPointer(this, degree);
     }
 
-    public Iterator<KeyValue> getKeyValues(){
-        return new KeyValueIterator(this);
+    public Iterator<KeyValue> getKeyValues(int degree){
+        return new KeyValueIterator(this, degree);
     }
 
-    public List<KeyValue> getKeyValueList() {
-        return ImmutableList.copyOf(getKeyValues());
+    public List<KeyValue> getKeyValueList(int degree) {
+        return ImmutableList.copyOf(getKeyValues(degree));
     }
 
     public void setKeyValues(List<KeyValue> keyValueList, int degree){
@@ -56,7 +56,7 @@ public class LeafTreeNode extends BaseTreeNode {
     public List<KeyValue> split(long identifier, Pointer pointer, int degree){
         int mid = (degree - 1) / 2;
 
-        List<KeyValue> allKeyValues = new ArrayList<>(getKeyValueList());
+        List<KeyValue> allKeyValues = new ArrayList<>(getKeyValueList(degree));
         allKeyValues.add(new KeyValue(identifier, pointer));
         Collections.sort(allKeyValues);
 
@@ -65,38 +65,12 @@ public class LeafTreeNode extends BaseTreeNode {
         return allKeyValues.subList(mid + 1, allKeyValues.size());
     }
 
-    public int addKeyValue(long identifier, Pointer pointer) {
-        return TreeNodeUtils.addKeyValueAndGetIndex(this, identifier, pointer);
+    public int addKeyValue(long identifier, Pointer pointer, int degree) {
+        return TreeNodeUtils.addKeyValueAndGetIndex(this, identifier, pointer, degree);
     }
 
-    public int addKeyValue(KeyValue keyValue) {
-        return TreeNodeUtils.addKeyValueAndGetIndex(this, keyValue.key, keyValue.value);
-    }
-
-    private static class TreeNodeKeyValueIterator implements Iterator<Map.Entry<Long, Pointer>> {
-        private final BaseTreeNode node;
-        private int cursor; // Cursor points to current key index, not current byte
-        private boolean hasNext = true;
-
-        private TreeNodeKeyValueIterator(BaseTreeNode node) {
-            this.node = node;
-        }
-
-        @Override
-        public boolean hasNext() {
-            if (!hasNext)
-                return false;
-
-            hasNext = TreeNodeUtils.hasKeyValuePointerAtIndex(this.node, cursor);
-            return hasNext;
-        }
-
-        @Override
-        public Map.Entry<Long, Pointer> next() {
-            Map.Entry<Long, Pointer> value = TreeNodeUtils.getKeyValuePointerAtIndex(this.node, cursor);
-            cursor++;
-            return value;
-        }
+    public int addKeyValue(KeyValue keyValue, int degree) {
+        return TreeNodeUtils.addKeyValueAndGetIndex(this, keyValue.key, keyValue.value, degree);
     }
 
 
@@ -112,14 +86,16 @@ public class LeafTreeNode extends BaseTreeNode {
         private int cursor = 0;
 
         private final LeafTreeNode node;
+        private final int degree;
 
-        public KeyValueIterator(LeafTreeNode node) {
+        public KeyValueIterator(LeafTreeNode node, int degree) {
             this.node = node;
+            this.degree = degree;
         }
 
         @Override
         public boolean hasNext() {
-            return TreeNodeUtils.hasKeyAtIndex(node, cursor);
+            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree);
         }
 
         @Override

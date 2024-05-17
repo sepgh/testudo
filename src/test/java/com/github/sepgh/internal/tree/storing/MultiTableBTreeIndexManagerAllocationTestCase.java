@@ -192,7 +192,6 @@ public class MultiTableBTreeIndexManagerAllocationTestCase {
         int index = 0;
         int runs = 0;
         while (runs < testIdentifiers.size()){
-            System.out.println("Adding " + testIdentifiers.get(index));
             indexManager.addIndex(1, testIdentifiers.get(index), samplePointer);
             indexManager.addIndex(2, testIdentifiers.get(index) * 10, samplePointer);
             index++;
@@ -267,9 +266,7 @@ public class MultiTableBTreeIndexManagerAllocationTestCase {
         for (int tableId = 1; tableId <= 2; tableId++){
 
             for (long testIdentifier : testIdentifiers) {
-                System.out.println("ADDING " + testIdentifier + " TO " + tableId);
                 indexManager.addIndex(tableId, testIdentifier, samplePointer);
-                System.out.println("");
                 indexFileDescriptor.describe();
             }
 

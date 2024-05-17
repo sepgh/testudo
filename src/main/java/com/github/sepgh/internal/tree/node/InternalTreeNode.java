@@ -19,17 +19,18 @@ public class InternalTreeNode extends BaseTreeNode {
         setType(Type.INTERNAL);
     }
 
-    public Iterator<KeyPointers> getKeyPointers(){
-        return new KeyPointersIterator(this);
+    public Iterator<KeyPointers> getKeyPointers(int degree){
+        return new KeyPointersIterator(this, degree);
     }
 
-    public List<KeyPointers> getKeyPointersList(){
-        return ImmutableList.copyOf(getKeyPointers());
+    public List<KeyPointers> getKeyPointersList(int degree){
+        return ImmutableList.copyOf(getKeyPointers(degree));
     }
 
     public void setKeyPointers(List<KeyPointers> keyPointers, int degree, boolean cleanRest){
         modified();
-        TreeNodeUtils.cleanChildrenPointers(this, degree);
+        if (cleanRest)
+            TreeNodeUtils.cleanChildrenPointers(this, degree);
         int i = 0;
         for (KeyPointers keyPointer : keyPointers) {
             keyPointer.setIndex(i);
@@ -45,9 +46,9 @@ public class InternalTreeNode extends BaseTreeNode {
 
     }
 
-    public void addKeyPointers(long identifier, @Nullable Pointer left, @Nullable Pointer right, boolean clearForNull){
+    public void addKeyPointers(long identifier, @Nullable Pointer left, @Nullable Pointer right, int degree, boolean clearForNull){
         modified();
-        int i = TreeNodeUtils.addKeyAndGetIndex(this, identifier);
+        int i = TreeNodeUtils.addKeyAndGetIndex(this, identifier, degree);
         if (left != null){
             TreeNodeUtils.setPointerToChild(this, i, left);
         }
@@ -59,14 +60,14 @@ public class InternalTreeNode extends BaseTreeNode {
             TreeNodeUtils.removeChildAtIndex(this, i + 1);
     }
 
-    public void addKeyPointers(KeyPointers keyPointers) {
+    public void addKeyPointers(KeyPointers keyPointers, int degree) {
         modified();
-        this.addKeyPointers(keyPointers.key, keyPointers.left, keyPointers.right, false);
+        this.addKeyPointers(keyPointers.key, keyPointers.left, keyPointers.right, degree, false);
     }
 
-    public void addKeyPointers(KeyPointers keyPointers, boolean clearForNull){
+    public void addKeyPointers(KeyPointers keyPointers, int degree, boolean clearForNull){
         modified();
-        this.addKeyPointers(keyPointers.key, keyPointers.left, keyPointers.right, clearForNull);
+        this.addKeyPointers(keyPointers.key, keyPointers.left, keyPointers.right, degree, clearForNull);
     }
 
 
@@ -83,13 +84,13 @@ public class InternalTreeNode extends BaseTreeNode {
         modified();
         int mid = (degree - 1) / 2;
 
-        List<Long> keyList = new ArrayList<>(getKeyList());
+        List<Long> keyList = new ArrayList<>(getKeyList(degree));
         keyList.add(identifier);
         keyList.sort(Long::compareTo);
 
         int i = keyList.indexOf(identifier);
 
-        List<KeyPointers> keyPointersList = new ArrayList<>(getKeyPointersList());
+        List<KeyPointers> keyPointersList = new ArrayList<>(getKeyPointersList(degree));
 
         keyPointersList.add(i, new KeyPointers(
                         0,
@@ -116,15 +117,17 @@ public class InternalTreeNode extends BaseTreeNode {
         private Pointer lastRightPointer;
 
         private final BaseTreeNode node;
+        private final int degree;
 
-        private KeyPointersIterator(BaseTreeNode node) {
+        private KeyPointersIterator(BaseTreeNode node, int degree) {
             this.node = node;
+            this.degree = degree;
         }
 
 
         @Override
         public boolean hasNext() {
-            return TreeNodeUtils.hasKeyAtIndex(node, cursor);
+            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree);
         }
 
         @Override
