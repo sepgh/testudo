@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
-import static java.io.ObjectInputFilter.merge;
-
 public class BTreeIndexManager implements IndexManager {
 
     private final IndexStorageManager indexStorageManager;
@@ -146,11 +144,9 @@ public class BTreeIndexManager implements IndexManager {
     }
 
     @Override
-    public void removeIndex(int table, long identifier) throws ExecutionException, InterruptedException {
+    public boolean removeIndex(int table, long identifier) throws ExecutionException, InterruptedException {
         BaseTreeNode root = getRoot(table);
-
-        this.deleteRecursive(table, root, identifier);
-
+        return this.deleteRecursive(table, root, identifier);
     }
 
     private boolean deleteRecursive(int table, BaseTreeNode node, long key) throws ExecutionException, InterruptedException {
@@ -160,6 +156,7 @@ public class BTreeIndexManager implements IndexManager {
         if (idx < node.getKeyList(degree).size() && node.getKeyList(degree).get(idx) == key){
             if (node.isLeaf()){
                 ((LeafTreeNode) node).removeKeyValue(idx);
+                TreeNodeIO.update(indexStorageManager, table, node);
                 result = true;
             } else {
                 this.deleteInternalNode(table, (InternalTreeNode) node, key, idx);
@@ -299,8 +296,6 @@ public class BTreeIndexManager implements IndexManager {
         BaseTreeNode child = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList(degree).get(idx));
         BaseTreeNode sibling = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList(degree).get(idx + 1));
 
-        // ======================================================================
-        // TODO TOMORRROOOOWWW
         if (!child.isLeaf()){
             InternalTreeNode siblingInternalNode = (InternalTreeNode) sibling;
             List<InternalTreeNode.ChildPointers> childPointersList = new ArrayList<>(siblingInternalNode.getChildPointersList(degree));
@@ -318,7 +313,6 @@ public class BTreeIndexManager implements IndexManager {
             childPointersList2.add(firstChildPointer);
             childInternalNode.setChildPointers(childPointersList2, degree, false);   // todo: probably no need to clean? it was short
 
-            // Todo: save them
         } else {
             LeafTreeNode siblingLeafNode = (LeafTreeNode) sibling;
             LeafTreeNode childLeafNode = (LeafTreeNode) sibling;
@@ -332,8 +326,9 @@ public class BTreeIndexManager implements IndexManager {
 
             childLeafNode.addKeyValue(currKey, keyValue.value(), degree);
 
-            // Todo: save them
         }
+
+        TreeNodeIO.update(indexStorageManager, table, node, sibling, child);
     }
 
     /**
@@ -359,7 +354,6 @@ public class BTreeIndexManager implements IndexManager {
             node.removeKey(idx);
             node.removeChild(idx + 1);
 
-            // Todo: save them
         } else {
             LeafTreeNode childLeafTreeNode = (LeafTreeNode) child;
             ArrayList<LeafTreeNode.KeyValue> keyValueList = new ArrayList<>(childLeafTreeNode.getKeyValueList(degree));
@@ -369,10 +363,10 @@ public class BTreeIndexManager implements IndexManager {
             node.removeKey(idx);
             node.removeChild(idx + 1);
 
-            // Todo: save them
         }
 
-        // Todo: remove sibling node completely
+        TreeNodeIO.update(indexStorageManager, table, node, child);
+        TreeNodeIO.remove(indexStorageManager, table, node);
 
     }
 

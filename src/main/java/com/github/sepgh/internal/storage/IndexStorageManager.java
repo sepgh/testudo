@@ -26,5 +26,7 @@ public interface IndexStorageManager {
 
     void close() throws IOException;
 
+    CompletableFuture<Integer> removeNode(int table, Pointer pointer);
+
     record NodeData(Pointer pointer, byte[] bytes){}
 }

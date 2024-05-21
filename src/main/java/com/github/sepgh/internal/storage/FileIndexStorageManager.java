@@ -330,4 +330,10 @@ public class FileIndexStorageManager implements IndexStorageManager {
             asynchronousFileChannel.close();
         }
     }
+
+    @Override
+    public CompletableFuture<Integer> removeNode(int table, Pointer pointer) {
+        long offset = headerManager.getHeader().getTableOfId(table).get().getIndexChunk(pointer.getChunk()).get().getOffset() + pointer.getPosition();
+        return FileUtils.write(getAsynchronousFileChannel(pointer.getChunk()), offset, new byte[engineConfig.getPaddedSize()]);
+    }
 }
