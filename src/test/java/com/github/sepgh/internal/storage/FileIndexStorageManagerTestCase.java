@@ -134,13 +134,13 @@ public class FileIndexStorageManagerTestCase {
 
             treeNode = BaseTreeNode.fromBytes(nodeData.bytes());
 
-            Iterator<InternalTreeNode.KeyPointers> children = ((InternalTreeNode) treeNode).getKeyPointers(2);
+            Iterator<InternalTreeNode.ChildPointers> children = ((InternalTreeNode) treeNode).getChildPointers(2);
 
             Assertions.assertTrue(children.hasNext());
-            InternalTreeNode.KeyPointers keyPointers = children.next();
-            Assertions.assertTrue(keyPointers.getLeft().isNodePointer());
-            Assertions.assertEquals(1, keyPointers.getLeft().getPosition());
-            Assertions.assertEquals(1, keyPointers.getLeft().getChunk());
+            InternalTreeNode.ChildPointers childPointers = children.next();
+            Assertions.assertTrue(childPointers.getLeft().isNodePointer());
+            Assertions.assertEquals(1, childPointers.getLeft().getPosition());
+            Assertions.assertEquals(1, childPointers.getLeft().getChunk());
         } finally {
             fileIndexStorageManager.close();
         }

@@ -148,7 +148,7 @@ public class BTreeIndexManagerTestCase {
 
         testIdentifiers.sort(Long::compareTo);
 
-        List<InternalTreeNode.KeyPointers> children = ((InternalTreeNode) rootNode).getKeyPointersList(degree);
+        List<InternalTreeNode.ChildPointers> children = ((InternalTreeNode) rootNode).getChildPointersList(degree);
         Assertions.assertEquals(1, children.size());
         Assertions.assertNotNull(children.get(0).getLeft());
         Assertions.assertNotNull(children.get(0).getRight());

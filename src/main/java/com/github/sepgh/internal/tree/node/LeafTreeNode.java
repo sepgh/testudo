@@ -73,6 +73,14 @@ public class LeafTreeNode extends BaseTreeNode {
         return TreeNodeUtils.addKeyValueAndGetIndex(this, keyValue.key, keyValue.value, degree);
     }
 
+    public void removeKeyValue(int index) {
+        // Todo
+    }
+
+    public void removeKeyValue(long identifier) {
+        // Todo
+    }
+
 
     public record KeyValue(long key, Pointer value) implements Comparable<KeyValue> {
 

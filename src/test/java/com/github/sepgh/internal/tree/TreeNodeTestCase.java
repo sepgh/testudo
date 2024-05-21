@@ -8,8 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 public class TreeNodeTestCase {
     private final byte[] singleKeyInternalNodeRepresentation = {
@@ -82,16 +80,16 @@ public class TreeNodeTestCase {
         Assertions.assertInstanceOf(InternalTreeNode.class, node);
         InternalTreeNode treeNode = (InternalTreeNode) node;
 
-        List<InternalTreeNode.KeyPointers> keyPointersList = treeNode.getKeyPointersList(3);
-        Assertions.assertEquals(1, keyPointersList.size());
+        List<InternalTreeNode.ChildPointers> childPointersList = treeNode.getChildPointersList(3);
+        Assertions.assertEquals(1, childPointersList.size());
 
-        Assertions.assertTrue(keyPointersList.get(0).getLeft().isNodePointer());
-        Assertions.assertEquals(1, keyPointersList.get(0).getLeft().getPosition());
-        Assertions.assertEquals(1, keyPointersList.get(0).getLeft().getChunk());
+        Assertions.assertTrue(childPointersList.get(0).getLeft().isNodePointer());
+        Assertions.assertEquals(1, childPointersList.get(0).getLeft().getPosition());
+        Assertions.assertEquals(1, childPointersList.get(0).getLeft().getChunk());
 
-        Assertions.assertTrue(keyPointersList.get(0).getRight().isNodePointer());
-        Assertions.assertEquals(2, keyPointersList.get(0).getRight().getPosition());
-        Assertions.assertEquals(2, keyPointersList.get(0).getRight().getChunk());
+        Assertions.assertTrue(childPointersList.get(0).getRight().isNodePointer());
+        Assertions.assertEquals(2, childPointersList.get(0).getRight().getPosition());
+        Assertions.assertEquals(2, childPointersList.get(0).getRight().getChunk());
     }
 
     @Test

@@ -50,7 +50,7 @@ public class IndexFileDescriptor {
         System.out.printf("Offset: %d%n", offset);
         System.out.printf("Node Header:  root(%s) [internal] %n", node.isRoot() ? "T" : "F");
         System.out.println("Keys:" + node.getKeyList(engineConfig.getBTreeNodeMaxKey() + 1));
-        System.out.println("Children:" + node.getKeyPointersList(engineConfig.getBTreeNodeMaxKey() + 1));
+        System.out.println("Children:" + node.getChildPointersList(engineConfig.getBTreeNodeMaxKey() + 1));
         System.out.println();
         System.out.println("===========================");
     }
