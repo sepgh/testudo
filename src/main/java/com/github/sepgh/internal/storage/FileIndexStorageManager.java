@@ -157,6 +157,9 @@ public class FileIndexStorageManager implements IndexStorageManager {
     public CompletableFuture<NodeData> readNode(int table, long position, int chunk) {
         CompletableFuture<NodeData> output = new CompletableFuture<>();
         AsynchronousFileChannel asynchronousFileChannel = getAsynchronousFileChannel(chunk);
+        System.out.println("DEB> tableOfIdPresent: " +  headerManager.getHeader().getTableOfId(table).isPresent());
+        System.out.println("DEB> indexOfChunkPresent:" +  headerManager.getHeader().getTableOfId(table).get().getIndexChunk(chunk).isPresent());
+        System.out.println("DEB> indexOfChunk:" +  headerManager.getHeader().getTableOfId(table).get().getIndexChunk(chunk).get());
         long filePosition = headerManager.getHeader().getTableOfId(table).get().getIndexChunk(chunk).get().getOffset() + position;
         FileUtils.readBytes(asynchronousFileChannel, filePosition, engineConfig.getPaddedSize()).whenComplete((bytes, throwable) -> {
             if (throwable != null){

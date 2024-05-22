@@ -154,54 +154,54 @@ public class BTreeIndexManager implements IndexManager {
         boolean result;
 
         if (idx < node.getKeyList(degree).size() && node.getKeyList(degree).get(idx) == key){
+            System.out.println("DEB> ["+node.getType()+"] removing key called for: " + key + ", current keys: " + node.getKeyList(degree) + ", idx: " + idx);
             if (node.isLeaf()){
                 ((LeafTreeNode) node).removeKeyValue(idx);
                 TreeNodeIO.update(indexStorageManager, table, node);
-                result = true;
             } else {
                 this.deleteInternalNode(table, (InternalTreeNode) node, key, idx);
-                result = true;
             }
+            result = true;
         } else {
             if (node.isLeaf()){
                 return false;
             }
 
-            boolean flag = (idx == node.getKeyList(degree).size());
-
             InternalTreeNode internalTreeNode = (InternalTreeNode) node;
 
-            BaseTreeNode leftChildAtIDX = TreeNodeIO.read(indexStorageManager, table, internalTreeNode.getChildrenList(degree).get(idx));
+            System.out.println("DEB> ["+node.getType()+"] key not found: " + key + ", current keys: " + node.getKeyList(degree) + ", idx: " + idx);
+            BaseTreeNode leftChildAtIDX = TreeNodeIO.read(indexStorageManager, table, internalTreeNode.getChildrenList().get(idx));
             if (leftChildAtIDX.getKeyList(degree).size() < minKeys){
+                System.out.println("DEB> underflow! filling...");
                 this.fill(table, (InternalTreeNode) node, idx);
             }
 
-            BaseTreeNode nextChild;
-            if (flag && idx > node.getKeyList(degree).size()){
-                nextChild = TreeNodeIO.read(indexStorageManager, table, internalTreeNode.getChildrenList(degree).get(idx - 1));
-            } else {
-                nextChild = TreeNodeIO.read(indexStorageManager, table, internalTreeNode.getChildrenList(degree).get(idx));
-            }
+            boolean flag = (idx == node.getKeyList(degree).size());
+            BaseTreeNode nextChild = TreeNodeIO.read(indexStorageManager, table, internalTreeNode.getChildrenList().get(flag ? idx - 1 : idx));
             result = deleteRecursive(table, nextChild, key);
         }
         return result;
     }
 
     private void deleteInternalNode(int table, InternalTreeNode node, long key, int idx) throws ExecutionException, InterruptedException {
-        List<Pointer> childPointersList = node.getChildrenList(degree);
-        BaseTreeNode leftIDXChild = TreeNodeIO.read(indexStorageManager, degree, childPointersList.get(idx));
+        List<Pointer> childrenList = node.getChildrenList();
+        BaseTreeNode leftIDXChild = TreeNodeIO.read(indexStorageManager, table, childrenList.get(idx));
         if (leftIDXChild.getKeyList(degree).size() >= minKeys){
             long pred = this.getPredecessor(table, node, idx);
             node.setKey(idx, pred);
+            TreeNodeIO.update(indexStorageManager, table, node);
+            System.out.println("DEB> pred: " + pred);
             deleteRecursive(table, leftIDXChild, pred);
         } else {
-            BaseTreeNode leftNextIDXChild = TreeNodeIO.read(indexStorageManager, degree, childPointersList.get(idx + 1));
+            BaseTreeNode leftNextIDXChild = TreeNodeIO.read(indexStorageManager, table, childrenList.get(idx + 1));
             if (leftNextIDXChild.getKeyList(degree).size() >= minKeys) {
                 long succ = getSuccessor(table, node, idx);
                 node.setKey(idx, succ);
+                TreeNodeIO.update(indexStorageManager, table, node);
                 deleteRecursive(table, leftNextIDXChild, succ);
             } else {
                 merge(table, node, idx);
+                System.out.println("DEB> post merge in deleteInternalNode, key: " + key);
                 deleteRecursive(table, leftIDXChild, key);
             }
         }
@@ -209,19 +209,19 @@ public class BTreeIndexManager implements IndexManager {
     }
 
     private long getPredecessor(int table, InternalTreeNode node, int idx) throws ExecutionException, InterruptedException {
-        BaseTreeNode cur = TreeNodeIO.read(indexStorageManager, table, node.getChildPointersList(degree).get(idx).getLeft());
+        BaseTreeNode cur = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList().get(idx));
         while (!cur.isLeaf()) {
-            cur = TreeNodeIO.read(indexStorageManager, table, node.getChildPointersList(degree).get(cur.getKeyList(degree).size() - 1).getLeft());
+            cur = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList().get(cur.getKeyList(degree).size()));
         }
-        return cur.getKeyList(degree).get(cur.getKeyList(degree).size() - 1);
+        return cur.getKeyList(degree).getLast();
     }
 
     private long getSuccessor(int table, InternalTreeNode node, int idx) throws ExecutionException, InterruptedException {
-        BaseTreeNode cur = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList(degree).get(idx + 1));
+        BaseTreeNode cur = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList().get(idx + 1));
         while (!cur.isLeaf()) {
-            cur = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList(degree).get(0));
+            cur = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList().get(0));
         }
-        return cur.getKeyList(degree).get(0);
+        return cur.getKeyList(degree).getFirst();
     }
 
 
@@ -231,11 +231,11 @@ public class BTreeIndexManager implements IndexManager {
      * @param idx The index of the child node to fill.
      */
     private void fill(int table, InternalTreeNode node, int idx) throws ExecutionException, InterruptedException {
-        InternalTreeNode treeNode = (InternalTreeNode) TreeNodeIO.read(indexStorageManager, table, node.getChildrenList(degree).get(idx - 1));
+        InternalTreeNode treeNode = (InternalTreeNode) TreeNodeIO.read(indexStorageManager, table, node.getChildrenList().get(idx - 1));
         if (idx != 0 && treeNode.getKeyList(degree).size() >= minKeys) {
             this.borrowFromPrev(table, node, idx);
         } else {
-            InternalTreeNode treeNode1 = (InternalTreeNode) TreeNodeIO.read(indexStorageManager, table, node.getChildrenList(degree).get(idx + 1));
+            InternalTreeNode treeNode1 = (InternalTreeNode) TreeNodeIO.read(indexStorageManager, table, node.getChildrenList().get(idx + 1));
             if (idx != treeNode.getKeyList(degree).size() && treeNode1.getKeyList(degree).size() >= minKeys) {
                 this.borrowFromNext(table, node, idx);
             } else {
@@ -254,8 +254,8 @@ public class BTreeIndexManager implements IndexManager {
      * @param idx The index of the child node to borrow for.
      */
     private void borrowFromPrev(int table, InternalTreeNode node, int idx) throws ExecutionException, InterruptedException {
-        BaseTreeNode child = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList(degree).get(idx));
-        BaseTreeNode sibling = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList(degree).get(idx - 1));
+        BaseTreeNode child = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList().get(idx));
+        BaseTreeNode sibling = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList().get(idx - 1));
 
         if (!child.isLeaf()){
             InternalTreeNode siblingInternalNode = (InternalTreeNode) sibling;
@@ -274,7 +274,6 @@ public class BTreeIndexManager implements IndexManager {
             childPointersList2.add(lastChildPointer);
             childInternalNode.setChildPointers(childPointersList2, degree, false);   // todo: probably no need to clean? it was short
 
-            // Todo: save them
         } else {
             LeafTreeNode siblingLeafNode = (LeafTreeNode) sibling;
             LeafTreeNode childLeafNode = (LeafTreeNode) sibling;
@@ -287,14 +286,13 @@ public class BTreeIndexManager implements IndexManager {
             node.setKey(idx, keyValue.key());
 
             childLeafNode.addKeyValue(currKey, keyValue.value(), degree);
-
-            // Todo: save them
         }
+        TreeNodeIO.update(indexStorageManager, table, node, child, sibling);
     }
 
     private void borrowFromNext(int table, InternalTreeNode node, int idx) throws ExecutionException, InterruptedException {
-        BaseTreeNode child = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList(degree).get(idx));
-        BaseTreeNode sibling = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList(degree).get(idx + 1));
+        BaseTreeNode child = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList().get(idx));
+        BaseTreeNode sibling = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList().get(idx + 1));
 
         if (!child.isLeaf()){
             InternalTreeNode siblingInternalNode = (InternalTreeNode) sibling;
@@ -328,7 +326,7 @@ public class BTreeIndexManager implements IndexManager {
 
         }
 
-        TreeNodeIO.update(indexStorageManager, table, node, sibling, child);
+        TreeNodeIO.update(indexStorageManager, table, node, child, sibling);
     }
 
     /**
@@ -337,8 +335,8 @@ public class BTreeIndexManager implements IndexManager {
      * @param idx The index of the child node to merge.
      */
     private void merge(int table, InternalTreeNode node, int idx) throws ExecutionException, InterruptedException {
-        BaseTreeNode child = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList(degree).get(idx));
-        BaseTreeNode sibling = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList(degree).get(idx + 1));
+        BaseTreeNode child = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList().get(idx));
+        BaseTreeNode sibling = TreeNodeIO.read(indexStorageManager, table, node.getChildrenList().get(idx + 1));
 
         if (!child.isLeaf()){
             InternalTreeNode childInternalTreeNode = (InternalTreeNode) child;
@@ -347,12 +345,9 @@ public class BTreeIndexManager implements IndexManager {
             childKeyList.sort(Long::compareTo);
             childInternalTreeNode.setKeys(childKeyList);
 
-            ArrayList<Pointer> childPointers = new ArrayList<>(childInternalTreeNode.getChildrenList(degree));
-            childPointers.addAll(((InternalTreeNode) sibling).getChildrenList(degree));
+            ArrayList<Pointer> childPointers = new ArrayList<>(childInternalTreeNode.getChildrenList());
+            childPointers.addAll(((InternalTreeNode) sibling).getChildrenList());
             childInternalTreeNode.setChildren(childPointers);
-
-            node.removeKey(idx);
-            node.removeChild(idx + 1);
 
         } else {
             LeafTreeNode childLeafTreeNode = (LeafTreeNode) child;
@@ -360,13 +355,12 @@ public class BTreeIndexManager implements IndexManager {
             keyValueList.addAll(((LeafTreeNode) sibling).getKeyValueList(degree));
             Collections.sort(keyValueList);
 
-            node.removeKey(idx);
-            node.removeChild(idx + 1);
-
         }
+        node.removeKey(idx);
+        node.removeChild(idx + 1);
 
         TreeNodeIO.update(indexStorageManager, table, node, child);
-        TreeNodeIO.remove(indexStorageManager, table, node);
+        TreeNodeIO.remove(indexStorageManager, table, sibling);
 
     }
 

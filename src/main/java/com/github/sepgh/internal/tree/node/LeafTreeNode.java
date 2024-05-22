@@ -74,11 +74,7 @@ public class LeafTreeNode extends BaseTreeNode {
     }
 
     public void removeKeyValue(int index) {
-        // Todo
-    }
-
-    public void removeKeyValue(long identifier) {
-        // Todo
+        TreeNodeUtils.removeKeyValueAtIndex(this, index);
     }
 
 

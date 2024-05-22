@@ -70,12 +70,12 @@ public class InternalTreeNode extends BaseTreeNode {
         this.addChildPointers(childPointers.key, childPointers.left, childPointers.right, degree, clearForNull);
     }
 
-    public Iterator<Pointer> getChildren(int degree) {
-        return new ChildrenIterator(this, degree);
+    public Iterator<Pointer> getChildren() {
+        return new ChildrenIterator(this);
     }
 
-    public List<Pointer> getChildrenList(int degree){
-        return ImmutableList.copyOf(getChildrenList(degree));
+    public List<Pointer> getChildrenList(){
+        return ImmutableList.copyOf(getChildren());
     }
 
     public void setChildAtIndex(int index, Pointer pointer){
@@ -142,20 +142,18 @@ public class InternalTreeNode extends BaseTreeNode {
         TreeNodeUtils.removeChildAtIndex(this, idx);
     }
 
-    private class ChildrenIterator implements Iterator<Pointer> {
+    private static class ChildrenIterator implements Iterator<Pointer> {
 
         private final BaseTreeNode node;
-        private final int degree;
         private int cursor = 0;
 
-        private ChildrenIterator(BaseTreeNode node, int degree) {
+        private ChildrenIterator(BaseTreeNode node) {
             this.node = node;
-            this.degree = degree;
         }
 
         @Override
         public boolean hasNext() {
-            return TreeNodeUtils.hasChildPointerAtIndex(this.node, degree);
+            return TreeNodeUtils.hasChildPointerAtIndex(this.node, cursor);
         }
 
         @Override

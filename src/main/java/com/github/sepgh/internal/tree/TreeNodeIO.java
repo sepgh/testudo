@@ -43,23 +43,22 @@ public class TreeNodeIO {
         return BaseTreeNode.fromNodeData(indexStorageManager.readNode(table, pointer).get());
     }
 
-    public static CompletableFuture<Void> update(IndexStorageManager indexStorageManager, int table, BaseTreeNode... nodes){
+    public static void update(IndexStorageManager indexStorageManager, int table, BaseTreeNode... nodes) throws InterruptedException {
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
-        AtomicInteger latch = new AtomicInteger(nodes.length);
+        CountDownLatch latch = new CountDownLatch(nodes.length);
         for (BaseTreeNode node : nodes) {
             indexStorageManager.updateNode(table, node.getData(), node.getPointer()).whenComplete((integer, throwable) -> {
                 if (throwable != null) {
                     completableFuture.completeExceptionally(throwable);
                 }
 
-                if (latch.decrementAndGet() == 0)
-                    completableFuture.complete(null);
+                latch.countDown();
             });
         }
-        return completableFuture;
+        latch.await();
     }
 
-    public static void remove(IndexStorageManager indexStorageManager, int table, InternalTreeNode node) throws ExecutionException, InterruptedException {
+    public static void remove(IndexStorageManager indexStorageManager, int table, BaseTreeNode node) throws ExecutionException, InterruptedException {
         indexStorageManager.removeNode(table, node.getPointer()).get();
     }
 }
