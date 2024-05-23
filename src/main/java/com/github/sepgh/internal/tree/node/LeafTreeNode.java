@@ -77,6 +77,13 @@ public class LeafTreeNode extends BaseTreeNode {
         TreeNodeUtils.removeKeyValueAtIndex(this, index);
     }
 
+    public boolean removeKeyValue(long key, int degree) {
+        List<KeyValue> keyValueList = new ArrayList<>(this.getKeyValueList(degree));
+        boolean removed = keyValueList.removeIf(keyValue -> keyValue.key == key);
+        setKeyValues(keyValueList, degree);
+        return removed;
+    }
+
 
     public record KeyValue(long key, Pointer value) implements Comparable<KeyValue> {
 

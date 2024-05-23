@@ -86,6 +86,10 @@ public class InternalTreeNode extends BaseTreeNode {
         return TreeNodeUtils.getChildPointerAtIndex(this, index);
     }
 
+    public int getIndexOfChild(Pointer pointer){
+        return this.getChildrenList().indexOf(pointer);
+    }
+
 
     /*
      *   When is this called? when an internal node wanted to add a new child pointer but there is no space left

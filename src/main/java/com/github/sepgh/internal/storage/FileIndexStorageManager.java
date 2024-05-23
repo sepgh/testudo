@@ -157,9 +157,9 @@ public class FileIndexStorageManager implements IndexStorageManager {
     public CompletableFuture<NodeData> readNode(int table, long position, int chunk) {
         CompletableFuture<NodeData> output = new CompletableFuture<>();
         AsynchronousFileChannel asynchronousFileChannel = getAsynchronousFileChannel(chunk);
-        System.out.println("DEB> tableOfIdPresent: " +  headerManager.getHeader().getTableOfId(table).isPresent());
-        System.out.println("DEB> indexOfChunkPresent:" +  headerManager.getHeader().getTableOfId(table).get().getIndexChunk(chunk).isPresent());
-        System.out.println("DEB> indexOfChunk:" +  headerManager.getHeader().getTableOfId(table).get().getIndexChunk(chunk).get());
+//        System.out.println("DEB> tableOfIdPresent: " +  headerManager.getHeader().getTableOfId(table).isPresent());
+//        System.out.println("DEB> indexOfChunkPresent:" +  headerManager.getHeader().getTableOfId(table).get().getIndexChunk(chunk).isPresent());
+//        System.out.println("DEB> indexOfChunk: " +  headerManager.getHeader().getTableOfId(table).get().getIndexChunk(chunk).get());
         long filePosition = headerManager.getHeader().getTableOfId(table).get().getIndexChunk(chunk).get().getOffset() + position;
         FileUtils.readBytes(asynchronousFileChannel, filePosition, engineConfig.getPaddedSize()).whenComplete((bytes, throwable) -> {
             if (throwable != null){
@@ -204,8 +204,7 @@ public class FileIndexStorageManager implements IndexStorageManager {
             );
         });
         if (isRoot){
-            headerManager.getHeader().getTableOfId(table).get().setRoot(new Header.IndexChunk(pointer.getChunk(), pointer.getPosition()));
-            headerManager.update();
+            this.updateRoot(table, pointer);
         }
         return output;
     }
@@ -322,9 +321,18 @@ public class FileIndexStorageManager implements IndexStorageManager {
     }
 
     @Override
-    public CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer) {
+    public CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer, boolean isRoot) throws IOException {
         long offset = headerManager.getHeader().getTableOfId(table).get().getIndexChunk(pointer.getChunk()).get().getOffset() + pointer.getPosition();
-        return FileUtils.write(getAsynchronousFileChannel(pointer.getChunk()), offset, data);
+        CompletableFuture<Integer> output = FileUtils.write(getAsynchronousFileChannel(pointer.getChunk()), offset, data);
+        if (isRoot){
+            this.updateRoot(table, pointer);
+        }
+        return output;
+    }
+
+    private void updateRoot(int table, Pointer pointer) throws IOException {
+        headerManager.getHeader().getTableOfId(table).get().setRoot(new Header.IndexChunk(pointer.getChunk(), pointer.getPosition()));
+        headerManager.update();
     }
 
     @Override

@@ -43,11 +43,11 @@ public class TreeNodeIO {
         return BaseTreeNode.fromNodeData(indexStorageManager.readNode(table, pointer).get());
     }
 
-    public static void update(IndexStorageManager indexStorageManager, int table, BaseTreeNode... nodes) throws InterruptedException {
+    public static void update(IndexStorageManager indexStorageManager, int table, BaseTreeNode... nodes) throws InterruptedException, IOException {
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
         CountDownLatch latch = new CountDownLatch(nodes.length);
         for (BaseTreeNode node : nodes) {
-            indexStorageManager.updateNode(table, node.getData(), node.getPointer()).whenComplete((integer, throwable) -> {
+            indexStorageManager.updateNode(table, node.getData(), node.getPointer(), node.isRoot()).whenComplete((integer, throwable) -> {
                 if (throwable != null) {
                     completableFuture.completeExceptionally(throwable);
                 }

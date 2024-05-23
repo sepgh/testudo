@@ -22,7 +22,10 @@ public interface IndexStorageManager {
     default CompletableFuture<NodeData> writeNewNode(int table, byte[] data) throws IOException, ExecutionException, InterruptedException {
         return this.writeNewNode(table, data, false);
     }
-    CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer);
+    default CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer) throws IOException {
+        return this.updateNode(table, data, pointer, false);
+    }
+    CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer, boolean root) throws IOException;
 
     void close() throws IOException;
 
