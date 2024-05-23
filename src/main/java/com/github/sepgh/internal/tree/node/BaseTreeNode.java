@@ -113,8 +113,20 @@ public abstract class BaseTreeNode {
         return idx;
     }
 
-    public void removeKey(int idx) {
+    public void removeKey(int idx, int degree) {
+        List<Long> keyList = this.getKeyList(degree);
         TreeNodeUtils.removeKeyAtIndex(this, idx);
+        List<Long> subList = keyList.subList(idx + 1, keyList.size());
+        int lastIndex = -1;
+        for (int i = 0; i < subList.size(); i++) {
+            lastIndex = idx + i;
+            TreeNodeUtils.setKeyAtIndex(this, lastIndex, subList.get(i));
+        }
+        if (lastIndex != -1){
+            for (int i = lastIndex + 1; i < degree - 1; i++){
+                TreeNodeUtils.removeKeyAtIndex(this, i);
+            }
+        }
     }
 
     public enum Type {

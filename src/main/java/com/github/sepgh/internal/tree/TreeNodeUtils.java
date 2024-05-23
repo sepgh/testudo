@@ -45,7 +45,16 @@ public class TreeNodeUtils {
     //       The performance could improve (reduce copy call) by checking if next child exists at all first.
     // Todo: additional to above Todo, currently this function is always called at latest index first, so the whole size check is unnecessary for now
     public static void removeChildAtIndex(BaseTreeNode treeNode, int index) {
-        int nextIndexOffset = OFFSET_TREE_NODE_FLAGS_END + ((index + 1) * (Pointer.BYTES + Long.BYTES));
+        System.arraycopy(
+                new byte[Pointer.BYTES],
+                0,
+                treeNode.getData(),
+                OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + Long.BYTES)),
+                Pointer.BYTES
+        );
+
+
+        /*int nextIndexOffset = OFFSET_TREE_NODE_FLAGS_END + ((index + 1) * (Pointer.BYTES + Long.BYTES));
         if (nextIndexOffset < treeNode.getData().length){
             System.arraycopy(
                     new byte[Pointer.BYTES],
@@ -69,7 +78,7 @@ public class TreeNodeUtils {
                     treeNode.getData().length - SIZE_INTERNAL_NODE_KEY_POINTER,
                     SIZE_INTERNAL_NODE_KEY_POINTER
             );
-        }
+        }*/
     }
 
     /**
