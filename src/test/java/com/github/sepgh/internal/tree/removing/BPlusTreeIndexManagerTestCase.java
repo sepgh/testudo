@@ -1,12 +1,11 @@
 package com.github.sepgh.internal.tree.removing;
 
 import com.github.sepgh.internal.EngineConfig;
-import com.github.sepgh.internal.helper.IndexFileDescriptor;
 import com.github.sepgh.internal.storage.FileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
-import com.github.sepgh.internal.tree.BTreeIndexManager;
+import com.github.sepgh.internal.tree.BPlusTreeIndexManager;
 import com.github.sepgh.internal.tree.IndexManager;
 import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.TreeNodeIO;
@@ -19,7 +18,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -31,7 +29,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.github.sepgh.internal.storage.FileIndexStorageManager.INDEX_FILE_NAME;
 
-public class BTreeIndexManagerTestCase {
+public class BPlusTreeIndexManagerTestCase {
 
     private Path dbPath;
     private EngineConfig engineConfig;
@@ -122,7 +120,7 @@ public class BTreeIndexManagerTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new BTreeIndexManager(degree, fileIndexStorageManager);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
 
 
         for (Long testIdentifier : testIdentifiers) {
@@ -314,7 +312,7 @@ public class BTreeIndexManagerTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new BTreeIndexManager(degree, fileIndexStorageManager);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
 
 
         for (Long testIdentifier : testIdentifiers) {
@@ -487,7 +485,7 @@ public class BTreeIndexManagerTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new BTreeIndexManager(degree, fileIndexStorageManager);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
 
         for (Long testIdentifier : testIdentifiers) {
             indexManager.addIndex(1, testIdentifier, samplePointer);

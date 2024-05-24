@@ -5,7 +5,7 @@ import com.github.sepgh.internal.storage.FileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
-import com.github.sepgh.internal.tree.BTreeIndexManager;
+import com.github.sepgh.internal.tree.BPlusTreeIndexManager;
 import com.github.sepgh.internal.tree.IndexManager;
 import com.github.sepgh.internal.tree.Pointer;
 import org.junit.jupiter.api.*;
@@ -21,7 +21,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.github.sepgh.internal.storage.FileIndexStorageManager.INDEX_FILE_NAME;
 
-public class BTreeIndexManagerReadingTestCase {
+public class BPlusTreeIndexManagerReadingTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private Header header;
@@ -87,7 +87,7 @@ public class BTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new BTreeIndexManager(degree, fileIndexStorageManager);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(1, 10, dataPointer);
@@ -103,7 +103,7 @@ public class BTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new BTreeIndexManager(degree, fileIndexStorageManager);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(1, 10, dataPointer);

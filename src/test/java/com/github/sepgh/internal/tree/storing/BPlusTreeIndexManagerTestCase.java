@@ -6,7 +6,7 @@ import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
-import com.github.sepgh.internal.tree.BTreeIndexManager;
+import com.github.sepgh.internal.tree.BPlusTreeIndexManager;
 import com.github.sepgh.internal.tree.IndexManager;
 import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.github.sepgh.internal.storage.FileIndexStorageManager.INDEX_FILE_NAME;
 
-public class BTreeIndexManagerTestCase {
+public class BPlusTreeIndexManagerTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private Header header;
@@ -91,7 +91,7 @@ public class BTreeIndexManagerTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new BTreeIndexManager(degree, fileIndexStorageManager);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
         BaseTreeNode baseTreeNode = indexManager.addIndex(1, 10, new Pointer(Pointer.TYPE_DATA, 100, 0));
 
         Assertions.assertTrue(baseTreeNode.isRoot());
@@ -125,7 +125,7 @@ public class BTreeIndexManagerTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new BTreeIndexManager(degree, fileIndexStorageManager);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
 
 
         BaseTreeNode lastTreeNode = null;
@@ -208,7 +208,7 @@ public class BTreeIndexManagerTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new BTreeIndexManager(degree, fileIndexStorageManager);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
 
 
         BaseTreeNode lastTreeNode = null;

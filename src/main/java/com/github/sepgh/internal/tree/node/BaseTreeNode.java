@@ -104,15 +104,6 @@ public abstract class BaseTreeNode {
         TreeNodeUtils.setKeyAtIndex(this, index, key);
     }
 
-    public int findKey(int degree, long key) {
-        int idx = 0;
-        List<Long> keyList = this.getKeyList(degree);
-        while (idx < keyList.size() && keyList.get(idx) < key) {
-            idx++;
-        }
-        return idx;
-    }
-
     public void removeKey(int idx, int degree) {
         List<Long> keyList = this.getKeyList(degree);
         TreeNodeUtils.removeKeyAtIndex(this, idx);
@@ -129,16 +120,13 @@ public abstract class BaseTreeNode {
         }
     }
 
+    @Getter
     public enum Type {
         LEAF(TYPE_LEAF_NODE_BIT), INTERNAL(TYPE_INTERNAL_NODE_BIT);
         private final byte sign;
 
         Type(byte sign) {
             this.sign = sign;
-        }
-
-        public byte getSign() {
-            return sign;
         }
     }
 

@@ -7,21 +7,18 @@ import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
-import com.github.sepgh.internal.tree.BTreeIndexManager;
+import com.github.sepgh.internal.tree.BPlusTreeIndexManager;
 import com.github.sepgh.internal.tree.IndexManager;
 import com.github.sepgh.internal.tree.Pointer;
-import com.github.sepgh.internal.tree.node.BaseTreeNode;
-import com.github.sepgh.internal.tree.node.InternalTreeNode;
-import com.github.sepgh.internal.tree.node.LeafTreeNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
@@ -34,21 +31,22 @@ import static com.github.sepgh.internal.storage.FileIndexStorageManager.INDEX_FI
 
 /*
 *  The purpose of this test case is to assure allocation wouldn't cause issue in multi-table environment
+*  Additionally, new chunks should be created and not cause problem
 */
-public class MultiTableBTreeIndexManagerAllocationTestCase {
+public class MultiTableBPlusTreeIndexManagerAllocationAndChunkTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private Header header;
-    private int degree = 4;
+    private final int degree = 4;
 
     @BeforeEach
     public void setUp() throws IOException {
-        dbPath = Files.createTempDirectory("TEST_MultiTableBTreeIndexManagerAllocationTestCase");
+        dbPath = Files.createTempDirectory("TEST_MultiTableBTreeIndexManagerAllocationAndChunkTestCase");
         engineConfig = EngineConfig.builder()
                 .bTreeNodeMaxKey(degree - 1)
-                .bTreeGrowthNodeAllocationCount(2)
+                .bTreeGrowthNodeAllocationCount(1)
                 .build();
-        engineConfig.setBTreeMaxFileSize(15L * 2 * engineConfig.getPaddedSize());
+        engineConfig.setBTreeMaxFileSize(4L * 2 * engineConfig.getPaddedSize());
 
         byte[] writingBytes = new byte[6 * engineConfig.getPaddedSize()];
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
@@ -84,7 +82,7 @@ public class MultiTableBTreeIndexManagerAllocationTestCase {
                                                 Collections.singletonList(
                                                         Header.IndexChunk.builder()
                                                                 .chunk(0)
-                                                                .offset(3L * engineConfig.getPaddedSize())
+                                                                .offset(2L * engineConfig.getPaddedSize())
                                                                 .build()
                                                 )
                                         )
@@ -107,13 +105,8 @@ public class MultiTableBTreeIndexManagerAllocationTestCase {
     }
 
     @AfterEach
-    public void destroy() throws IOException {
-        Path indexPath0 = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
-        Files.delete(indexPath0);
-        try {
-            Path indexPath1 = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
-            Files.delete(indexPath1);
-        } catch (NoSuchFileException ignored){}
+    public void destroy() {
+        new File(dbPath.toString()).delete();
     }
 
 
@@ -150,7 +143,7 @@ public class MultiTableBTreeIndexManagerAllocationTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new BTreeIndexManager(degree, fileIndexStorageManager);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
 
 
         for (int tableId = 1; tableId <= 2; tableId++){
@@ -161,8 +154,10 @@ public class MultiTableBTreeIndexManagerAllocationTestCase {
 
             Optional<IndexStorageManager.NodeData> optional = fileIndexStorageManager.getRoot(tableId).get();
             Assertions.assertTrue(optional.isPresent());
+            Assertions.assertTrue(optional.get().pointer().getChunk() != 0);
 
             StoredTreeStructureVerifier.testOrderedTreeStructure(fileIndexStorageManager, tableId, 1, degree);
+
         }
 
     }
@@ -176,7 +171,7 @@ public class MultiTableBTreeIndexManagerAllocationTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new BTreeIndexManager(degree, fileIndexStorageManager);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
 
         IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
                 AsynchronousFileChannel.open(
@@ -207,10 +202,8 @@ public class MultiTableBTreeIndexManagerAllocationTestCase {
                 multi = 10;
             }
 
-            Optional<IndexStorageManager.NodeData> optional = fileIndexStorageManager.getRoot(tableId).get();
-            Assertions.assertTrue(optional.isPresent());
-
             StoredTreeStructureVerifier.testOrderedTreeStructure(fileIndexStorageManager, tableId, multi, degree);
+
         }
 
     }
@@ -246,34 +239,18 @@ public class MultiTableBTreeIndexManagerAllocationTestCase {
         List<Long> testIdentifiers = Arrays.asList(1L, 4L, 9L, 6L, 10L, 8L, 3L, 2L, 11L, 5L, 7L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new BTreeIndexManager(degree, fileIndexStorageManager);
-
-
-        IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
-                AsynchronousFileChannel.open(
-                        Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0)),
-                        StandardOpenOption.READ,
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.CREATE
-                ),
-                headerManager,
-                engineConfig
-        );
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
 
         for (int tableId = 1; tableId <= 2; tableId++){
 
             for (long testIdentifier : testIdentifiers) {
                 indexManager.addIndex(tableId, testIdentifier, samplePointer);
-                indexFileDescriptor.describe();
             }
 
-            Optional<IndexStorageManager.NodeData> optional = fileIndexStorageManager.getRoot(tableId).get();
-            Assertions.assertTrue(optional.isPresent());
-
             StoredTreeStructureVerifier.testUnOrderedTreeStructure1(fileIndexStorageManager, tableId, 1, degree);
+
         }
 
     }

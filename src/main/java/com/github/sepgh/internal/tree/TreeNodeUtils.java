@@ -52,33 +52,6 @@ public class TreeNodeUtils {
                 OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + Long.BYTES)),
                 Pointer.BYTES
         );
-
-
-        /*int nextIndexOffset = OFFSET_TREE_NODE_FLAGS_END + ((index + 1) * (Pointer.BYTES + Long.BYTES));
-        if (nextIndexOffset < treeNode.getData().length){
-            System.arraycopy(
-                    new byte[Pointer.BYTES],
-                    0,
-                    treeNode.getData(),
-                    OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + Long.BYTES)),
-                    Pointer.BYTES
-            );
-        } else {
-            System.arraycopy(
-                    treeNode.getData(),
-                    nextIndexOffset,
-                    treeNode.getData(),
-                    OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + Long.BYTES)),
-                    treeNode.getData().length - nextIndexOffset
-            );
-            System.arraycopy(
-                    new byte[SIZE_INTERNAL_NODE_KEY_POINTER],
-                    0,
-                    treeNode.getData(),
-                    treeNode.getData().length - SIZE_INTERNAL_NODE_KEY_POINTER,
-                    SIZE_INTERNAL_NODE_KEY_POINTER
-            );
-        }*/
     }
 
     /**
@@ -203,7 +176,7 @@ public class TreeNodeUtils {
      */
     public static int addKeyValueAndGetIndex(BaseTreeNode treeNode, long key, Pointer pointer, int degree) {
         int indexToFill = -1;
-        long keyAtIndex = 0;
+        long keyAtIndex;
         for (int i = 0; i < degree - 1; i++){
             keyAtIndex = getKeyAtIndex(treeNode, i);
             if (keyAtIndex == 0 || keyAtIndex > key){
@@ -384,13 +357,13 @@ public class TreeNodeUtils {
     }
 
     public static void cleanChildrenPointers(InternalTreeNode treeNode, int degree) {
-        byte[] cleanup = new byte[((degree - 1) * (SIZE_INTERNAL_NODE_KEY_POINTER) + Pointer.BYTES)];
+        int len = ((degree - 1) * (SIZE_INTERNAL_NODE_KEY_POINTER) + Pointer.BYTES);
         System.arraycopy(
-                cleanup,
+                new byte[len],
                 0,
                 treeNode.getData(),
                 OFFSET_TREE_NODE_FLAGS_END,
-                cleanup.length
+                len
         );
     }
 }
