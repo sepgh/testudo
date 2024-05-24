@@ -2,6 +2,7 @@ package com.github.sepgh.internal.helper;
 
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.storage.header.HeaderManager;
+import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.tree.node.LeafTreeNode;
@@ -49,8 +50,11 @@ public class IndexFileDescriptor {
         System.out.println(HashCode.fromBytes(node.toBytes()));
         System.out.printf("Offset: %d%n", offset);
         System.out.printf("Node Header:  root(%s) [internal] %n", node.isRoot() ? "T" : "F");
-        System.out.println("Keys:" + node.getKeyList(engineConfig.getBTreeNodeMaxKey() + 1));
-        System.out.println("Children:" + node.getChildPointersList(engineConfig.getBTreeNodeMaxKey() + 1));
+        System.out.println("Keys: " + node.getKeyList(engineConfig.getBTreeNodeMaxKey() + 1));
+        System.out.println("Children: ");
+        for (Pointer pointer : node.getChildrenList()) {
+            System.out.println("\t" + pointer.toString());
+        }
         System.out.println();
         System.out.println("===========================");
     }

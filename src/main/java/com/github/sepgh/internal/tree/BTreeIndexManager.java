@@ -424,6 +424,7 @@ public class BTreeIndexManager implements IndexManager {
             ArrayList<LeafTreeNode.KeyValue> keyValueList = new ArrayList<>(childLeafTreeNode.getKeyValueList(degree));
             keyValueList.addAll(((LeafTreeNode) sibling).getKeyValueList(degree));
             Collections.sort(keyValueList);
+            ((LeafTreeNode) child).setKeyValues(keyValueList, degree);
         }
         int keyToRemoveIndex = siblingIndex == 0 ? siblingIndex : siblingIndex - 1;
         long parentKeyAtIndex = parent.getKeyList(degree).get(keyToRemoveIndex);

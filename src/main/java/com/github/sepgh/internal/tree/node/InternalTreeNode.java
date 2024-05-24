@@ -47,7 +47,16 @@ public class InternalTreeNode extends BaseTreeNode {
     }
 
     public int addKey(long identifier, int degree) {
-        return TreeNodeUtils.addKeyAndGetIndex(this, identifier, degree);
+        List<Long> keyList = new ArrayList<>(this.getKeyList(degree));
+        keyList.add(identifier);
+        keyList.sort(Long::compareTo);
+        int idx = keyList.indexOf(identifier);
+
+        for (int j = idx; j < keyList.size() && j < degree - 1; j++){
+            TreeNodeUtils.setKeyAtIndex(this, j, keyList.get(j));
+        }
+
+        return idx;
     }
 
     public void addChildPointers(long identifier, @Nullable Pointer left, @Nullable Pointer right, int degree, boolean clearForNull){
@@ -147,9 +156,7 @@ public class InternalTreeNode extends BaseTreeNode {
     }
 
     public void removeChild(int idx, int degree) {
-        System.out.println("Remove child called with idx: " + idx);
         List<Pointer> pointerList = this.getChildrenList();
-        System.out.println("Before: " + pointerList);
         TreeNodeUtils.removeChildAtIndex(this, idx);
         List<Pointer> subList = pointerList.subList(idx + 1, pointerList.size());
         int lastIndex = -1;
@@ -162,7 +169,6 @@ public class InternalTreeNode extends BaseTreeNode {
                 TreeNodeUtils.removeChildAtIndex(this, i);
             }
         }
-        System.out.println("After: " + pointerList);
     }
 
     private static class ChildrenIterator implements Iterator<Pointer> {
