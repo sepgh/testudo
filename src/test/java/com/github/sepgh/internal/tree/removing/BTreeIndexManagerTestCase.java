@@ -540,4 +540,108 @@ public class BTreeIndexManagerTestCase {
 
     }
 
+
+    @Test
+    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException {
+        List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
+        Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
+
+
+        HeaderManager headerManager = new InMemoryHeaderManager(header);
+        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexManager indexManager = new BTreeIndexManager(degree, fileIndexStorageManager);
+
+        for (Long testIdentifier : testIdentifiers) {
+            indexManager.addIndex(1, testIdentifier, samplePointer);
+        }
+
+        // Check Tree
+        InternalTreeNode root = (InternalTreeNode) InternalTreeNode.fromNodeData(fileIndexStorageManager.getRoot(1).get().get());
+        Assertions.assertEquals(1, root.getKeyList(degree).size());
+        Assertions.assertEquals(7, root.getKeyList(degree).getFirst());
+
+        Assertions.assertTrue(indexManager.removeIndex(1, 7));
+        Assertions.assertFalse(indexManager.removeIndex(1, 7));
+
+        root = (InternalTreeNode) InternalTreeNode.fromNodeData(fileIndexStorageManager.getRoot(1).get().get());
+        Assertions.assertEquals(1, root.getKeyList(degree).size());
+        Assertions.assertEquals(8, root.getKeyList(degree).getFirst());
+
+        Assertions.assertTrue(indexManager.removeIndex(1, 8));
+        Assertions.assertFalse(indexManager.removeIndex(1, 8));
+
+        root = (InternalTreeNode) InternalTreeNode.fromNodeData(fileIndexStorageManager.getRoot(1).get().get());
+        Assertions.assertEquals(1, root.getKeyList(degree).size());
+        Assertions.assertEquals(9, root.getKeyList(degree).getFirst());
+
+        Assertions.assertTrue(indexManager.removeIndex(1, 9));
+        Assertions.assertFalse(indexManager.removeIndex(1, 9));
+
+        root = (InternalTreeNode) InternalTreeNode.fromNodeData(fileIndexStorageManager.getRoot(1).get().get());
+        Assertions.assertEquals(1, root.getKeyList(degree).size());
+        Assertions.assertEquals(10, root.getKeyList(degree).getFirst());
+
+        Assertions.assertTrue(indexManager.removeIndex(1, 10));
+        Assertions.assertFalse(indexManager.removeIndex(1, 10));
+
+        root = (InternalTreeNode) InternalTreeNode.fromNodeData(fileIndexStorageManager.getRoot(1).get().get());
+        Assertions.assertEquals(1, root.getKeyList(degree).size());
+        Assertions.assertEquals(11, root.getKeyList(degree).getFirst());
+
+        Assertions.assertTrue(indexManager.removeIndex(1, 11));
+        Assertions.assertFalse(indexManager.removeIndex(1, 11));
+
+        root = (InternalTreeNode) InternalTreeNode.fromNodeData(fileIndexStorageManager.getRoot(1).get().get());
+        Assertions.assertEquals(1, root.getKeyList(degree).size(), "" +  root.getKeyList(degree));
+        Assertions.assertEquals(5, root.getKeyList(degree).getFirst());
+
+        Assertions.assertTrue(indexManager.removeIndex(1, 5));
+        Assertions.assertFalse(indexManager.removeIndex(1, 5));
+
+        root = (InternalTreeNode) InternalTreeNode.fromNodeData(fileIndexStorageManager.getRoot(1).get().get());
+        Assertions.assertEquals(1, root.getKeyList(degree).size(), "" +  root.getKeyList(degree));
+        Assertions.assertEquals(6, root.getKeyList(degree).getFirst());
+
+        Assertions.assertTrue(indexManager.removeIndex(1, 6));
+        Assertions.assertFalse(indexManager.removeIndex(1, 6));
+
+        root = (InternalTreeNode) InternalTreeNode.fromNodeData(fileIndexStorageManager.getRoot(1).get().get());
+        Assertions.assertEquals(2, root.getKeyList(degree).size(), "" +  root.getKeyList(degree));
+        Assertions.assertEquals(3, root.getKeyList(degree).getFirst());
+        Assertions.assertEquals(12, root.getKeyList(degree).getLast());
+
+        Assertions.assertTrue(indexManager.removeIndex(1, 3));
+        Assertions.assertFalse(indexManager.removeIndex(1, 3));
+
+        root = (InternalTreeNode) InternalTreeNode.fromNodeData(fileIndexStorageManager.getRoot(1).get().get());
+        Assertions.assertEquals(2, root.getKeyList(degree).size(), "" +  root.getKeyList(degree));
+        Assertions.assertEquals(4, root.getKeyList(degree).getFirst());
+        Assertions.assertEquals(12, root.getKeyList(degree).getLast());
+
+        Assertions.assertTrue(indexManager.removeIndex(1, 4));
+        Assertions.assertFalse(indexManager.removeIndex(1, 4));
+
+        root = (InternalTreeNode) InternalTreeNode.fromNodeData(fileIndexStorageManager.getRoot(1).get().get());
+        Assertions.assertEquals(2, root.getKeyList(degree).size(), "" +  root.getKeyList(degree));
+        Assertions.assertEquals(2, root.getKeyList(degree).getFirst());
+        Assertions.assertEquals(12, root.getKeyList(degree).getLast());
+
+        Assertions.assertTrue(indexManager.removeIndex(1, 2));
+        Assertions.assertFalse(indexManager.removeIndex(1, 2));
+
+        root = (InternalTreeNode) InternalTreeNode.fromNodeData(fileIndexStorageManager.getRoot(1).get().get());
+        Assertions.assertEquals(1, root.getKeyList(degree).size(), "" +  root.getKeyList(degree));
+        Assertions.assertEquals(12, root.getKeyList(degree).getFirst());
+
+
+        Assertions.assertTrue(indexManager.removeIndex(1, 12));
+        Assertions.assertFalse(indexManager.removeIndex(1, 12));
+
+        BaseTreeNode lRoot = InternalTreeNode.fromNodeData(fileIndexStorageManager.getRoot(1).get().get());
+        Assertions.assertEquals(1, lRoot.getKeyList(degree).size(), "" +  root.getKeyList(degree));
+        Assertions.assertEquals(1, lRoot.getKeyList(degree).getFirst());
+        Assertions.assertEquals(BaseTreeNode.Type.LEAF, lRoot.getType());
+
+    }
+
 }

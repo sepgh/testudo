@@ -217,7 +217,11 @@ public class BTreeIndexManager implements IndexManager {
             return;
         int indexOfKey = keyList.indexOf(identifier);
         if (indexOfKey != -1){
-            this.deleteInternalNode(table, (InternalTreeNode) path.get(nodeIndex + 1), internalTreeNode, indexOfKey);
+            if (internalTreeNode.isRoot()){
+                this.fillRootAtIndex(table, internalTreeNode, indexOfKey, identifier);
+            } else {
+                this.deleteInternalNode(table, (InternalTreeNode) path.get(nodeIndex + 1), internalTreeNode, indexOfKey);
+            }
         }
 
         int nodeKeySize = internalTreeNode.getKeyList(degree).size();
@@ -225,6 +229,22 @@ public class BTreeIndexManager implements IndexManager {
             InternalTreeNode parent = (InternalTreeNode) path.get(nodeIndex + 1);
             this.fillInternal(table, internalTreeNode, parent, parent.getIndexOfChild(internalTreeNode.getPointer()));
         }
+    }
+
+    private void fillRootAtIndex(int table, InternalTreeNode internalTreeNode, int indexOfKey, long identifier) throws ExecutionException, InterruptedException, IOException {
+        Optional<LeafTreeNode> responsibleNode = getResponsibleNode(
+                TreeNodeIO.read(indexStorageManager, table, internalTreeNode.getChildAtIndex(indexOfKey + 1)),
+                identifier,
+                table
+        );
+
+        if (responsibleNode.isEmpty()) {
+            // Todo: something awful happened?
+        }
+
+        LeafTreeNode leafTreeNode = responsibleNode.get();
+        internalTreeNode.setKey(indexOfKey, leafTreeNode.getKeyList(degree).getLast());
+        TreeNodeIO.update(indexStorageManager, table, internalTreeNode);
     }
 
     private void fillLeaf(int table, LeafTreeNode node, List<BaseTreeNode> path, int currentIndex, long identifier) throws ExecutionException, InterruptedException, IOException {
