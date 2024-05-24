@@ -129,22 +129,9 @@ public class BTreeIndexManagerTestCase {
             indexManager.addIndex(1, testIdentifier, samplePointer);
         }
 
-        IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
-                AsynchronousFileChannel.open(
-                        Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0)),
-                        StandardOpenOption.READ,
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.CREATE
-                ),
-                headerManager,
-                engineConfig
-        );
-
-        System.out.println("DEB> removing 1");
         Assertions.assertTrue(indexManager.removeIndex(1, 1));
         Assertions.assertFalse(indexManager.removeIndex(1, 1));
 
-        System.out.println("DEB> removing 2");
         Assertions.assertTrue(indexManager.removeIndex(1, 2));
         Assertions.assertFalse(indexManager.removeIndex(1, 2));
 
@@ -181,7 +168,6 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(6, rightSideLastTreeNodeKeyList.getLast());
 
 
-        System.out.println("DEB> removing 3");
         Assertions.assertTrue(indexManager.removeIndex(1, 3));
         Assertions.assertFalse(indexManager.removeIndex(1, 3));
 
@@ -192,7 +178,6 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(5, midTreeNodeLeftKeyList.getFirst());
 
 
-        System.out.println("DEB> removing 4");
         Assertions.assertTrue(indexManager.removeIndex(1, 4));
         Assertions.assertFalse(indexManager.removeIndex(1, 4));
 
@@ -201,7 +186,6 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(1, midTreeNodeLeftKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(6, midTreeNodeLeftKeyList.getFirst());
 
-        System.out.println("DEB> removing 5");
         Assertions.assertTrue(indexManager.removeIndex(1, 5));
         Assertions.assertFalse(indexManager.removeIndex(1, 5));
 
@@ -230,7 +214,6 @@ public class BTreeIndexManagerTestCase {
 
 
 
-        System.out.println("DEB> removing 6");
         Assertions.assertTrue(indexManager.removeIndex(1, 6));
         Assertions.assertFalse(indexManager.removeIndex(1, 6));
 
@@ -239,9 +222,7 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(1, midTreeNodeLeftKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(8, midTreeNodeLeftKeyList.getFirst());
 
-        indexFileDescriptor.describe();
 
-        System.out.println("DEB> removing 7");
         Assertions.assertTrue(indexManager.removeIndex(1, 7));
         Assertions.assertFalse(indexManager.removeIndex(1, 7));
 
@@ -258,9 +239,6 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(9, leafNodeAtMid.getKeyList(degree).getFirst());
         Assertions.assertEquals(10, leafNodeAtMid.getKeyList(degree).getLast());
 
-        indexFileDescriptor.describe();
-
-        System.out.println("DEB> removing 8");
         Assertions.assertTrue(indexManager.removeIndex(1, 8));
         Assertions.assertFalse(indexManager.removeIndex(1, 8));
 
@@ -274,7 +252,6 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(9, leafNodeAtLeft.getKeyList(degree).getFirst());
 
 
-        System.out.println("DEB> removing 9");
         Assertions.assertTrue(indexManager.removeIndex(1, 9));
         Assertions.assertFalse(indexManager.removeIndex(1, 9));
 
@@ -286,7 +263,6 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree).size());
         Assertions.assertEquals(10, leafNodeAtLeft.getKeyList(degree).getFirst());
 
-        System.out.println("WTF? " + root.getChildrenList());
         LeafTreeNode leafNodeAtRight = (LeafTreeNode) TreeNodeIO.read(fileIndexStorageManager, 1, root.getChildrenList().getLast());
         Assertions.assertEquals(2, leafNodeAtRight.getKeyList(degree).size());
         Assertions.assertEquals(11, leafNodeAtRight.getKeyList(degree).getFirst());
@@ -294,7 +270,6 @@ public class BTreeIndexManagerTestCase {
 
 
 
-        System.out.println("DEB> removing 10");
         Assertions.assertTrue(indexManager.removeIndex(1, 10));
         Assertions.assertFalse(indexManager.removeIndex(1, 10));
 
@@ -313,7 +288,6 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(12, leafNodeAtRight.getKeyList(degree).getFirst());
 
 
-        System.out.println("DEB> removing 11");
         Assertions.assertTrue(indexManager.getIndex(1, 11).isPresent());
         Assertions.assertTrue(indexManager.removeIndex(1, 11));
         Assertions.assertFalse(indexManager.removeIndex(1, 11));
@@ -323,7 +297,6 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(12, bRoot.getKeyList(degree).getFirst());
         Assertions.assertEquals(BaseTreeNode.Type.LEAF, bRoot.getType());
 
-        System.out.println("DEB> removing 12");
         Assertions.assertTrue(indexManager.getIndex(1, 12).isPresent());
         Assertions.assertTrue(indexManager.removeIndex(1, 12));
         Assertions.assertFalse(indexManager.removeIndex(1, 12));
@@ -348,30 +321,13 @@ public class BTreeIndexManagerTestCase {
             indexManager.addIndex(1, testIdentifier, samplePointer);
         }
 
-        IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
-                AsynchronousFileChannel.open(
-                        Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0)),
-                        StandardOpenOption.READ,
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.CREATE
-                ),
-                headerManager,
-                engineConfig
-        );
-
-        System.out.println("DEB> removing 13");
         Assertions.assertFalse(indexManager.removeIndex(1, 13));
-        System.out.println("DEB> removing 12");
         Assertions.assertTrue(indexManager.removeIndex(1, 12));
 
-//        indexFileDescriptor.describe(); // Just print to see // Todo: remove this and descriptor all together
 
 
-        System.out.println("DEB> removing 12");
         Assertions.assertFalse(indexManager.removeIndex(1, 12));
-        System.out.println("DEB> removing 11");
         Assertions.assertTrue(indexManager.removeIndex(1, 11));
-//        indexFileDescriptor.describe();  // Todo: remove this and descriptor all together
 
         Assertions.assertFalse(indexManager.removeIndex(1, 11));
 
@@ -407,7 +363,6 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(10, rightSideLastTreeNodeKeyList.getFirst());
 
 
-        System.out.println("DEB> removing 10");
         Assertions.assertTrue(indexManager.removeIndex(1, 10));
         Assertions.assertFalse(indexManager.removeIndex(1, 10));
 
@@ -426,7 +381,6 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(1, midTreeNodeKeyList.size(), "" + midTreeNodeKeyList);
         Assertions.assertEquals(8, midTreeNodeKeyList.getFirst());
 
-        System.out.println("DEB> removing 8");
         Assertions.assertTrue(indexManager.removeIndex(1, 8));
         Assertions.assertFalse(indexManager.removeIndex(1, 8));
 
@@ -453,23 +407,13 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(1, rightSideLastTreeNodeKeyList.size(), "Keys: " + midLastTreeNodeKeyList + ", P: " + midLastTreeNode.getPointer());
         Assertions.assertEquals(7, rightSideLastTreeNodeKeyList.getFirst());
 
-
-
-        System.out.println("DEB> removing 7");
         Assertions.assertTrue(indexManager.removeIndex(1, 7));
         Assertions.assertFalse(indexManager.removeIndex(1, 7));
 
-
-
-
-        System.out.println("DEB> removing 6");
         Assertions.assertTrue(indexManager.removeIndex(1, 6));
         Assertions.assertFalse(indexManager.removeIndex(1, 6));
 
-        System.out.println("\n\n=== DESCRIPTION ===");
-//        indexFileDescriptor.describe();    // todo
 
-        System.out.println(headerManager.getHeader().getTableOfId(1).get().getRoot());
         root = (InternalTreeNode) InternalTreeNode.fromNodeData(fileIndexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(2, root.getKeyList(degree).size());
         Assertions.assertEquals(3, root.getKeyList(degree).getFirst());
@@ -480,7 +424,6 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(5, leafNodeAtRight.getKeyList(degree).getFirst());
 
 
-        System.out.println("DEB> removing 5");
         Assertions.assertTrue(indexManager.removeIndex(1, 5));
         Assertions.assertFalse(indexManager.removeIndex(1, 5));
 
@@ -494,7 +437,6 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(4, leafNodeAtRight.getKeyList(degree).getFirst());
 
 
-        System.out.println("DEB> removing 4");
         Assertions.assertTrue(indexManager.removeIndex(1, 4));
         Assertions.assertFalse(indexManager.removeIndex(1, 4));
 
@@ -507,7 +449,6 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(3, leafNodeAtRight.getKeyList(degree).getFirst());
 
 
-        System.out.println("DEB> removing 3");
         Assertions.assertTrue(indexManager.removeIndex(1, 3));
         Assertions.assertFalse(indexManager.removeIndex(1, 3));
 
@@ -519,8 +460,6 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree).size());
         Assertions.assertEquals(2, leafNodeAtRight.getKeyList(degree).getFirst());
 
-
-        System.out.println("DEB> removing 2");
         Assertions.assertTrue(indexManager.getIndex(1, 2).isPresent());
         Assertions.assertTrue(indexManager.removeIndex(1, 2));
         Assertions.assertFalse(indexManager.removeIndex(1, 2));
@@ -530,7 +469,6 @@ public class BTreeIndexManagerTestCase {
         Assertions.assertEquals(1, bRoot.getKeyList(degree).getFirst());
         Assertions.assertEquals(BaseTreeNode.Type.LEAF, bRoot.getType());
 
-        System.out.println("DEB> removing 1");
         Assertions.assertTrue(indexManager.getIndex(1, 1).isPresent());
         Assertions.assertTrue(indexManager.removeIndex(1, 1));
         Assertions.assertFalse(indexManager.removeIndex(1, 1));

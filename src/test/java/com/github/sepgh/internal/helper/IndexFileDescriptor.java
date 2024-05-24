@@ -40,7 +40,7 @@ public class IndexFileDescriptor {
             else if (baseTreeNode.getType() == BaseTreeNode.Type.INTERNAL)
                 this.printInternalNode((InternalTreeNode) baseTreeNode, offset);
             else
-                System.out.println("Bro wtf?");
+                System.out.println("Empty leaf?");
         }
 
     }
