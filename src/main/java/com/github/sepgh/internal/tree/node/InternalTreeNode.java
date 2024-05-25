@@ -61,8 +61,7 @@ public class InternalTreeNode extends BaseTreeNode {
 
     public void addChildPointers(long identifier, @Nullable Pointer left, @Nullable Pointer right, int degree, boolean clearForNull){
         modified();
-        // Todo: since we spotted an issue with (addKeyAndGetIndex), using this.addKey() should be feasible but using it would break some test cases and needs investigation to see if test is wrong or the implementation is wrong
-        int i = TreeNodeUtils.addKeyAndGetIndex(this, identifier, degree);
+        int i = this.addKey(identifier, degree);
         if (left != null){
             TreeNodeUtils.setPointerToChild(this, i, left);
         }
@@ -90,6 +89,16 @@ public class InternalTreeNode extends BaseTreeNode {
 
     public List<Pointer> getChildrenList(){
         return ImmutableList.copyOf(getChildren());
+    }
+
+    public void addChildAtIndex(int index, Pointer pointer){
+        List<Pointer> childrenList = new ArrayList<>(this.getChildrenList());
+        childrenList.add(index, pointer);
+
+        for (int i = index; i < childrenList.size(); i++){
+            this.setChildAtIndex(i, childrenList.get(i));
+        }
+
     }
 
     public void setChildAtIndex(int index, Pointer pointer){

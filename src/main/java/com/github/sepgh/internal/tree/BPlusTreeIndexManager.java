@@ -89,7 +89,12 @@ public class BPlusTreeIndexManager implements IndexManager {
                 InternalTreeNode currentInternalTreeNode = (InternalTreeNode) currentNode;
                 if (currentInternalTreeNode.getKeyList(degree).size() < degree - 1) {
                     /* current internal node can store the key */
-                    currentInternalTreeNode.addChildPointers(idForParentToStore, null, newChildForParent.getPointer(), degree, false);
+                    int indexOfAddedKey = currentInternalTreeNode.addKey(idForParentToStore, degree);
+                    if (newChildForParent.getKeyList(degree).getFirst() < idForParentToStore){
+                        currentInternalTreeNode.addChildAtIndex(indexOfAddedKey, newChildForParent.getPointer());
+                    } else {
+                        currentInternalTreeNode.addChildAtIndex(indexOfAddedKey + 1, newChildForParent.getPointer());
+                    }
                     TreeNodeIO.write(currentInternalTreeNode, indexStorageManager, table).get();
                     return answer;
                 }

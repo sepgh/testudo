@@ -64,7 +64,7 @@ public class StoredTreeStructureVerifier {
         // 2nd Leaf
         Optional<Pointer> nextPointer = currentLeaf.getNextSiblingPointer(degree);
         Assertions.assertTrue(nextPointer.isPresent());
-        Assertions.assertEquals(nextPointer.get(), leftChildInternalNode.getChildPointersList(degree).get(0).getRight());
+        Assertions.assertEquals(nextPointer.get(), leftChildInternalNode.getChildAtIndex(1));
 
         currentLeaf = (LeafTreeNode) TreeNodeIO.read(indexStorageManager, table, leftChildInternalNode.getChildPointersList(degree).get(0).getRight());
         currentLeafKeys = currentLeaf.getKeyList(degree);

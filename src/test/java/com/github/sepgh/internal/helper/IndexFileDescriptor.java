@@ -88,6 +88,8 @@ public class IndexFileDescriptor {
         }
         System.out.println("Key Values:");
         System.out.println(stringBuilder);
+        System.out.println("Prev: " + node.getPreviousSiblingPointer(engineConfig.getBTreeNodeMaxKey() + 1));
+        System.out.println("Next: " + node.getNextSiblingPointer(engineConfig.getBTreeNodeMaxKey() + 1));
         System.out.println("===========================");
     }
 

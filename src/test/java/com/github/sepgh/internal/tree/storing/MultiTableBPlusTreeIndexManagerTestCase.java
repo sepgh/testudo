@@ -1,6 +1,7 @@
 package com.github.sepgh.internal.tree.storing;
 
 import com.github.sepgh.internal.EngineConfig;
+import com.github.sepgh.internal.helper.IndexFileDescriptor;
 import com.github.sepgh.internal.storage.FileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -190,16 +192,28 @@ public class MultiTableBPlusTreeIndexManagerTestCase {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 4L, 9L, 6L, 10L, 8L, 3L, 2L, 11L, 5L, 7L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
+        HeaderManager headerManager = new InMemoryHeaderManager(header);
+        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
+
+        IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
+                AsynchronousFileChannel.open(
+                        Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0)),
+                        StandardOpenOption.READ,
+                        StandardOpenOption.WRITE,
+                        StandardOpenOption.CREATE
+                ),
+                headerManager,
+                engineConfig
+        );
 
         for (int tableId = 1; tableId <= 2; tableId++){
-            HeaderManager headerManager = new InMemoryHeaderManager(header);
-            FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
-            IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
-
 
             BaseTreeNode lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
                 lastTreeNode = indexManager.addIndex(tableId, testIdentifier, samplePointer);
+                System.out.println("Adding " + testIdentifier + " to table " + tableId);
+                indexFileDescriptor.describe();
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());
