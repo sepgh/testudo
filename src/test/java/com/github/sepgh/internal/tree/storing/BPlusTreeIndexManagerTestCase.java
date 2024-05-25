@@ -115,8 +115,12 @@ public class BPlusTreeIndexManagerTestCase {
 
         List<Long> testIdentifiers = new ArrayList<>(degree);
         int i = 0;
-        for (; i < degree; i++){
-            testIdentifiers.add(random.nextLong() % 100);
+        while (testIdentifiers.size() < degree){
+            long l = random.nextLong() % 100;
+            if (!testIdentifiers.contains(l)){
+                testIdentifiers.add(l);
+                i++;
+            }
         }
 
         Assertions.assertEquals(degree, i);

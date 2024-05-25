@@ -2,6 +2,7 @@ package com.github.sepgh.internal.tree.node;
 
 import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.TreeNodeUtils;
+import com.github.sepgh.internal.utils.CollectionUtils;
 import com.google.common.collect.ImmutableList;
 
 import java.util.*;
@@ -57,8 +58,9 @@ public class LeafTreeNode extends BaseTreeNode {
         int mid = (degree - 1) / 2;
 
         List<KeyValue> allKeyValues = new ArrayList<>(getKeyValueList(degree));
-        allKeyValues.add(new KeyValue(identifier, pointer));
-        Collections.sort(allKeyValues);
+        KeyValue keyValue = new KeyValue(identifier, pointer);
+        int i = CollectionUtils.indexToInsert(allKeyValues, keyValue);
+        allKeyValues.add(i, keyValue);
 
         List<KeyValue> toKeep = allKeyValues.subList(0, mid + 1);
         this.setKeyValues(toKeep, degree);

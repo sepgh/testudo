@@ -2,6 +2,7 @@ package com.github.sepgh.internal.tree.node;
 
 import com.github.sepgh.internal.tree.Pointer;
 import com.github.sepgh.internal.tree.TreeNodeUtils;
+import com.github.sepgh.internal.utils.CollectionUtils;
 import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -48,9 +49,8 @@ public class InternalTreeNode extends BaseTreeNode {
 
     public int addKey(long identifier, int degree) {
         List<Long> keyList = new ArrayList<>(this.getKeyList(degree));
-        keyList.add(identifier);
-        keyList.sort(Long::compareTo);
-        int idx = keyList.indexOf(identifier);
+        int idx = CollectionUtils.indexToInsert(keyList, identifier);
+        keyList.add(idx, identifier);
 
         for (int j = idx; j < keyList.size() && j < degree - 1; j++){
             TreeNodeUtils.setKeyAtIndex(this, j, keyList.get(j));
@@ -128,10 +128,8 @@ public class InternalTreeNode extends BaseTreeNode {
         int mid = (degree - 1) / 2;
 
         List<Long> keyList = new ArrayList<>(getKeyList(degree));
-        keyList.add(identifier);
-        keyList.sort(Long::compareTo);
-
-        int i = keyList.indexOf(identifier);
+        int i = CollectionUtils.indexToInsert(keyList, identifier);
+        keyList.add(i, identifier);
 
         List<ChildPointers> childPointersList = new ArrayList<>(getChildPointersList(degree));
 
