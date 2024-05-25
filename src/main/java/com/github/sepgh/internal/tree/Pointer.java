@@ -32,6 +32,14 @@ public class Pointer {
         );
     }
 
+    public static Pointer empty(){
+        return new Pointer(
+                (byte) 0x00,
+                0,
+                0
+        );
+    }
+
     public static Pointer fromBytes(byte[] bytes){
         return Pointer.fromBytes(bytes, 0);
     }

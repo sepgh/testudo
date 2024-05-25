@@ -517,6 +517,14 @@ public class BPlusTreeIndexManagerTestCase {
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(10, root.getKeyList(degree).getFirst());
 
+        // Testing next / prev state
+        Pointer lastLeafFromLeftPointer = ((InternalTreeNode) TreeNodeIO.read(fileIndexStorageManager, 1, root.getChildrenList().getFirst())).getChildrenList().getLast();
+        Pointer firstLeafFromRightPointer = ((InternalTreeNode) TreeNodeIO.read(fileIndexStorageManager, 1, root.getChildrenList().getLast())).getChildrenList().getFirst();
+
+        Assertions.assertEquals(lastLeafFromLeftPointer, ((LeafTreeNode) TreeNodeIO.read(fileIndexStorageManager, 1, firstLeafFromRightPointer)).getPreviousSiblingPointer(degree).get());
+        Assertions.assertEquals(firstLeafFromRightPointer, ((LeafTreeNode) TreeNodeIO.read(fileIndexStorageManager, 1, lastLeafFromLeftPointer)).getNextSiblingPointer(degree).get());
+
+
         Assertions.assertTrue(indexManager.removeIndex(1, 10));
         Assertions.assertFalse(indexManager.removeIndex(1, 10));
 

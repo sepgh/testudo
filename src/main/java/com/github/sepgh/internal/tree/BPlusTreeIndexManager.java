@@ -471,12 +471,44 @@ public class BPlusTreeIndexManager implements IndexManager {
                 child.setAsRoot();
                 parent.unsetAsRoot();
             }
+            if (child.isLeaf()) {
+                assert child instanceof LeafTreeNode;
+                this.connectSiblings((LeafTreeNode) child, table);
+            }
             TreeNodeIO.update(indexStorageManager, table, child);
             TreeNodeIO.remove(indexStorageManager, table, parent);
         }else{
             TreeNodeIO.update(indexStorageManager, table, parent, child);
         }
+        if (toRemove.isLeaf()) {
+            assert toRemove instanceof LeafTreeNode;
+            this.connectSiblings((LeafTreeNode) toRemove, table);
+        }
         TreeNodeIO.remove(indexStorageManager, table, toRemove);
+    }
+
+    private void connectSiblings(LeafTreeNode toRemove, int table) throws ExecutionException, InterruptedException, IOException {
+        Optional<Pointer> optionalNextSiblingPointer = toRemove.getNextSiblingPointer(degree);
+        Optional<Pointer> optionalPreviousSiblingPointer = toRemove.getPreviousSiblingPointer(degree);
+        if (optionalNextSiblingPointer.isPresent()){
+            LeafTreeNode nextNode = (LeafTreeNode) TreeNodeIO.read(indexStorageManager, table, optionalNextSiblingPointer.get());
+            if (optionalPreviousSiblingPointer.isPresent()){
+                nextNode.setPreviousSiblingPointer(optionalPreviousSiblingPointer.get(), degree);
+            } else {
+                nextNode.setPreviousSiblingPointer(Pointer.empty(), degree);
+            }
+            TreeNodeIO.update(indexStorageManager, table, nextNode);
+        }
+
+        if (optionalPreviousSiblingPointer.isPresent()){
+            LeafTreeNode previousNode = (LeafTreeNode) TreeNodeIO.read(indexStorageManager, table, optionalPreviousSiblingPointer.get());
+            if (optionalNextSiblingPointer.isPresent()){
+                previousNode.setNextSiblingPointer(optionalNextSiblingPointer.get(), degree);
+            } else {
+                previousNode.setNextSiblingPointer(Pointer.empty(), degree);
+            }
+            TreeNodeIO.update(indexStorageManager, table, previousNode);
+        }
 
     }
 
