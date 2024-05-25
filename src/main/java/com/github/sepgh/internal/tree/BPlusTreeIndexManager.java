@@ -471,13 +471,13 @@ public class BPlusTreeIndexManager implements IndexManager {
                 child.setAsRoot();
                 parent.unsetAsRoot();
             }
+            TreeNodeIO.update(indexStorageManager, table, child);
+            TreeNodeIO.remove(indexStorageManager, table, parent);
+        }else{
             if (child.isLeaf()) {
                 assert child instanceof LeafTreeNode;
                 this.connectSiblings((LeafTreeNode) child, table);
             }
-            TreeNodeIO.update(indexStorageManager, table, child);
-            TreeNodeIO.remove(indexStorageManager, table, parent);
-        }else{
             TreeNodeIO.update(indexStorageManager, table, parent, child);
         }
         if (toRemove.isLeaf()) {
