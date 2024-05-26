@@ -170,7 +170,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
     }
 
     @Test
-    public void testMultiSplitAddIndexLimitedOpenFiles_FailLimitedTo1() throws IOException, ExecutionException, InterruptedException {
+    public void testMultiSplitAddIndexLimitedOpenFiles_SuccessLimitTo1() throws IOException, ExecutionException, InterruptedException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
@@ -182,14 +182,12 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, limitedFileHandlerPool);
         IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
 
-        Assertions.assertThrows(IllegalStateException.class, () -> {
-            for (int tableId = 1; tableId <= 2; tableId++) {
-                int finalTableId = tableId;
-                for (long testIdentifier : testIdentifiers) {
-                    indexManager.addIndex(finalTableId, testIdentifier, samplePointer);
-                }
+        for (int tableId = 1; tableId <= 2; tableId++) {
+            int finalTableId = tableId;
+            for (long testIdentifier : testIdentifiers) {
+                indexManager.addIndex(finalTableId, testIdentifier, samplePointer);
             }
-        });
+        }
 
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         FileHandler fileHandler = limitedFileHandlerPool.getFileHandler(indexPath.toString());

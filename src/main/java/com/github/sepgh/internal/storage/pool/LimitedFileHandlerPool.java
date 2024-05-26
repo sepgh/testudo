@@ -28,7 +28,6 @@ public class LimitedFileHandlerPool implements FileHandlerPool {
             fileHandler = fileHandlers.get(filePath);
             if (fileHandler == null) {
                 if (!semaphore.tryAcquire(timeout, timeUnit)) {
-                    System.out.println(this.getFileHandler(filePath.replace("index.1", "index.0")).getUsageCount());
                     throw new IllegalStateException("Timeout while waiting to acquire file handler for " + filePath);
                 }
                 fileHandler = new FileHandler(filePath);

@@ -234,70 +234,74 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
         Optional<Header.IndexChunk> optional = table.getIndexChunk(chunk);
         boolean newChunkCreatedForTable = optional.isEmpty();
 
-        try (ManagedFileHandler managedFileHandler = this.getManagedFileHandler(tableId, chunk)){
-            AsynchronousFileChannel asynchronousFileChannel = managedFileHandler.getAsynchronousFileChannel();
-            long fileSize = asynchronousFileChannel.size();
+        ManagedFileHandler managedFileHandler = this.getManagedFileHandler(tableId, chunk);
+        AsynchronousFileChannel asynchronousFileChannel = managedFileHandler.getAsynchronousFileChannel();
+        long fileSize = asynchronousFileChannel.size();
 
-            if (newChunkCreatedForTable){
-                if (fileSize >= engineConfig.getBTreeMaxFileSize()){
-                    return getAllocatedSpaceForNewNode(tableId, chunk + 1);
-                } else {
-                    Long position = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
-                    List<Header.IndexChunk> newChunks = new ArrayList<>(table.getChunks());
-                    newChunks.add(new Header.IndexChunk(chunk, position));
-                    table.setChunks(newChunks);
-                    headerManager.update();
-                    return new Pointer(Pointer.TYPE_NODE, position, chunk);
-                }
-            }
-
-            List<Header.Table> tablesIncludingChunk = getTablesIncludingChunk(chunk);
-            int indexOfTable = getIndexOfTable(tablesIncludingChunk, tableId);
-            boolean isLastTable = indexOfTable == tablesIncludingChunk.size() - 1;
-
-
-            if (fileSize > 0){
-                long positionToCheck =
-                        isLastTable ?
-                                fileSize - engineConfig.indexGrowthAllocationSize()
-                                :
-                                tablesIncludingChunk.get(indexOfTable + 1).getIndexChunk(chunk).get().getOffset() - engineConfig.indexGrowthAllocationSize();
-
-                if (positionToCheck > 0 && positionToCheck > tablesIncludingChunk.get(indexOfTable).getIndexChunk(chunk).get().getOffset()) {
-                    byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, engineConfig.indexGrowthAllocationSize()).get();
-                    Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
-                    if (optionalAdditionalPosition.isPresent()){
-                        long finalPosition = positionToCheck + optionalAdditionalPosition.get();
-                        return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
-                    }
-                }
-            }
-
+        if (newChunkCreatedForTable){
             if (fileSize >= engineConfig.getBTreeMaxFileSize()){
-                return this.getAllocatedSpaceForNewNode(tableId, chunk + 1);
-            }
-
-
-            long allocatedOffset;
-            if (isLastTable){
-                allocatedOffset = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
+                managedFileHandler.close();
+                return getAllocatedSpaceForNewNode(tableId, chunk + 1);
             } else {
-                allocatedOffset = FileUtils.allocate(
-                        asynchronousFileChannel,
-                        tablesIncludingChunk.get(indexOfTable + 1).getIndexChunk(chunk).get().getOffset(),
-                        engineConfig.indexGrowthAllocationSize()
-                ).get();
-
-                for (int i = indexOfTable + 1; i < tablesIncludingChunk.size(); i++){
-                    Header.Table nextTable = tablesIncludingChunk.get(i);
-                    Header.IndexChunk indexChunk = nextTable.getIndexChunk(chunk).get();
-                    indexChunk.setOffset(indexChunk.getOffset() + engineConfig.indexGrowthAllocationSize());
-                }
+                Long position = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
+                managedFileHandler.close();
+                List<Header.IndexChunk> newChunks = new ArrayList<>(table.getChunks());
+                newChunks.add(new Header.IndexChunk(chunk, position));
+                table.setChunks(newChunks);
                 headerManager.update();
+                return new Pointer(Pointer.TYPE_NODE, position, chunk);
             }
-
-            return new Pointer(Pointer.TYPE_NODE, allocatedOffset, chunk);
         }
+
+        List<Header.Table> tablesIncludingChunk = getTablesIncludingChunk(chunk);
+        int indexOfTable = getIndexOfTable(tablesIncludingChunk, tableId);
+        boolean isLastTable = indexOfTable == tablesIncludingChunk.size() - 1;
+
+
+        if (fileSize > 0){
+            long positionToCheck =
+                    isLastTable ?
+                            fileSize - engineConfig.indexGrowthAllocationSize()
+                            :
+                            tablesIncludingChunk.get(indexOfTable + 1).getIndexChunk(chunk).get().getOffset() - engineConfig.indexGrowthAllocationSize();
+
+            if (positionToCheck > 0 && positionToCheck > tablesIncludingChunk.get(indexOfTable).getIndexChunk(chunk).get().getOffset()) {
+                byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, engineConfig.indexGrowthAllocationSize()).get();
+                Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
+                if (optionalAdditionalPosition.isPresent()){
+                    long finalPosition = positionToCheck + optionalAdditionalPosition.get();
+                    managedFileHandler.close();
+                    return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
+                }
+            }
+        }
+
+        if (fileSize >= engineConfig.getBTreeMaxFileSize()){
+            managedFileHandler.close();
+            return this.getAllocatedSpaceForNewNode(tableId, chunk + 1);
+        }
+
+
+        long allocatedOffset;
+        if (isLastTable){
+            allocatedOffset = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
+        } else {
+            allocatedOffset = FileUtils.allocate(
+                    asynchronousFileChannel,
+                    tablesIncludingChunk.get(indexOfTable + 1).getIndexChunk(chunk).get().getOffset(),
+                    engineConfig.indexGrowthAllocationSize()
+            ).get();
+
+            for (int i = indexOfTable + 1; i < tablesIncludingChunk.size(); i++){
+                Header.Table nextTable = tablesIncludingChunk.get(i);
+                Header.IndexChunk indexChunk = nextTable.getIndexChunk(chunk).get();
+                indexChunk.setOffset(indexChunk.getOffset() + engineConfig.indexGrowthAllocationSize());
+            }
+            headerManager.update();
+        }
+        managedFileHandler.close();
+
+        return new Pointer(Pointer.TYPE_NODE, allocatedOffset, chunk);
     }
 
     /*
