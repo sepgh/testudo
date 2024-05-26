@@ -3,7 +3,7 @@ package com.github.sepgh.internal.index.tree.reading;
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.storage.FileIndexStorageManager;
+import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-import static com.github.sepgh.internal.storage.FileIndexStorageManager.INDEX_FILE_NAME;
+import static com.github.sepgh.internal.storage.CompactFileIndexStorageManager.INDEX_FILE_NAME;
 
 public class BPlusTreeIndexManagerReadingTestCase {
     private Path dbPath;
@@ -85,9 +85,9 @@ public class BPlusTreeIndexManagerReadingTestCase {
     @Timeout(value = 2)
     public void findIndexSuccessfully() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(1, 10, dataPointer);
@@ -101,9 +101,9 @@ public class BPlusTreeIndexManagerReadingTestCase {
     @Timeout(value = 2)
     public void findIndexFailure() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(1, 10, dataPointer);

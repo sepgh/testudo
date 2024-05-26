@@ -8,28 +8,28 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public interface IndexStorageManager {
-    CompletableFuture<NodeData> fillRoot(int table, byte[] data);
+    CompletableFuture<NodeData> fillRoot(int table, byte[] data) throws InterruptedException;
 
-    CompletableFuture<Optional<NodeData>> getRoot(int table);
+    CompletableFuture<Optional<NodeData>> getRoot(int table) throws InterruptedException;
 
     byte[] getEmptyNode();
-    default CompletableFuture<NodeData> readNode(int table, Pointer pointer) {
+    default CompletableFuture<NodeData> readNode(int table, Pointer pointer) throws InterruptedException {
         return this.readNode(table, pointer.getPosition(), pointer.getChunk());
     }
-    CompletableFuture<NodeData> readNode(int table, long position, int chunk);
+    CompletableFuture<NodeData> readNode(int table, long position, int chunk) throws InterruptedException;
 
     CompletableFuture<NodeData> writeNewNode(int table, byte[] data, boolean isRoot) throws IOException, ExecutionException, InterruptedException;
     default CompletableFuture<NodeData> writeNewNode(int table, byte[] data) throws IOException, ExecutionException, InterruptedException {
         return this.writeNewNode(table, data, false);
     }
-    default CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer) throws IOException {
+    default CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer) throws IOException, InterruptedException {
         return this.updateNode(table, data, pointer, false);
     }
-    CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer, boolean root) throws IOException;
+    CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer, boolean root) throws IOException, InterruptedException;
 
     void close() throws IOException;
 
-    CompletableFuture<Integer> removeNode(int table, Pointer pointer);
+    CompletableFuture<Integer> removeNode(int table, Pointer pointer) throws InterruptedException;
 
     record NodeData(Pointer pointer, byte[] bytes){}
 }

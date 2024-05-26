@@ -6,7 +6,7 @@ import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
-import com.github.sepgh.internal.storage.FileIndexStorageManager;
+import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.header.Header;
@@ -22,7 +22,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
-import static com.github.sepgh.internal.storage.FileIndexStorageManager.INDEX_FILE_NAME;
+import static com.github.sepgh.internal.storage.CompactFileIndexStorageManager.INDEX_FILE_NAME;
 
 public class BPlusTreeIndexManagerTestCase {
     private Path dbPath;
@@ -89,16 +89,16 @@ public class BPlusTreeIndexManagerTestCase {
     @Timeout(value = 2)
     public void addIndex() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
         BaseTreeNode baseTreeNode = indexManager.addIndex(1, 10, new Pointer(Pointer.TYPE_DATA, 100, 0));
 
         Assertions.assertTrue(baseTreeNode.isRoot());
         Assertions.assertEquals(0, baseTreeNode.getPointer().getPosition());
         Assertions.assertEquals(0, baseTreeNode.getPointer().getChunk());
 
-        IndexStorageManager.NodeData nodeData = fileIndexStorageManager.readNode(1, baseTreeNode.getPointer()).get();
+        IndexStorageManager.NodeData nodeData = compactFileIndexStorageManager.readNode(1, baseTreeNode.getPointer()).get();
         LeafTreeNode leafTreeNode = new LeafTreeNode(nodeData.bytes());
         Assertions.assertTrue(leafTreeNode.isRoot());
         Iterator<LeafTreeNode.KeyValue> entryIterator = leafTreeNode.getKeyValues(degree);
@@ -128,8 +128,8 @@ public class BPlusTreeIndexManagerTestCase {
 
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
 
 
         BaseTreeNode lastTreeNode = null;
@@ -141,7 +141,7 @@ public class BPlusTreeIndexManagerTestCase {
         Assertions.assertEquals(2, lastTreeNode.getKeyList(degree).size());
         Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
-        Optional<IndexStorageManager.NodeData> optional = fileIndexStorageManager.getRoot(1).get();
+        Optional<IndexStorageManager.NodeData> optional = compactFileIndexStorageManager.getRoot(1).get();
         Assertions.assertTrue(optional.isPresent());
 
         BaseTreeNode rootNode = BaseTreeNode.fromBytes(optional.get().bytes());
@@ -159,13 +159,13 @@ public class BPlusTreeIndexManagerTestCase {
         Assertions.assertEquals(testIdentifiers.get(2), rootNode.getKeyList(degree).get(0));
 
         // First child
-        LeafTreeNode childLeafTreeNode = new LeafTreeNode(fileIndexStorageManager.readNode(1, children.get(0).getLeft()).get().bytes());
+        LeafTreeNode childLeafTreeNode = new LeafTreeNode(compactFileIndexStorageManager.readNode(1, children.get(0).getLeft()).get().bytes());
         List<LeafTreeNode.KeyValue> keyValueList = childLeafTreeNode.getKeyValueList(degree);
         Assertions.assertEquals(testIdentifiers.get(0), keyValueList.get(0).key());
         Assertions.assertEquals(testIdentifiers.get(1), keyValueList.get(1).key());
 
         //Second child
-        LeafTreeNode secondChildLeafTreeNode = new LeafTreeNode(fileIndexStorageManager.readNode(1, children.get(0).getRight()).get().bytes());
+        LeafTreeNode secondChildLeafTreeNode = new LeafTreeNode(compactFileIndexStorageManager.readNode(1, children.get(0).getRight()).get().bytes());
         keyValueList = secondChildLeafTreeNode.getKeyValueList(degree);
         Assertions.assertEquals(testIdentifiers.get(2), keyValueList.get(0).key());
         Assertions.assertEquals(testIdentifiers.get(3), keyValueList.get(1).key());
@@ -211,8 +211,8 @@ public class BPlusTreeIndexManagerTestCase {
 
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
 
 
         BaseTreeNode lastTreeNode = null;
@@ -224,7 +224,7 @@ public class BPlusTreeIndexManagerTestCase {
         Assertions.assertEquals(2, lastTreeNode.getKeyList(degree).size());
         Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
-        StoredTreeStructureVerifier.testOrderedTreeStructure(fileIndexStorageManager, 1, 1, degree);
+        StoredTreeStructureVerifier.testOrderedTreeStructure(compactFileIndexStorageManager, 1, 1, degree);
 
     }
 

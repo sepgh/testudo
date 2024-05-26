@@ -22,9 +22,9 @@ import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static com.github.sepgh.internal.storage.FileIndexStorageManager.INDEX_FILE_NAME;
+import static com.github.sepgh.internal.storage.CompactFileIndexStorageManager.INDEX_FILE_NAME;
 
-public class FileIndexStorageManagerTestCase {
+public class CompactFileIndexStorageManagerTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private Header header;
@@ -112,9 +112,9 @@ public class FileIndexStorageManagerTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
-        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         try {
-            CompletableFuture<IndexStorageManager.NodeData> future = fileIndexStorageManager.readNode(1, 0, 0);
+            CompletableFuture<IndexStorageManager.NodeData> future = compactFileIndexStorageManager.readNode(1, 0, 0);
 
             IndexStorageManager.NodeData nodeData = future.get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
@@ -128,7 +128,7 @@ public class FileIndexStorageManagerTestCase {
             Assertions.assertEquals(15, keys.next());
 
 
-            future = fileIndexStorageManager.readNode(1, engineConfig.getPaddedSize(), 0);
+            future = compactFileIndexStorageManager.readNode(1, engineConfig.getPaddedSize(), 0);
             nodeData = future.get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
 
@@ -142,7 +142,7 @@ public class FileIndexStorageManagerTestCase {
             Assertions.assertEquals(1, childPointers.getLeft().getPosition());
             Assertions.assertEquals(1, childPointers.getLeft().getChunk());
         } finally {
-            fileIndexStorageManager.close();
+            compactFileIndexStorageManager.close();
         }
 
     }
@@ -151,9 +151,9 @@ public class FileIndexStorageManagerTestCase {
     public void canReadAndUpdateNodeSuccessfully() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
-        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         try {
-            CompletableFuture<IndexStorageManager.NodeData> future = fileIndexStorageManager.readNode(1, 0, 0);
+            CompletableFuture<IndexStorageManager.NodeData> future = compactFileIndexStorageManager.readNode(1, 0, 0);
 
             IndexStorageManager.NodeData nodeData = future.get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
@@ -161,9 +161,9 @@ public class FileIndexStorageManagerTestCase {
             LeafTreeNode leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(nodeData.bytes());
             leafTreeNode.setKeyValue(0, new LeafTreeNode.KeyValue(10L, new Pointer(Pointer.TYPE_DATA, 100, 100)));
 
-            fileIndexStorageManager.updateNode(1, leafTreeNode.getData(), nodeData.pointer()).get();
+            compactFileIndexStorageManager.updateNode(1, leafTreeNode.getData(), nodeData.pointer()).get();
 
-            future = fileIndexStorageManager.readNode(1, 0, 0);
+            future = compactFileIndexStorageManager.readNode(1, 0, 0);
             nodeData = future.get();
             leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(nodeData.bytes());
 
@@ -174,7 +174,7 @@ public class FileIndexStorageManagerTestCase {
             Assertions.assertEquals(100, leafTreeNode.getKeyValueList(2).get(0).value().getPosition());
 
         } finally {
-            fileIndexStorageManager.close();
+            compactFileIndexStorageManager.close();
         }
     }
 
@@ -182,30 +182,30 @@ public class FileIndexStorageManagerTestCase {
     public void canWriteNewNodeAndAllocate() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
-        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         try {
 
-            byte[] emptyNode = fileIndexStorageManager.getEmptyNode();
+            byte[] emptyNode = compactFileIndexStorageManager.getEmptyNode();
             BaseTreeNode baseTreeNode = BaseTreeNode.fromBytes(emptyNode, BaseTreeNode.Type.INTERNAL);
             baseTreeNode.setAsRoot();
 
-            IndexStorageManager.NodeData nodeData = fileIndexStorageManager.writeNewNode(1, baseTreeNode.getData()).get();
+            IndexStorageManager.NodeData nodeData = compactFileIndexStorageManager.writeNewNode(1, baseTreeNode.getData()).get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
             Assertions.assertEquals(2L * engineConfig.getPaddedSize(), nodeData.pointer().getPosition());
             Assertions.assertEquals(0, nodeData.pointer().getChunk());
 
-            nodeData = fileIndexStorageManager.writeNewNode(1, baseTreeNode.getData()).get();
+            nodeData = compactFileIndexStorageManager.writeNewNode(1, baseTreeNode.getData()).get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
             Assertions.assertEquals(0, nodeData.pointer().getPosition());
             Assertions.assertEquals(1, nodeData.pointer().getChunk());
 
-            nodeData = fileIndexStorageManager.writeNewNode(1, baseTreeNode.getData()).get();
+            nodeData = compactFileIndexStorageManager.writeNewNode(1, baseTreeNode.getData()).get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.pointer().getPosition());
             Assertions.assertEquals(1, nodeData.pointer().getChunk());
 
         } finally {
-            fileIndexStorageManager.close();
+            compactFileIndexStorageManager.close();
         }
     }
 

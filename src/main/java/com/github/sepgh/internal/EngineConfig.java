@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.concurrent.TimeUnit;
+
 @Builder
 @Data
 @AllArgsConstructor
@@ -14,19 +16,11 @@ public class EngineConfig {
     private final int bTreeDegree;
     private final int bTreeGrowthNodeAllocationCount;
     @Builder.Default
+    private int fileAcquireTimeout = 10;
+    @Builder.Default
+    private TimeUnit fileAcquireUnit = TimeUnit.SECONDS;
+    @Builder.Default
     private long bTreeMaxFileSize = -1L;
-
-
-    public EngineConfig(int bTreeDegree, int bTreeGrowthNodeAllocationCount) {
-        this.bTreeDegree = bTreeDegree;
-        this.bTreeGrowthNodeAllocationCount = bTreeGrowthNodeAllocationCount;
-    }
-
-    public EngineConfig(int bTreeDegree, int bTreeGrowthNodeAllocationCount, long bTreeMaxFileSize) {
-        this.bTreeDegree = bTreeDegree;
-        this.bTreeGrowthNodeAllocationCount = bTreeGrowthNodeAllocationCount;
-        this.bTreeMaxFileSize = bTreeMaxFileSize;
-    }
 
     @Builder.Default
     private Integer cachedPaddingSize = null;

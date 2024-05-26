@@ -6,7 +6,7 @@ import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
-import com.github.sepgh.internal.storage.FileIndexStorageManager;
+import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
@@ -27,9 +27,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import static com.github.sepgh.internal.storage.FileIndexStorageManager.INDEX_FILE_NAME;
+import static com.github.sepgh.internal.storage.CompactFileIndexStorageManager.INDEX_FILE_NAME;
 
-public class MultiTableBPlusTreeIndexManagerTestCase {
+public class MultiTableBPlusTreeIndexManagerCompactTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private Header header;
@@ -144,8 +144,8 @@ public class MultiTableBPlusTreeIndexManagerTestCase {
 
         for (int tableId = 1; tableId <= 2; tableId++){
             HeaderManager headerManager = new InMemoryHeaderManager(header);
-            FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
-            IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
+            CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+            IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
 
 
             BaseTreeNode lastTreeNode = null;
@@ -157,7 +157,7 @@ public class MultiTableBPlusTreeIndexManagerTestCase {
             Assertions.assertEquals(2, lastTreeNode.getKeyList(degree).size());
             Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
-            StoredTreeStructureVerifier.testOrderedTreeStructure(fileIndexStorageManager, tableId, 1, degree);
+            StoredTreeStructureVerifier.testOrderedTreeStructure(compactFileIndexStorageManager, tableId, 1, degree);
         }
 
     }
@@ -193,8 +193,8 @@ public class MultiTableBPlusTreeIndexManagerTestCase {
         List<Long> testIdentifiers = Arrays.asList(1L, 4L, 9L, 6L, 10L, 8L, 3L, 2L, 11L, 5L, 7L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        FileIndexStorageManager fileIndexStorageManager = new FileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, fileIndexStorageManager);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
 
         IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
                 AsynchronousFileChannel.open(
@@ -220,7 +220,7 @@ public class MultiTableBPlusTreeIndexManagerTestCase {
             Assertions.assertEquals(2, lastTreeNode.getKeyList(degree).size());
             Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
-            StoredTreeStructureVerifier.testUnOrderedTreeStructure1(fileIndexStorageManager, tableId, 1, degree);
+            StoredTreeStructureVerifier.testUnOrderedTreeStructure1(compactFileIndexStorageManager, tableId, 1, degree);
 
         }
 

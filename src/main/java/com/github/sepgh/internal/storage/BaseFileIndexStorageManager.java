@@ -1,18 +1,18 @@
 package com.github.sepgh.internal.storage;
 
 import com.github.sepgh.internal.EngineConfig;
+import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
-import com.github.sepgh.internal.index.Pointer;
+import com.github.sepgh.internal.storage.pool.FileHandlerPool;
+import com.github.sepgh.internal.storage.pool.ManagedFileHandler;
+import com.github.sepgh.internal.storage.pool.UnlimitedFileHandlerPool;
 import com.github.sepgh.internal.utils.FileUtils;
-import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -21,65 +21,46 @@ import java.util.concurrent.ExecutionException;
 import static com.github.sepgh.internal.index.tree.node.BaseTreeNode.TYPE_INTERNAL_NODE_BIT;
 import static com.github.sepgh.internal.index.tree.node.BaseTreeNode.TYPE_LEAF_NODE_BIT;
 
-public class FileIndexStorageManager implements IndexStorageManager {
-    private final Path path;
-    private final HeaderManager headerManager;
-    private final EngineConfig engineConfig;
+public abstract class BaseFileIndexStorageManager implements IndexStorageManager {
+    protected final Path path;
+    protected final HeaderManager headerManager;
+    protected final EngineConfig engineConfig;
+    protected final FileHandlerPool fileHandlerPool;
     public static final String INDEX_FILE_NAME = "index";
-    private final List<AsynchronousFileChannel> pool = new ArrayList<>(5);
 
-    public FileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig) throws IOException, ExecutionException, InterruptedException {
+    public BaseFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) {
         this.path = path;
         this.headerManager = headerManager;
         this.engineConfig = engineConfig;
-        this.initialize();
+        this.fileHandlerPool = fileHandlerPool;
     }
 
-    // Todo: temporarily this is the solution for allocating space for new tables
-    //       alternatively, previous state of the database and new state should be compared, some data may need removal
-    private void initialize() throws IOException, ExecutionException, InterruptedException {
-        Header header = this.headerManager.getHeader();
-        int chunkId = 0;
-        for (Header.Table table : header.getTables()) {
-            if (!table.isInitialized()) {
-                boolean stored = false;
-                while (!stored){
-                    AsynchronousFileChannel asynchronousFileChannel = getAsynchronousFileChannel(chunkId);
-                    if (asynchronousFileChannel.size() != engineConfig.getBTreeMaxFileSize()){
-                        long position = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
-                        table.setChunks(Collections.singletonList(new Header.IndexChunk(chunkId, position)));
-                        table.setInitialized(true);
-                        stored = true;
-                    } else {
-                        chunkId++;
-                    }
-                }
-            }
-        }
-        this.headerManager.update(header);
+    public BaseFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig) {
+        this(path, headerManager, engineConfig, new UnlimitedFileHandlerPool());
     }
 
-    @SneakyThrows
-    private AsynchronousFileChannel getAsynchronousFileChannel(int chunk) {
-        if (pool.size() > chunk){
-            return pool.get(chunk);
+    protected abstract Path getIndexFilePath(int table, int chunk);
+    protected AsynchronousFileChannel acquireFileChannel(int table, int chunk) throws InterruptedException {
+        Path indexFilePath = getIndexFilePath(table, chunk);
+        try {
+            return this.fileHandlerPool.getFileChannel(indexFilePath, engineConfig.getFileAcquireTimeout(), engineConfig.getFileAcquireUnit());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+    }
 
-        Path indexPath = Path.of(path.toString(), String.format("%s.%d", INDEX_FILE_NAME, chunk));
-        AsynchronousFileChannel channel = AsynchronousFileChannel.open(
-                indexPath,
-                StandardOpenOption.READ,
-                StandardOpenOption.WRITE,
-                StandardOpenOption.CREATE
-        );
+    protected void releaseFileChannel(int table, int chunk) {
+        Path indexFilePath = getIndexFilePath(table, chunk);
+        this.fileHandlerPool.releaseFileChannel(indexFilePath);
+    }
 
-        pool.add(chunk, channel);
-
-        return channel;
+    protected ManagedFileHandler getManagedFileHandler(int table, int chunk){
+        Path indexFilePath = getIndexFilePath(table, chunk);
+        return new ManagedFileHandler(this.fileHandlerPool, indexFilePath,  engineConfig.getFileAcquireTimeout(), engineConfig.getFileAcquireUnit());
     }
 
     @Override
-    public CompletableFuture<NodeData> fillRoot(int table, byte[] data){
+    public CompletableFuture<NodeData> fillRoot(int table, byte[] data) throws InterruptedException {
         CompletableFuture<NodeData> output = new CompletableFuture<>();
 
         Optional<Header.Table> optionalTable = headerManager.getHeader().getTableOfId(table);
@@ -91,28 +72,35 @@ public class FileIndexStorageManager implements IndexStorageManager {
         }
 
         long rootAbsolutePosition = headerTable.getIndexChunk(headerTable.getRoot().getChunk()).get().getOffset() + headerTable.getRoot().getOffset();
-        FileUtils.write(getAsynchronousFileChannel(headerTable.getRoot().getChunk()),rootAbsolutePosition, data).whenComplete((size, throwable) -> {
-            if (throwable != null){
-                output.completeExceptionally(throwable);
-            }
+        ManagedFileHandler managedFileHandler = getManagedFileHandler(table, headerTable.getRoot().getChunk());
+        try {
+            FileUtils.write(managedFileHandler.getAsynchronousFileChannel() ,rootAbsolutePosition, data)
+                    .whenComplete((integer, throwable) -> managedFileHandler.close())
+                    .whenComplete((size, throwable) -> {
+                        if (throwable != null){
+                            output.completeExceptionally(throwable);
+                        }
 
-            output.complete(
-                    new NodeData(
-                            new Pointer(
-                                    Pointer.TYPE_NODE,
-                                    optionalTable.get().getRoot().getOffset(),
-                                    optionalTable.get().getRoot().getChunk()
-                            ),
-                            data
-                    )
-            );
-        });
+                        output.complete(
+                                new NodeData(
+                                        new Pointer(
+                                                Pointer.TYPE_NODE,
+                                                optionalTable.get().getRoot().getOffset(),
+                                                optionalTable.get().getRoot().getChunk()
+                                        ),
+                                        data
+                                )
+                        );
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return output;
     }
 
     @Override
-    public CompletableFuture<Optional<NodeData>> getRoot(int table) {
+    public CompletableFuture<Optional<NodeData>> getRoot(int table) throws InterruptedException {
         CompletableFuture<Optional<NodeData>> output = new CompletableFuture<>();
 
         Optional<Header.Table> optionalTable = headerManager.getHeader().getTableOfId(table);
@@ -124,10 +112,11 @@ public class FileIndexStorageManager implements IndexStorageManager {
         Header.Table headerTable = optionalTable.get();
         Header.IndexChunk root = headerTable.getRoot();
         FileUtils.readBytes(
-                getAsynchronousFileChannel(root.getChunk()),
+                acquireFileChannel(table, root.getChunk()),
                 headerTable.getIndexChunk(root.getChunk()).get().getOffset()  + root.getOffset(),
                 engineConfig.getPaddedSize()
         ).whenComplete((bytes, throwable) -> {
+            releaseFileChannel(table, root.getChunk());
             if (throwable != null){
                 output.completeExceptionally(throwable);
                 return;
@@ -154,11 +143,13 @@ public class FileIndexStorageManager implements IndexStorageManager {
     }
 
     @Override
-    public CompletableFuture<NodeData> readNode(int table, long position, int chunk) {
+    public CompletableFuture<NodeData> readNode(int table, long position, int chunk) throws InterruptedException {
         CompletableFuture<NodeData> output = new CompletableFuture<>();
-        AsynchronousFileChannel asynchronousFileChannel = getAsynchronousFileChannel(chunk);
         long filePosition = headerManager.getHeader().getTableOfId(table).get().getIndexChunk(chunk).get().getOffset() + position;
+
+        AsynchronousFileChannel asynchronousFileChannel = acquireFileChannel(table, chunk);
         FileUtils.readBytes(asynchronousFileChannel, filePosition, engineConfig.getPaddedSize()).whenComplete((bytes, throwable) -> {
+            releaseFileChannel(table, chunk);
             if (throwable != null){
                 output.completeExceptionally(throwable);
                 return;
@@ -190,7 +181,9 @@ public class FileIndexStorageManager implements IndexStorageManager {
 
         // setting pointer position according to the table offset. Reading table again since a new chunk may have been created
         pointer.setPosition(offset - headerManager.getHeader().getTableOfId(table).get().getIndexChunk(pointer.getChunk()).get().getOffset());
-        FileUtils.write(getAsynchronousFileChannel(pointer.getChunk()), offset, data).whenComplete((size, throwable) -> {
+        FileUtils.write(acquireFileChannel(table, pointer.getChunk()), offset, data).whenComplete((size, throwable) -> {
+            releaseFileChannel(table, pointer.getChunk());
+
             if (throwable != null){
                 output.completeExceptionally(throwable);
                 return;
@@ -241,73 +234,76 @@ public class FileIndexStorageManager implements IndexStorageManager {
         Optional<Header.IndexChunk> optional = table.getIndexChunk(chunk);
         boolean newChunkCreatedForTable = optional.isEmpty();
 
-        AsynchronousFileChannel asynchronousFileChannel = this.getAsynchronousFileChannel(chunk);
-        long fileSize = asynchronousFileChannel.size();
+        try (ManagedFileHandler managedFileHandler = this.getManagedFileHandler(tableId, chunk)){
+            AsynchronousFileChannel asynchronousFileChannel = managedFileHandler.getAsynchronousFileChannel();
+            long fileSize = asynchronousFileChannel.size();
 
-        if (newChunkCreatedForTable){
-            if (fileSize >= engineConfig.getBTreeMaxFileSize()){
-                return getAllocatedSpaceForNewNode(tableId, chunk + 1);
-            } else {
-                Long position = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
-                List<Header.IndexChunk> newChunks = new ArrayList<>(table.getChunks());
-                newChunks.add(new Header.IndexChunk(chunk, position));
-                table.setChunks(newChunks);
-                headerManager.update();
-                return new Pointer(Pointer.TYPE_NODE, position, chunk);
-            }
-        }
-
-        List<Header.Table> tablesIncludingChunk = getTablesIncludingChunk(chunk);
-        int indexOfTable = getIndexOfTable(tablesIncludingChunk, tableId);
-        boolean isLastTable = indexOfTable == tablesIncludingChunk.size() - 1;
-
-
-        if (fileSize > 0){
-            long positionToCheck =
-                    isLastTable ?
-                            fileSize - engineConfig.indexGrowthAllocationSize()
-                            :
-                            tablesIncludingChunk.get(indexOfTable + 1).getIndexChunk(chunk).get().getOffset() - engineConfig.indexGrowthAllocationSize();
-
-            if (positionToCheck > 0 && positionToCheck > tablesIncludingChunk.get(indexOfTable).getIndexChunk(chunk).get().getOffset()) {
-                byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, engineConfig.indexGrowthAllocationSize()).get();
-                Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
-                if (optionalAdditionalPosition.isPresent()){
-                    long finalPosition = positionToCheck + optionalAdditionalPosition.get();
-                    return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
+            if (newChunkCreatedForTable){
+                if (fileSize >= engineConfig.getBTreeMaxFileSize()){
+                    return getAllocatedSpaceForNewNode(tableId, chunk + 1);
+                } else {
+                    Long position = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
+                    List<Header.IndexChunk> newChunks = new ArrayList<>(table.getChunks());
+                    newChunks.add(new Header.IndexChunk(chunk, position));
+                    table.setChunks(newChunks);
+                    headerManager.update();
+                    return new Pointer(Pointer.TYPE_NODE, position, chunk);
                 }
             }
-        }
 
-        if (fileSize >= engineConfig.getBTreeMaxFileSize())
-            return this.getAllocatedSpaceForNewNode(tableId, chunk + 1);
+            List<Header.Table> tablesIncludingChunk = getTablesIncludingChunk(chunk);
+            int indexOfTable = getIndexOfTable(tablesIncludingChunk, tableId);
+            boolean isLastTable = indexOfTable == tablesIncludingChunk.size() - 1;
 
 
-        long allocatedOffset;
-        if (isLastTable){
-            allocatedOffset = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
-        } else {
-            allocatedOffset = FileUtils.allocate(
-                    asynchronousFileChannel,
-                    tablesIncludingChunk.get(indexOfTable + 1).getIndexChunk(chunk).get().getOffset(),
-                    engineConfig.indexGrowthAllocationSize()
-            ).get();
+            if (fileSize > 0){
+                long positionToCheck =
+                        isLastTable ?
+                                fileSize - engineConfig.indexGrowthAllocationSize()
+                                :
+                                tablesIncludingChunk.get(indexOfTable + 1).getIndexChunk(chunk).get().getOffset() - engineConfig.indexGrowthAllocationSize();
 
-            for (int i = indexOfTable + 1; i < tablesIncludingChunk.size(); i++){
-                Header.Table nextTable = tablesIncludingChunk.get(i);
-                Header.IndexChunk indexChunk = nextTable.getIndexChunk(chunk).get();
-                indexChunk.setOffset(indexChunk.getOffset() + engineConfig.indexGrowthAllocationSize());
+                if (positionToCheck > 0 && positionToCheck > tablesIncludingChunk.get(indexOfTable).getIndexChunk(chunk).get().getOffset()) {
+                    byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, engineConfig.indexGrowthAllocationSize()).get();
+                    Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
+                    if (optionalAdditionalPosition.isPresent()){
+                        long finalPosition = positionToCheck + optionalAdditionalPosition.get();
+                        return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
+                    }
+                }
             }
-            headerManager.update();
-        }
 
-        return new Pointer(Pointer.TYPE_NODE, allocatedOffset, chunk);
+            if (fileSize >= engineConfig.getBTreeMaxFileSize()){
+                return this.getAllocatedSpaceForNewNode(tableId, chunk + 1);
+            }
+
+
+            long allocatedOffset;
+            if (isLastTable){
+                allocatedOffset = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
+            } else {
+                allocatedOffset = FileUtils.allocate(
+                        asynchronousFileChannel,
+                        tablesIncludingChunk.get(indexOfTable + 1).getIndexChunk(chunk).get().getOffset(),
+                        engineConfig.indexGrowthAllocationSize()
+                ).get();
+
+                for (int i = indexOfTable + 1; i < tablesIncludingChunk.size(); i++){
+                    Header.Table nextTable = tablesIncludingChunk.get(i);
+                    Header.IndexChunk indexChunk = nextTable.getIndexChunk(chunk).get();
+                    indexChunk.setOffset(indexChunk.getOffset() + engineConfig.indexGrowthAllocationSize());
+                }
+                headerManager.update();
+            }
+
+            return new Pointer(Pointer.TYPE_NODE, allocatedOffset, chunk);
+        }
     }
 
     /*
-    * Returns the empty position within byte[] passed to the method
-    */
-    private Optional<Integer> getPossibleAllocationLocation(byte[] bytes){
+     * Returns the empty position within byte[] passed to the method
+     */
+    protected Optional<Integer> getPossibleAllocationLocation(byte[] bytes){
         for (int i = 0; i < engineConfig.getBTreeGrowthNodeAllocationCount(); i++){
             int position = i * engineConfig.getPaddedSize();
             if ((bytes[position] & TYPE_LEAF_NODE_BIT) != TYPE_LEAF_NODE_BIT && (bytes[position] & TYPE_INTERNAL_NODE_BIT) != TYPE_INTERNAL_NODE_BIT){
@@ -318,13 +314,14 @@ public class FileIndexStorageManager implements IndexStorageManager {
     }
 
     @Override
-    public CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer, boolean isRoot) throws IOException {
+    public CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer, boolean isRoot) throws InterruptedException, IOException {
         long offset = headerManager.getHeader().getTableOfId(table).get().getIndexChunk(pointer.getChunk()).get().getOffset() + pointer.getPosition();
-        CompletableFuture<Integer> output = FileUtils.write(getAsynchronousFileChannel(pointer.getChunk()), offset, data);
+
+        AsynchronousFileChannel asynchronousFileChannel = acquireFileChannel(table, pointer.getChunk());
         if (isRoot){
             this.updateRoot(table, pointer);
         }
-        return output;
+        return FileUtils.write(asynchronousFileChannel, offset, data).whenComplete((integer, throwable) -> releaseFileChannel(table, pointer.getChunk()));
     }
 
     private void updateRoot(int table, Pointer pointer) throws IOException {
@@ -334,14 +331,13 @@ public class FileIndexStorageManager implements IndexStorageManager {
 
     @Override
     public void close() throws IOException {
-        for (AsynchronousFileChannel asynchronousFileChannel : this.pool) {
-            asynchronousFileChannel.close();
-        }
+        this.fileHandlerPool.closeAll();
     }
 
     @Override
-    public CompletableFuture<Integer> removeNode(int table, Pointer pointer) {
+    public CompletableFuture<Integer> removeNode(int table, Pointer pointer) throws InterruptedException {
         long offset = headerManager.getHeader().getTableOfId(table).get().getIndexChunk(pointer.getChunk()).get().getOffset() + pointer.getPosition();
-        return FileUtils.write(getAsynchronousFileChannel(pointer.getChunk()), offset, new byte[engineConfig.getPaddedSize()]);
+        return FileUtils.write(acquireFileChannel(table, pointer.getChunk()), offset, new byte[engineConfig.getPaddedSize()]).whenComplete((integer, throwable) -> releaseFileChannel(table, pointer.getChunk()));
     }
+
 }
