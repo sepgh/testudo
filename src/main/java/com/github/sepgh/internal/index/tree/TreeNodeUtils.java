@@ -1,7 +1,8 @@
-package com.github.sepgh.internal.tree;
+package com.github.sepgh.internal.index.tree;
 
-import com.github.sepgh.internal.tree.node.BaseTreeNode;
-import com.github.sepgh.internal.tree.node.InternalTreeNode;
+import com.github.sepgh.internal.index.Pointer;
+import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
+import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.utils.BinaryUtils;
 import com.google.common.primitives.Longs;
 

@@ -1,15 +1,13 @@
-package com.github.sepgh.internal.tree.storing;
+package com.github.sepgh.internal.index.tree.storing;
 
+import com.github.sepgh.internal.index.Pointer;
+import com.github.sepgh.internal.index.tree.TreeNodeIO;
+import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
+import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
+import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
 import com.github.sepgh.internal.storage.IndexStorageManager;
-import com.github.sepgh.internal.tree.Pointer;
-import com.github.sepgh.internal.tree.TreeNodeIO;
-import com.github.sepgh.internal.tree.node.BaseTreeNode;
-import com.github.sepgh.internal.tree.node.InternalTreeNode;
-import com.github.sepgh.internal.tree.node.LeafTreeNode;
-import com.google.common.hash.HashCode;
 import org.junit.jupiter.api.Assertions;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;

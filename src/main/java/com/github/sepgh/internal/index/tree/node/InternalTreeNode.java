@@ -1,7 +1,7 @@
-package com.github.sepgh.internal.tree.node;
+package com.github.sepgh.internal.index.tree.node;
 
-import com.github.sepgh.internal.tree.Pointer;
-import com.github.sepgh.internal.tree.TreeNodeUtils;
+import com.github.sepgh.internal.index.Pointer;
+import com.github.sepgh.internal.index.tree.TreeNodeUtils;
 import com.github.sepgh.internal.utils.CollectionUtils;
 import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;

@@ -1,6 +1,6 @@
-package com.github.sepgh.internal.tree;
+package com.github.sepgh.internal.index;
 
-import com.github.sepgh.internal.tree.node.BaseTreeNode;
+import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
 
 import java.io.IOException;
 import java.util.Optional;

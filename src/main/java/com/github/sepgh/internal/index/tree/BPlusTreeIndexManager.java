@@ -1,9 +1,11 @@
-package com.github.sepgh.internal.tree;
+package com.github.sepgh.internal.index.tree;
 
+import com.github.sepgh.internal.index.IndexManager;
+import com.github.sepgh.internal.index.Pointer;
+import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
+import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
+import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
 import com.github.sepgh.internal.storage.IndexStorageManager;
-import com.github.sepgh.internal.tree.node.BaseTreeNode;
-import com.github.sepgh.internal.tree.node.InternalTreeNode;
-import com.github.sepgh.internal.tree.node.LeafTreeNode;
 
 import javax.annotation.Nullable;
 import java.io.IOException;

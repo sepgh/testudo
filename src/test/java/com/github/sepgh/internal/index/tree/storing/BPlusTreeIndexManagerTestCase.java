@@ -1,17 +1,17 @@
-package com.github.sepgh.internal.tree.storing;
+package com.github.sepgh.internal.index.tree.storing;
 
 import com.github.sepgh.internal.EngineConfig;
+import com.github.sepgh.internal.index.IndexManager;
+import com.github.sepgh.internal.index.Pointer;
+import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
+import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
+import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
 import com.github.sepgh.internal.storage.FileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
-import com.github.sepgh.internal.tree.BPlusTreeIndexManager;
-import com.github.sepgh.internal.tree.IndexManager;
-import com.github.sepgh.internal.tree.Pointer;
-import com.github.sepgh.internal.tree.node.BaseTreeNode;
-import com.github.sepgh.internal.tree.node.InternalTreeNode;
-import com.github.sepgh.internal.tree.node.LeafTreeNode;
+import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;

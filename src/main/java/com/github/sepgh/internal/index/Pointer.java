@@ -1,4 +1,4 @@
-package com.github.sepgh.internal.tree;
+package com.github.sepgh.internal.index;
 
 import com.github.sepgh.internal.utils.BinaryUtils;
 import com.google.common.primitives.Ints;

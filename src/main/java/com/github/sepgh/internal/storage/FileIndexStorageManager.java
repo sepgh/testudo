@@ -3,7 +3,7 @@ package com.github.sepgh.internal.storage;
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
-import com.github.sepgh.internal.tree.Pointer;
+import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.utils.FileUtils;
 import lombok.SneakyThrows;
 
@@ -18,8 +18,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static com.github.sepgh.internal.tree.node.BaseTreeNode.TYPE_INTERNAL_NODE_BIT;
-import static com.github.sepgh.internal.tree.node.BaseTreeNode.TYPE_LEAF_NODE_BIT;
+import static com.github.sepgh.internal.index.tree.node.BaseTreeNode.TYPE_INTERNAL_NODE_BIT;
+import static com.github.sepgh.internal.index.tree.node.BaseTreeNode.TYPE_LEAF_NODE_BIT;
 
 public class FileIndexStorageManager implements IndexStorageManager {
     private final Path path;

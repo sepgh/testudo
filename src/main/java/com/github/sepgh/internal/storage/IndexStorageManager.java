@@ -1,6 +1,6 @@
 package com.github.sepgh.internal.storage;
 
-import com.github.sepgh.internal.tree.Pointer;
+import com.github.sepgh.internal.index.Pointer;
 
 import java.io.IOException;
 import java.util.Optional;
