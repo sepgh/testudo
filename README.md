@@ -49,8 +49,8 @@ Also, to manage resources in a better manner, a specific threadpool may be requi
 
 For the `IndexManager` we require a [`Reader-Writer lock`](https://en.wikipedia.org/wiki/Readers%E2%80%93writer_lock) will be required.
 Before we discover more about that, it's important to notice that the current interface of `IndexManager` accepts `int table` per each operation, meaning that it's not depended on tables, rather the database itself.
-The underlying implementation of each method may require a separate object that handles these operations per specific table, **if we want to use Reader-Writer lock mechanism**.
 As the name suggests, this lock will allow multiple reads to be performed if no write operation is being performed, as for locks, they will be only performed if there are no read operations performed. In my understanding, this is where part of **Atomic** behaviour of databases are structured.
+**Important detail** here would be that this lock can happen on table or database level, but it mainly depends on if we store each table indexes on a different file or a single file. 
 
 
 ## Development Progress
