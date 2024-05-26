@@ -52,6 +52,9 @@ Before we discover more about that, it's important to notice that the current in
 As the name suggests, this lock will allow multiple reads to be performed if no write operation is being performed, as for locks, they will be only performed if there are no read operations performed. In my understanding, this is where part of **Atomic** behaviour of databases are structured.
 **Important detail** here would be that this lock can happen on table or database level, but it mainly depends on if we store each table indexes on a different file or a single file. 
 
+Another way to improve B+Tree I/O performance is to add a LRU cache on top of storage layer. Since the storage layer is abstract from node definitions, we could use combination of {table,chunk,offset} as a cache key and byte array of size N as value where node data is stored.
+This way, we won't bother reading a node from file if we have "recently" loaded it into memory. This LRU cache may not accept a specific size in bytes but number of the nodes it should store. A single node size may differ due to number of the keys it can hold (degree of the B+Tree), and indexes.
+
 
 ## Development Progress
 
