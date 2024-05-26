@@ -39,7 +39,7 @@ public class MultiTableBPlusTreeIndexManagerTestCase {
     public void setUp() throws IOException {
         dbPath = Files.createTempDirectory("TEST_MultiTableBTreeIndexManagerTestCase");
         engineConfig = EngineConfig.builder()
-                .bTreeNodeMaxKey(degree - 1)
+                .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(10)
                 .build();
         engineConfig.setBTreeMaxFileSize(2 * 15L * engineConfig.getPaddedSize());

@@ -61,7 +61,7 @@ public class FileIndexStorageManagerTestCase {
     public void setUp() throws IOException {
         dbPath = Files.createTempDirectory("TEST_IndexFileManagerTestCase");
         engineConfig = EngineConfig.builder()
-                .bTreeNodeMaxKey(1)
+                .bTreeDegree(1)
                 .bTreeGrowthNodeAllocationCount(1)
                 .build();
         engineConfig.setBTreeMaxFileSize(3L * engineConfig.getPaddedSize());

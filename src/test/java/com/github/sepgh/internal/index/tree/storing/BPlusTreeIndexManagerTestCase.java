@@ -34,7 +34,7 @@ public class BPlusTreeIndexManagerTestCase {
     public void setUp() throws IOException {
         dbPath = Files.createTempDirectory("TEST_BTreeIndexManagerTestCase");
         engineConfig = EngineConfig.builder()
-                .bTreeNodeMaxKey(degree - 1)
+                .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
                 .build();
         engineConfig.setBTreeMaxFileSize(4L * engineConfig.getPaddedSize());

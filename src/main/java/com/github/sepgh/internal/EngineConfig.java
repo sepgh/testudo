@@ -4,25 +4,26 @@ import com.github.sepgh.internal.index.Pointer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Builder
 @Data
 @AllArgsConstructor
 public class EngineConfig {
 
-    private final int bTreeNodeMaxKey;
+    private final int bTreeDegree;
     private final int bTreeGrowthNodeAllocationCount;
     @Builder.Default
     private long bTreeMaxFileSize = -1L;
 
 
-    public EngineConfig(int bTreeNodeMaxKey, int bTreeGrowthNodeAllocationCount) {
-        this.bTreeNodeMaxKey = bTreeNodeMaxKey;
+    public EngineConfig(int bTreeDegree, int bTreeGrowthNodeAllocationCount) {
+        this.bTreeDegree = bTreeDegree;
         this.bTreeGrowthNodeAllocationCount = bTreeGrowthNodeAllocationCount;
     }
 
-    public EngineConfig(int bTreeNodeMaxKey, int bTreeGrowthNodeAllocationCount, long bTreeMaxFileSize) {
-        this.bTreeNodeMaxKey = bTreeNodeMaxKey;
+    public EngineConfig(int bTreeDegree, int bTreeGrowthNodeAllocationCount, long bTreeMaxFileSize) {
+        this.bTreeDegree = bTreeDegree;
         this.bTreeGrowthNodeAllocationCount = bTreeGrowthNodeAllocationCount;
         this.bTreeMaxFileSize = bTreeMaxFileSize;
     }
@@ -55,16 +56,16 @@ public class EngineConfig {
     }
 
     public int bTreeNodeSize(){
-        return 1 + (this.getBTreeNodeMaxKey() * (Long.BYTES + Pointer.BYTES)) + (2 * Pointer.BYTES);
+        return 1 + (this.getBTreeDegree() * (Long.BYTES + Pointer.BYTES)) + (2 * Pointer.BYTES);
     }
 
     public static class Default {
-        public static final int DEFAULT_BTREE_NODE_MAX_KEY = 10;
+        public static final int DEFAULT_BTREE_NODE_DEGREE = 4;
         public static final int DEFAULT_BTREE_GROWTH_NODE_ALLOCATION_COUNT = 10;
 
         public static EngineConfig getDefault(){
             return EngineConfig.builder()
-                    .bTreeNodeMaxKey(DEFAULT_BTREE_NODE_MAX_KEY)
+                    .bTreeDegree(DEFAULT_BTREE_NODE_DEGREE)
                     .bTreeGrowthNodeAllocationCount(DEFAULT_BTREE_GROWTH_NODE_ALLOCATION_COUNT)
                     .build();
         }

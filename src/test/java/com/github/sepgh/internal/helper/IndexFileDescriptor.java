@@ -50,7 +50,7 @@ public class IndexFileDescriptor {
         System.out.println(HashCode.fromBytes(node.toBytes()));
         System.out.printf("Offset: %d%n", offset);
         System.out.printf("Node Header:  root(%s) [internal] %n", node.isRoot() ? "T" : "F");
-        System.out.println("Keys: " + node.getKeyList(engineConfig.getBTreeNodeMaxKey() + 1));
+        System.out.println("Keys: " + node.getKeyList(engineConfig.getBTreeDegree() + 1));
         System.out.println("Children: ");
         for (Pointer pointer : node.getChildrenList()) {
             System.out.println("\t" + pointer.toString());
@@ -73,7 +73,7 @@ public class IndexFileDescriptor {
         System.out.printf("Offset: %d%n", offset);
         System.out.printf("Node Header:  root(%s) [leaf] %n", node.isRoot() ? "T" : "F");
         StringBuilder stringBuilder = new StringBuilder();
-        Iterator<LeafTreeNode.KeyValue> entryIterator = node.getKeyValues(engineConfig.getBTreeNodeMaxKey() + 1);
+        Iterator<LeafTreeNode.KeyValue> entryIterator = node.getKeyValues(engineConfig.getBTreeDegree());
         while (entryIterator.hasNext()) {
             LeafTreeNode.KeyValue next = entryIterator.next();
             stringBuilder
@@ -88,8 +88,8 @@ public class IndexFileDescriptor {
         }
         System.out.println("Key Values:");
         System.out.println(stringBuilder);
-        System.out.println("Prev: " + node.getPreviousSiblingPointer(engineConfig.getBTreeNodeMaxKey() + 1));
-        System.out.println("Next: " + node.getNextSiblingPointer(engineConfig.getBTreeNodeMaxKey() + 1));
+        System.out.println("Prev: " + node.getPreviousSiblingPointer(engineConfig.getBTreeDegree()));
+        System.out.println("Next: " + node.getNextSiblingPointer(engineConfig.getBTreeDegree()));
         System.out.println("===========================");
     }
 
