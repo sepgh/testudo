@@ -4,13 +4,13 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.helper.IndexFileDescriptor;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
+import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
 import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
-import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -212,7 +212,6 @@ public class MultiTableBPlusTreeIndexManagerCompactTestCase {
             BaseTreeNode lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
                 lastTreeNode = indexManager.addIndex(tableId, testIdentifier, samplePointer);
-                System.out.println("Adding " + testIdentifier + " to table " + tableId);
                 indexFileDescriptor.describe();
             }
 

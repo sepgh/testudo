@@ -1,7 +1,6 @@
 package com.github.sepgh.internal.index.tree.storing;
 
 import com.github.sepgh.internal.EngineConfig;
-import com.github.sepgh.internal.helper.IndexFileDescriptor;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
@@ -19,7 +18,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -54,7 +52,6 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
         engineConfig.setBTreeMaxFileSize(4L * engineConfig.getPaddedSize());
 
         byte[] writingBytes = new byte[2 * engineConfig.getPaddedSize()];
-        System.out.println(engineConfig.getPaddedSize());
         Path indexPath = Path.of(dbPath.toString(), String.format("%s-%d.%d", INDEX_FILE_NAME, 1, 0));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
         System.out.println(indexPath);
@@ -155,36 +152,10 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
         ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig);
         IndexManager indexManager = new BPlusTreeIndexManager(degree, extendedFileIndexStorageManager);
 
-        IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
-                AsynchronousFileChannel.open(
-                        Path.of(dbPath.toString(), String.format("%s-%d.%d", INDEX_FILE_NAME, 1, 0)),
-                        StandardOpenOption.READ,
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.CREATE
-                ),
-                headerManager,
-                engineConfig
-        );
-        IndexFileDescriptor indexFileDescriptor2 = new IndexFileDescriptor(
-                AsynchronousFileChannel.open(
-                        Path.of(dbPath.toString(), String.format("%s-%d.%d", INDEX_FILE_NAME, 1, 2)),
-                        StandardOpenOption.READ,
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.CREATE
-                ),
-                headerManager,
-                engineConfig
-        );
-
         for (int tableId = 1; tableId <= 2; tableId++){
 
             for (long testIdentifier : testIdentifiers) {
-                System.out.println("Adding " + testIdentifier + " to table " + tableId);
                 indexManager.addIndex(tableId, testIdentifier, samplePointer);
-                System.out.println("Desc 1");
-                indexFileDescriptor.describe();
-                System.out.println("Desc 2");
-                indexFileDescriptor2.describe();
             }
 
             Optional<IndexStorageManager.NodeData> optional = extendedFileIndexStorageManager.getRoot(tableId).get();

@@ -4,15 +4,15 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.AsyncIndexManagerDecorator;
+import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
 import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
+import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
-import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.TreeNodeIO;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;
@@ -140,7 +140,7 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(7, root.getKeyList(degree).getFirst());
 
-        InternalTreeNode midTreeNodeLeft = (InternalTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
+        InternalTreeNode midTreeNodeLeft = (InternalTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
         List<Long> midTreeNodeLeftKeyList = midTreeNodeLeft.getKeyList(degree);
         Assertions.assertEquals(2, midTreeNodeLeftKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(4, midTreeNodeLeftKeyList.getFirst(), "" + midTreeNodeLeftKeyList);
@@ -148,19 +148,19 @@ public class BPlusTreeIndexManagerRemovalTestCase {
 
 
         List<Pointer> midTreeNodeLeftChildrenList = midTreeNodeLeft.getChildrenList();
-        LeafTreeNode leftSideLastTreeNode = (LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeLeftChildrenList.getFirst());
+        LeafTreeNode leftSideLastTreeNode = (LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeLeftChildrenList.getFirst());
         List<Long> leftSideLastTreeNodeKeyList = leftSideLastTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, leftSideLastTreeNodeKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(3, leftSideLastTreeNodeKeyList.getFirst());
 
 
-        LeafTreeNode midLastTreeNodeAtLeft = (LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeLeftChildrenList.get(1));
+        LeafTreeNode midLastTreeNodeAtLeft = (LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeLeftChildrenList.get(1));
         List<Long> midLastTreeNodeKeyList = midLastTreeNodeAtLeft.getKeyList(degree);
         Assertions.assertEquals(1, midLastTreeNodeKeyList.size(), "Keys: " + midLastTreeNodeKeyList + ", P: " + midLastTreeNodeAtLeft.getPointer());
         Assertions.assertEquals(4, midLastTreeNodeKeyList.getFirst());
 
 
-        LeafTreeNode rightSideLastTreeNodeAtLeft = (LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeLeftChildrenList.getLast());
+        LeafTreeNode rightSideLastTreeNodeAtLeft = (LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeLeftChildrenList.getLast());
         List<Long> rightSideLastTreeNodeKeyList = rightSideLastTreeNodeAtLeft.getKeyList(degree);
         Assertions.assertEquals(2, rightSideLastTreeNodeKeyList.size(), "Keys: " + midLastTreeNodeKeyList + ", P: " + midLastTreeNodeAtLeft.getPointer());
         Assertions.assertEquals(5, rightSideLastTreeNodeKeyList.getFirst());
@@ -171,7 +171,7 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertFalse(indexManager.removeIndex(1, 3));
 
 
-        midTreeNodeLeft = (InternalTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
+        midTreeNodeLeft = (InternalTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
         midTreeNodeLeftKeyList = midTreeNodeLeft.getKeyList(degree);
         Assertions.assertEquals(1, midTreeNodeLeftKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(5, midTreeNodeLeftKeyList.getFirst());
@@ -180,7 +180,7 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 4));
         Assertions.assertFalse(indexManager.removeIndex(1, 4));
 
-        midTreeNodeLeft = (InternalTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
+        midTreeNodeLeft = (InternalTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
         midTreeNodeLeftKeyList = midTreeNodeLeft.getKeyList(degree);
         Assertions.assertEquals(1, midTreeNodeLeftKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(6, midTreeNodeLeftKeyList.getFirst());
@@ -193,19 +193,19 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(9, root.getKeyList(degree).getFirst());
 
-        midTreeNodeLeft = (InternalTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
+        midTreeNodeLeft = (InternalTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
         midTreeNodeLeftKeyList = midTreeNodeLeft.getKeyList(degree);
         Assertions.assertEquals(1, midTreeNodeLeftKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(7, midTreeNodeLeftKeyList.getFirst());
 
         midTreeNodeLeftChildrenList = midTreeNodeLeft.getChildrenList();
 
-        leftSideLastTreeNode = (LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeLeftChildrenList.getFirst());
+        leftSideLastTreeNode = (LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeLeftChildrenList.getFirst());
         leftSideLastTreeNodeKeyList = leftSideLastTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, leftSideLastTreeNodeKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(6, leftSideLastTreeNodeKeyList.getFirst());
 
-        rightSideLastTreeNodeAtLeft = (LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeLeftChildrenList.getLast());
+        rightSideLastTreeNodeAtLeft = (LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeLeftChildrenList.getLast());
         rightSideLastTreeNodeKeyList = rightSideLastTreeNodeAtLeft.getKeyList(degree);
         Assertions.assertEquals(2, rightSideLastTreeNodeKeyList.size(), "Keys: " + midLastTreeNodeKeyList + ", P: " + midLastTreeNodeAtLeft.getPointer());
         Assertions.assertEquals(7, rightSideLastTreeNodeKeyList.getFirst());
@@ -216,7 +216,7 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 6));
         Assertions.assertFalse(indexManager.removeIndex(1, 6));
 
-        midTreeNodeLeft = (InternalTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
+        midTreeNodeLeft = (InternalTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
         midTreeNodeLeftKeyList = midTreeNodeLeft.getKeyList(degree);
         Assertions.assertEquals(1, midTreeNodeLeftKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(8, midTreeNodeLeftKeyList.getFirst());
@@ -230,10 +230,10 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(9, root.getKeyList(degree).getFirst(), "" + root.getKeyList(degree));
         Assertions.assertEquals(11, root.getKeyList(degree).getLast(), "" + root.getKeyList(degree));
 
-        BaseTreeNode leafNodeAtLeft = TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
+        BaseTreeNode leafNodeAtLeft = IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
         Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree).size(), "" + leafNodeAtLeft.getKeyList(degree));
         Assertions.assertEquals(8, leafNodeAtLeft.getKeyList(degree).getFirst(), "" + leafNodeAtLeft.getKeyList(degree));
-        BaseTreeNode leafNodeAtMid = TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().get(1));
+        BaseTreeNode leafNodeAtMid = IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().get(1));
         Assertions.assertEquals(2, leafNodeAtMid.getKeyList(degree).size());
         Assertions.assertEquals(9, leafNodeAtMid.getKeyList(degree).getFirst());
         Assertions.assertEquals(10, leafNodeAtMid.getKeyList(degree).getLast());
@@ -246,7 +246,7 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(10, root.getKeyList(degree).getFirst(), "" + root.getKeyList(degree));
         Assertions.assertEquals(11, root.getKeyList(degree).getLast(), "" + root.getKeyList(degree));
 
-        leafNodeAtLeft = (LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
+        leafNodeAtLeft = (LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
         Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree).size());
         Assertions.assertEquals(9, leafNodeAtLeft.getKeyList(degree).getFirst());
 
@@ -258,11 +258,11 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(11, root.getKeyList(degree).getFirst());
 
-        leafNodeAtLeft = (LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
+        leafNodeAtLeft = (LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
         Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree).size());
         Assertions.assertEquals(10, leafNodeAtLeft.getKeyList(degree).getFirst());
 
-        LeafTreeNode leafNodeAtRight = (LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
+        LeafTreeNode leafNodeAtRight = (LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
         Assertions.assertEquals(2, leafNodeAtRight.getKeyList(degree).size());
         Assertions.assertEquals(11, leafNodeAtRight.getKeyList(degree).getFirst());
         Assertions.assertEquals(12, leafNodeAtRight.getKeyList(degree).getLast());
@@ -278,11 +278,11 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(12, root.getKeyList(degree).getFirst());
 
-        leafNodeAtLeft = (LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
+        leafNodeAtLeft = (LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst());
         Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree).size());
         Assertions.assertEquals(11, leafNodeAtLeft.getKeyList(degree).getFirst());
 
-        leafNodeAtRight = (LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
+        leafNodeAtRight = (LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
         Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree).size());
         Assertions.assertEquals(12, leafNodeAtRight.getKeyList(degree).getFirst());
 
@@ -335,7 +335,7 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertTrue(root.getKeyList(degree).contains(7L));
 
-        InternalTreeNode midTreeNode = (InternalTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
+        InternalTreeNode midTreeNode = (InternalTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
         List<Long> midTreeNodeKeyList = midTreeNode.getKeyList(degree);
         Assertions.assertEquals(2, midTreeNodeKeyList.size(), "" + midTreeNodeKeyList);
         Assertions.assertEquals(9, midTreeNodeKeyList.getFirst());
@@ -343,20 +343,20 @@ public class BPlusTreeIndexManagerRemovalTestCase {
 
 
         List<Pointer> midTreeNodeChildrenList = midTreeNode.getChildrenList();
-        LeafTreeNode leftSideLastTreeNode = (LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeChildrenList.getFirst());
+        LeafTreeNode leftSideLastTreeNode = (LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeChildrenList.getFirst());
         List<Long> leftSideLastTreeNodeKeyList = leftSideLastTreeNode.getKeyList(degree);
         Assertions.assertEquals(2, leftSideLastTreeNodeKeyList.size(), "" + midTreeNodeKeyList);
         Assertions.assertEquals(7, leftSideLastTreeNodeKeyList.getFirst());
         Assertions.assertEquals(8, leftSideLastTreeNodeKeyList.getLast());
 
 
-        LeafTreeNode midLastTreeNode = (LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeChildrenList.get(1));
+        LeafTreeNode midLastTreeNode = (LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeChildrenList.get(1));
         List<Long> midLastTreeNodeKeyList = midLastTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, midLastTreeNodeKeyList.size(), "Keys: " + midLastTreeNodeKeyList + ", P: " + midLastTreeNode.getPointer());
         Assertions.assertEquals(9, midLastTreeNodeKeyList.getFirst());
 
 
-        LeafTreeNode rightSideLastTreeNode = (LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeChildrenList.getLast());
+        LeafTreeNode rightSideLastTreeNode = (LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeChildrenList.getLast());
         List<Long> rightSideLastTreeNodeKeyList = rightSideLastTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, rightSideLastTreeNodeKeyList.size(), "Keys: " + midLastTreeNodeKeyList + ", P: " + midLastTreeNode.getPointer());
         Assertions.assertEquals(10, rightSideLastTreeNodeKeyList.getFirst());
@@ -366,7 +366,7 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertFalse(indexManager.removeIndex(1, 10));
 
 
-        midTreeNode = (InternalTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
+        midTreeNode = (InternalTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
         midTreeNodeKeyList = midTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, midTreeNodeKeyList.size(), "" + midTreeNodeKeyList);
         Assertions.assertEquals(9, midTreeNodeKeyList.getFirst());
@@ -375,7 +375,7 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 9));
         Assertions.assertFalse(indexManager.removeIndex(1, 9));
 
-        midTreeNode = (InternalTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
+        midTreeNode = (InternalTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
         midTreeNodeKeyList = midTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, midTreeNodeKeyList.size(), "" + midTreeNodeKeyList);
         Assertions.assertEquals(8, midTreeNodeKeyList.getFirst());
@@ -388,20 +388,20 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(5, root.getKeyList(degree).getFirst());
 
-        midTreeNode = (InternalTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
+        midTreeNode = (InternalTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
         midTreeNodeKeyList = midTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, midTreeNodeKeyList.size(), "" + midTreeNodeKeyList);
         Assertions.assertEquals(7, midTreeNodeKeyList.getFirst());
 
         midTreeNodeChildrenList = midTreeNode.getChildrenList();
 
-        leftSideLastTreeNode = (LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeChildrenList.getFirst());
+        leftSideLastTreeNode = (LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeChildrenList.getFirst());
         leftSideLastTreeNodeKeyList = leftSideLastTreeNode.getKeyList(degree);
         Assertions.assertEquals(2, leftSideLastTreeNodeKeyList.size(), "" + midTreeNodeKeyList);
         Assertions.assertEquals(5, leftSideLastTreeNodeKeyList.getFirst());
         Assertions.assertEquals(6, leftSideLastTreeNodeKeyList.getLast());
 
-        rightSideLastTreeNode = (LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeChildrenList.getLast());
+        rightSideLastTreeNode = (LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, midTreeNodeChildrenList.getLast());
         rightSideLastTreeNodeKeyList = rightSideLastTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, rightSideLastTreeNodeKeyList.size(), "Keys: " + midLastTreeNodeKeyList + ", P: " + midLastTreeNode.getPointer());
         Assertions.assertEquals(7, rightSideLastTreeNodeKeyList.getFirst());
@@ -418,7 +418,7 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(3, root.getKeyList(degree).getFirst());
         Assertions.assertEquals(5, root.getKeyList(degree).getLast());
 
-        BaseTreeNode leafNodeAtRight = TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
+        BaseTreeNode leafNodeAtRight = IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
         Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree).size());
         Assertions.assertEquals(5, leafNodeAtRight.getKeyList(degree).getFirst());
 
@@ -431,7 +431,7 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(3, root.getKeyList(degree).getFirst());
         Assertions.assertEquals(4, root.getKeyList(degree).getLast());
 
-        leafNodeAtRight = TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
+        leafNodeAtRight = IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
         Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree).size());
         Assertions.assertEquals(4, leafNodeAtRight.getKeyList(degree).getFirst());
 
@@ -443,7 +443,7 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(3, root.getKeyList(degree).getFirst());
 
-        leafNodeAtRight = TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
+        leafNodeAtRight = IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
         Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree).size());
         Assertions.assertEquals(3, leafNodeAtRight.getKeyList(degree).getFirst());
 
@@ -455,7 +455,7 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(2, root.getKeyList(degree).getFirst());
 
-        leafNodeAtRight = TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
+        leafNodeAtRight = IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast());
         Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree).size());
         Assertions.assertEquals(2, leafNodeAtRight.getKeyList(degree).getFirst());
 
@@ -519,11 +519,11 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(10, root.getKeyList(degree).getFirst());
 
         // Testing next / prev state
-        Pointer lastLeafFromLeftPointer = ((InternalTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst())).getChildrenList().getLast();
-        Pointer firstLeafFromRightPointer = ((InternalTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast())).getChildrenList().getFirst();
+        Pointer lastLeafFromLeftPointer = ((InternalTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getFirst())).getChildrenList().getLast();
+        Pointer firstLeafFromRightPointer = ((InternalTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, root.getChildrenList().getLast())).getChildrenList().getFirst();
 
-        Assertions.assertEquals(lastLeafFromLeftPointer, ((LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, firstLeafFromRightPointer)).getPreviousSiblingPointer(degree).get());
-        Assertions.assertEquals(firstLeafFromRightPointer, ((LeafTreeNode) TreeNodeIO.read(compactFileIndexStorageManager, 1, lastLeafFromLeftPointer)).getNextSiblingPointer(degree).get());
+        Assertions.assertEquals(lastLeafFromLeftPointer, ((LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, firstLeafFromRightPointer)).getPreviousSiblingPointer(degree).get());
+        Assertions.assertEquals(firstLeafFromRightPointer, ((LeafTreeNode) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, lastLeafFromLeftPointer)).getNextSiblingPointer(degree).get());
 
 
         Assertions.assertTrue(indexManager.removeIndex(1, 10));

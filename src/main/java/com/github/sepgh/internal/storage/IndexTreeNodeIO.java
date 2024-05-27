@@ -1,15 +1,14 @@
-package com.github.sepgh.internal.index.tree;
+package com.github.sepgh.internal.storage;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
-import com.github.sepgh.internal.storage.IndexStorageManager;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
-public class TreeNodeIO {
+public class IndexTreeNodeIO {
     public static CompletableFuture<IndexStorageManager.NodeData> write(BaseTreeNode node, IndexStorageManager indexStorageManager, int table) throws IOException, ExecutionException, InterruptedException {
         IndexStorageManager.NodeData nodeData = new IndexStorageManager.NodeData(node.getPointer(), node.getData());
         if (!node.isModified() && node.getPointer() != null){
@@ -43,16 +42,9 @@ public class TreeNodeIO {
     }
 
     public static void update(IndexStorageManager indexStorageManager, int table, BaseTreeNode... nodes) throws InterruptedException, IOException {
-        CompletableFuture<Void> completableFuture = new CompletableFuture<>();
         CountDownLatch latch = new CountDownLatch(nodes.length);
         for (BaseTreeNode node : nodes) {
-            indexStorageManager.updateNode(table, node.getData(), node.getPointer(), node.isRoot()).whenComplete((integer, throwable) -> {
-                if (throwable != null) {
-                    completableFuture.completeExceptionally(throwable);
-                }
-
-                latch.countDown();
-            });
+            indexStorageManager.updateNode(table, node.getData(), node.getPointer(), node.isRoot()).whenComplete((integer, throwable) -> latch.countDown());
         }
         latch.await();
     }

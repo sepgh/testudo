@@ -14,8 +14,12 @@ public class FileHandler {
     private final AtomicInteger usageCount = new AtomicInteger(0);
 
     public FileHandler(String filePath) throws IOException {
+        // Todo: executor service could be passed here
         this.fileChannel = AsynchronousFileChannel.open(Path.of(filePath),
-                StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+                StandardOpenOption.READ,
+                StandardOpenOption.WRITE,
+                StandardOpenOption.CREATE
+        );
     }
 
     public void incrementUsage() {

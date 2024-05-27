@@ -1,11 +1,11 @@
 package com.github.sepgh.internal.index.tree.storing;
 
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.TreeNodeIO;
 import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
 import com.github.sepgh.internal.storage.IndexStorageManager;
+import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.List;
@@ -46,14 +46,14 @@ public class StoredTreeStructureVerifier {
         Assertions.assertEquals(multi * 9, rootNode.getKeys(degree).next());
 
         // Checking root child at left
-        InternalTreeNode leftChildInternalNode = (InternalTreeNode) TreeNodeIO.read(indexStorageManager, table, ((InternalTreeNode) rootNode).getChildPointersList(degree).get(0).getLeft());
+        InternalTreeNode leftChildInternalNode = (InternalTreeNode) IndexTreeNodeIO.read(indexStorageManager, table, ((InternalTreeNode) rootNode).getChildPointersList(degree).get(0).getLeft());
         List<Long> leftChildInternalNodeKeys = leftChildInternalNode.getKeyList(degree);
         Assertions.assertEquals(2, leftChildInternalNodeKeys.size());
         Assertions.assertEquals(multi * 3, leftChildInternalNodeKeys.get(0));
         Assertions.assertEquals(multi * 6, leftChildInternalNodeKeys.get(1));
 
         // Far left leaf
-        LeafTreeNode currentLeaf = (LeafTreeNode) TreeNodeIO.read(indexStorageManager, table, leftChildInternalNode.getChildPointersList(degree).get(0).getLeft());
+        LeafTreeNode currentLeaf = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, table, leftChildInternalNode.getChildPointersList(degree).get(0).getLeft());
         List<Long> currentLeafKeys = currentLeaf.getKeyList(degree);
         Assertions.assertEquals(2, currentLeafKeys.size());
         Assertions.assertEquals(multi * 1, currentLeafKeys.get(0));
@@ -64,7 +64,7 @@ public class StoredTreeStructureVerifier {
         Assertions.assertTrue(nextPointer.isPresent());
         Assertions.assertEquals(nextPointer.get(), leftChildInternalNode.getChildAtIndex(1));
 
-        currentLeaf = (LeafTreeNode) TreeNodeIO.read(indexStorageManager, table, leftChildInternalNode.getChildPointersList(degree).get(0).getRight());
+        currentLeaf = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, table, leftChildInternalNode.getChildPointersList(degree).get(0).getRight());
         currentLeafKeys = currentLeaf.getKeyList(degree);
         Assertions.assertEquals(3, currentLeafKeys.size());
         Assertions.assertEquals(multi * 3, currentLeafKeys.get(0));
