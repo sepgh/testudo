@@ -1,7 +1,5 @@
 package com.github.sepgh.internal.storage.pool;
 
-import lombok.Getter;
-
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Path;

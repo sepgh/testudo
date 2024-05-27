@@ -1,8 +1,8 @@
 package com.github.sepgh.internal.index.tree.node;
 
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.index.tree.TreeNodeUtils;
+import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.google.common.collect.ImmutableList;
 import lombok.Getter;
 import lombok.Setter;
