@@ -3,6 +3,7 @@ package com.github.sepgh.internal.index.tree.removing;
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
+import com.github.sepgh.internal.index.tree.AsyncIndexManagerDecorator;
 import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
@@ -12,10 +13,7 @@ import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
 import com.github.sepgh.internal.index.tree.TreeNodeIO;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,7 +23,10 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.github.sepgh.internal.storage.CompactFileIndexStorageManager.INDEX_FILE_NAME;
 
@@ -586,6 +587,52 @@ public class BPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(1, lRoot.getKeyList(degree).getFirst());
         Assertions.assertEquals(BaseTreeNode.Type.LEAF, lRoot.getType());
 
+    }
+
+    @Test
+    @Timeout(2)
+    public void testRemovingLeftToRightAsync() throws IOException, ExecutionException, InterruptedException {
+        List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
+        Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
+
+
+        HeaderManager headerManager = new InMemoryHeaderManager(header);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexManager indexManager = new AsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, compactFileIndexStorageManager));
+
+        ExecutorService executorService = Executors.newFixedThreadPool(4);
+        CountDownLatch countDownLatch = new CountDownLatch(testIdentifiers.size());
+        for (Long testIdentifier : testIdentifiers) {
+            executorService.submit(() -> {
+                try {
+                    indexManager.addIndex(1, testIdentifier, samplePointer);
+                } catch (ExecutionException | InterruptedException | IOException e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    countDownLatch.countDown();
+                }
+            });
+        }
+        countDownLatch.await();
+
+        CountDownLatch countDownLatch2 = new CountDownLatch(testIdentifiers.size());
+        for (Long testIdentifier : testIdentifiers) {
+            executorService.submit(() -> {
+                try {
+                    indexManager.removeIndex(1, testIdentifier);
+                } catch (ExecutionException | InterruptedException | IOException e) {
+                    throw new RuntimeException(e);
+                }finally {
+                    countDownLatch2.countDown();
+                }
+            });
+        }
+
+        countDownLatch2.await();
+
+        BaseTreeNode bRoot = BaseTreeNode.fromNodeData(compactFileIndexStorageManager.getRoot(1).get().get());
+        Assertions.assertEquals(0, bRoot.getKeyList(degree).size());
+        Assertions.assertEquals(BaseTreeNode.Type.LEAF, bRoot.getType());
     }
 
 }

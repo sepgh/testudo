@@ -3,6 +3,7 @@ package com.github.sepgh.internal.index.tree.storing;
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
+import com.github.sepgh.internal.index.tree.AsyncIndexManagerDecorator;
 import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
@@ -20,7 +21,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.*;
 
 import static com.github.sepgh.internal.storage.CompactFileIndexStorageManager.INDEX_FILE_NAME;
 
@@ -224,6 +225,38 @@ public class BPlusTreeIndexManagerTestCase {
         Assertions.assertEquals(2, lastTreeNode.getKeyList(degree).size());
         Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
+        StoredTreeStructureVerifier.testOrderedTreeStructure(compactFileIndexStorageManager, 1, 1, degree);
+
+    }
+
+    // Todo: there is a chance of this test to fail since we are using multiple threads to add index and order may not be
+    //       as seen in testIdentifiers list
+    @Test
+    @Timeout(value = 2)
+    public void testMultiSplitAddIndexAsync() throws IOException, ExecutionException, InterruptedException {
+
+        List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
+        Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
+
+
+        HeaderManager headerManager = new InMemoryHeaderManager(header);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexManager indexManager = new AsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, compactFileIndexStorageManager));
+
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
+        CountDownLatch countDownLatch = new CountDownLatch(testIdentifiers.size());
+        for (Long testIdentifier : testIdentifiers) {
+            executorService.submit(() -> {
+                try {
+                    indexManager.addIndex(1, testIdentifier, samplePointer);
+                    countDownLatch.countDown();
+                } catch (ExecutionException | InterruptedException | IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+
+        countDownLatch.await();
         StoredTreeStructureVerifier.testOrderedTreeStructure(compactFileIndexStorageManager, 1, 1, degree);
 
     }
