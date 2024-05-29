@@ -34,7 +34,7 @@ public class AsyncIndexManagerDecorator extends IndexManagerDecorator {
     }
 
     @Override
-    public Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException {
+    public Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException {
         LockManager lockManager = getLockManager(table);
         lockManager.readLock.lock();
         try {

@@ -9,7 +9,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
 public class IndexTreeNodeIO {
-    public static CompletableFuture<IndexStorageManager.NodeData> write(BaseTreeNode node, IndexStorageManager indexStorageManager, int table) throws IOException, ExecutionException, InterruptedException {
+    public static CompletableFuture<IndexStorageManager.NodeData> write(IndexStorageManager indexStorageManager, int table, BaseTreeNode node) throws IOException, ExecutionException, InterruptedException {
         IndexStorageManager.NodeData nodeData = new IndexStorageManager.NodeData(node.getPointer(), node.getData());
         if (!node.isModified() && node.getPointer() != null){
             return CompletableFuture.completedFuture(nodeData);
@@ -26,7 +26,7 @@ public class IndexTreeNodeIO {
                 output.complete(nodeData1);
             });
         } else {
-            indexStorageManager.updateNode(table, node.getData(), node.getPointer()).whenComplete((integer, throwable) -> {
+            indexStorageManager.updateNode(table, node.getData(), node.getPointer(), node.isRoot()).whenComplete((integer, throwable) -> {
                 if (throwable != null){
                     output.completeExceptionally(throwable);
                     return;
@@ -50,6 +50,10 @@ public class IndexTreeNodeIO {
     }
 
     public static void remove(IndexStorageManager indexStorageManager, int table, BaseTreeNode node) throws ExecutionException, InterruptedException {
-        indexStorageManager.removeNode(table, node.getPointer()).get();
+        remove(indexStorageManager, table, node.getPointer());
+    }
+
+    public static void remove(IndexStorageManager indexStorageManager, int table, Pointer pointer) throws ExecutionException, InterruptedException {
+        indexStorageManager.removeNode(table, pointer).get();
     }
 }

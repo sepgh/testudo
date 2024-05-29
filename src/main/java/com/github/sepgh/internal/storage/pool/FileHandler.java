@@ -32,5 +32,6 @@ public class FileHandler {
 
     public void close() throws IOException {
         fileChannel.close();
+        usageCount.set(0);
     }
 }

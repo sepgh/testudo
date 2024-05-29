@@ -8,6 +8,6 @@ import java.util.concurrent.ExecutionException;
 
 public interface IndexManager {
     BaseTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException;
-    Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException;
+    Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException;
     boolean removeIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException;
 }

@@ -54,7 +54,6 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
         byte[] writingBytes = new byte[2 * engineConfig.getPaddedSize()];
         Path indexPath = Path.of(dbPath.toString(), String.format("%s-%d.%d", INDEX_FILE_NAME, 1, 0));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-        System.out.println(indexPath);
 
         indexPath = Path.of(dbPath.toString(), String.format("%s-%d.%d", INDEX_FILE_NAME, 2, 0));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);

@@ -59,46 +59,6 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
     }
 
     @Override
-    public CompletableFuture<NodeData> fillRoot(int table, byte[] data) throws InterruptedException {
-        CompletableFuture<NodeData> output = new CompletableFuture<>();
-
-        Optional<Header.Table> optionalTable = headerManager.getHeader().getTableOfId(table);
-
-        Header.Table headerTable = optionalTable.get();
-        if (optionalTable.isEmpty() || headerTable.getRoot() == null){
-            output.completeExceptionally(new Exception("Root position is undetermined")); // Todo
-            return output;
-        }
-
-        long rootAbsolutePosition = headerTable.getIndexChunk(headerTable.getRoot().getChunk()).get().getOffset() + headerTable.getRoot().getOffset();
-        ManagedFileHandler managedFileHandler = getManagedFileHandler(table, headerTable.getRoot().getChunk());
-        try {
-            FileUtils.write(managedFileHandler.getAsynchronousFileChannel() ,rootAbsolutePosition, data)
-                    .whenComplete((integer, throwable) -> managedFileHandler.close())
-                    .whenComplete((size, throwable) -> {
-                        if (throwable != null){
-                            output.completeExceptionally(throwable);
-                        }
-
-                        output.complete(
-                                new NodeData(
-                                        new Pointer(
-                                                Pointer.TYPE_NODE,
-                                                optionalTable.get().getRoot().getOffset(),
-                                                optionalTable.get().getRoot().getChunk()
-                                        ),
-                                        data
-                                )
-                        );
-            });
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return output;
-    }
-
-    @Override
     public CompletableFuture<Optional<NodeData>> getRoot(int table) throws InterruptedException {
         CompletableFuture<Optional<NodeData>> output = new CompletableFuture<>();
 

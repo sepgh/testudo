@@ -149,38 +149,4 @@ public class BPlusTreeIndexCreateOperation {
         }
     }
 
-    public static void getPathToResponsibleNode(IndexIOSession indexIOSession, List<BaseTreeNode> path, BaseTreeNode node, long identifier, int degree) throws ExecutionException, InterruptedException {
-        if (node.getType() == BaseTreeNode.Type.LEAF){
-            path.addFirst(node);
-            return;
-        }
-
-        List<InternalTreeNode.ChildPointers> childPointersList = ((InternalTreeNode) node).getChildPointersList(degree);
-        for (int i = 0; i < childPointersList.size(); i++){
-            InternalTreeNode.ChildPointers childPointers = childPointersList.get(i);
-            if (childPointers.getKey() > identifier && childPointers.getLeft() != null){
-                path.addFirst(node);
-                getPathToResponsibleNode(
-                        indexIOSession,
-                        path,
-                        indexIOSession.read(childPointers.getLeft()),
-                        identifier,
-                        degree
-                );
-                return;
-            }
-            if (i == childPointersList.size() - 1 && childPointers.getRight() != null){
-                path.addFirst(node);
-                getPathToResponsibleNode(
-                        indexIOSession,
-                        path,
-                        indexIOSession.read(childPointers.getRight()),
-                        identifier,
-                        degree
-                );
-                return;
-            }
-        }
-    }
-
 }

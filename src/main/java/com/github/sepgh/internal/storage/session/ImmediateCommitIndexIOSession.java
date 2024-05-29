@@ -7,6 +7,7 @@ import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 public class ImmediateCommitIndexIOSession implements IndexIOSession {
@@ -20,8 +21,14 @@ public class ImmediateCommitIndexIOSession implements IndexIOSession {
     }
 
     @Override
+    public Optional<BaseTreeNode> getRoot() throws ExecutionException, InterruptedException {
+        Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table).get();
+        return optional.map(BaseTreeNode::fromNodeData);
+    }
+
+    @Override
     public IndexStorageManager.NodeData write(BaseTreeNode node) throws IOException, ExecutionException, InterruptedException {
-        return IndexTreeNodeIO.write(node, indexStorageManager, table).get();
+        return IndexTreeNodeIO.write(indexStorageManager, table, node).get();
     }
 
     @Override

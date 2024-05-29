@@ -16,7 +16,7 @@ public class IndexManagerDecorator implements IndexManager {
     public BaseTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException{
         return this.indexManager.addIndex(table, identifier, pointer);
     }
-    public Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException {
+    public Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException {
         return this.indexManager.getIndex(table, identifier);
     }
 
