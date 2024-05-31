@@ -1,11 +1,13 @@
 package com.github.sepgh.internal.index.tree.removing;
 
 import com.github.sepgh.internal.EngineConfig;
+import com.github.sepgh.internal.helper.IndexFileDescriptor;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
+import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import com.github.sepgh.internal.storage.header.Header;
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
+import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -36,7 +39,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
 
     @BeforeEach
     public void setUp() throws IOException {
-        dbPath = Files.createTempDirectory("TEST_BTreeIndexManagerReadingTestCase");
+        dbPath = Files.createTempDirectory("TEST_BaseBPlusTreeIndexManagerRemovalTestCase");
         engineConfig = EngineConfig.builder()
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
@@ -61,12 +64,6 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
                                                                 .offset(0)
                                                                 .build()
                                                 )
-                                        )
-                                        .root(
-                                                Header.IndexChunk.builder()
-                                                        .chunk(0)
-                                                        .offset(0)
-                                                        .build()
                                         )
                                         .initialized(true)
                                         .build()
@@ -583,7 +580,9 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
             });
         }
         countDownLatch.await();
+        executorService.shutdown();
 
+        executorService = Executors.newFixedThreadPool(4);
         CountDownLatch countDownLatch2 = new CountDownLatch(testIdentifiers.size());
         for (Long testIdentifier : testIdentifiers) {
             executorService.submit(() -> {
@@ -598,9 +597,10 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         }
 
         countDownLatch2.await();
+        executorService.shutdown();
 
-        BaseTreeNode bRoot = BaseTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
-        Assertions.assertEquals(0, bRoot.getKeyList(degree).size());
-        Assertions.assertEquals(BaseTreeNode.Type.LEAF, bRoot.getType());
+        for (Long testIdentifier : testIdentifiers) {
+            Assertions.assertTrue(indexManager.getIndex(1, testIdentifier).isEmpty(), "Still can get " + testIdentifier);
+        }
     }
 }

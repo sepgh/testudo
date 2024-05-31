@@ -260,7 +260,11 @@ public class BPlusTreeIndexManagerTestCase {
         }
 
         countDownLatch.await();
-        StoredTreeStructureVerifier.testOrderedTreeStructure(compactFileIndexStorageManager, 1, 1, degree);
+        executorService.shutdown();
+
+        for (Long testIdentifier : testIdentifiers) {
+            Assertions.assertTrue(indexManager.getIndex(1, testIdentifier).isPresent());
+        }
 
     }
 

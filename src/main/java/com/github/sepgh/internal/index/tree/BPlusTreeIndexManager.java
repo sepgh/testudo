@@ -14,7 +14,6 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 public class BPlusTreeIndexManager implements IndexManager {
-
     private final IndexStorageManager indexStorageManager;
     private final IndexIOSessionFactory indexIOSessionFactory;
     private final int degree;
@@ -70,6 +69,5 @@ public class BPlusTreeIndexManager implements IndexManager {
         leafTreeNode.setPointer(nodeData.pointer());
         return leafTreeNode;
     }
-
 
 }

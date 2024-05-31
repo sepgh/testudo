@@ -305,6 +305,7 @@ public class BPlusTreeIndexDeleteOperation {
          *  If sibling is after current child, its pointer are appended, otherwise they prepend
          */
         if (!child.isLeaf()){
+
             InternalTreeNode childInternalTreeNode = (InternalTreeNode) child;
             List<Long> childKeyList = new ArrayList<>(childInternalTreeNode.getKeyList(degree));
             childKeyList.addAll(sibling.getKeyList(degree));
@@ -351,10 +352,6 @@ public class BPlusTreeIndexDeleteOperation {
             indexIOSession.update(child);
             indexIOSession.remove(parent);
         }else{
-            if (child.isLeaf()) {
-                assert child instanceof LeafTreeNode;
-                this.connectSiblings((LeafTreeNode) child);
-            }
             indexIOSession.update(parent, child);
         }
         if (toRemove.isLeaf()) {
@@ -364,9 +361,9 @@ public class BPlusTreeIndexDeleteOperation {
         indexIOSession.remove(toRemove);
     }
 
-    private void connectSiblings(LeafTreeNode toRemove) throws ExecutionException, InterruptedException, IOException {
-        Optional<Pointer> optionalNextSiblingPointer = toRemove.getNextSiblingPointer(degree);
-        Optional<Pointer> optionalPreviousSiblingPointer = toRemove.getPreviousSiblingPointer(degree);
+    private void connectSiblings(LeafTreeNode node) throws ExecutionException, InterruptedException, IOException {
+        Optional<Pointer> optionalNextSiblingPointer = node.getNextSiblingPointer(degree);
+        Optional<Pointer> optionalPreviousSiblingPointer = node.getPreviousSiblingPointer(degree);
         if (optionalNextSiblingPointer.isPresent()){
             LeafTreeNode nextNode = (LeafTreeNode) indexIOSession.read(optionalNextSiblingPointer.get());
             if (optionalPreviousSiblingPointer.isPresent()){

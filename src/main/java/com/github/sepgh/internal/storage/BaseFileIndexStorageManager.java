@@ -128,7 +128,6 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
         CompletableFuture<NodeData> output = new CompletableFuture<>();
         Header.Table headerTable = headerManager.getHeader().getTableOfId(table).get();
         Pointer pointer = this.getAllocatedSpaceForNewNode(table, headerTable.getChunks().getLast().getChunk());
-
         if (data.length < engineConfig.getPaddedSize()){
             byte[] finalData = new byte[engineConfig.getPaddedSize()];
             System.arraycopy(data, 0, finalData, 0, engineConfig.getPaddedSize());

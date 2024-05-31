@@ -56,6 +56,10 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
         byte[] writingBytes = new byte[6 * engineConfig.getPaddedSize()];
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+        indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 1));
+        Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+        indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 2));
+        Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 
         header = Header.builder()
                 .database("sample")
@@ -72,12 +76,6 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
                                                                 .build()
                                                 )
                                         )
-                                        .root(
-                                                Header.IndexChunk.builder()
-                                                        .chunk(0)
-                                                        .offset(0)
-                                                        .build()
-                                        )
                                         .initialized(true)
                                         .build(),
                                 Header.Table.builder()
@@ -87,15 +85,9 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
                                                 Collections.singletonList(
                                                         Header.IndexChunk.builder()
                                                                 .chunk(0)
-                                                                .offset(2L * engineConfig.getPaddedSize())
+                                                                .offset(4L * engineConfig.getPaddedSize())
                                                                 .build()
                                                 )
-                                        )
-                                        .root(
-                                                Header.IndexChunk.builder()
-                                                        .chunk(0)
-                                                        .offset(0)
-                                                        .build()
                                         )
                                         .initialized(true)
                                         .build()
@@ -252,6 +244,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
         int index = 0;
         int runs = 0;
         while (runs < testIdentifiers.size()){
+            System.out.println("Adding {" + testIdentifiers.get(index) + "}");
             indexManager.addIndex(1, testIdentifiers.get(index), samplePointer);
             indexManager.addIndex(2, testIdentifiers.get(index) * 10, samplePointer);
             index++;

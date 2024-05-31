@@ -15,5 +15,5 @@ public interface IndexIOSession {
     void update(BaseTreeNode... nodes) throws IOException, InterruptedException;
     void remove(BaseTreeNode node) throws ExecutionException, InterruptedException;
     IndexStorageManager getIndexStorageManager();
-    void commit() throws InterruptedException, IOException;
+    void commit() throws InterruptedException, IOException, ExecutionException;
 }

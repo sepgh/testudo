@@ -28,16 +28,18 @@ public class MemorySnapshotIndexIOSession implements IndexIOSession {
 
     @Override
     public Optional<BaseTreeNode> getRoot() throws ExecutionException, InterruptedException {
-        Optional<BaseTreeNode> output;
         if (root == null){
             Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table).get();
-            output = optional.map(BaseTreeNode::fromNodeData);
+            if (optional.isPresent()){
+                BaseTreeNode baseTreeNode = BaseTreeNode.fromNodeData(optional.get());
+                this.root = baseTreeNode;
+                return Optional.of(baseTreeNode);
+            }
         } else {
-            output = Optional.empty();
+            return Optional.of(root);
         }
-        output.ifPresent(baseTreeNode -> this.root = baseTreeNode);
 
-        return output;
+        return Optional.empty();
     }
 
     @Override
@@ -71,7 +73,7 @@ public class MemorySnapshotIndexIOSession implements IndexIOSession {
     @Override
     public void update(BaseTreeNode... nodes) throws IOException, InterruptedException {
         for (BaseTreeNode node : nodes) {
-            BaseTreeNode baseTreeNode = update.putIfAbsent(node.getPointer(), node);
+            BaseTreeNode baseTreeNode = update.put(node.getPointer(), node);
             if (baseTreeNode == null){
                 sortedUpdate.addLast(node);
             }
@@ -87,7 +89,7 @@ public class MemorySnapshotIndexIOSession implements IndexIOSession {
 
 
     @Override
-    public void commit() throws InterruptedException, IOException {
+    public void commit() throws InterruptedException, IOException, ExecutionException {
         for (Pointer pointer : deleted) {
             try {
                 IndexTreeNodeIO.remove(indexStorageManager, table, pointer);
@@ -106,14 +108,17 @@ public class MemorySnapshotIndexIOSession implements IndexIOSession {
 
     }
 
-    protected void rollback() throws IOException, InterruptedException {
-        System.out.println("Rollback is called!!!!!");
+    protected void rollback() throws IOException, InterruptedException, ExecutionException {
         for (Pointer pointer : deleted) {
             IndexTreeNodeIO.update(indexStorageManager, table, original.get(pointer));
         }
 
         for (BaseTreeNode baseTreeNode : sortedUpdate) {
             IndexTreeNodeIO.update(indexStorageManager, table, original.get(baseTreeNode.getPointer()));
+        }
+
+        for (Pointer pointer : created) {
+            IndexTreeNodeIO.remove(indexStorageManager, table, pointer);
         }
     }
 

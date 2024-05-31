@@ -1,6 +1,7 @@
 package com.github.sepgh.internal.index;
 
 import com.github.sepgh.internal.utils.BinaryUtils;
+import com.google.common.hash.HashCode;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import lombok.AllArgsConstructor;
@@ -13,7 +14,7 @@ import java.util.Objects;
    Binary size of pointer:  1byte type  +  8bytes position   +  4bytes chunk  = 13bytes
 */
 
-@AllArgsConstructor
+//@AllArgsConstructor
 @Data
 public class Pointer {
     public static byte TYPE_DATA = 0x01;
@@ -24,7 +25,17 @@ public class Pointer {
     private long position;
     private int chunk;
 
+    public Pointer(byte type, long position, int chunk) {
+        this.type = type;
+        this.position = position;
+        this.chunk = chunk;
+//        if (position < 0){
+//            throw new RuntimeException("F");
+//        }
+    }
+
     public static Pointer fromBytes(byte[] bytes, int position){
+//        System.out.println(HashCode.fromBytes(bytes));
         return new Pointer(
                 bytes[position],
                 BinaryUtils.bytesToLong(bytes, position + 1),
