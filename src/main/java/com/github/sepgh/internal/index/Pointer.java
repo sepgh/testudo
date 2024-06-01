@@ -1,10 +1,8 @@
 package com.github.sepgh.internal.index;
 
 import com.github.sepgh.internal.utils.BinaryUtils;
-import com.google.common.hash.HashCode;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.Objects;

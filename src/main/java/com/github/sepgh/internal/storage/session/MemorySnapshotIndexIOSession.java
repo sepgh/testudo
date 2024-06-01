@@ -14,8 +14,8 @@ public class MemorySnapshotIndexIOSession implements IndexIOSession {
     @Getter
     protected final IndexStorageManager indexStorageManager;
     protected final int table;
-    protected final Map<Pointer, BaseTreeNode> update = new HashMap<>();
-    private final List<BaseTreeNode> sortedUpdate = new LinkedList<>();
+    protected final Set<Pointer> updated = new HashSet<>();
+    protected final Map<Pointer, BaseTreeNode> pool = new HashMap<>();
     protected final Map<Pointer, BaseTreeNode> original = new HashMap<>();
     protected final List<Pointer> created = new LinkedList<>();
     protected final List<Pointer> deleted = new LinkedList<>();
@@ -46,7 +46,7 @@ public class MemorySnapshotIndexIOSession implements IndexIOSession {
     public IndexStorageManager.NodeData write(BaseTreeNode node) throws IOException, ExecutionException, InterruptedException {
         IndexStorageManager.NodeData nodeData = IndexTreeNodeIO.write(indexStorageManager, table, node).get();
         this.created.add(nodeData.pointer());
-        this.original.put(nodeData.pointer(), node);
+        this.pool.put(nodeData.pointer(), node);
         if (node.isRoot())
             root = node;
         return nodeData;
@@ -57,14 +57,18 @@ public class MemorySnapshotIndexIOSession implements IndexIOSession {
         if (deleted.contains(pointer))
             return null;
 
-        if (update.containsKey(pointer))
-            return update.get(pointer);
+        if (updated.contains(pointer))
+            return pool.get(pointer);
 
         if (created.contains(pointer))
-            return original.get(pointer);
+            return pool.get(pointer);
 
         BaseTreeNode baseTreeNode = IndexTreeNodeIO.read(indexStorageManager, table, pointer);
-        original.put(pointer, baseTreeNode);
+        pool.put(pointer, baseTreeNode);
+
+        byte[] copy = new byte[baseTreeNode.getData().length];
+        System.arraycopy(baseTreeNode.getData(), 0, copy, 0, copy.length);
+        original.put(pointer, BaseTreeNode.fromNodeData(new IndexStorageManager.NodeData(pointer, copy)));
         if (baseTreeNode.isRoot())
             this.root = baseTreeNode;
         return baseTreeNode;
@@ -73,10 +77,11 @@ public class MemorySnapshotIndexIOSession implements IndexIOSession {
     @Override
     public void update(BaseTreeNode... nodes) throws IOException, InterruptedException {
         for (BaseTreeNode node : nodes) {
-            BaseTreeNode baseTreeNode = update.put(node.getPointer(), node);
-            if (baseTreeNode == null){
-                sortedUpdate.addLast(node);
-            }
+            pool.put(
+                    node.getPointer(),
+                    node
+            );
+            updated.add(node.getPointer());
             if (node.isRoot())
                 root = node;
         }
@@ -99,8 +104,8 @@ public class MemorySnapshotIndexIOSession implements IndexIOSession {
         }
 
         try {
-            for (BaseTreeNode baseTreeNode : sortedUpdate) {
-                IndexTreeNodeIO.update(indexStorageManager, table, baseTreeNode);
+            for (Pointer pointer : updated) {
+                IndexTreeNodeIO.update(indexStorageManager, table, pool.get(pointer));
             }
         } catch (InterruptedException | IOException e) {
             this.rollback();
@@ -113,8 +118,9 @@ public class MemorySnapshotIndexIOSession implements IndexIOSession {
             IndexTreeNodeIO.update(indexStorageManager, table, original.get(pointer));
         }
 
-        for (BaseTreeNode baseTreeNode : sortedUpdate) {
-            IndexTreeNodeIO.update(indexStorageManager, table, original.get(baseTreeNode.getPointer()));
+        for (Pointer pointer : updated) {
+            BaseTreeNode baseTreeNode = original.get(pointer);
+            IndexTreeNodeIO.update(indexStorageManager, table, baseTreeNode);
         }
 
         for (Pointer pointer : created) {

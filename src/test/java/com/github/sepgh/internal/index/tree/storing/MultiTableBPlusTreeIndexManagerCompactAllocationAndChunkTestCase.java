@@ -244,7 +244,6 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
         int index = 0;
         int runs = 0;
         while (runs < testIdentifiers.size()){
-            System.out.println("Adding {" + testIdentifiers.get(index) + "}");
             indexManager.addIndex(1, testIdentifiers.get(index), samplePointer);
             indexManager.addIndex(2, testIdentifiers.get(index) * 10, samplePointer);
             index++;

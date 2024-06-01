@@ -28,7 +28,6 @@ public class BPlusTreeIndexDeleteOperation {
 
         List<BaseTreeNode> path = new LinkedList<>();
         BPlusTreeUtils.getPathToResponsibleNode(indexIOSession, path, root, identifier, degree);
-
         boolean result = false;
 
         for (int i = 0; i < path.size(); i++){
