@@ -47,10 +47,13 @@ To read and write into disk, `AsynchronousFileChannel` is used. While due to cha
 As mentioned above, a file pool will be required to prevent "too many open file" issues. This pool should have a maximum size, be blocking (async), and allow passing timeout to get file channel or fail otherwise.
 Also, to manage resources in a better manner, a specific threadpool may be required to be passed to `AsynchronousFileChannel`s created in the file pool.
 
-For the `IndexManager` we require a [`Reader-Writer lock`](https://en.wikipedia.org/wiki/Readers%E2%80%93writer_lock) will be required.
+For the `IndexManager` we require a [`Reader-Writer lock`](https://en.wikipedia.org/wiki/Readers%E2%80%93writer_lock).
 Before we discover more about that, it's important to notice that the current interface of `IndexManager` accepts `int table` per each operation, meaning that it's not depended on tables, rather the database itself.
-As the name suggests, this lock will allow multiple reads to be performed if no write operation is being performed, as for locks, they will be only performed if there are no read operations performed. In my understanding, this is where part of **Atomic** behaviour of databases are structured.
-**Important detail** here would be that this lock can happen on table or database level, but it mainly depends on if we store each table indexes on a different file or a single file. 
+As the name suggests, this lock will allow multiple reads to be performed if no write operation is being performed, as for locks, they will be only performed if there are no read operations performed. Using Reader-Writer lock we can get the benefits of an `IndexManager` in a multithreaded environment.
+**Important detail** here would be that this lock can happen on table or database level, but it mainly depends on if we store each table indexes on a different file or a single file. (Todo -__-)
+
+Another thing to note is that with all that's been mentioned, so far we have no atomicity! If one of the read/write operations fail during any of the index management operations that change the disk (add/delete), everything would be lost! That's why concept of `IOSession` is introduced, which is an interface that any IO operation related to indexes should go through and have a `commit()`/`rollback()` mechanism. Additionally, `recover()` functionality may be needed as well.
+Of course, the implementation of `IOSession` can become very complex in multithreaded environment. If we store multiple table index in a single file and by any chance we let two threads run an operation that makes changes on the disk at same time, `IOSession` should be shared between these threads so each one can know the changes made by other thread.
 
 Another way to improve B+Tree I/O performance is to add a LRU cache on top of storage layer. Since the storage layer is abstract from node definitions, we could use combination of {table,chunk,offset} as a cache key and byte array of size N as value where node data is stored.
 This way, we won't bother reading a node from file if we have "recently" loaded it into memory. This LRU cache may not accept a specific size in bytes but number of the nodes it should store. A single node size may differ due to number of the keys it can hold (degree of the B+Tree), and indexes.
