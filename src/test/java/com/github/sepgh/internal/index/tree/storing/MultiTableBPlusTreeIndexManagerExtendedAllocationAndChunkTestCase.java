@@ -1,6 +1,7 @@
 package com.github.sepgh.internal.index.tree.storing;
 
 import com.github.sepgh.internal.EngineConfig;
+import com.github.sepgh.internal.index.DBLevelAsyncIndexManagerDecorator;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
@@ -11,10 +12,7 @@ import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.storage.pool.FileHandler;
 import com.github.sepgh.internal.storage.pool.LimitedFileHandlerPool;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,8 +23,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.sepgh.internal.storage.ExtendedFileIndexStorageManager.INDEX_FILE_NAME;
 
@@ -228,25 +226,47 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
     }
 
 
+    // Todo: there is a small chance of failure due to unordered execution of multiple threads
+    @Timeout(10)
     @Test
-    public void testMultiSplitAddIndexDifferentAddOrders() throws IOException, ExecutionException, InterruptedException {
+    public void testMultiSplitAddIndexDifferentAddOrdersOnDBLevelAsyncIndexManager() throws IOException, ExecutionException, InterruptedException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, extendedFileIndexStorageManager);
+        IndexManager indexManager = new DBLevelAsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, extendedFileIndexStorageManager));
 
-        int index = 0;
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
+        CountDownLatch countDownLatch = new CountDownLatch((2 * testIdentifiers.size()) - 2);
+
+
+        AtomicInteger index1 = new AtomicInteger(0);
+        AtomicInteger index2 = new AtomicInteger(0);
+
         int runs = 0;
         while (runs < testIdentifiers.size()){
-            indexManager.addIndex(1, testIdentifiers.get(index), samplePointer);
-            indexManager.addIndex(2, testIdentifiers.get(index) * 10, samplePointer);
-            index++;
+            executorService.submit(() -> {
+                try {
+                    indexManager.addIndex(1, testIdentifiers.get(index1.getAndIncrement()), samplePointer);
+                    countDownLatch.countDown();
+                } catch (ExecutionException | InterruptedException | IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            executorService.submit(() -> {
+                try {
+                    indexManager.addIndex(2, testIdentifiers.get(index2.getAndIncrement()) * 10, samplePointer);
+                    countDownLatch.countDown();
+                } catch (ExecutionException | InterruptedException | IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
             runs++;
         }
 
+        countDownLatch.await();
 
         for (int tableId = 1; tableId <= 2; tableId++) {
 

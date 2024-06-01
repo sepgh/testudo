@@ -1,8 +1,5 @@
-package com.github.sepgh.internal.index.tree;
+package com.github.sepgh.internal.index;
 
-import com.github.sepgh.internal.index.IndexManager;
-import com.github.sepgh.internal.index.IndexManagerDecorator;
-import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
 
 import java.io.IOException;
@@ -12,9 +9,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class AsyncIndexManagerDecorator extends IndexManagerDecorator {
+public class TableLevelAsyncIndexManagerDecorator extends IndexManagerDecorator {
     private final Map<Integer, LockManager> lockManagerPool = new ConcurrentHashMap<>();
-    public AsyncIndexManagerDecorator(IndexManager indexManager) {
+    public TableLevelAsyncIndexManagerDecorator(IndexManager indexManager) {
         super(indexManager);
     }
 

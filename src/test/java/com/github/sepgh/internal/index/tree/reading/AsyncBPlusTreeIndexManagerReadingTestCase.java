@@ -3,7 +3,7 @@ package com.github.sepgh.internal.index.tree.reading;
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.AsyncIndexManagerDecorator;
+import com.github.sepgh.internal.index.TableLevelAsyncIndexManagerDecorator;
 import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
@@ -88,7 +88,7 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new AsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, compactFileIndexStorageManager));
+        IndexManager indexManager = new TableLevelAsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, compactFileIndexStorageManager));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(1, 10, dataPointer);
@@ -104,7 +104,7 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new AsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, compactFileIndexStorageManager));
+        IndexManager indexManager = new TableLevelAsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, compactFileIndexStorageManager));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(1, 10, dataPointer);

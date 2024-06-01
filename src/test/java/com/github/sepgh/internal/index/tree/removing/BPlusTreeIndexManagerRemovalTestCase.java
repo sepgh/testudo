@@ -1,7 +1,7 @@
 package com.github.sepgh.internal.index.tree.removing;
 
 import com.github.sepgh.internal.index.IndexManager;
-import com.github.sepgh.internal.index.tree.AsyncIndexManagerDecorator;
+import com.github.sepgh.internal.index.TableLevelAsyncIndexManagerDecorator;
 import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
@@ -51,7 +51,7 @@ public class BPlusTreeIndexManagerRemovalTestCase extends BaseBPlusTreeIndexMana
     public void testRemovingLeftToRightAsync() throws IOException, ExecutionException, InterruptedException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         IndexManager indexManager = getIndexManager(indexStorageManager);
-        IndexManager asycnIndexManager = new AsyncIndexManagerDecorator(indexManager);
+        IndexManager asycnIndexManager = new TableLevelAsyncIndexManagerDecorator(indexManager);
         super.testRemovingLeftToRightAsync(asycnIndexManager, indexStorageManager);
     }
 
