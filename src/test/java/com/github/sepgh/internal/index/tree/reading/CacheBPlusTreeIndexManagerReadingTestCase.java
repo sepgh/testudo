@@ -1,9 +1,7 @@
 package com.github.sepgh.internal.index.tree.reading;
 
 import com.github.sepgh.internal.EngineConfig;
-import com.github.sepgh.internal.index.IndexManager;
-import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.TableLevelAsyncIndexManagerDecorator;
+import com.github.sepgh.internal.index.*;
 import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
 import com.github.sepgh.internal.storage.CachedIndexStorageManagerDecorator;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
@@ -84,7 +82,7 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexSuccessfully() throws IOException, ExecutionException, InterruptedException {
+    public void findIndexSuccessfully_cachedStorage() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 12);
@@ -111,14 +109,13 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
 
         indexManager = new TableLevelAsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, indexStorageManager));
         optionalPointer = indexManager.getIndex(1, 10);
-        System.out.println(optionalPointer);
         Assertions.assertFalse(optionalPointer.isPresent());
 
     }
 
     @Test
     @Timeout(value = 2)
-    public void findIndexFailure() throws IOException, ExecutionException, InterruptedException {
+    public void findIndexFailure_cachedStorage() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 12);
@@ -130,11 +127,59 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
             indexManager.addIndex(1, i, dataPointer);
         }
 
-        // Forcing cache to be created
         Optional<Pointer> optionalPointer = indexManager.getIndex(1, 100);
         Assertions.assertFalse(optionalPointer.isPresent());
 
         // Removing file and checking if we can still find index
+        Assertions.assertTrue(destroy());
+        optionalPointer = indexManager.getIndex(1, 100);
+        Assertions.assertFalse(optionalPointer.isPresent());
+    }
+
+    @Test
+    @Timeout(value = 2)
+    public void findIndexSuccessfully_cachedIndexManager() throws IOException, ExecutionException, InterruptedException {
+        HeaderManager headerManager = new InMemoryHeaderManager(header);
+        IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+
+        IndexManager indexManager = new CachedIndexManagerDecorator(
+                new BPlusTreeIndexManager(degree, indexStorageManager),
+                20
+        );
+        Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
+
+        for (int i = 1; i < 20; i++){
+            indexManager.addIndex(1, i, dataPointer);
+        }
+        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 10);
+
+        Assertions.assertTrue(optionalPointer.isPresent());
+        Assertions.assertEquals(dataPointer, optionalPointer.get());
+
+        Assertions.assertTrue(destroy());
+        optionalPointer = indexManager.getIndex(1, 10);
+        Assertions.assertTrue(optionalPointer.isPresent());
+        Assertions.assertEquals(dataPointer, optionalPointer.get());
+    }
+
+    @Test
+    @Timeout(value = 2)
+    public void findIndexFailure_cachedIndexManager() throws IOException, ExecutionException, InterruptedException {
+        HeaderManager headerManager = new InMemoryHeaderManager(header);
+        IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexManager indexManager = new CachedIndexManagerDecorator(
+                new BPlusTreeIndexManager(degree, indexStorageManager),
+                20
+        );
+        Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
+
+        for (int i = 1; i < 20; i++){
+            indexManager.addIndex(1, i, dataPointer);
+        }
+
+        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 100);
+        Assertions.assertFalse(optionalPointer.isPresent());
+
         Assertions.assertTrue(destroy());
         optionalPointer = indexManager.getIndex(1, 100);
         Assertions.assertFalse(optionalPointer.isPresent());
