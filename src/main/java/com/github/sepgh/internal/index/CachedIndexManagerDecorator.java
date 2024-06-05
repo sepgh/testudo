@@ -5,12 +5,15 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 public class CachedIndexManagerDecorator extends IndexManagerDecorator {
     private final Cache<TableIdentifier, Pointer> cache;
+    private final Map<Integer, Integer> sizeCache;
 
     public CachedIndexManagerDecorator(IndexManager indexManager, int maxSize) {
         this(indexManager, CacheBuilder.newBuilder().maximumSize(maxSize).initialCapacity(10).build());
@@ -18,12 +21,14 @@ public class CachedIndexManagerDecorator extends IndexManagerDecorator {
     public CachedIndexManagerDecorator(IndexManager indexManager, Cache<TableIdentifier, Pointer> cache) {
         super(indexManager);
         this.cache = cache;
+        this.sizeCache = new ConcurrentHashMap<>();
     }
 
     @Override
     public BaseTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
         BaseTreeNode baseTreeNode = super.addIndex(table, identifier, pointer);
         cache.put(new TableIdentifier(table, identifier), pointer);
+        sizeCache.computeIfPresent(table, (k, v) -> v + 1);
         return baseTreeNode;
     }
 
@@ -42,9 +47,21 @@ public class CachedIndexManagerDecorator extends IndexManagerDecorator {
     public boolean removeIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException {
         if (super.removeIndex(table, identifier)) {
             cache.invalidate(new TableIdentifier(table, identifier));
+            sizeCache.computeIfPresent(table, (k, v) -> v - 1);
             return true;
         }
         return false;
+    }
+
+    @Override
+    public int size(int table) {
+        return sizeCache.computeIfAbsent(table, key -> {
+            try {
+                return super.size(table);
+            } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public record TableIdentifier(int table, long identifier){

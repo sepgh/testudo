@@ -23,4 +23,9 @@ public class IndexManagerDecorator implements IndexManager {
     public boolean removeIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException {
         return this.indexManager.removeIndex(table, identifier);
     }
+
+    @Override
+    public int size(int table) throws ExecutionException, InterruptedException {
+        return this.indexManager.size(table);
+    }
 }

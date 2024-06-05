@@ -18,7 +18,10 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.github.sepgh.internal.storage.CompactFileIndexStorageManager.INDEX_FILE_NAME;
 
@@ -96,6 +99,34 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
 
         Assertions.assertTrue(optionalPointer.isPresent());
         Assertions.assertEquals(dataPointer, optionalPointer.get());
+    }
+
+    @Test
+    @Timeout(value = 2)
+    public void getTableSize() throws IOException, ExecutionException, InterruptedException {
+        HeaderManager headerManager = new InMemoryHeaderManager(header);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+
+        IndexManager indexManager = new TableLevelAsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, compactFileIndexStorageManager));
+        Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
+
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
+        CountDownLatch countDownLatch = new CountDownLatch(100);
+        for(long i = 1; i <= 100; i++){
+            long finalI = i;
+            executorService.submit(() -> {
+                try {
+                    indexManager.addIndex(1, finalI, dataPointer);
+                } catch (ExecutionException | InterruptedException | IOException e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    countDownLatch.countDown();
+                }
+            });
+        }
+
+        countDownLatch.await();
+        Assertions.assertEquals(100, indexManager.size(1));
     }
 
     @Test

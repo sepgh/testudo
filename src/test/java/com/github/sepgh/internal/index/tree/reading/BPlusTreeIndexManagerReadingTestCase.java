@@ -99,6 +99,22 @@ public class BPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
+    public void getTableSize() throws IOException, ExecutionException, InterruptedException {
+        HeaderManager headerManager = new InMemoryHeaderManager(header);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
+        Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
+
+        for(long i = 1; i <= 100; i++)
+            indexManager.addIndex(1, i, dataPointer);
+
+        Assertions.assertEquals(100, indexManager.size(1));
+    }
+
+
+    @Test
+    @Timeout(value = 2)
     public void findIndexFailure() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);

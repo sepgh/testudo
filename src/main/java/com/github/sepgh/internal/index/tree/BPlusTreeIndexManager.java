@@ -3,8 +3,10 @@ package com.github.sepgh.internal.index.tree;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
+import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
 import com.github.sepgh.internal.storage.IndexStorageManager;
+import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import com.github.sepgh.internal.storage.session.ImmediateCommitIndexIOSession;
 import com.github.sepgh.internal.storage.session.IndexIOSession;
 import com.github.sepgh.internal.storage.session.IndexIOSessionFactory;
@@ -53,6 +55,33 @@ public class BPlusTreeIndexManager implements IndexManager {
         IndexIOSession indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table);
         BaseTreeNode root = getRoot(indexIOSession);
         return new BPlusTreeIndexDeleteOperation(degree, table, indexIOSession).removeIndex(root, identifier);
+    }
+
+    @Override
+    public int size(int table) throws InterruptedException, ExecutionException {
+        Optional<IndexStorageManager.NodeData> optionalNodeData = this.indexStorageManager.getRoot(table).get();
+        if (optionalNodeData.isEmpty())
+            return 0;
+
+        BaseTreeNode root = BaseTreeNode.fromNodeData(optionalNodeData.get());
+        if (root.isLeaf()){
+            return root.getKeyList(degree).size();
+        }
+
+        BaseTreeNode curr = root;
+        while (!curr.isLeaf()) {
+            curr = IndexTreeNodeIO.read(indexStorageManager, table, ((InternalTreeNode) curr).getChildrenList().getFirst());
+        }
+
+        int size = curr.getKeyList(degree).size();
+        Optional<Pointer> optionalNext = ((LeafTreeNode) curr).getNextSiblingPointer(degree);
+        while (optionalNext.isPresent()){
+            BaseTreeNode nextNode = IndexTreeNodeIO.read(indexStorageManager, table, optionalNext.get());
+            size += nextNode.getKeyList(degree).size();
+            optionalNext = ((LeafTreeNode) nextNode).getNextSiblingPointer(degree);
+        }
+
+        return size;
     }
 
     private BaseTreeNode getRoot(IndexIOSession indexIOSession) throws ExecutionException, InterruptedException, IOException {
