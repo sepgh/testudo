@@ -168,7 +168,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
 
-        LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(1);
+        LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(), 1);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, limitedFileHandlerPool);
         IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
 
@@ -197,7 +197,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
 
-        LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(2);
+        LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(), 2);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, limitedFileHandlerPool);
         IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
 

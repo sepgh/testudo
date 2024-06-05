@@ -10,8 +10,10 @@ import java.util.concurrent.TimeUnit;
 public class LimitedFileHandlerPool implements FileHandlerPool {
     private final Map<String, FileHandler> fileHandlers;
     private final Semaphore semaphore;
+    private final FileHandlerFactory fileHandlerFactory;
 
-    public LimitedFileHandlerPool(int maxFiles) {
+    public LimitedFileHandlerPool(FileHandlerFactory fileHandlerFactory, int maxFiles) {
+        this.fileHandlerFactory = fileHandlerFactory;
         fileHandlers = new ConcurrentHashMap<>();
         semaphore = new Semaphore(maxFiles);
     }
@@ -30,7 +32,7 @@ public class LimitedFileHandlerPool implements FileHandlerPool {
                 if (!semaphore.tryAcquire(timeout, timeUnit)) {
                     throw new IllegalStateException("Timeout while waiting to acquire file handler for " + filePath);
                 }
-                fileHandler = new FileHandler(filePath);
+                fileHandler = fileHandlerFactory.getFileHandler(filePath);
                 fileHandlers.put(filePath, fileHandler);
             }
             fileHandler.incrementUsage();

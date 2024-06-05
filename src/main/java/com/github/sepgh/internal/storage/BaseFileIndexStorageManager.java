@@ -4,6 +4,7 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
+import com.github.sepgh.internal.storage.pool.FileHandler;
 import com.github.sepgh.internal.storage.pool.FileHandlerPool;
 import com.github.sepgh.internal.storage.pool.ManagedFileHandler;
 import com.github.sepgh.internal.storage.pool.UnlimitedFileHandlerPool;
@@ -35,7 +36,7 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
     }
 
     public BaseFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig) {
-        this(path, headerManager, engineConfig, new UnlimitedFileHandlerPool());
+        this(path, headerManager, engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()));
     }
 
     protected abstract Path getIndexFilePath(int table, int chunk);

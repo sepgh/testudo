@@ -8,15 +8,17 @@ import java.util.concurrent.TimeUnit;
 
 public class UnlimitedFileHandlerPool implements FileHandlerPool {
     private final Map<String, FileHandler> fileHandlers;
+    private final FileHandlerFactory fileHandlerFactory;
 
-    public UnlimitedFileHandlerPool() {
+    public UnlimitedFileHandlerPool(FileHandlerFactory fileHandlerFactory) {
+        this.fileHandlerFactory = fileHandlerFactory;
         fileHandlers = new ConcurrentHashMap<>();
     }
 
     public AsynchronousFileChannel getFileChannel(String filePath, long timeout, TimeUnit timeUnit) throws InterruptedException {
         FileHandler fileHandler = fileHandlers.computeIfAbsent(filePath, filePath1 -> {
             try {
-                return new FileHandler(filePath1);
+                return fileHandlerFactory.getFileHandler(filePath1);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

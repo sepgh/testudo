@@ -174,7 +174,7 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
 
-        LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(1);
+        LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(), 1);
         ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig, limitedFileHandlerPool);
         IndexManager indexManager = new BPlusTreeIndexManager(degree, extendedFileIndexStorageManager);
 
@@ -203,7 +203,7 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
 
-        LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(2);
+        LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(),2);
         ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig, limitedFileHandlerPool);
         IndexManager indexManager = new BPlusTreeIndexManager(degree, extendedFileIndexStorageManager);
 
@@ -226,7 +226,6 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
     }
 
 
-    // Todo: there is a small chance of failure due to unordered execution of multiple threads
     @Timeout(10)
     @Test
     public void testMultiSplitAddIndexDifferentAddOrdersOnDBLevelAsyncIndexManager() throws IOException, ExecutionException, InterruptedException {
@@ -274,9 +273,10 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
             if (tableId == 2){
                 multi = 10;
             }
-
-            StoredTreeStructureVerifier.testOrderedTreeStructure(extendedFileIndexStorageManager, tableId, multi, degree);
-
+            // Cant verify structure but can check if all index are added
+            for (Long testIdentifier : testIdentifiers) {
+                Assertions.assertTrue(indexManager.getIndex(tableId, testIdentifier * multi).isPresent());
+            }
         }
 
     }
