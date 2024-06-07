@@ -18,8 +18,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static com.github.sepgh.internal.index.tree.node.BaseTreeNode.TYPE_INTERNAL_NODE_BIT;
-import static com.github.sepgh.internal.index.tree.node.BaseTreeNode.TYPE_LEAF_NODE_BIT;
+import static com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode.TYPE_INTERNAL_NODE_BIT;
+import static com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode.TYPE_LEAF_NODE_BIT;
 
 public abstract class BaseFileIndexStorageManager implements IndexStorageManager {
     protected final Path path;
@@ -103,11 +103,13 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
     }
 
     @Override
-    public CompletableFuture<NodeData> readNode(int table, long position, int chunk) throws InterruptedException {
+    public CompletableFuture<NodeData> readNode(int table, long position, int chunk) throws InterruptedException, IOException {
         CompletableFuture<NodeData> output = new CompletableFuture<>();
         long filePosition = headerManager.getHeader().getTableOfId(table).get().getIndexChunk(chunk).get().getOffset() + position;
 
         AsynchronousFileChannel asynchronousFileChannel = acquireFileChannel(table, chunk);
+        if (asynchronousFileChannel.size() == 0)
+            throw new IOException("Nothing available to read.");
         FileUtils.readBytes(asynchronousFileChannel, filePosition, engineConfig.getPaddedSize()).whenComplete((bytes, throwable) -> {
             releaseFileChannel(table, chunk);
             if (throwable != null){

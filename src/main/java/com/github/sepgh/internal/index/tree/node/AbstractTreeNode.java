@@ -2,10 +2,11 @@ package com.github.sepgh.internal.index.tree.node;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.TreeNodeUtils;
-import com.github.sepgh.internal.storage.IndexStorageManager;
+import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
 import com.google.common.collect.ImmutableList;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.SneakyThrows;
 
 import java.util.Iterator;
 import java.util.List;
@@ -18,7 +19,7 @@ import java.util.List;
   [1 byte -6 empty bits- IS_ROOT | IS_LEAF] + (([LONG_SIZE bytes id] + [POINTER_SIZE bytes data]) * max node size) + [POINTER_SIZE bytes previous leaf node] + [POINTER_SIZE bytes next leaf node]
 */
 @Getter
-public abstract class BaseTreeNode {
+public abstract class AbstractTreeNode {
     public static byte TYPE_LEAF_NODE_BIT = 0x02; // 0 0 1 0
     public static byte TYPE_INTERNAL_NODE_BIT = 0x01; // 0 0 0 1
     public static byte ROOT_BIT = 0x04; // 0 1 0 0
@@ -29,7 +30,7 @@ public abstract class BaseTreeNode {
     @Getter
     private boolean modified = false;
 
-    public BaseTreeNode(byte[] data) {
+    public AbstractTreeNode(byte[] data) {
         this.data = data;
     }
 
@@ -39,25 +40,6 @@ public abstract class BaseTreeNode {
 
     protected void modified(){
         this.modified = true;
-    }
-
-
-    public static BaseTreeNode fromNodeData(IndexStorageManager.NodeData nodeData) {
-        BaseTreeNode treeNode = BaseTreeNode.fromBytes(nodeData.bytes());
-        treeNode.setPointer(nodeData.pointer());
-        return treeNode;
-    }
-    public static BaseTreeNode fromBytes(byte[] data, Type type){
-        if (type == Type.INTERNAL){
-            return new InternalTreeNode(data);
-        }
-        return new LeafTreeNode(data);
-    }
-
-    public static BaseTreeNode fromBytes(byte[] data){
-        if ((data[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT)
-            return new LeafTreeNode(data);
-        return new InternalTreeNode(data);
     }
 
     public byte[] toBytes(){
@@ -88,34 +70,40 @@ public abstract class BaseTreeNode {
         this.data[0] = (byte) (data[0] & ~ROOT_BIT);
     }
 
-    public Iterator<Long> getKeys(int degree){
-        return new TreeNodeKeysIterator(this, degree);
-    }
-
-    public List<Long> getKeyList(int degree){
-        return ImmutableList.copyOf(getKeys(degree));
-    }
-
     public boolean isRoot() {
         return (data[0] & ROOT_BIT) == ROOT_BIT;
     }
 
-    public void setKey(int index, long key){
-        TreeNodeUtils.setKeyAtIndex(this, index, key);
+    public <E extends Comparable<E>> Iterator<E> getKeys(int degree, Class<? extends NodeInnerObj<E>> nodeInnerObjectClass, int keySize, int valueSize){
+        return new TreeNodeKeysIterator<E>(this, degree, nodeInnerObjectClass, keySize, valueSize);
     }
 
-    public void removeKey(int idx, int degree) {
-        List<Long> keyList = this.getKeyList(degree);
-        TreeNodeUtils.removeKeyAtIndex(this, idx);
-        List<Long> subList = keyList.subList(idx + 1, keyList.size());
+    public <E extends Comparable<E>> List<E> getKeyList(int degree, Class<? extends NodeInnerObj<E>> nodeInnerObjectClass, int keySize, int valueSize){
+        return ImmutableList.copyOf(getKeys(degree, nodeInnerObjectClass, keySize, valueSize));
+    }
+
+    public <E extends Comparable<E>> void setKey(int index, NodeInnerObj<E> key, int keySize, int valueSize){
+        TreeNodeUtils.setKeyAtIndex(this, index, key, valueSize);
+    }
+
+    @SneakyThrows
+    public <E extends Comparable<E>> void removeKey(int idx, int degree, Class<? extends NodeInnerObj<E>> keyClass, Class<E> clazz, int keySize, int valueSize) {
+        List<E> keyList = this.getKeyList(degree, keyClass, keySize, valueSize);
+        TreeNodeUtils.removeKeyAtIndex(this, idx, keySize, valueSize);
+        List<E> subList = keyList.subList(idx + 1, keyList.size());
         int lastIndex = -1;
         for (int i = 0; i < subList.size(); i++) {
             lastIndex = idx + i;
-            TreeNodeUtils.setKeyAtIndex(this, lastIndex, subList.get(i));
+            TreeNodeUtils.setKeyAtIndex(
+                    this,
+                    lastIndex,
+                    keyClass.getConstructor(clazz).newInstance(subList.get(i)),
+                    valueSize
+            );
         }
         if (lastIndex != -1){
             for (int i = lastIndex + 1; i < degree - 1; i++){
-                TreeNodeUtils.removeKeyAtIndex(this, i);
+                TreeNodeUtils.removeKeyAtIndex(this, i, keySize, valueSize);
             }
         }
     }
@@ -130,31 +118,39 @@ public abstract class BaseTreeNode {
         }
     }
 
-    private static class TreeNodeKeysIterator implements Iterator<Long> {
-        private final BaseTreeNode node;
+    private static class TreeNodeKeysIterator<E extends Comparable<E>> implements Iterator<E> {
+        private final AbstractTreeNode node;
         private final int degree;
+        private final Class<? extends NodeInnerObj<E>> kClass;
+        private final int keySize;
+        private final int valueSize;
         private int cursor; // Cursor points to current key index, not current byte
         private boolean hasNext = true;
 
-        private TreeNodeKeysIterator(BaseTreeNode node, int degree) {
+        private TreeNodeKeysIterator(AbstractTreeNode node, int degree, Class<? extends NodeInnerObj<E>> kClass, int keySize, int valueSize) {
             this.node = node;
             this.degree = degree;
+            this.kClass = kClass;
+            this.keySize = keySize;
+            this.valueSize = valueSize;
         }
 
+        @SneakyThrows
         @Override
         public boolean hasNext() {
             if (!hasNext)
                 return false;
 
-            hasNext = TreeNodeUtils.hasKeyAtIndex(this.node, cursor, degree);
+            hasNext = TreeNodeUtils.hasKeyAtIndex(this.node, cursor, degree, kClass, keySize, valueSize);
             return hasNext;
         }
 
+        @SneakyThrows
         @Override
-        public Long next() {
-            long value = TreeNodeUtils.getKeyAtIndex(this.node, cursor);
+        public E next() {
+            NodeInnerObj<E> nodeInnerObj = TreeNodeUtils.getKeyAtIndex(this.node, cursor, kClass, keySize, valueSize);
             cursor++;
-            return value;
+            return nodeInnerObj.data();
         }
     }
 }

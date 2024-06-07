@@ -14,7 +14,7 @@ import java.util.Objects;
 
 //@AllArgsConstructor
 @Data
-public class Pointer {
+public class Pointer implements Comparable<Pointer> {
     public static byte TYPE_DATA = 0x01;
     public static byte TYPE_NODE = 0x02;
     public static int BYTES = 1 + Long.BYTES + Integer.BYTES;
@@ -96,5 +96,16 @@ public class Pointer {
     @Override
     public int hashCode() {
         return Objects.hash(type, position, chunk);
+    }
+
+
+    // This doesn't make much sense if single file for multiple table indexes is used
+    @Override
+    public int compareTo(Pointer other) {
+        if (this.chunk < other.chunk)
+            return -1;
+        if (this.chunk > other.chunk)
+            return 1;
+        return Long.compare(this.position, other.position);
     }
 }

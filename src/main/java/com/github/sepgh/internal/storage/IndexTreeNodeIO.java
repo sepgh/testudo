@@ -1,7 +1,7 @@
 package com.github.sepgh.internal.storage;
 
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -9,7 +9,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
 public class IndexTreeNodeIO {
-    public static CompletableFuture<IndexStorageManager.NodeData> write(IndexStorageManager indexStorageManager, int table, BaseTreeNode node) throws IOException, ExecutionException, InterruptedException {
+    public static CompletableFuture<IndexStorageManager.NodeData> write(IndexStorageManager indexStorageManager, int table, BaseClusterTreeNode node) throws IOException, ExecutionException, InterruptedException {
         IndexStorageManager.NodeData nodeData = new IndexStorageManager.NodeData(node.getPointer(), node.getData());
         if (!node.isModified() && node.getPointer() != null){
             return CompletableFuture.completedFuture(nodeData);
@@ -37,19 +37,21 @@ public class IndexTreeNodeIO {
         return output;
     }
 
-    public static BaseTreeNode read(IndexStorageManager indexStorageManager, int table, Pointer pointer) throws ExecutionException, InterruptedException {
-        return BaseTreeNode.fromNodeData(indexStorageManager.readNode(table, pointer).get());
+    // Todo: apparently `indexStorageManager.readNode(table, pointer).get()` can return empty byte[] in case file doesnt exist,
+    //       in that case fromBytes() method of TreeNode throw "ArrayIndexOutOfBoundsException: Index 0 out of bounds for length 0" during construction
+    public static BaseClusterTreeNode read(IndexStorageManager indexStorageManager, int table, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
+        return BaseClusterTreeNode.fromNodeData(indexStorageManager.readNode(table, pointer).get());
     }
 
-    public static void update(IndexStorageManager indexStorageManager, int table, BaseTreeNode... nodes) throws InterruptedException, IOException {
+    public static void update(IndexStorageManager indexStorageManager, int table, BaseClusterTreeNode... nodes) throws InterruptedException, IOException {
         CountDownLatch latch = new CountDownLatch(nodes.length);
-        for (BaseTreeNode node : nodes) {
+        for (BaseClusterTreeNode node : nodes) {
             indexStorageManager.updateNode(table, node.getData(), node.getPointer(), node.isRoot()).whenComplete((integer, throwable) -> latch.countDown());
         }
         latch.await();
     }
 
-    public static void remove(IndexStorageManager indexStorageManager, int table, BaseTreeNode node) throws ExecutionException, InterruptedException {
+    public static void remove(IndexStorageManager indexStorageManager, int table, BaseClusterTreeNode node) throws ExecutionException, InterruptedException {
         remove(indexStorageManager, table, node.getPointer());
     }
 

@@ -42,7 +42,7 @@ public class CachedIndexStorageManagerDecorator extends IndexStorageManagerDecor
         });
     }
 
-    public CompletableFuture<NodeData> readNode(int table, long position, int chunk) throws InterruptedException {
+    public CompletableFuture<NodeData> readNode(int table, long position, int chunk) throws InterruptedException, IOException {
         NodeData optionalNodeData = cache.getIfPresent(new TablePointer(table, new Pointer(Pointer.TYPE_NODE, position, chunk)));
         if (optionalNodeData != null){
             return CompletableFuture.completedFuture(optionalNodeData);

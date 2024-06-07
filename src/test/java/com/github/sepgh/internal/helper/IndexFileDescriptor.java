@@ -2,9 +2,9 @@ package com.github.sepgh.internal.helper;
 
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
-import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
-import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.InternalClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.utils.FileUtils;
 import com.google.common.hash.HashCode;
@@ -34,18 +34,18 @@ public class IndexFileDescriptor {
                 continue;
             }
 
-            BaseTreeNode baseTreeNode = BaseTreeNode.fromBytes(bytes);
-            if (baseTreeNode.getType() == BaseTreeNode.Type.LEAF)
-                this.printLeafNode((LeafTreeNode) baseTreeNode, offset);
-            else if (baseTreeNode.getType() == BaseTreeNode.Type.INTERNAL)
-                this.printInternalNode((InternalTreeNode) baseTreeNode, offset);
+            BaseClusterTreeNode baseClusterTreeNode = BaseClusterTreeNode.fromBytes(bytes);
+            if (baseClusterTreeNode.getType() == BaseClusterTreeNode.Type.LEAF)
+                this.printLeafNode((LeafClusterTreeNode) baseClusterTreeNode, offset);
+            else if (baseClusterTreeNode.getType() == BaseClusterTreeNode.Type.INTERNAL)
+                this.printInternalNode((InternalClusterTreeNode) baseClusterTreeNode, offset);
             else
                 System.out.println("Empty leaf?");
         }
 
     }
 
-    private void printInternalNode(InternalTreeNode node, int offset) {
+    private void printInternalNode(InternalClusterTreeNode node, int offset) {
         System.out.println();
         System.out.println(HashCode.fromBytes(node.toBytes()));
         System.out.printf("Offset: %d%n", offset);
@@ -67,15 +67,15 @@ public class IndexFileDescriptor {
         System.out.println("===========================");
     }
 
-    private void printLeafNode(LeafTreeNode node, int offset){
+    private void printLeafNode(LeafClusterTreeNode node, int offset){
         System.out.println();
         System.out.println(HashCode.fromBytes(node.toBytes()));
         System.out.printf("Offset: %d%n", offset);
         System.out.printf("Node Header:  root(%s) [leaf] %n", node.isRoot() ? "T" : "F");
         StringBuilder stringBuilder = new StringBuilder();
-        Iterator<LeafTreeNode.KeyValue> entryIterator = node.getKeyValues(engineConfig.getBTreeDegree());
+        Iterator<LeafClusterTreeNode.KeyValue> entryIterator = node.getKeyValues(engineConfig.getBTreeDegree());
         while (entryIterator.hasNext()) {
-            LeafTreeNode.KeyValue next = entryIterator.next();
+            LeafClusterTreeNode.KeyValue next = entryIterator.next();
             stringBuilder
                     .append("\t")
                     .append("K: ")

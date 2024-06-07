@@ -1,6 +1,6 @@
 package com.github.sepgh.internal.index;
 
-import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -13,7 +13,7 @@ public class IndexManagerDecorator implements IndexManager {
         this.indexManager = indexManager;
     }
 
-    public BaseTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException{
+    public BaseClusterTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException{
         return this.indexManager.addIndex(table, identifier, pointer);
     }
     public Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException {
@@ -26,6 +26,10 @@ public class IndexManagerDecorator implements IndexManager {
 
     @Override
     public int size(int table) throws ExecutionException, InterruptedException {
-        return this.indexManager.size(table);
+        try {
+            return this.indexManager.size(table);
+        } catch (IOException e) {
+            return 0;
+        }
     }
 }

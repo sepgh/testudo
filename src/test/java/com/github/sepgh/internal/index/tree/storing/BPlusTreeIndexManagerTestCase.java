@@ -5,9 +5,9 @@ import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.TableLevelAsyncIndexManagerDecorator;
 import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
-import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
-import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.InternalClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
@@ -96,18 +96,18 @@ public class BPlusTreeIndexManagerTestCase {
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
         IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
-        BaseTreeNode baseTreeNode = indexManager.addIndex(1, 10, new Pointer(Pointer.TYPE_DATA, 100, 0));
+        BaseClusterTreeNode baseClusterTreeNode = indexManager.addIndex(1, 10, new Pointer(Pointer.TYPE_DATA, 100, 0));
 
-        Assertions.assertTrue(baseTreeNode.isRoot());
-        Assertions.assertEquals(0, baseTreeNode.getPointer().getPosition());
-        Assertions.assertEquals(0, baseTreeNode.getPointer().getChunk());
+        Assertions.assertTrue(baseClusterTreeNode.isRoot());
+        Assertions.assertEquals(0, baseClusterTreeNode.getPointer().getPosition());
+        Assertions.assertEquals(0, baseClusterTreeNode.getPointer().getChunk());
 
-        IndexStorageManager.NodeData nodeData = compactFileIndexStorageManager.readNode(1, baseTreeNode.getPointer()).get();
-        LeafTreeNode leafTreeNode = new LeafTreeNode(nodeData.bytes());
+        IndexStorageManager.NodeData nodeData = compactFileIndexStorageManager.readNode(1, baseClusterTreeNode.getPointer()).get();
+        LeafClusterTreeNode leafTreeNode = new LeafClusterTreeNode(nodeData.bytes());
         Assertions.assertTrue(leafTreeNode.isRoot());
-        Iterator<LeafTreeNode.KeyValue> entryIterator = leafTreeNode.getKeyValues(degree);
+        Iterator<LeafClusterTreeNode.KeyValue> entryIterator = leafTreeNode.getKeyValues(degree);
         Assertions.assertTrue(entryIterator.hasNext());
-        LeafTreeNode.KeyValue pointerEntry = entryIterator.next();
+        LeafClusterTreeNode.KeyValue pointerEntry = entryIterator.next();
         Assertions.assertEquals(pointerEntry.key(), 10);
         Assertions.assertEquals(pointerEntry.value().getPosition(), 100);
     }
@@ -136,19 +136,19 @@ public class BPlusTreeIndexManagerTestCase {
         IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
 
 
-        BaseTreeNode lastTreeNode = null;
+        BaseClusterTreeNode lastTreeNode = null;
         for (Long testIdentifier : testIdentifiers) {
             lastTreeNode = indexManager.addIndex(1, testIdentifier, samplePointer);
         }
 
         Assertions.assertTrue(lastTreeNode.isLeaf());
         Assertions.assertEquals(2, lastTreeNode.getKeyList(degree).size());
-        Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).getKeyValues(degree).next().value().getPosition());
+        Assertions.assertEquals(samplePointer.getPosition(), ((LeafClusterTreeNode) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
         Optional<IndexStorageManager.NodeData> optional = compactFileIndexStorageManager.getRoot(1).get();
         Assertions.assertTrue(optional.isPresent());
 
-        BaseTreeNode rootNode = BaseTreeNode.fromBytes(optional.get().bytes());
+        BaseClusterTreeNode rootNode = BaseClusterTreeNode.fromBytes(optional.get().bytes());
         Assertions.assertTrue(rootNode.isRoot());
         Assertions.assertFalse(rootNode.isLeaf());
 
@@ -156,20 +156,20 @@ public class BPlusTreeIndexManagerTestCase {
 
         testIdentifiers.sort(Long::compareTo);
 
-        List<InternalTreeNode.ChildPointers> children = ((InternalTreeNode) rootNode).getChildPointersList(degree);
+        List<InternalClusterTreeNode.ChildPointers> children = ((InternalClusterTreeNode) rootNode).getChildPointersList(degree);
         Assertions.assertEquals(1, children.size());
         Assertions.assertNotNull(children.get(0).getLeft());
         Assertions.assertNotNull(children.get(0).getRight());
         Assertions.assertEquals(testIdentifiers.get(2), rootNode.getKeyList(degree).get(0));
 
         // First child
-        LeafTreeNode childLeafTreeNode = new LeafTreeNode(compactFileIndexStorageManager.readNode(1, children.get(0).getLeft()).get().bytes());
-        List<LeafTreeNode.KeyValue> keyValueList = childLeafTreeNode.getKeyValueList(degree);
+        LeafClusterTreeNode childLeafTreeNode = new LeafClusterTreeNode(compactFileIndexStorageManager.readNode(1, children.get(0).getLeft()).get().bytes());
+        List<LeafClusterTreeNode.KeyValue> keyValueList = childLeafTreeNode.getKeyValueList(degree);
         Assertions.assertEquals(testIdentifiers.get(0), keyValueList.get(0).key());
         Assertions.assertEquals(testIdentifiers.get(1), keyValueList.get(1).key());
 
         //Second child
-        LeafTreeNode secondChildLeafTreeNode = new LeafTreeNode(compactFileIndexStorageManager.readNode(1, children.get(0).getRight()).get().bytes());
+        LeafClusterTreeNode secondChildLeafTreeNode = new LeafClusterTreeNode(compactFileIndexStorageManager.readNode(1, children.get(0).getRight()).get().bytes());
         keyValueList = secondChildLeafTreeNode.getKeyValueList(degree);
         Assertions.assertEquals(testIdentifiers.get(2), keyValueList.get(0).key());
         Assertions.assertEquals(testIdentifiers.get(3), keyValueList.get(1).key());
@@ -219,21 +219,19 @@ public class BPlusTreeIndexManagerTestCase {
         IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
 
 
-        BaseTreeNode lastTreeNode = null;
+        BaseClusterTreeNode lastTreeNode = null;
         for (Long testIdentifier : testIdentifiers) {
             lastTreeNode = indexManager.addIndex(1, testIdentifier, samplePointer);
         }
 
         Assertions.assertTrue(lastTreeNode.isLeaf());
         Assertions.assertEquals(2, lastTreeNode.getKeyList(degree).size());
-        Assertions.assertEquals(samplePointer.getPosition(), ((LeafTreeNode) lastTreeNode).getKeyValues(degree).next().value().getPosition());
+        Assertions.assertEquals(samplePointer.getPosition(), ((LeafClusterTreeNode) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
         StoredTreeStructureVerifier.testOrderedTreeStructure(compactFileIndexStorageManager, 1, 1, degree);
 
     }
 
-    // Todo: there is a chance of this test to fail since we are using multiple threads to add index and order may not be
-    //       as seen in testIdentifiers list
     @Test
     @Timeout(value = 2)
     public void testMultiSplitAddIndexAsync() throws IOException, ExecutionException, InterruptedException {

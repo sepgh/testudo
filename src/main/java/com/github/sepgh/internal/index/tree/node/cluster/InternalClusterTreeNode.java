@@ -1,21 +1,21 @@
-package com.github.sepgh.internal.index.tree.node;
+package com.github.sepgh.internal.index.tree.node.cluster;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.TreeNodeUtils;
+import com.github.sepgh.internal.index.tree.node.data.Identifier;
+import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.PointerInnerObject;
 import com.github.sepgh.internal.utils.CollectionUtils;
 import com.google.common.collect.ImmutableList;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class InternalTreeNode extends BaseTreeNode {
-    public InternalTreeNode(byte[] data) {
+public class InternalClusterTreeNode extends BaseClusterTreeNode {
+    public InternalClusterTreeNode(byte[] data) {
         super(data);
         setType(Type.INTERNAL);
     }
@@ -31,16 +31,16 @@ public class InternalTreeNode extends BaseTreeNode {
     public void setChildPointers(List<ChildPointers> childPointers, int degree, boolean cleanRest){
         modified();
         if (cleanRest)
-            TreeNodeUtils.cleanChildrenPointers(this, degree);
+            TreeNodeUtils.cleanChildrenPointers(this, degree, Identifier.BYTES, PointerInnerObject.BYTES);
         int i = 0;
         for (ChildPointers keyPointer : childPointers) {
             keyPointer.setIndex(i);
-            TreeNodeUtils.setKeyAtIndex(this, keyPointer.index, keyPointer.key);
+            TreeNodeUtils.setKeyAtIndex(this, keyPointer.index, new Identifier(keyPointer.key), PointerInnerObject.BYTES);
             if (i == 0){
-                TreeNodeUtils.setPointerToChild(this, 0, keyPointer.left);
-                TreeNodeUtils.setPointerToChild(this, 1, keyPointer.right);
+                TreeNodeUtils.setPointerToChild(this, 0, keyPointer.left, Identifier.BYTES);
+                TreeNodeUtils.setPointerToChild(this, 1, keyPointer.right, Identifier.BYTES);
             } else {
-                TreeNodeUtils.setPointerToChild(this, keyPointer.index + 1, keyPointer.right);
+                TreeNodeUtils.setPointerToChild(this, keyPointer.index + 1, keyPointer.right, Identifier.BYTES);
             }
             i++;
         }
@@ -53,7 +53,7 @@ public class InternalTreeNode extends BaseTreeNode {
         keyList.add(idx, identifier);
 
         for (int j = idx; j < keyList.size() && j < degree - 1; j++){
-            TreeNodeUtils.setKeyAtIndex(this, j, keyList.get(j));
+            TreeNodeUtils.setKeyAtIndex(this, j, new Identifier(keyList.get(j)), Pointer.BYTES);
         }
 
         return idx;
@@ -63,14 +63,14 @@ public class InternalTreeNode extends BaseTreeNode {
         modified();
         int i = this.addKey(identifier, degree);
         if (left != null){
-            TreeNodeUtils.setPointerToChild(this, i, left);
+            TreeNodeUtils.setPointerToChild(this, i, left, Identifier.BYTES);
         }
         else if (clearForNull)
-            TreeNodeUtils.removeChildAtIndex(this, i);
+            TreeNodeUtils.removeChildAtIndex(this, i, Identifier.BYTES);
         if (right != null)
-            TreeNodeUtils.setPointerToChild(this, i+1, right);
+            TreeNodeUtils.setPointerToChild(this, i+1, right, Identifier.BYTES);
         else if (clearForNull)
-            TreeNodeUtils.removeChildAtIndex(this, i + 1);
+            TreeNodeUtils.removeChildAtIndex(this, i + 1, Identifier.BYTES);
     }
 
     public void addChildPointers(ChildPointers childPointers, int degree) {
@@ -102,11 +102,11 @@ public class InternalTreeNode extends BaseTreeNode {
     }
 
     public void setChildAtIndex(int index, Pointer pointer){
-        TreeNodeUtils.setPointerToChild(this, index, pointer);
+        TreeNodeUtils.setPointerToChild(this, index, pointer, Identifier.BYTES);
     }
 
     public Pointer getChildAtIndex(int index) {
-        return TreeNodeUtils.getChildPointerAtIndex(this, index);
+        return TreeNodeUtils.getChildPointerAtIndex(this, index, Identifier.BYTES);
     }
 
     public int getIndexOfChild(Pointer pointer){
@@ -165,37 +165,37 @@ public class InternalTreeNode extends BaseTreeNode {
 
     public void removeChild(int idx, int degree) {
         List<Pointer> pointerList = this.getChildrenList();
-        TreeNodeUtils.removeChildAtIndex(this, idx);
+        TreeNodeUtils.removeChildAtIndex(this, idx, Identifier.BYTES);
         List<Pointer> subList = pointerList.subList(idx + 1, pointerList.size());
         int lastIndex = -1;
         for (int i = 0; i < subList.size(); i++) {
             lastIndex = idx + i;
-            TreeNodeUtils.setPointerToChild(this, lastIndex, subList.get(i));
+            TreeNodeUtils.setPointerToChild(this, lastIndex, subList.get(i), Identifier.BYTES);
         }
         if (lastIndex != -1){
             for (int i = lastIndex + 1; i < degree; i++){
-                TreeNodeUtils.removeChildAtIndex(this, i);
+                TreeNodeUtils.removeChildAtIndex(this, i, Identifier.BYTES);
             }
         }
     }
 
     private static class ChildrenIterator implements Iterator<Pointer> {
 
-        private final BaseTreeNode node;
+        private final BaseClusterTreeNode node;
         private int cursor = 0;
 
-        private ChildrenIterator(BaseTreeNode node) {
+        private ChildrenIterator(BaseClusterTreeNode node) {
             this.node = node;
         }
 
         @Override
         public boolean hasNext() {
-            return TreeNodeUtils.hasChildPointerAtIndex(this.node, cursor);
+            return TreeNodeUtils.hasChildPointerAtIndex(this.node, cursor, Identifier.BYTES);
         }
 
         @Override
         public Pointer next() {
-            Pointer pointer = TreeNodeUtils.getChildPointerAtIndex(this.node, cursor);
+            Pointer pointer = TreeNodeUtils.getChildPointerAtIndex(this.node, cursor, Identifier.BYTES);
             cursor++;
             return pointer;
         }
@@ -206,37 +206,39 @@ public class InternalTreeNode extends BaseTreeNode {
         private int cursor = 0;
         private Pointer lastRightPointer;
 
-        private final BaseTreeNode node;
+        private final BaseClusterTreeNode node;
         private final int degree;
 
-        private ChildPointersIterator(BaseTreeNode node, int degree) {
+        private ChildPointersIterator(BaseClusterTreeNode node, int degree) {
             this.node = node;
             this.degree = degree;
         }
 
 
+        @SneakyThrows
         @Override
         public boolean hasNext() {
-            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree);
+            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree, Identifier.class, Identifier.BYTES, Pointer.BYTES);
         }
 
+        @SneakyThrows
         @Override
         public ChildPointers next() {
-            long keyAtIndex = TreeNodeUtils.getKeyAtIndex(node, cursor);
+            NodeInnerObj<Long> nodeInnerObj = TreeNodeUtils.getKeyAtIndex(node, cursor, Identifier.class, Identifier.BYTES, PointerInnerObject.BYTES);
             ChildPointers childPointers = null;
             if (cursor == 0){
                 childPointers = new ChildPointers(
                         cursor,
-                        keyAtIndex,
-                        TreeNodeUtils.getChildPointerAtIndex(node, 0),
-                        TreeNodeUtils.getChildPointerAtIndex(node, 1)
+                        nodeInnerObj.data(),
+                        TreeNodeUtils.getChildPointerAtIndex(node, 0, Identifier.BYTES),
+                        TreeNodeUtils.getChildPointerAtIndex(node, 1, Identifier.BYTES)
                 );
             } else {
                 childPointers = new ChildPointers(
                         cursor,
-                        keyAtIndex,
+                        nodeInnerObj.data(),
                         lastRightPointer,
-                        TreeNodeUtils.getChildPointerAtIndex(node, cursor + 1)
+                        TreeNodeUtils.getChildPointerAtIndex(node, cursor + 1, Identifier.BYTES)
                 );
             }
             lastRightPointer = childPointers.getRight();

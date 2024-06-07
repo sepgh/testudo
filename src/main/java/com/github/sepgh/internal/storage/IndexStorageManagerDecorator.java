@@ -22,10 +22,10 @@ public class IndexStorageManagerDecorator implements IndexStorageManager {
         return this.decorated.getEmptyNode();
     }
 
-    public CompletableFuture<NodeData> readNode(int table, Pointer pointer) throws InterruptedException {
+    public CompletableFuture<NodeData> readNode(int table, Pointer pointer) throws InterruptedException, IOException {
         return this.readNode(table, pointer.getPosition(), pointer.getChunk());
     }
-    public CompletableFuture<NodeData> readNode(int table, long position, int chunk) throws InterruptedException {
+    public CompletableFuture<NodeData> readNode(int table, long position, int chunk) throws InterruptedException, IOException {
         return this.decorated.readNode(table, position, chunk);
     }
 

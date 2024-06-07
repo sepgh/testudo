@@ -2,9 +2,9 @@ package com.github.sepgh.internal.index.tree;
 
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
-import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
-import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.InternalClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import com.github.sepgh.internal.storage.session.ImmediateCommitIndexIOSession;
@@ -31,9 +31,9 @@ public class BPlusTreeIndexManager implements IndexManager {
     }
 
     @Override
-    public BaseTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
+    public BaseClusterTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
         IndexIOSession indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table);
-        BaseTreeNode root = getRoot(indexIOSession);
+        BaseClusterTreeNode root = getRoot(indexIOSession);
         return new BPlusTreeIndexCreateOperation(degree, table, indexIOSession).addIndex(root, identifier, pointer);
     }
 
@@ -41,8 +41,8 @@ public class BPlusTreeIndexManager implements IndexManager {
     public Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException {
         IndexIOSession indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table);
 
-        LeafTreeNode baseTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, table, degree);
-        for (LeafTreeNode.KeyValue entry : baseTreeNode.getKeyValueList(degree)) {
+        LeafClusterTreeNode baseTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, table, degree);
+        for (LeafClusterTreeNode.KeyValue entry : baseTreeNode.getKeyValueList(degree)) {
             if (entry.key() == identifier)
                 return Optional.of(entry.value());
         }
@@ -53,45 +53,45 @@ public class BPlusTreeIndexManager implements IndexManager {
     @Override
     public boolean removeIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException {
         IndexIOSession indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table);
-        BaseTreeNode root = getRoot(indexIOSession);
+        BaseClusterTreeNode root = getRoot(indexIOSession);
         return new BPlusTreeIndexDeleteOperation(degree, table, indexIOSession).removeIndex(root, identifier);
     }
 
     @Override
-    public int size(int table) throws InterruptedException, ExecutionException {
+    public int size(int table) throws InterruptedException, ExecutionException, IOException {
         Optional<IndexStorageManager.NodeData> optionalNodeData = this.indexStorageManager.getRoot(table).get();
         if (optionalNodeData.isEmpty())
             return 0;
 
-        BaseTreeNode root = BaseTreeNode.fromNodeData(optionalNodeData.get());
+        BaseClusterTreeNode root = BaseClusterTreeNode.fromNodeData(optionalNodeData.get());
         if (root.isLeaf()){
             return root.getKeyList(degree).size();
         }
 
-        BaseTreeNode curr = root;
+        BaseClusterTreeNode curr = root;
         while (!curr.isLeaf()) {
-            curr = IndexTreeNodeIO.read(indexStorageManager, table, ((InternalTreeNode) curr).getChildrenList().getFirst());
+            curr = IndexTreeNodeIO.read(indexStorageManager, table, ((InternalClusterTreeNode) curr).getChildrenList().getFirst());
         }
 
         int size = curr.getKeyList(degree).size();
-        Optional<Pointer> optionalNext = ((LeafTreeNode) curr).getNextSiblingPointer(degree);
+        Optional<Pointer> optionalNext = ((LeafClusterTreeNode) curr).getNextSiblingPointer(degree);
         while (optionalNext.isPresent()){
-            BaseTreeNode nextNode = IndexTreeNodeIO.read(indexStorageManager, table, optionalNext.get());
+            BaseClusterTreeNode nextNode = IndexTreeNodeIO.read(indexStorageManager, table, optionalNext.get());
             size += nextNode.getKeyList(degree).size();
-            optionalNext = ((LeafTreeNode) nextNode).getNextSiblingPointer(degree);
+            optionalNext = ((LeafClusterTreeNode) nextNode).getNextSiblingPointer(degree);
         }
 
         return size;
     }
 
-    private BaseTreeNode getRoot(IndexIOSession indexIOSession) throws ExecutionException, InterruptedException, IOException {
-        Optional<BaseTreeNode> optionalRoot = indexIOSession.getRoot();
+    private BaseClusterTreeNode getRoot(IndexIOSession indexIOSession) throws ExecutionException, InterruptedException, IOException {
+        Optional<BaseClusterTreeNode> optionalRoot = indexIOSession.getRoot();
         if (optionalRoot.isPresent()){
             return optionalRoot.get();
         }
 
         byte[] emptyNode = indexStorageManager.getEmptyNode();
-        LeafTreeNode leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(emptyNode, BaseTreeNode.Type.LEAF);
+        LeafClusterTreeNode leafTreeNode = (LeafClusterTreeNode) BaseClusterTreeNode.fromBytes(emptyNode, BaseClusterTreeNode.Type.LEAF);
         leafTreeNode.setAsRoot();
 
         IndexStorageManager.NodeData nodeData = indexIOSession.write(leafTreeNode);

@@ -1,7 +1,7 @@
 package com.github.sepgh.internal.storage.session;
 
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import lombok.Getter;
@@ -21,28 +21,28 @@ public class ImmediateCommitIndexIOSession implements IndexIOSession {
     }
 
     @Override
-    public Optional<BaseTreeNode> getRoot() throws ExecutionException, InterruptedException {
+    public Optional<BaseClusterTreeNode> getRoot() throws ExecutionException, InterruptedException {
         Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table).get();
-        return optional.map(BaseTreeNode::fromNodeData);
+        return optional.map(BaseClusterTreeNode::fromNodeData);
     }
 
     @Override
-    public IndexStorageManager.NodeData write(BaseTreeNode node) throws IOException, ExecutionException, InterruptedException {
+    public IndexStorageManager.NodeData write(BaseClusterTreeNode node) throws IOException, ExecutionException, InterruptedException {
         return IndexTreeNodeIO.write(indexStorageManager, table, node).get();
     }
 
     @Override
-    public BaseTreeNode read(Pointer pointer) throws ExecutionException, InterruptedException {
+    public BaseClusterTreeNode read(Pointer pointer) throws ExecutionException, InterruptedException, IOException {
         return IndexTreeNodeIO.read(indexStorageManager, table, pointer);
     }
 
     @Override
-    public void update(BaseTreeNode... nodes) throws IOException, InterruptedException {
+    public void update(BaseClusterTreeNode... nodes) throws IOException, InterruptedException {
         IndexTreeNodeIO.update(indexStorageManager, table, nodes);
     }
 
     @Override
-    public void remove(BaseTreeNode node) throws ExecutionException, InterruptedException {
+    public void remove(BaseClusterTreeNode node) throws ExecutionException, InterruptedException {
         IndexTreeNodeIO.remove(indexStorageManager, table, node);
     }
 

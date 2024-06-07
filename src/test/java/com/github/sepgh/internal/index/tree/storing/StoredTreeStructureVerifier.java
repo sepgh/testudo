@@ -1,13 +1,14 @@
 package com.github.sepgh.internal.index.tree.storing;
 
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
-import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
-import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.InternalClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import org.junit.jupiter.api.Assertions;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -35,25 +36,25 @@ public class StoredTreeStructureVerifier {
      *     ├── 011
      *     └── 012
      */
-    public static void testUnOrderedTreeStructure1(IndexStorageManager indexStorageManager, int table, long multi, int degree) throws ExecutionException, InterruptedException {
+    public static void testUnOrderedTreeStructure1(IndexStorageManager indexStorageManager, int table, long multi, int degree) throws ExecutionException, InterruptedException, IOException {
         Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table).get();
         Assertions.assertTrue(optional.isPresent());
 
-        BaseTreeNode rootNode = BaseTreeNode.fromBytes(optional.get().bytes());
+        BaseClusterTreeNode rootNode = BaseClusterTreeNode.fromBytes(optional.get().bytes());
         Assertions.assertTrue(rootNode.isRoot());
         Assertions.assertFalse(rootNode.isLeaf());
 
         Assertions.assertEquals(multi * 9, rootNode.getKeys(degree).next());
 
         // Checking root child at left
-        InternalTreeNode leftChildInternalNode = (InternalTreeNode) IndexTreeNodeIO.read(indexStorageManager, table, ((InternalTreeNode) rootNode).getChildPointersList(degree).get(0).getLeft());
+        InternalClusterTreeNode leftChildInternalNode = (InternalClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, table, ((InternalClusterTreeNode) rootNode).getChildPointersList(degree).get(0).getLeft());
         List<Long> leftChildInternalNodeKeys = leftChildInternalNode.getKeyList(degree);
         Assertions.assertEquals(2, leftChildInternalNodeKeys.size());
         Assertions.assertEquals(multi * 3, leftChildInternalNodeKeys.get(0));
         Assertions.assertEquals(multi * 6, leftChildInternalNodeKeys.get(1));
 
         // Far left leaf
-        LeafTreeNode currentLeaf = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, table, leftChildInternalNode.getChildPointersList(degree).get(0).getLeft());
+        LeafClusterTreeNode currentLeaf = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, table, leftChildInternalNode.getChildPointersList(degree).get(0).getLeft());
         List<Long> currentLeafKeys = currentLeaf.getKeyList(degree);
         Assertions.assertEquals(2, currentLeafKeys.size());
         Assertions.assertEquals(multi * 1, currentLeafKeys.get(0));
@@ -64,7 +65,7 @@ public class StoredTreeStructureVerifier {
         Assertions.assertTrue(nextPointer.isPresent());
         Assertions.assertEquals(nextPointer.get(), leftChildInternalNode.getChildAtIndex(1));
 
-        currentLeaf = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, table, leftChildInternalNode.getChildPointersList(degree).get(0).getRight());
+        currentLeaf = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, table, leftChildInternalNode.getChildPointersList(degree).get(0).getRight());
         currentLeafKeys = currentLeaf.getKeyList(degree);
         Assertions.assertEquals(3, currentLeafKeys.size());
         Assertions.assertEquals(multi * 3, currentLeafKeys.get(0));
@@ -77,7 +78,7 @@ public class StoredTreeStructureVerifier {
         Assertions.assertTrue(nextPointer.isPresent());
         Assertions.assertEquals(nextPointer.get(), leftChildInternalNode.getChildPointersList(degree).get(1).getRight());
 
-        currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
+        currentLeaf = (LeafClusterTreeNode) BaseClusterTreeNode.fromBytes(
                 indexStorageManager.readNode(
                         table,
                         leftChildInternalNode.getChildPointersList(degree).get(1).getRight()
@@ -91,10 +92,10 @@ public class StoredTreeStructureVerifier {
 
 
         // Checking root child at right
-        InternalTreeNode rightChildInternalNode = (InternalTreeNode) BaseTreeNode.fromBytes(
+        InternalClusterTreeNode rightChildInternalNode = (InternalClusterTreeNode) BaseClusterTreeNode.fromBytes(
                 indexStorageManager.readNode(
                         table,
-                        ((InternalTreeNode) rootNode).getChildPointersList(degree).get(0).getRight()).get().bytes()
+                        ((InternalClusterTreeNode) rootNode).getChildPointersList(degree).get(0).getRight()).get().bytes()
         );
         List<Long> rightChildInternalNodeKeys = rightChildInternalNode.getKeyList(degree);
         Assertions.assertEquals(1, rightChildInternalNodeKeys.size());
@@ -105,7 +106,7 @@ public class StoredTreeStructureVerifier {
         Assertions.assertTrue(nextPointer.isPresent());
         Assertions.assertEquals(nextPointer.get(), rightChildInternalNode.getChildPointersList(degree).get(0).getLeft());
 
-        currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
+        currentLeaf = (LeafClusterTreeNode) BaseClusterTreeNode.fromBytes(
                 indexStorageManager.readNode(
                         table,
                         rightChildInternalNode.getChildPointersList(degree).get(0).getLeft()
@@ -122,7 +123,7 @@ public class StoredTreeStructureVerifier {
         Assertions.assertTrue(nextPointer.isPresent());
         Assertions.assertEquals(nextPointer.get(), rightChildInternalNode.getChildPointersList(degree).get(0).getRight());
 
-        currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
+        currentLeaf = (LeafClusterTreeNode) BaseClusterTreeNode.fromBytes(
                 indexStorageManager.readNode(
                         table,
                         rightChildInternalNode.getChildPointersList(degree).get(0).getRight()
@@ -157,21 +158,21 @@ public class StoredTreeStructureVerifier {
      *     ├── 011
      *     └── 012
      */
-    public static void testOrderedTreeStructure(IndexStorageManager indexStorageManager, int table, long multi, int degree) throws ExecutionException, InterruptedException {
+    public static void testOrderedTreeStructure(IndexStorageManager indexStorageManager, int table, long multi, int degree) throws ExecutionException, InterruptedException, IOException {
         Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table).get();
         Assertions.assertTrue(optional.isPresent());
 
-        BaseTreeNode rootNode = BaseTreeNode.fromBytes(optional.get().bytes());
+        BaseClusterTreeNode rootNode = BaseClusterTreeNode.fromBytes(optional.get().bytes());
         Assertions.assertTrue(rootNode.isRoot());
         Assertions.assertFalse(rootNode.isLeaf());
 
         Assertions.assertEquals(multi*7, rootNode.getKeys(degree).next());
 
         // Checking root child at left
-        InternalTreeNode leftChildInternalNode = (InternalTreeNode) BaseTreeNode.fromBytes(
+        InternalClusterTreeNode leftChildInternalNode = (InternalClusterTreeNode) BaseClusterTreeNode.fromBytes(
                 indexStorageManager.readNode(
                         table,
-                        ((InternalTreeNode) rootNode).getChildPointersList(degree).get(0).getLeft()).get().bytes()
+                        ((InternalClusterTreeNode) rootNode).getChildPointersList(degree).get(0).getLeft()).get().bytes()
         );
         List<Long> leftChildInternalNodeKeys = leftChildInternalNode.getKeyList(degree);
         Assertions.assertEquals(2, leftChildInternalNodeKeys.size(), ""+leftChildInternalNodeKeys);
@@ -179,7 +180,7 @@ public class StoredTreeStructureVerifier {
         Assertions.assertEquals(multi * 5, leftChildInternalNodeKeys.get(1));
 
         // Far left leaf
-        LeafTreeNode currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
+        LeafClusterTreeNode currentLeaf = (LeafClusterTreeNode) BaseClusterTreeNode.fromBytes(
                 indexStorageManager.readNode(
                         table,
                         leftChildInternalNode.getChildPointersList(degree).get(0).getLeft()
@@ -195,7 +196,7 @@ public class StoredTreeStructureVerifier {
         Assertions.assertTrue(nextPointer.isPresent());
         Assertions.assertEquals(nextPointer.get(), leftChildInternalNode.getChildPointersList(degree).get(0).getRight());
 
-        currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
+        currentLeaf = (LeafClusterTreeNode) BaseClusterTreeNode.fromBytes(
                 indexStorageManager.readNode(
                         table,
                         leftChildInternalNode.getChildPointersList(degree).get(0).getRight()
@@ -211,7 +212,7 @@ public class StoredTreeStructureVerifier {
         Assertions.assertTrue(nextPointer.isPresent());
         Assertions.assertEquals(nextPointer.get(), leftChildInternalNode.getChildPointersList(degree).get(1).getRight());
 
-        currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
+        currentLeaf = (LeafClusterTreeNode) BaseClusterTreeNode.fromBytes(
                 indexStorageManager.readNode(
                         table,
                         leftChildInternalNode.getChildPointersList(degree).get(1).getRight()
@@ -224,10 +225,10 @@ public class StoredTreeStructureVerifier {
 
 
         // Checking root child at right
-        InternalTreeNode rightChildInternalNode = (InternalTreeNode) BaseTreeNode.fromBytes(
+        InternalClusterTreeNode rightChildInternalNode = (InternalClusterTreeNode) BaseClusterTreeNode.fromBytes(
                 indexStorageManager.readNode(
                         table,
-                        ((InternalTreeNode) rootNode).getChildPointersList(degree).get(0).getRight()).get().bytes()
+                        ((InternalClusterTreeNode) rootNode).getChildPointersList(degree).get(0).getRight()).get().bytes()
         );
         List<Long> rightChildInternalNodeKeys = rightChildInternalNode.getKeyList(degree);
         Assertions.assertEquals(2, rightChildInternalNodeKeys.size());
@@ -239,7 +240,7 @@ public class StoredTreeStructureVerifier {
         Assertions.assertTrue(nextPointer.isPresent());
         Assertions.assertEquals(nextPointer.get(), rightChildInternalNode.getChildPointersList(degree).get(0).getLeft());
 
-        currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
+        currentLeaf = (LeafClusterTreeNode) BaseClusterTreeNode.fromBytes(
                 indexStorageManager.readNode(
                         table,
                         rightChildInternalNode.getChildPointersList(degree).get(0).getLeft()
@@ -256,7 +257,7 @@ public class StoredTreeStructureVerifier {
         Assertions.assertTrue(nextPointer.isPresent());
         Assertions.assertEquals(nextPointer.get(), rightChildInternalNode.getChildPointersList(degree).get(0).getRight());
 
-        currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
+        currentLeaf = (LeafClusterTreeNode) BaseClusterTreeNode.fromBytes(
                 indexStorageManager.readNode(
                         table,
                         rightChildInternalNode.getChildPointersList(degree).get(0).getRight()
@@ -273,7 +274,7 @@ public class StoredTreeStructureVerifier {
         Assertions.assertTrue(nextPointer.isPresent());
         Assertions.assertEquals(nextPointer.get(), rightChildInternalNode.getChildPointersList(degree).get(1).getRight());
 
-        currentLeaf = (LeafTreeNode) BaseTreeNode.fromBytes(
+        currentLeaf = (LeafClusterTreeNode) BaseClusterTreeNode.fromBytes(
                 indexStorageManager.readNode(
                         table,
                         rightChildInternalNode.getChildPointersList(degree).get(1).getRight()

@@ -1,27 +1,28 @@
 package com.github.sepgh.internal.index.tree;
 
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
-import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
-import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.InternalClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import com.github.sepgh.internal.storage.session.IndexIOSession;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class BPlusTreeUtils {
 
-    public static void getPathToResponsibleNode(IndexIOSession indexIOSession, List<BaseTreeNode> path, BaseTreeNode node, long identifier, int degree) throws ExecutionException, InterruptedException {
-        if (node.getType() == BaseTreeNode.Type.LEAF){
+    public static void getPathToResponsibleNode(IndexIOSession indexIOSession, List<BaseClusterTreeNode> path, BaseClusterTreeNode node, long identifier, int degree) throws ExecutionException, InterruptedException, IOException {
+        if (node.getType() == BaseClusterTreeNode.Type.LEAF){
             path.addFirst(node);
             return;
         }
 
-        List<InternalTreeNode.ChildPointers> childPointersList = ((InternalTreeNode) node).getChildPointersList(degree);
+        List<InternalClusterTreeNode.ChildPointers> childPointersList = ((InternalClusterTreeNode) node).getChildPointersList(degree);
         for (int i = 0; i < childPointersList.size(); i++){
-            InternalTreeNode.ChildPointers childPointers = childPointersList.get(i);
+            InternalClusterTreeNode.ChildPointers childPointers = childPointersList.get(i);
             if (childPointers.getKey() > identifier && childPointers.getLeft() != null){
                 path.addFirst(node);
                 getPathToResponsibleNode(
@@ -47,12 +48,12 @@ public class BPlusTreeUtils {
         }
     }
 
-    public static LeafTreeNode getResponsibleNode(IndexStorageManager indexStorageManager, BaseTreeNode node, long identifier, int table, int degree) throws ExecutionException, InterruptedException {
+    public static LeafClusterTreeNode getResponsibleNode(IndexStorageManager indexStorageManager, BaseClusterTreeNode node, long identifier, int table, int degree) throws ExecutionException, InterruptedException, IOException {
         if (node.isLeaf()){
-            return (LeafTreeNode) node;
+            return (LeafClusterTreeNode) node;
         }
 
-        List<Pointer> childrenList = ((InternalTreeNode) node).getChildrenList();
+        List<Pointer> childrenList = ((InternalClusterTreeNode) node).getChildrenList();
         List<Long> keys = node.getKeyList(degree);
         int i;
         long keyAtIndex;

@@ -1,6 +1,7 @@
 package com.github.sepgh.internal;
 
 import com.github.sepgh.internal.index.Pointer;
+import com.github.sepgh.internal.index.tree.node.data.Identifier;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -49,7 +50,7 @@ public class EngineConfig {
     }
 
     public int bTreeNodeSize(){
-        return 1 + (this.getBTreeDegree() * (Long.BYTES + Pointer.BYTES)) + (2 * Pointer.BYTES);
+        return 1 + (this.getBTreeDegree() * (Identifier.BYTES + Pointer.BYTES)) + (2 * Pointer.BYTES);
     }
 
     public static class Default {

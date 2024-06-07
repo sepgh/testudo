@@ -85,7 +85,7 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
     public void findIndexSuccessfully_cachedStorage() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 12);
+        indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 30);
 
         IndexManager indexManager = new TableLevelAsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, indexStorageManager));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
@@ -108,9 +108,10 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 12);
 
         indexManager = new TableLevelAsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, indexStorageManager));
-        optionalPointer = indexManager.getIndex(1, 10);
-        Assertions.assertFalse(optionalPointer.isPresent());
-
+        IndexManager finalIndexManager = indexManager;
+        Assertions.assertThrows(IOException.class, () -> {
+            finalIndexManager.getIndex(1, 10);
+        }, "Nothing available to read.");
     }
 
     @Test

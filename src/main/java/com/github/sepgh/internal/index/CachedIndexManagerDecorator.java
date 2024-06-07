@@ -1,6 +1,6 @@
 package com.github.sepgh.internal.index;
 
-import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
@@ -25,11 +25,11 @@ public class CachedIndexManagerDecorator extends IndexManagerDecorator {
     }
 
     @Override
-    public BaseTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
-        BaseTreeNode baseTreeNode = super.addIndex(table, identifier, pointer);
+    public BaseClusterTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
+        BaseClusterTreeNode baseClusterTreeNode = super.addIndex(table, identifier, pointer);
         cache.put(new TableIdentifier(table, identifier), pointer);
         sizeCache.computeIfPresent(table, (k, v) -> v + 1);
-        return baseTreeNode;
+        return baseClusterTreeNode;
     }
 
     @Override

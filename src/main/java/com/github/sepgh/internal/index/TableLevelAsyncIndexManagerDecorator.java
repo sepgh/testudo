@@ -1,6 +1,6 @@
 package com.github.sepgh.internal.index;
 
-import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
 
 import java.io.IOException;
 import java.util.Map;
@@ -20,7 +20,7 @@ public class TableLevelAsyncIndexManagerDecorator extends IndexManagerDecorator 
     }
 
     @Override
-    public BaseTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
+    public BaseClusterTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
         LockManager lockManager = getLockManager(table);
         lockManager.writeLock.lock();
         try {

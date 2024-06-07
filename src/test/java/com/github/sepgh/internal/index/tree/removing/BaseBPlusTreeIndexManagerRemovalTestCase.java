@@ -3,9 +3,9 @@ package com.github.sepgh.internal.index.tree.removing;
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
-import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
-import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.InternalClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import com.github.sepgh.internal.storage.header.Header;
@@ -118,11 +118,11 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
 
 
         // Check Tree
-        InternalTreeNode root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        InternalClusterTreeNode root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(7, root.getKeyList(degree).getFirst());
 
-        InternalTreeNode midTreeNodeLeft = (InternalTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
+        InternalClusterTreeNode midTreeNodeLeft = (InternalClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
         List<Long> midTreeNodeLeftKeyList = midTreeNodeLeft.getKeyList(degree);
         Assertions.assertEquals(2, midTreeNodeLeftKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(4, midTreeNodeLeftKeyList.getFirst(), "" + midTreeNodeLeftKeyList);
@@ -130,19 +130,19 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
 
 
         List<Pointer> midTreeNodeLeftChildrenList = midTreeNodeLeft.getChildrenList();
-        LeafTreeNode leftSideLastTreeNode = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeLeftChildrenList.getFirst());
+        LeafClusterTreeNode leftSideLastTreeNode = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeLeftChildrenList.getFirst());
         List<Long> leftSideLastTreeNodeKeyList = leftSideLastTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, leftSideLastTreeNodeKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(3, leftSideLastTreeNodeKeyList.getFirst());
 
 
-        LeafTreeNode midLastTreeNodeAtLeft = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeLeftChildrenList.get(1));
+        LeafClusterTreeNode midLastTreeNodeAtLeft = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeLeftChildrenList.get(1));
         List<Long> midLastTreeNodeKeyList = midLastTreeNodeAtLeft.getKeyList(degree);
         Assertions.assertEquals(1, midLastTreeNodeKeyList.size(), "Keys: " + midLastTreeNodeKeyList + ", P: " + midLastTreeNodeAtLeft.getPointer());
         Assertions.assertEquals(4, midLastTreeNodeKeyList.getFirst());
 
 
-        LeafTreeNode rightSideLastTreeNodeAtLeft = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeLeftChildrenList.getLast());
+        LeafClusterTreeNode rightSideLastTreeNodeAtLeft = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeLeftChildrenList.getLast());
         List<Long> rightSideLastTreeNodeKeyList = rightSideLastTreeNodeAtLeft.getKeyList(degree);
         Assertions.assertEquals(2, rightSideLastTreeNodeKeyList.size(), "Keys: " + midLastTreeNodeKeyList + ", P: " + midLastTreeNodeAtLeft.getPointer());
         Assertions.assertEquals(5, rightSideLastTreeNodeKeyList.getFirst());
@@ -153,7 +153,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertFalse(indexManager.removeIndex(1, 3));
 
 
-        midTreeNodeLeft = (InternalTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
+        midTreeNodeLeft = (InternalClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
         midTreeNodeLeftKeyList = midTreeNodeLeft.getKeyList(degree);
         Assertions.assertEquals(1, midTreeNodeLeftKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(5, midTreeNodeLeftKeyList.getFirst());
@@ -162,7 +162,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 4));
         Assertions.assertFalse(indexManager.removeIndex(1, 4));
 
-        midTreeNodeLeft = (InternalTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
+        midTreeNodeLeft = (InternalClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
         midTreeNodeLeftKeyList = midTreeNodeLeft.getKeyList(degree);
         Assertions.assertEquals(1, midTreeNodeLeftKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(6, midTreeNodeLeftKeyList.getFirst());
@@ -171,23 +171,23 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertFalse(indexManager.removeIndex(1, 5));
 
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(9, root.getKeyList(degree).getFirst());
 
-        midTreeNodeLeft = (InternalTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
+        midTreeNodeLeft = (InternalClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
         midTreeNodeLeftKeyList = midTreeNodeLeft.getKeyList(degree);
         Assertions.assertEquals(1, midTreeNodeLeftKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(7, midTreeNodeLeftKeyList.getFirst());
 
         midTreeNodeLeftChildrenList = midTreeNodeLeft.getChildrenList();
 
-        leftSideLastTreeNode = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeLeftChildrenList.getFirst());
+        leftSideLastTreeNode = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeLeftChildrenList.getFirst());
         leftSideLastTreeNodeKeyList = leftSideLastTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, leftSideLastTreeNodeKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(6, leftSideLastTreeNodeKeyList.getFirst());
 
-        rightSideLastTreeNodeAtLeft = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeLeftChildrenList.getLast());
+        rightSideLastTreeNodeAtLeft = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeLeftChildrenList.getLast());
         rightSideLastTreeNodeKeyList = rightSideLastTreeNodeAtLeft.getKeyList(degree);
         Assertions.assertEquals(2, rightSideLastTreeNodeKeyList.size(), "Keys: " + midLastTreeNodeKeyList + ", P: " + midLastTreeNodeAtLeft.getPointer());
         Assertions.assertEquals(7, rightSideLastTreeNodeKeyList.getFirst());
@@ -198,7 +198,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 6));
         Assertions.assertFalse(indexManager.removeIndex(1, 6));
 
-        midTreeNodeLeft = (InternalTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
+        midTreeNodeLeft = (InternalClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
         midTreeNodeLeftKeyList = midTreeNodeLeft.getKeyList(degree);
         Assertions.assertEquals(1, midTreeNodeLeftKeyList.size(), "" + midTreeNodeLeftKeyList);
         Assertions.assertEquals(8, midTreeNodeLeftKeyList.getFirst());
@@ -207,15 +207,15 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 7));
         Assertions.assertFalse(indexManager.removeIndex(1, 7));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(2, root.getKeyList(degree).size(), "" + root.getKeyList(degree));
         Assertions.assertEquals(9, root.getKeyList(degree).getFirst(), "" + root.getKeyList(degree));
         Assertions.assertEquals(11, root.getKeyList(degree).getLast(), "" + root.getKeyList(degree));
 
-        BaseTreeNode leafNodeAtLeft = IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
+        BaseClusterTreeNode leafNodeAtLeft = IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
         Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree).size(), "" + leafNodeAtLeft.getKeyList(degree));
         Assertions.assertEquals(8, leafNodeAtLeft.getKeyList(degree).getFirst(), "" + leafNodeAtLeft.getKeyList(degree));
-        BaseTreeNode leafNodeAtMid = IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().get(1));
+        BaseClusterTreeNode leafNodeAtMid = IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().get(1));
         Assertions.assertEquals(2, leafNodeAtMid.getKeyList(degree).size());
         Assertions.assertEquals(9, leafNodeAtMid.getKeyList(degree).getFirst());
         Assertions.assertEquals(10, leafNodeAtMid.getKeyList(degree).getLast());
@@ -223,12 +223,12 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 8));
         Assertions.assertFalse(indexManager.removeIndex(1, 8));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(2, root.getKeyList(degree).size(), "" + root.getKeyList(degree));
         Assertions.assertEquals(10, root.getKeyList(degree).getFirst(), "" + root.getKeyList(degree));
         Assertions.assertEquals(11, root.getKeyList(degree).getLast(), "" + root.getKeyList(degree));
 
-        leafNodeAtLeft = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
+        leafNodeAtLeft = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
         Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree).size());
         Assertions.assertEquals(9, leafNodeAtLeft.getKeyList(degree).getFirst());
 
@@ -236,15 +236,15 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 9));
         Assertions.assertFalse(indexManager.removeIndex(1, 9));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(11, root.getKeyList(degree).getFirst());
 
-        leafNodeAtLeft = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
+        leafNodeAtLeft = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
         Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree).size());
         Assertions.assertEquals(10, leafNodeAtLeft.getKeyList(degree).getFirst());
 
-        LeafTreeNode leafNodeAtRight = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast());
+        LeafClusterTreeNode leafNodeAtRight = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast());
         Assertions.assertEquals(2, leafNodeAtRight.getKeyList(degree).size());
         Assertions.assertEquals(11, leafNodeAtRight.getKeyList(degree).getFirst());
         Assertions.assertEquals(12, leafNodeAtRight.getKeyList(degree).getLast());
@@ -256,15 +256,15 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
 
 
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(12, root.getKeyList(degree).getFirst());
 
-        leafNodeAtLeft = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
+        leafNodeAtLeft = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst());
         Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree).size());
         Assertions.assertEquals(11, leafNodeAtLeft.getKeyList(degree).getFirst());
 
-        leafNodeAtRight = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast());
+        leafNodeAtRight = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast());
         Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree).size());
         Assertions.assertEquals(12, leafNodeAtRight.getKeyList(degree).getFirst());
 
@@ -273,17 +273,17 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 11));
         Assertions.assertFalse(indexManager.removeIndex(1, 11));
 
-        BaseTreeNode bRoot = InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        BaseClusterTreeNode bRoot = InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, bRoot.getKeyList(degree).size());
         Assertions.assertEquals(12, bRoot.getKeyList(degree).getFirst());
-        Assertions.assertEquals(BaseTreeNode.Type.LEAF, bRoot.getType());
+        Assertions.assertEquals(BaseClusterTreeNode.Type.LEAF, bRoot.getType());
 
         Assertions.assertTrue(indexManager.getIndex(1, 12).isPresent());
         Assertions.assertTrue(indexManager.removeIndex(1, 12));
         Assertions.assertFalse(indexManager.removeIndex(1, 12));
-        bRoot = InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        bRoot = InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(0, bRoot.getKeyList(degree).size());
-        Assertions.assertEquals(BaseTreeNode.Type.LEAF, bRoot.getType());
+        Assertions.assertEquals(BaseClusterTreeNode.Type.LEAF, bRoot.getType());
 
     }
 
@@ -307,11 +307,11 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertFalse(indexManager.removeIndex(1, 11));
 
         // Check Tree
-        InternalTreeNode root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        InternalClusterTreeNode root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertTrue(root.getKeyList(degree).contains(7L));
 
-        InternalTreeNode midTreeNode = (InternalTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast());
+        InternalClusterTreeNode midTreeNode = (InternalClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast());
         List<Long> midTreeNodeKeyList = midTreeNode.getKeyList(degree);
         Assertions.assertEquals(2, midTreeNodeKeyList.size(), "" + midTreeNodeKeyList);
         Assertions.assertEquals(9, midTreeNodeKeyList.getFirst());
@@ -319,20 +319,20 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
 
 
         List<Pointer> midTreeNodeChildrenList = midTreeNode.getChildrenList();
-        LeafTreeNode leftSideLastTreeNode = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeChildrenList.getFirst());
+        LeafClusterTreeNode leftSideLastTreeNode = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeChildrenList.getFirst());
         List<Long> leftSideLastTreeNodeKeyList = leftSideLastTreeNode.getKeyList(degree);
         Assertions.assertEquals(2, leftSideLastTreeNodeKeyList.size(), "" + midTreeNodeKeyList);
         Assertions.assertEquals(7, leftSideLastTreeNodeKeyList.getFirst());
         Assertions.assertEquals(8, leftSideLastTreeNodeKeyList.getLast());
 
 
-        LeafTreeNode midLastTreeNode = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeChildrenList.get(1));
+        LeafClusterTreeNode midLastTreeNode = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeChildrenList.get(1));
         List<Long> midLastTreeNodeKeyList = midLastTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, midLastTreeNodeKeyList.size(), "Keys: " + midLastTreeNodeKeyList + ", P: " + midLastTreeNode.getPointer());
         Assertions.assertEquals(9, midLastTreeNodeKeyList.getFirst());
 
 
-        LeafTreeNode rightSideLastTreeNode = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeChildrenList.getLast());
+        LeafClusterTreeNode rightSideLastTreeNode = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeChildrenList.getLast());
         List<Long> rightSideLastTreeNodeKeyList = rightSideLastTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, rightSideLastTreeNodeKeyList.size(), "Keys: " + midLastTreeNodeKeyList + ", P: " + midLastTreeNode.getPointer());
         Assertions.assertEquals(10, rightSideLastTreeNodeKeyList.getFirst());
@@ -342,7 +342,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertFalse(indexManager.removeIndex(1, 10));
 
 
-        midTreeNode = (InternalTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast());
+        midTreeNode = (InternalClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast());
         midTreeNodeKeyList = midTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, midTreeNodeKeyList.size(), "" + midTreeNodeKeyList);
         Assertions.assertEquals(9, midTreeNodeKeyList.getFirst());
@@ -351,7 +351,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 9));
         Assertions.assertFalse(indexManager.removeIndex(1, 9));
 
-        midTreeNode = (InternalTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast());
+        midTreeNode = (InternalClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast());
         midTreeNodeKeyList = midTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, midTreeNodeKeyList.size(), "" + midTreeNodeKeyList);
         Assertions.assertEquals(8, midTreeNodeKeyList.getFirst());
@@ -360,24 +360,24 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertFalse(indexManager.removeIndex(1, 8));
 
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(5, root.getKeyList(degree).getFirst());
 
-        midTreeNode = (InternalTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast());
+        midTreeNode = (InternalClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast());
         midTreeNodeKeyList = midTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, midTreeNodeKeyList.size(), "" + midTreeNodeKeyList);
         Assertions.assertEquals(7, midTreeNodeKeyList.getFirst());
 
         midTreeNodeChildrenList = midTreeNode.getChildrenList();
 
-        leftSideLastTreeNode = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeChildrenList.getFirst());
+        leftSideLastTreeNode = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeChildrenList.getFirst());
         leftSideLastTreeNodeKeyList = leftSideLastTreeNode.getKeyList(degree);
         Assertions.assertEquals(2, leftSideLastTreeNodeKeyList.size(), "" + midTreeNodeKeyList);
         Assertions.assertEquals(5, leftSideLastTreeNodeKeyList.getFirst());
         Assertions.assertEquals(6, leftSideLastTreeNodeKeyList.getLast());
 
-        rightSideLastTreeNode = (LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeChildrenList.getLast());
+        rightSideLastTreeNode = (LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, midTreeNodeChildrenList.getLast());
         rightSideLastTreeNodeKeyList = rightSideLastTreeNode.getKeyList(degree);
         Assertions.assertEquals(1, rightSideLastTreeNodeKeyList.size(), "Keys: " + midLastTreeNodeKeyList + ", P: " + midLastTreeNode.getPointer());
         Assertions.assertEquals(7, rightSideLastTreeNodeKeyList.getFirst());
@@ -389,12 +389,12 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertFalse(indexManager.removeIndex(1, 6));
 
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(2, root.getKeyList(degree).size());
         Assertions.assertEquals(3, root.getKeyList(degree).getFirst());
         Assertions.assertEquals(5, root.getKeyList(degree).getLast());
 
-        BaseTreeNode leafNodeAtRight = IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast());
+        BaseClusterTreeNode leafNodeAtRight = IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast());
         Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree).size());
         Assertions.assertEquals(5, leafNodeAtRight.getKeyList(degree).getFirst());
 
@@ -402,7 +402,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 5));
         Assertions.assertFalse(indexManager.removeIndex(1, 5));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(2, root.getKeyList(degree).size());
         Assertions.assertEquals(3, root.getKeyList(degree).getFirst());
         Assertions.assertEquals(4, root.getKeyList(degree).getLast());
@@ -415,7 +415,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 4));
         Assertions.assertFalse(indexManager.removeIndex(1, 4));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(3, root.getKeyList(degree).getFirst());
 
@@ -427,7 +427,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 3));
         Assertions.assertFalse(indexManager.removeIndex(1, 3));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(2, root.getKeyList(degree).getFirst());
 
@@ -439,17 +439,17 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 2));
         Assertions.assertFalse(indexManager.removeIndex(1, 2));
 
-        BaseTreeNode bRoot = InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        BaseClusterTreeNode bRoot = InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, bRoot.getKeyList(degree).size());
         Assertions.assertEquals(1, bRoot.getKeyList(degree).getFirst());
-        Assertions.assertEquals(BaseTreeNode.Type.LEAF, bRoot.getType());
+        Assertions.assertEquals(BaseClusterTreeNode.Type.LEAF, bRoot.getType());
 
         Assertions.assertTrue(indexManager.getIndex(1, 1).isPresent());
         Assertions.assertTrue(indexManager.removeIndex(1, 1));
         Assertions.assertFalse(indexManager.removeIndex(1, 1));
-        bRoot = InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        bRoot = InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(0, bRoot.getKeyList(degree).size());
-        Assertions.assertEquals(BaseTreeNode.Type.LEAF, bRoot.getType());
+        Assertions.assertEquals(BaseClusterTreeNode.Type.LEAF, bRoot.getType());
 
     }
 
@@ -463,64 +463,64 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         }
 
         // Check Tree
-        InternalTreeNode root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        InternalClusterTreeNode root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(7, root.getKeyList(degree).getFirst());
 
         Assertions.assertTrue(indexManager.removeIndex(1, 7));
         Assertions.assertFalse(indexManager.removeIndex(1, 7));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(8, root.getKeyList(degree).getFirst());
 
         Assertions.assertTrue(indexManager.removeIndex(1, 8));
         Assertions.assertFalse(indexManager.removeIndex(1, 8));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(9, root.getKeyList(degree).getFirst());
 
         Assertions.assertTrue(indexManager.removeIndex(1, 9));
         Assertions.assertFalse(indexManager.removeIndex(1, 9));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(10, root.getKeyList(degree).getFirst());
 
         // Testing next / prev state
-        Pointer lastLeafFromLeftPointer = ((InternalTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst())).getChildrenList().getLast();
-        Pointer firstLeafFromRightPointer = ((InternalTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast())).getChildrenList().getFirst();
+        Pointer lastLeafFromLeftPointer = ((InternalClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst())).getChildrenList().getLast();
+        Pointer firstLeafFromRightPointer = ((InternalClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast())).getChildrenList().getFirst();
 
-        Assertions.assertEquals(lastLeafFromLeftPointer, ((LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, firstLeafFromRightPointer)).getPreviousSiblingPointer(degree).get());
-        Assertions.assertEquals(firstLeafFromRightPointer, ((LeafTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, lastLeafFromLeftPointer)).getNextSiblingPointer(degree).get());
+        Assertions.assertEquals(lastLeafFromLeftPointer, ((LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, firstLeafFromRightPointer)).getPreviousSiblingPointer(degree).get());
+        Assertions.assertEquals(firstLeafFromRightPointer, ((LeafClusterTreeNode) IndexTreeNodeIO.read(indexStorageManager, 1, lastLeafFromLeftPointer)).getNextSiblingPointer(degree).get());
 
 
         Assertions.assertTrue(indexManager.removeIndex(1, 10));
         Assertions.assertFalse(indexManager.removeIndex(1, 10));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(11, root.getKeyList(degree).getFirst());
 
         Assertions.assertTrue(indexManager.removeIndex(1, 11));
         Assertions.assertFalse(indexManager.removeIndex(1, 11));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size(), "" +  root.getKeyList(degree));
         Assertions.assertEquals(5, root.getKeyList(degree).getFirst());
 
         Assertions.assertTrue(indexManager.removeIndex(1, 5));
         Assertions.assertFalse(indexManager.removeIndex(1, 5));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size(), "" +  root.getKeyList(degree));
         Assertions.assertEquals(6, root.getKeyList(degree).getFirst());
 
         Assertions.assertTrue(indexManager.removeIndex(1, 6));
         Assertions.assertFalse(indexManager.removeIndex(1, 6));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(2, root.getKeyList(degree).size(), "" +  root.getKeyList(degree));
         Assertions.assertEquals(3, root.getKeyList(degree).getFirst());
         Assertions.assertEquals(12, root.getKeyList(degree).getLast());
@@ -528,7 +528,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 3));
         Assertions.assertFalse(indexManager.removeIndex(1, 3));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(2, root.getKeyList(degree).size(), "" +  root.getKeyList(degree));
         Assertions.assertEquals(4, root.getKeyList(degree).getFirst());
         Assertions.assertEquals(12, root.getKeyList(degree).getLast());
@@ -536,7 +536,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 4));
         Assertions.assertFalse(indexManager.removeIndex(1, 4));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(2, root.getKeyList(degree).size(), "" +  root.getKeyList(degree));
         Assertions.assertEquals(2, root.getKeyList(degree).getFirst());
         Assertions.assertEquals(12, root.getKeyList(degree).getLast());
@@ -544,7 +544,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 2));
         Assertions.assertFalse(indexManager.removeIndex(1, 2));
 
-        root = (InternalTreeNode) InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        root = (InternalClusterTreeNode) InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size(), "" +  root.getKeyList(degree));
         Assertions.assertEquals(12, root.getKeyList(degree).getFirst());
 
@@ -552,10 +552,10 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 12));
         Assertions.assertFalse(indexManager.removeIndex(1, 12));
 
-        BaseTreeNode lRoot = InternalTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
+        BaseClusterTreeNode lRoot = InternalClusterTreeNode.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, lRoot.getKeyList(degree).size(), "" +  root.getKeyList(degree));
         Assertions.assertEquals(1, lRoot.getKeyList(degree).getFirst());
-        Assertions.assertEquals(BaseTreeNode.Type.LEAF, lRoot.getType());
+        Assertions.assertEquals(BaseClusterTreeNode.Type.LEAF, lRoot.getType());
 
     }
 

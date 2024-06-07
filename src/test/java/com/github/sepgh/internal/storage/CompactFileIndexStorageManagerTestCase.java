@@ -2,9 +2,9 @@ package com.github.sepgh.internal.storage;
 
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.node.BaseTreeNode;
-import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
-import com.github.sepgh.internal.index.tree.node.LeafTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.InternalClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import org.junit.jupiter.api.AfterEach;
@@ -29,9 +29,9 @@ public class CompactFileIndexStorageManagerTestCase {
     private EngineConfig engineConfig;
     private Header header;
     private final byte[] singleKeyLeafNodeRepresentation = {
-            ((byte) (0x00 | BaseTreeNode.ROOT_BIT | BaseTreeNode.TYPE_LEAF_NODE_BIT)), // Leaf
+            ((byte) (0x00 | BaseClusterTreeNode.ROOT_BIT | BaseClusterTreeNode.TYPE_LEAF_NODE_BIT)), // Leaf
 
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F,  // Key 1
+            0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F,  // Key 1
 
             // >> Start pointer to child 1
             Pointer.TYPE_DATA,  // type
@@ -40,7 +40,7 @@ public class CompactFileIndexStorageManagerTestCase {
             // >> End pointer to child 1
     };
     private final byte[] singleKeyInternalNodeRepresentation = {
-            ((byte) (0x00 | BaseTreeNode.ROOT_BIT | BaseTreeNode.TYPE_INTERNAL_NODE_BIT)), // Not leaf
+            ((byte) (0x00 | BaseClusterTreeNode.ROOT_BIT | BaseClusterTreeNode.TYPE_INTERNAL_NODE_BIT)), // Not leaf
 
             // >> Start pointer to child 1
             Pointer.TYPE_NODE,  // type
@@ -48,7 +48,7 @@ public class CompactFileIndexStorageManagerTestCase {
             0x00, 0x00, 0x00, 0x01, // chunk
             // >> End pointer to child 1
 
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F,  // Key
+            0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F,  // Key
 
             // >> Start pointer to child 2
             Pointer.TYPE_NODE,  // type
@@ -119,7 +119,7 @@ public class CompactFileIndexStorageManagerTestCase {
             IndexStorageManager.NodeData nodeData = future.get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
 
-            BaseTreeNode treeNode = BaseTreeNode.fromBytes(nodeData.bytes());
+            BaseClusterTreeNode treeNode = BaseClusterTreeNode.fromBytes(nodeData.bytes());
 
             Iterator<Long> keys = treeNode.getKeys(2);
 
@@ -132,12 +132,12 @@ public class CompactFileIndexStorageManagerTestCase {
             nodeData = future.get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
 
-            treeNode = BaseTreeNode.fromBytes(nodeData.bytes());
+            treeNode = BaseClusterTreeNode.fromBytes(nodeData.bytes());
 
-            Iterator<InternalTreeNode.ChildPointers> children = ((InternalTreeNode) treeNode).getChildPointers(2);
+            Iterator<InternalClusterTreeNode.ChildPointers> children = ((InternalClusterTreeNode) treeNode).getChildPointers(2);
 
             Assertions.assertTrue(children.hasNext());
-            InternalTreeNode.ChildPointers childPointers = children.next();
+            InternalClusterTreeNode.ChildPointers childPointers = children.next();
             Assertions.assertTrue(childPointers.getLeft().isNodePointer());
             Assertions.assertEquals(1, childPointers.getLeft().getPosition());
             Assertions.assertEquals(1, childPointers.getLeft().getChunk());
@@ -158,14 +158,14 @@ public class CompactFileIndexStorageManagerTestCase {
             IndexStorageManager.NodeData nodeData = future.get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
 
-            LeafTreeNode leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(nodeData.bytes());
-            leafTreeNode.setKeyValue(0, new LeafTreeNode.KeyValue(10L, new Pointer(Pointer.TYPE_DATA, 100, 100)));
+            LeafClusterTreeNode leafTreeNode = (LeafClusterTreeNode) BaseClusterTreeNode.fromBytes(nodeData.bytes());
+            leafTreeNode.setKeyValue(0, new LeafClusterTreeNode.KeyValue(10L, new Pointer(Pointer.TYPE_DATA, 100, 100)));
 
             compactFileIndexStorageManager.updateNode(1, leafTreeNode.getData(), nodeData.pointer()).get();
 
             future = compactFileIndexStorageManager.readNode(1, 0, 0);
             nodeData = future.get();
-            leafTreeNode = (LeafTreeNode) BaseTreeNode.fromBytes(nodeData.bytes());
+            leafTreeNode = (LeafClusterTreeNode) BaseClusterTreeNode.fromBytes(nodeData.bytes());
 
             Assertions.assertTrue(leafTreeNode.getKeyValues(2).hasNext());
 
@@ -186,20 +186,20 @@ public class CompactFileIndexStorageManagerTestCase {
         try {
 
             byte[] emptyNode = compactFileIndexStorageManager.getEmptyNode();
-            BaseTreeNode baseTreeNode = BaseTreeNode.fromBytes(emptyNode, BaseTreeNode.Type.INTERNAL);
-            baseTreeNode.setAsRoot();
+            BaseClusterTreeNode baseClusterTreeNode = BaseClusterTreeNode.fromBytes(emptyNode, BaseClusterTreeNode.Type.INTERNAL);
+            baseClusterTreeNode.setAsRoot();
 
-            IndexStorageManager.NodeData nodeData = compactFileIndexStorageManager.writeNewNode(1, baseTreeNode.getData()).get();
+            IndexStorageManager.NodeData nodeData = compactFileIndexStorageManager.writeNewNode(1, baseClusterTreeNode.getData()).get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
             Assertions.assertEquals(2L * engineConfig.getPaddedSize(), nodeData.pointer().getPosition());
             Assertions.assertEquals(0, nodeData.pointer().getChunk());
 
-            nodeData = compactFileIndexStorageManager.writeNewNode(1, baseTreeNode.getData()).get();
+            nodeData = compactFileIndexStorageManager.writeNewNode(1, baseClusterTreeNode.getData()).get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
             Assertions.assertEquals(0, nodeData.pointer().getPosition());
             Assertions.assertEquals(1, nodeData.pointer().getChunk());
 
-            nodeData = compactFileIndexStorageManager.writeNewNode(1, baseTreeNode.getData()).get();
+            nodeData = compactFileIndexStorageManager.writeNewNode(1, baseClusterTreeNode.getData()).get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.pointer().getPosition());
             Assertions.assertEquals(1, nodeData.pointer().getChunk());
