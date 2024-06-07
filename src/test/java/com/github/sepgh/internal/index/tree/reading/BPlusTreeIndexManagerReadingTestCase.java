@@ -127,4 +127,18 @@ public class BPlusTreeIndexManagerReadingTestCase {
 
         Assertions.assertFalse(optionalPointer.isPresent());
     }
+    @Test
+    @Timeout(value = 2)
+    public void readAndWriteZero() throws IOException, ExecutionException, InterruptedException {
+        HeaderManager headerManager = new InMemoryHeaderManager(header);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+
+        IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
+        Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
+
+        indexManager.addIndex(1, 0, dataPointer);
+        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 0);
+        Assertions.assertTrue(optionalPointer.isPresent());
+        Assertions.assertEquals(dataPointer, optionalPointer.get());
+    }
 }
