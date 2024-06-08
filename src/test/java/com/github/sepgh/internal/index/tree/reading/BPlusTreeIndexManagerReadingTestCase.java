@@ -4,6 +4,7 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
@@ -87,11 +88,11 @@ public class BPlusTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
+        IndexManager<Long> indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        indexManager.addIndex(1, 10, dataPointer);
-        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 10);
+        indexManager.addIndex(1, 10L, dataPointer);
+        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 10L);
 
         Assertions.assertTrue(optionalPointer.isPresent());
         Assertions.assertEquals(dataPointer, optionalPointer.get());
@@ -103,7 +104,7 @@ public class BPlusTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
+        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         for(long i = 1; i <= 100; i++)
@@ -119,11 +120,11 @@ public class BPlusTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
+        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        indexManager.addIndex(1, 10, dataPointer);
-        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 100);
+        indexManager.addIndex(1, 10L, dataPointer);
+        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 100L);
 
         Assertions.assertFalse(optionalPointer.isPresent());
     }
@@ -133,11 +134,11 @@ public class BPlusTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
+        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        indexManager.addIndex(1, 0, dataPointer);
-        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 0);
+        indexManager.addIndex(1, 0L, dataPointer);
+        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 0L);
         Assertions.assertTrue(optionalPointer.isPresent());
         Assertions.assertEquals(dataPointer, optionalPointer.get());
     }

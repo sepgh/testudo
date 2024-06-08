@@ -2,7 +2,7 @@ package com.github.sepgh.internal.index.tree.node.cluster;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.Identifier;
+import com.github.sepgh.internal.index.tree.node.data.LongIdentifier;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.google.common.collect.ImmutableList;
 import lombok.Getter;
@@ -18,44 +18,45 @@ import java.util.List;
   [1 byte -6 empty bits- IS_ROOT | IS_LEAF] + (([LONG_SIZE bytes id] + [POINTER_SIZE bytes data]) * max node size) + [POINTER_SIZE bytes previous leaf node] + [POINTER_SIZE bytes next leaf node]
 */
 @Getter
-public class BaseClusterTreeNode extends AbstractTreeNode {
-
-    public BaseClusterTreeNode(byte[] data) {
+public abstract class BaseClusterTreeNode<K extends Comparable<K>> extends AbstractTreeNode {
+    protected final ClusterIdentifier.Strategy<K> clusterIdentifierStrategy;
+    public BaseClusterTreeNode(byte[] data, ClusterIdentifier.Strategy<K> clusterIdentifierStrategy) {
         super(data);
+        this.clusterIdentifierStrategy = clusterIdentifierStrategy;
     }
 
-    public static BaseClusterTreeNode fromNodeData(IndexStorageManager.NodeData nodeData) {
-        BaseClusterTreeNode treeNode = BaseClusterTreeNode.fromBytes(nodeData.bytes());
+    public static <K extends Comparable<K>> BaseClusterTreeNode<K> fromNodeData(IndexStorageManager.NodeData nodeData, ClusterIdentifier.Strategy<K> strategy) {
+        BaseClusterTreeNode<K> treeNode = BaseClusterTreeNode.fromBytes(nodeData.bytes(), strategy);
         treeNode.setPointer(nodeData.pointer());
         return treeNode;
     }
-    public static BaseClusterTreeNode fromBytes(byte[] data, Type type){
+    public static <K extends Comparable<K>> BaseClusterTreeNode<K> fromBytes(byte[] data, Type type, ClusterIdentifier.Strategy<K> strategy){
         if (type == Type.INTERNAL){
-            return new InternalClusterTreeNode(data);
+            return new InternalClusterTreeNode<K>(data, strategy);
         }
-        return new LeafClusterTreeNode(data);
+        return new LeafClusterTreeNode<K>(data, strategy);
     }
 
-    public static BaseClusterTreeNode fromBytes(byte[] data){
+    public static <K extends Comparable<K>> BaseClusterTreeNode<K> fromBytes(byte[] data, ClusterIdentifier.Strategy<K> strategy){
         if ((data[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT)
-            return new LeafClusterTreeNode(data);
-        return new InternalClusterTreeNode(data);
+            return new LeafClusterTreeNode<K>(data, strategy);
+        return new InternalClusterTreeNode<K>(data, strategy);
     }
 
-    public Iterator<Long> getKeys(int degree){
-        return super.getKeys(degree, Identifier.class, Identifier.BYTES, Pointer.BYTES);
+    public Iterator<K> getKeys(int degree){
+        return super.getKeys(degree, clusterIdentifierStrategy.getNodeInnerObjClass(), clusterIdentifierStrategy.size(), Pointer.BYTES);
     }
 
-    public List<Long> getKeyList(int degree){
+    public List<K> getKeyList(int degree){
         return ImmutableList.copyOf(getKeys(degree));
     }
 
-    public void setKey(int index, long key){
-        super.setKey(index, new Identifier(key), Identifier.BYTES, Pointer.BYTES);
+    public void setKey(int index, K key){
+        super.setKey(index, clusterIdentifierStrategy.fromObject(key), clusterIdentifierStrategy.size(), Pointer.BYTES);
     }
 
     public void removeKey(int idx, int degree) {
-        super.removeKey(idx, degree, Identifier.class, Long.class, Identifier.BYTES, Pointer.BYTES);
+        super.removeKey(idx, degree, LongIdentifier.class, Long.class, clusterIdentifierStrategy.size(), Pointer.BYTES);
     }
 
 }

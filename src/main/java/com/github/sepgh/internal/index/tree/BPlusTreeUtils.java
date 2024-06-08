@@ -2,6 +2,7 @@ package com.github.sepgh.internal.index.tree;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
 import com.github.sepgh.internal.index.tree.node.cluster.InternalClusterTreeNode;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.storage.IndexStorageManager;
@@ -14,16 +15,16 @@ import java.util.concurrent.ExecutionException;
 
 public class BPlusTreeUtils {
 
-    public static void getPathToResponsibleNode(IndexIOSession indexIOSession, List<BaseClusterTreeNode> path, BaseClusterTreeNode node, long identifier, int degree) throws ExecutionException, InterruptedException, IOException {
+    public static <K extends Comparable<K>> void getPathToResponsibleNode(IndexIOSession<K> indexIOSession, List<BaseClusterTreeNode<K>> path, BaseClusterTreeNode<K> node, K identifier, int degree) throws ExecutionException, InterruptedException, IOException {
         if (node.getType() == BaseClusterTreeNode.Type.LEAF){
             path.addFirst(node);
             return;
         }
 
-        List<InternalClusterTreeNode.ChildPointers> childPointersList = ((InternalClusterTreeNode) node).getChildPointersList(degree);
+        List<InternalClusterTreeNode.ChildPointers<K>> childPointersList = ((InternalClusterTreeNode<K>) node).getChildPointersList(degree);
         for (int i = 0; i < childPointersList.size(); i++){
-            InternalClusterTreeNode.ChildPointers childPointers = childPointersList.get(i);
-            if (childPointers.getKey() > identifier && childPointers.getLeft() != null){
+            InternalClusterTreeNode.ChildPointers<K> childPointers = childPointersList.get(i);
+            if (childPointers.getKey().compareTo(identifier) > 0 && childPointers.getLeft() != null){
                 path.addFirst(node);
                 getPathToResponsibleNode(
                         indexIOSession,
@@ -48,19 +49,19 @@ public class BPlusTreeUtils {
         }
     }
 
-    public static LeafClusterTreeNode getResponsibleNode(IndexStorageManager indexStorageManager, BaseClusterTreeNode node, long identifier, int table, int degree) throws ExecutionException, InterruptedException, IOException {
+    public static <K extends Comparable<K>> LeafClusterTreeNode<K> getResponsibleNode(IndexStorageManager indexStorageManager, BaseClusterTreeNode<K> node, K identifier, int table, int degree, ClusterIdentifier.Strategy<K> strategy) throws ExecutionException, InterruptedException, IOException {
         if (node.isLeaf()){
-            return (LeafClusterTreeNode) node;
+            return (LeafClusterTreeNode<K>) node;
         }
 
-        List<Pointer> childrenList = ((InternalClusterTreeNode) node).getChildrenList();
-        List<Long> keys = node.getKeyList(degree);
+        List<Pointer> childrenList = ((InternalClusterTreeNode<K>) node).getChildrenList();
+        List<K> keys = node.getKeyList(degree);
         int i;
-        long keyAtIndex;
+        K keyAtIndex;
         boolean flag = false;
         for (i = 0; i < keys.size(); i++){
             keyAtIndex = keys.get(i);
-            if (identifier < keyAtIndex){
+            if (identifier.compareTo(keyAtIndex) < 0){
                 flag = true;
                 break;
             }
@@ -69,18 +70,20 @@ public class BPlusTreeUtils {
         if (flag) {
             return getResponsibleNode(
                     indexStorageManager,
-                    IndexTreeNodeIO.read(indexStorageManager, table, childrenList.get(i)),
+                    IndexTreeNodeIO.read(indexStorageManager, table, childrenList.get(i), strategy),
                     identifier,
                     table,
-                    degree
+                    degree,
+                    strategy
             );
         } else {
             return getResponsibleNode(
                     indexStorageManager,
-                    IndexTreeNodeIO.read(indexStorageManager, table, childrenList.getLast()),
+                    IndexTreeNodeIO.read(indexStorageManager, table, childrenList.getLast(), strategy),
                     identifier,
                     table,
-                    degree
+                    degree,
+                    strategy
             );
         }
 

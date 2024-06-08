@@ -4,6 +4,7 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.storage.session.IndexIOSession;
@@ -85,22 +86,22 @@ public class MemorySnapshotIndexIOSessionTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        final IndexIOSession indexIOSession = new MemorySnapshotIndexIOSession(indexStorageManager, 1);
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, indexStorageManager, new IndexIOSessionFactory() {
+        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, ClusterIdentifier.LONG);
+        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, indexStorageManager, new IndexIOSessionFactory() {
             @Override
-            public IndexIOSession create(IndexStorageManager indexStorageManager, int table) {
-                return indexIOSession;
+            public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, ClusterIdentifier.Strategy<K> strategy) {
+                return (IndexIOSession<K>) indexIOSession;
             }
-        });
+        }, ClusterIdentifier.LONG);
 
         for (long i = 1; i < 12; i++){
             indexManager.addIndex(1, i, Pointer.empty());
         }
 
-        Assertions.assertTrue(indexManager.getIndex(1, 11).isPresent());
+        Assertions.assertTrue(indexManager.getIndex(1, 11L).isPresent());
 
-        indexManager.addIndex(1, 12, Pointer.empty());
-        Assertions.assertTrue(indexManager.getIndex(1, 12).isPresent());
+        indexManager.addIndex(1, 12L, Pointer.empty());
+        Assertions.assertTrue(indexManager.getIndex(1, 12L).isPresent());
 
         Class<MemorySnapshotIndexIOSession> aClass = MemorySnapshotIndexIOSession.class;
         Method method = aClass.getDeclaredMethod("rollback");
@@ -108,8 +109,8 @@ public class MemorySnapshotIndexIOSessionTestCase {
         method.invoke(indexIOSession);
 
         // Since the same indexIOSession instance shouldn't be used to re-read after rollback we create a new instance
-        indexManager = new BPlusTreeIndexManager(degree, indexStorageManager);
-        Assertions.assertFalse(indexManager.getIndex(1, 12).isPresent());
+        indexManager = new BPlusTreeIndexManager<>(degree, indexStorageManager, ClusterIdentifier.LONG);
+        Assertions.assertFalse(indexManager.getIndex(1, 12L).isPresent());
 
     }
 
@@ -119,31 +120,31 @@ public class MemorySnapshotIndexIOSessionTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        final IndexIOSession indexIOSession = new MemorySnapshotIndexIOSession(indexStorageManager, 1);
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, indexStorageManager, new IndexIOSessionFactory() {
+        final IndexIOSession indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, ClusterIdentifier.LONG);
+        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, indexStorageManager, new IndexIOSessionFactory() {
             @Override
-            public IndexIOSession create(IndexStorageManager indexStorageManager, int table) {
+            public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, ClusterIdentifier.Strategy<K> strategy) {
                 return indexIOSession;
             }
-        });
+        }, ClusterIdentifier.LONG);
 
-        IndexManager indexManager2 = new BPlusTreeIndexManager(degree, indexStorageManager);
+        IndexManager<Long> indexManager2 = new BPlusTreeIndexManager<>(degree, indexStorageManager, ClusterIdentifier.LONG);
 
         for (long i = 1; i < 13; i++){
             indexManager2.addIndex(1, i, Pointer.empty());
         }
 
-        Assertions.assertTrue(indexManager2.getIndex(1, 12).isPresent());
+        Assertions.assertTrue(indexManager2.getIndex(1, 12L).isPresent());
 
-        Assertions.assertTrue(indexManager.removeIndex(1, 12));
-        Assertions.assertTrue(indexManager2.getIndex(1, 12).isEmpty());
+        Assertions.assertTrue(indexManager.removeIndex(1, 12L));
+        Assertions.assertTrue(indexManager2.getIndex(1, 12L).isEmpty());
 
         Class<MemorySnapshotIndexIOSession> aClass = MemorySnapshotIndexIOSession.class;
         Method method = aClass.getDeclaredMethod("rollback");
         method.setAccessible(true);
         method.invoke(indexIOSession);
 
-        Assertions.assertTrue(indexManager2.getIndex(1, 12).isPresent());
+        Assertions.assertTrue(indexManager2.getIndex(1, 12L).isPresent());
     }
 
 

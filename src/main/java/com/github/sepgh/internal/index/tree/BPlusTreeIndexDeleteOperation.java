@@ -2,6 +2,7 @@ package com.github.sepgh.internal.index.tree;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
 import com.github.sepgh.internal.index.tree.node.cluster.InternalClusterTreeNode;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.storage.session.IndexIOSession;
@@ -11,39 +12,41 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
-public class BPlusTreeIndexDeleteOperation {
+public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>> {
     private final int degree;
     private final int table;
-    private final IndexIOSession indexIOSession;
+    private final IndexIOSession<K> indexIOSession;
     private final int minKeys;
+    private final ClusterIdentifier.Strategy<K> strategy;
 
-    public BPlusTreeIndexDeleteOperation(int degree, int table, IndexIOSession indexIOSession) {
+    public BPlusTreeIndexDeleteOperation(int degree, int table, IndexIOSession<K> indexIOSession, ClusterIdentifier.Strategy<K> strategy) {
         this.degree = degree;
         this.table = table;
         this.indexIOSession = indexIOSession;
+        this.strategy = strategy;
         this.minKeys = (degree - 1) / 2;
     }
 
-    public boolean removeIndex(BaseClusterTreeNode root, long identifier) throws ExecutionException, InterruptedException, IOException {
+    public boolean removeIndex(BaseClusterTreeNode<K> root, K identifier) throws ExecutionException, InterruptedException, IOException {
 
-        List<BaseClusterTreeNode> path = new LinkedList<>();
+        List<BaseClusterTreeNode<K>> path = new LinkedList<>();
         BPlusTreeUtils.getPathToResponsibleNode(indexIOSession, path, root, identifier, degree);
         boolean result = false;
 
         for (int i = 0; i < path.size(); i++){
-            BaseClusterTreeNode currentNode = path.get(i);
+            BaseClusterTreeNode<K> currentNode = path.get(i);
 
             if (i == 0){   // Leaf
-                LeafClusterTreeNode leafNode = (LeafClusterTreeNode) currentNode;
+                LeafClusterTreeNode<K> leafNode = (LeafClusterTreeNode<K>) currentNode;
                 result = leafNode.removeKeyValue(identifier, degree);
                 indexIOSession.update(leafNode);
 
                 if (result && !leafNode.isRoot() && leafNode.getKeyList(degree).size() < minKeys){   // Under filled
-                    InternalClusterTreeNode parentNode = (InternalClusterTreeNode) path.get(i + 1);
+                    InternalClusterTreeNode<K> parentNode = (InternalClusterTreeNode<K>) path.get(i + 1);
                     this.fillNode(leafNode, parentNode, parentNode.getIndexOfChild(currentNode.getPointer()));
                 }
             } else {  // internal
-                this.checkInternalNode((InternalClusterTreeNode) path.get(i), path, i, identifier);
+                this.checkInternalNode((InternalClusterTreeNode<K>) path.get(i), path, i, identifier);
             }
         }
         indexIOSession.commit();
@@ -52,19 +55,19 @@ public class BPlusTreeIndexDeleteOperation {
     }
 
 
-    private void deleteInternalNode(InternalClusterTreeNode parent, InternalClusterTreeNode node, int idx) throws ExecutionException, InterruptedException, IOException {
+    private void deleteInternalNode(InternalClusterTreeNode<K> parent, InternalClusterTreeNode<K> node, int idx) throws ExecutionException, InterruptedException, IOException {
         List<Pointer> childrenList = node.getChildrenList();
         if (idx != 0){
-            BaseClusterTreeNode leftIDXChild = indexIOSession.read(childrenList.get(idx - 1));
+            BaseClusterTreeNode<K> leftIDXChild = indexIOSession.read(childrenList.get(idx - 1));
             if (leftIDXChild.getKeyList(degree).size() >= minKeys){
-                long pred = this.getPredecessor(node, idx);
+                K pred = this.getPredecessor(node, idx);
                 node.setKey(idx, pred);
                 indexIOSession.update(node);
             }
         } else {
-            BaseClusterTreeNode rightIDXChild = indexIOSession.read(childrenList.get(idx + 1));
+            BaseClusterTreeNode<K> rightIDXChild = indexIOSession.read(childrenList.get(idx + 1));
             if (rightIDXChild.getKeyList(degree).size() >= minKeys) {
-                long succ = getSuccessor(node, idx);
+                K succ = getSuccessor(node, idx);
                 node.setKey(idx, succ);
                 indexIOSession.update(node);
             } else {
@@ -74,24 +77,24 @@ public class BPlusTreeIndexDeleteOperation {
 
     }
 
-    private long getPredecessor(InternalClusterTreeNode node, int idx) throws ExecutionException, InterruptedException, IOException {
-        BaseClusterTreeNode cur = indexIOSession.read(node.getChildrenList().get(idx));
+    private K getPredecessor(InternalClusterTreeNode<K> node, int idx) throws ExecutionException, InterruptedException, IOException {
+        BaseClusterTreeNode<K> cur = indexIOSession.read(node.getChildrenList().get(idx));
         while (!cur.isLeaf()) {
             cur = indexIOSession.read(node.getChildrenList().get(cur.getKeyList(degree).size()));
         }
         return cur.getKeyList(degree).getLast();
     }
 
-    private long getSuccessor(InternalClusterTreeNode node, int idx) throws ExecutionException, InterruptedException, IOException {
-        BaseClusterTreeNode cur = indexIOSession.read(node.getChildrenList().get(idx + 1));
+    private K getSuccessor(InternalClusterTreeNode<K> node, int idx) throws ExecutionException, InterruptedException, IOException {
+        BaseClusterTreeNode<K> cur = indexIOSession.read(node.getChildrenList().get(idx + 1));
         while (!cur.isLeaf()) {
-            cur = indexIOSession.read(((InternalClusterTreeNode) cur).getChildrenList().getFirst());
+            cur = indexIOSession.read(((InternalClusterTreeNode<K>) cur).getChildrenList().getFirst());
         }
         return cur.getKeyList(degree).getFirst();
     }
 
-    private void checkInternalNode(InternalClusterTreeNode internalTreeNode, List<BaseClusterTreeNode> path, int nodeIndex, long identifier) throws ExecutionException, InterruptedException, IOException {
-        List<Long> keyList = internalTreeNode.getKeyList(degree);
+    private void checkInternalNode(InternalClusterTreeNode<K> internalTreeNode, List<BaseClusterTreeNode<K>> path, int nodeIndex, K identifier) throws ExecutionException, InterruptedException, IOException {
+        List<K> keyList = internalTreeNode.getKeyList(degree);
         if (nodeIndex == path.size() - 1 && keyList.isEmpty())
             return;
         int indexOfKey = keyList.indexOf(identifier);
@@ -99,31 +102,32 @@ public class BPlusTreeIndexDeleteOperation {
             if (internalTreeNode.isRoot()){
                 this.fillRootAtIndex(internalTreeNode, indexOfKey, identifier);
             } else {
-                this.deleteInternalNode((InternalClusterTreeNode) path.get(nodeIndex + 1), internalTreeNode, indexOfKey);
+                this.deleteInternalNode((InternalClusterTreeNode<K>) path.get(nodeIndex + 1), internalTreeNode, indexOfKey);
             }
         }
 
         int nodeKeySize = internalTreeNode.getKeyList(degree).size();
         if (nodeKeySize < minKeys && !internalTreeNode.isRoot()){
-            InternalClusterTreeNode parent = (InternalClusterTreeNode) path.get(nodeIndex + 1);
+            InternalClusterTreeNode<K> parent = (InternalClusterTreeNode<K>) path.get(nodeIndex + 1);
             this.fillNode(internalTreeNode, parent, parent.getIndexOfChild(internalTreeNode.getPointer()));
         }
     }
 
-    private void fillRootAtIndex(InternalClusterTreeNode internalTreeNode, int indexOfKey, long identifier) throws ExecutionException, InterruptedException, IOException {
-        LeafClusterTreeNode leafTreeNode = BPlusTreeUtils.getResponsibleNode(
+    private void fillRootAtIndex(InternalClusterTreeNode<K> internalTreeNode, int indexOfKey, K identifier) throws ExecutionException, InterruptedException, IOException {
+        LeafClusterTreeNode<K> leafTreeNode = BPlusTreeUtils.getResponsibleNode(
                 indexIOSession.getIndexStorageManager(),
                 indexIOSession.read(internalTreeNode.getChildAtIndex(indexOfKey + 1)),
                 identifier,
                 table,
-                degree
+                degree,
+                strategy
         );
 
         internalTreeNode.setKey(indexOfKey, leafTreeNode.getKeyList(degree).getLast());
         indexIOSession.update(internalTreeNode);
     }
 
-    private void fillNode(BaseClusterTreeNode currentNode, InternalClusterTreeNode parentNode, int idx) throws IOException, ExecutionException, InterruptedException {
+    private void fillNode(BaseClusterTreeNode<K> currentNode, InternalClusterTreeNode<K> parentNode, int idx) throws IOException, ExecutionException, InterruptedException {
         boolean borrowed;
         if (idx == 0){  // Leaf was at the beginning, check if we can borrow from right
             borrowed = tryBorrowRight(parentNode, idx, currentNode);
@@ -143,8 +147,8 @@ public class BPlusTreeIndexDeleteOperation {
         }
     }
 
-    private boolean tryBorrowRight(InternalClusterTreeNode parentNode, int idx, BaseClusterTreeNode child) throws ExecutionException, InterruptedException, IOException {
-        BaseClusterTreeNode sibling = indexIOSession.read(parentNode.getChildrenList().get(idx + 1));
+    private boolean tryBorrowRight(InternalClusterTreeNode<K> parentNode, int idx, BaseClusterTreeNode<K> child) throws ExecutionException, InterruptedException, IOException {
+        BaseClusterTreeNode<K> sibling = indexIOSession.read(parentNode.getChildrenList().get(idx + 1));
         if (sibling.getKeyList(degree).size() > minKeys){
             this.borrowFromNext(parentNode, idx, child);
             return true;
@@ -152,8 +156,8 @@ public class BPlusTreeIndexDeleteOperation {
         return false;
     }
 
-    private boolean tryBorrowLeft(InternalClusterTreeNode parentNode, int idx, BaseClusterTreeNode child) throws ExecutionException, InterruptedException, IOException {
-        BaseClusterTreeNode sibling = indexIOSession.read(parentNode.getChildrenList().get(idx - 1));
+    private boolean tryBorrowLeft(InternalClusterTreeNode<K> parentNode, int idx, BaseClusterTreeNode<K> child) throws ExecutionException, InterruptedException, IOException {
+        BaseClusterTreeNode<K> sibling = indexIOSession.read(parentNode.getChildrenList().get(idx - 1));
         if (sibling.getKeyList(degree).size() > minKeys){
             this.borrowFromPrev(parentNode, idx, child);
             return true;
@@ -171,25 +175,25 @@ public class BPlusTreeIndexDeleteOperation {
      * @param idx index of child in parent
      * @param optionalChild nullable child node, if not provided it will be calculated based on idx
      */
-    private void borrowFromPrev(InternalClusterTreeNode parent, int idx, @Nullable BaseClusterTreeNode optionalChild) throws ExecutionException, InterruptedException, IOException {
-        BaseClusterTreeNode child = optionalChild != null ? optionalChild : indexIOSession.read(parent.getChildrenList().get(idx));
-        BaseClusterTreeNode sibling = indexIOSession.read(parent.getChildrenList().get(idx - 1));
+    private void borrowFromPrev(InternalClusterTreeNode<K> parent, int idx, @Nullable BaseClusterTreeNode<K> optionalChild) throws ExecutionException, InterruptedException, IOException {
+        BaseClusterTreeNode<K> child = optionalChild != null ? optionalChild : indexIOSession.read(parent.getChildrenList().get(idx));
+        BaseClusterTreeNode<K> sibling = indexIOSession.read(parent.getChildrenList().get(idx - 1));
 
         if (!child.isLeaf()){
-            InternalClusterTreeNode siblingInternalNode = (InternalClusterTreeNode) sibling;
-            List<InternalClusterTreeNode.ChildPointers> childPointersList = new ArrayList<>(siblingInternalNode.getChildPointersList(degree));
-            InternalClusterTreeNode.ChildPointers siblingLastChildPointer = childPointersList.removeLast();
+            InternalClusterTreeNode<K> siblingInternalNode = (InternalClusterTreeNode<K>) sibling;
+            List<InternalClusterTreeNode.ChildPointers<K>> childPointersList = new ArrayList<>(siblingInternalNode.getChildPointersList(degree));
+            InternalClusterTreeNode.ChildPointers<K> siblingLastChildPointer = childPointersList.removeLast();
             siblingInternalNode.setChildPointers(childPointersList, degree, true);
 
-            long currKey = parent.getKeyList(degree).get(idx - 1);
+            K currKey = parent.getKeyList(degree).get(idx - 1);
             parent.setKey(idx - 1, siblingLastChildPointer.getKey());
 
             // we put removed sibling child at left side of newly added key
             // if child looks empty it definitely still has aa child pointer despite keys being empty
             // this happens due to merge calls on lower level or removal of the key in internal node
-            InternalClusterTreeNode childInternalNode = (InternalClusterTreeNode) child;
+            InternalClusterTreeNode<K> childInternalNode = (InternalClusterTreeNode<K>) child;
             if (!childInternalNode.getKeyList(degree).isEmpty()){
-                ArrayList<InternalClusterTreeNode.ChildPointers> childPointersList2 = new ArrayList<>(childInternalNode.getChildPointersList(degree));
+                ArrayList<InternalClusterTreeNode.ChildPointers<K>> childPointersList2 = new ArrayList<>(childInternalNode.getChildPointersList(degree));
                 siblingLastChildPointer.setRight(childPointersList2.getFirst().getLeft());
                 siblingLastChildPointer.setKey(currKey);
                 siblingLastChildPointer.setLeft(siblingLastChildPointer.getRight());
@@ -201,11 +205,11 @@ public class BPlusTreeIndexDeleteOperation {
             }
 
         } else {
-            LeafClusterTreeNode siblingLeafNode = (LeafClusterTreeNode) sibling;
-            LeafClusterTreeNode childLeafNode = (LeafClusterTreeNode) child;
+            LeafClusterTreeNode<K> siblingLeafNode = (LeafClusterTreeNode<K>) sibling;
+            LeafClusterTreeNode<K> childLeafNode = (LeafClusterTreeNode<K>) child;
 
-            List<LeafClusterTreeNode.KeyValue> keyValueList = new ArrayList<>(siblingLeafNode.getKeyValueList(degree));
-            LeafClusterTreeNode.KeyValue keyValue = keyValueList.removeLast();
+            List<LeafClusterTreeNode.KeyValue<K>> keyValueList = new ArrayList<>(siblingLeafNode.getKeyValueList(degree));
+            LeafClusterTreeNode.KeyValue<K> keyValue = keyValueList.removeLast();
             siblingLeafNode.setKeyValues(keyValueList, degree);
 
 
@@ -226,26 +230,26 @@ public class BPlusTreeIndexDeleteOperation {
      * @param idx index of child in parent
      * @param optionalChild nullable child node, if not provided it will be calculated based on idx
      */
-    private void borrowFromNext(InternalClusterTreeNode parent, int idx, @Nullable BaseClusterTreeNode optionalChild) throws ExecutionException, InterruptedException, IOException {
-        BaseClusterTreeNode child = optionalChild != null ? optionalChild : indexIOSession.read(parent.getChildrenList().get(idx));
-        BaseClusterTreeNode sibling = indexIOSession.read(parent.getChildrenList().get(idx + 1));
+    private void borrowFromNext(InternalClusterTreeNode<K> parent, int idx, @Nullable BaseClusterTreeNode<K> optionalChild) throws ExecutionException, InterruptedException, IOException {
+        BaseClusterTreeNode<K> child = optionalChild != null ? optionalChild : indexIOSession.read(parent.getChildrenList().get(idx));
+        BaseClusterTreeNode<K> sibling = indexIOSession.read(parent.getChildrenList().get(idx + 1));
 
         if (!child.isLeaf()){
-            InternalClusterTreeNode siblingInternalNode = (InternalClusterTreeNode) sibling;
-            List<InternalClusterTreeNode.ChildPointers> siblingPointersList = new ArrayList<>(siblingInternalNode.getChildPointersList(degree));
-            InternalClusterTreeNode.ChildPointers siblingFirstChildPointer = siblingPointersList.removeFirst();
+            InternalClusterTreeNode<K> siblingInternalNode = (InternalClusterTreeNode<K>) sibling;
+            List<InternalClusterTreeNode.ChildPointers<K>> siblingPointersList = new ArrayList<>(siblingInternalNode.getChildPointersList(degree));
+            InternalClusterTreeNode.ChildPointers<K> siblingFirstChildPointer = siblingPointersList.removeFirst();
             siblingInternalNode.setChildPointers(siblingPointersList, degree, true);
 
-            long currKey = parent.getKeyList(degree).get(idx);
+            K currKey = parent.getKeyList(degree).get(idx);
             parent.setKey(idx, siblingFirstChildPointer.getKey());
 
-            InternalClusterTreeNode childInternalNode = (InternalClusterTreeNode) child;
+            InternalClusterTreeNode<K> childInternalNode = (InternalClusterTreeNode<K>) child;
 
             // we put removed sibling child at right side of newly added key
             // if child looks empty it definitely still has aa child pointer despite keys being empty
             // this happens due to merge calls on lower level or removal of the key in internal node
             if (!childInternalNode.getKeyList(degree).isEmpty()){
-                ArrayList<InternalClusterTreeNode.ChildPointers> childPointersList2 = new ArrayList<>(childInternalNode.getChildPointersList(degree));
+                ArrayList<InternalClusterTreeNode.ChildPointers<K>> childPointersList2 = new ArrayList<>(childInternalNode.getChildPointersList(degree));
                 siblingFirstChildPointer.setRight(siblingFirstChildPointer.getLeft());
                 siblingFirstChildPointer.setKey(currKey);
                 siblingFirstChildPointer.setLeft(childPointersList2.getLast().getRight());
@@ -257,11 +261,11 @@ public class BPlusTreeIndexDeleteOperation {
             }
 
         } else {
-            LeafClusterTreeNode siblingLeafNode = (LeafClusterTreeNode) sibling;
-            LeafClusterTreeNode childLeafNode = (LeafClusterTreeNode) child;
+            LeafClusterTreeNode<K> siblingLeafNode = (LeafClusterTreeNode<K>) sibling;
+            LeafClusterTreeNode<K> childLeafNode = (LeafClusterTreeNode<K>) child;
 
-            List<LeafClusterTreeNode.KeyValue> keyValueList = new ArrayList<>(siblingLeafNode.getKeyValueList(degree));
-            LeafClusterTreeNode.KeyValue keyValue = keyValueList.removeFirst();
+            List<LeafClusterTreeNode.KeyValue<K>> keyValueList = new ArrayList<>(siblingLeafNode.getKeyValueList(degree));
+            LeafClusterTreeNode.KeyValue<K> keyValue = keyValueList.removeFirst();
             siblingLeafNode.setKeyValues(keyValueList, degree);
             parent.setKey(idx, keyValueList.getFirst().key());
             childLeafNode.addKeyValue(keyValue, degree);
@@ -279,17 +283,17 @@ public class BPlusTreeIndexDeleteOperation {
      * @param child The current node. We will merge into child (we may switch it with sibling first)
      * @param idx The index of the child parent to merge.
      */
-    private void merge(InternalClusterTreeNode parent, BaseClusterTreeNode child, int idx) throws ExecutionException, InterruptedException, IOException {
+    private void merge(InternalClusterTreeNode<K> parent, BaseClusterTreeNode<K> child, int idx) throws ExecutionException, InterruptedException, IOException {
         int siblingIndex = idx + 1;
         if (idx == parent.getChildrenList().size() - 1){
             siblingIndex = idx - 1;
         }
-        BaseClusterTreeNode sibling = indexIOSession.read(parent.getChildrenList().get(siblingIndex));
-        BaseClusterTreeNode toRemove = sibling;
+        BaseClusterTreeNode<K> sibling = indexIOSession.read(parent.getChildrenList().get(siblingIndex));
+        BaseClusterTreeNode<K> toRemove = sibling;
 
         if (sibling.getKeyList(degree).size() > child.getKeyList(degree).size()){
             // Sibling has more keys, lets merge from child to sibling and remove child
-            BaseClusterTreeNode temp = child;
+            BaseClusterTreeNode<K> temp = child;
             child = sibling;
             sibling = temp;
             toRemove = sibling;
@@ -305,31 +309,31 @@ public class BPlusTreeIndexDeleteOperation {
          */
         if (!child.isLeaf()){
 
-            InternalClusterTreeNode childInternalTreeNode = (InternalClusterTreeNode) child;
-            List<Long> childKeyList = new ArrayList<>(childInternalTreeNode.getKeyList(degree));
+            InternalClusterTreeNode<K> childInternalTreeNode = (InternalClusterTreeNode<K>) child;
+            List<K> childKeyList = new ArrayList<>(childInternalTreeNode.getKeyList(degree));
             childKeyList.addAll(sibling.getKeyList(degree));
-            childKeyList.sort(Long::compareTo);
+            childKeyList.sort(K::compareTo);
             childInternalTreeNode.setKeys(childKeyList);
 
             ArrayList<Pointer> childPointers = new ArrayList<>(childInternalTreeNode.getChildrenList());
             // Prepend or append
             if (idx > siblingIndex){
-                childPointers.addAll(0, ((InternalClusterTreeNode) sibling).getChildrenList());
+                childPointers.addAll(0, ((InternalClusterTreeNode<K>) sibling).getChildrenList());
             } else {
-                childPointers.addAll(((InternalClusterTreeNode) sibling).getChildrenList());
+                childPointers.addAll(((InternalClusterTreeNode<K>) sibling).getChildrenList());
             }
             childInternalTreeNode.setChildren(childPointers);
 
         } else {
-            LeafClusterTreeNode childLeafTreeNode = (LeafClusterTreeNode) child;
-            ArrayList<LeafClusterTreeNode.KeyValue> keyValueList = new ArrayList<>(childLeafTreeNode.getKeyValueList(degree));
-            keyValueList.addAll(((LeafClusterTreeNode) sibling).getKeyValueList(degree));
+            LeafClusterTreeNode<K> childLeafTreeNode = (LeafClusterTreeNode<K>) child;
+            ArrayList<LeafClusterTreeNode.KeyValue<K>> keyValueList = new ArrayList<>(childLeafTreeNode.getKeyValueList(degree));
+            keyValueList.addAll(((LeafClusterTreeNode<K>) sibling).getKeyValueList(degree));
             Collections.sort(keyValueList);
-            ((LeafClusterTreeNode) child).setKeyValues(keyValueList, degree);
+            ((LeafClusterTreeNode<K>) child).setKeyValues(keyValueList, degree);
         }
 
         int keyToRemoveIndex = siblingIndex == 0 ? siblingIndex : siblingIndex - 1;
-        long parentKeyAtIndex = parent.getKeyList(degree).get(keyToRemoveIndex);
+        K parentKeyAtIndex = parent.getKeyList(degree).get(keyToRemoveIndex);
 
         parent.removeKey(keyToRemoveIndex, degree);
         parent.removeChild(siblingIndex, degree);
@@ -342,7 +346,7 @@ public class BPlusTreeIndexDeleteOperation {
         if (parent.getKeyList(degree).isEmpty()){
             if (!child.isLeaf()) {
                 assert child instanceof InternalClusterTreeNode;
-                ((InternalClusterTreeNode) child).addKey(parentKeyAtIndex, degree);
+                ((InternalClusterTreeNode<K>) child).addKey(parentKeyAtIndex, degree);
             }
             if (parent.isRoot()){
                 child.setAsRoot();
@@ -354,17 +358,17 @@ public class BPlusTreeIndexDeleteOperation {
             indexIOSession.update(parent, child);
         }
         if (toRemove.isLeaf()) {
-            assert toRemove instanceof LeafClusterTreeNode;
-            this.connectSiblings((LeafClusterTreeNode) toRemove);
+            assert toRemove instanceof LeafClusterTreeNode<K>;
+            this.connectSiblings((LeafClusterTreeNode<K>) toRemove);
         }
         indexIOSession.remove(toRemove);
     }
 
-    private void connectSiblings(LeafClusterTreeNode node) throws ExecutionException, InterruptedException, IOException {
+    private void connectSiblings(LeafClusterTreeNode<K> node) throws ExecutionException, InterruptedException, IOException {
         Optional<Pointer> optionalNextSiblingPointer = node.getNextSiblingPointer(degree);
         Optional<Pointer> optionalPreviousSiblingPointer = node.getPreviousSiblingPointer(degree);
         if (optionalNextSiblingPointer.isPresent()){
-            LeafClusterTreeNode nextNode = (LeafClusterTreeNode) indexIOSession.read(optionalNextSiblingPointer.get());
+            LeafClusterTreeNode<K> nextNode = (LeafClusterTreeNode<K>) indexIOSession.read(optionalNextSiblingPointer.get());
             if (optionalPreviousSiblingPointer.isPresent()){
                 nextNode.setPreviousSiblingPointer(optionalPreviousSiblingPointer.get(), degree);
             } else {
@@ -374,7 +378,7 @@ public class BPlusTreeIndexDeleteOperation {
         }
 
         if (optionalPreviousSiblingPointer.isPresent()){
-            LeafClusterTreeNode previousNode = (LeafClusterTreeNode) indexIOSession.read(optionalPreviousSiblingPointer.get());
+            LeafClusterTreeNode<K> previousNode = (LeafClusterTreeNode<K>) indexIOSession.read(optionalPreviousSiblingPointer.get());
             if (optionalNextSiblingPointer.isPresent()){
                 previousNode.setNextSiblingPointer(optionalNextSiblingPointer.get(), degree);
             } else {

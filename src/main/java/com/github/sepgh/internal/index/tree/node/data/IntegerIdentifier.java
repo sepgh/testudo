@@ -1,33 +1,33 @@
 package com.github.sepgh.internal.index.tree.node.data;
 
 import com.github.sepgh.internal.utils.BinaryUtils;
-import com.google.common.primitives.Longs;
+import com.google.common.primitives.Ints;
 
-public class Identifier extends NodeInnerObj<Long> {
-    public static final int BYTES = Long.BYTES + 1;
+public class IntegerIdentifier extends NodeInnerObj<Integer> {
+    public static final int BYTES = Integer.BYTES + 1;
 
-    public Identifier(byte[] bytes, int beginning) {
+    public IntegerIdentifier(byte[] bytes, int beginning) {
         super(bytes, beginning);
     }
 
-    public Identifier(byte[] bytes) {
+    public IntegerIdentifier(byte[] bytes) {
         super(bytes);
     }
 
-    public Identifier(Long aLong) {
-        super(aLong);
+    public IntegerIdentifier(Integer integer) {
+        super(integer);
     }
 
     @Override
-    protected byte[] valueToByteArray(Long aLong) {
+    protected byte[] valueToByteArray(Integer integer) {
         byte[] result = new byte[BYTES];
         result[0] = 0x01;
         System.arraycopy(
-                Longs.toByteArray(aLong),
+                Ints.toByteArray(integer),
                 0,
                 result,
                 1,
-                Long.BYTES
+                Integer.BYTES
         );
 
         return result;
@@ -39,8 +39,8 @@ public class Identifier extends NodeInnerObj<Long> {
     }
 
     @Override
-    public Long data() {
-        return BinaryUtils.bytesToLong(bytes, 1);
+    public Integer data() {
+        return BinaryUtils.bytesToInteger(bytes, 1);
     }
 
     @Override

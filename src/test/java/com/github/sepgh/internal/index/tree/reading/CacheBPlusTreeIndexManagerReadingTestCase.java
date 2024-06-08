@@ -3,6 +3,7 @@ package com.github.sepgh.internal.index.tree.reading;
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.*;
 import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
 import com.github.sepgh.internal.storage.CachedIndexStorageManagerDecorator;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
@@ -87,19 +88,19 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 30);
 
-        IndexManager indexManager = new TableLevelAsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, indexStorageManager));
+        IndexManager<Long> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new BPlusTreeIndexManager<>(degree, indexStorageManager, ClusterIdentifier.LONG));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        for (int i = 0; i < 20; i++){
+        for (long i = 0; i < 20; i++){
             indexManager.addIndex(1, i, dataPointer);
         }
-        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 10);
+        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 10L);
 
         Assertions.assertTrue(optionalPointer.isPresent());
         Assertions.assertEquals(dataPointer, optionalPointer.get());
 
         Assertions.assertTrue(destroy());
-        optionalPointer = indexManager.getIndex(1, 10);
+        optionalPointer = indexManager.getIndex(1, 10L);
         Assertions.assertEquals(dataPointer, optionalPointer.get());
 
         indexStorageManager.close();
@@ -107,10 +108,10 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
         indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 12);
 
-        indexManager = new TableLevelAsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, indexStorageManager));
-        IndexManager finalIndexManager = indexManager;
+        indexManager = new TableLevelAsyncIndexManagerDecorator<>(new BPlusTreeIndexManager<>(degree, indexStorageManager, ClusterIdentifier.LONG));
+        IndexManager<Long> finalIndexManager = indexManager;
         Assertions.assertThrows(IOException.class, () -> {
-            finalIndexManager.getIndex(1, 10);
+            finalIndexManager.getIndex(1, 10L);
         }, "Nothing available to read.");
     }
 
@@ -121,19 +122,19 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 12);
 
-        IndexManager indexManager = new TableLevelAsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, indexStorageManager));
+        IndexManager<Long> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new BPlusTreeIndexManager<>(degree, indexStorageManager, ClusterIdentifier.LONG));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        for (int i = 0; i < 20; i++){
+        for (long i = 0; i < 20; i++){
             indexManager.addIndex(1, i, dataPointer);
         }
 
-        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 100);
+        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 100L);
         Assertions.assertFalse(optionalPointer.isPresent());
 
         // Removing file and checking if we can still find index
         Assertions.assertTrue(destroy());
-        optionalPointer = indexManager.getIndex(1, 100);
+        optionalPointer = indexManager.getIndex(1, 100L);
         Assertions.assertFalse(optionalPointer.isPresent());
     }
 
@@ -143,22 +144,22 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new CachedIndexManagerDecorator(
-                new BPlusTreeIndexManager(degree, indexStorageManager),
+        IndexManager<Long> indexManager = new CachedIndexManagerDecorator<>(
+                new BPlusTreeIndexManager<>(degree, indexStorageManager, ClusterIdentifier.LONG),
                 20
         );
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        for (int i = 1; i < 20; i++){
+        for (long i = 1; i < 20; i++){
             indexManager.addIndex(1, i, dataPointer);
         }
-        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 10);
+        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 10L);
 
         Assertions.assertTrue(optionalPointer.isPresent());
         Assertions.assertEquals(dataPointer, optionalPointer.get());
 
         Assertions.assertTrue(destroy());
-        optionalPointer = indexManager.getIndex(1, 10);
+        optionalPointer = indexManager.getIndex(1, 10L);
         Assertions.assertTrue(optionalPointer.isPresent());
         Assertions.assertEquals(dataPointer, optionalPointer.get());
     }
@@ -168,21 +169,21 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
     public void findIndexFailure_cachedIndexManager() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new CachedIndexManagerDecorator(
-                new BPlusTreeIndexManager(degree, indexStorageManager),
+        IndexManager<Long> indexManager = new CachedIndexManagerDecorator<>(
+                new BPlusTreeIndexManager<>(degree, indexStorageManager, ClusterIdentifier.LONG),
                 20
         );
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        for (int i = 1; i < 20; i++){
+        for (long i = 1; i < 20; i++){
             indexManager.addIndex(1, i, dataPointer);
         }
 
-        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 100);
+        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 100L);
         Assertions.assertFalse(optionalPointer.isPresent());
 
         Assertions.assertTrue(destroy());
-        optionalPointer = indexManager.getIndex(1, 100);
+        optionalPointer = indexManager.getIndex(1, 100L);
         Assertions.assertFalse(optionalPointer.isPresent());
     }
 }

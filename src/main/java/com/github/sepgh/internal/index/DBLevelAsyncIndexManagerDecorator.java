@@ -7,16 +7,16 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class DBLevelAsyncIndexManagerDecorator extends IndexManagerDecorator {
+public class DBLevelAsyncIndexManagerDecorator<K extends Comparable<K>> extends IndexManagerDecorator<K> {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
-    public DBLevelAsyncIndexManagerDecorator(IndexManager indexManager) {
+    public DBLevelAsyncIndexManagerDecorator(IndexManager<K> indexManager) {
         super(indexManager);
     }
     
     @Override
-    public BaseClusterTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
+    public BaseClusterTreeNode<K> addIndex(int table, K identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
         writeLock.lock();
         try {
             return super.addIndex(table, identifier, pointer);
@@ -26,7 +26,7 @@ public class DBLevelAsyncIndexManagerDecorator extends IndexManagerDecorator {
     }
 
     @Override
-    public Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException {
+    public Optional<Pointer> getIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
         readLock.lock();
         try {
             return super.getIndex(table, identifier);
@@ -36,7 +36,7 @@ public class DBLevelAsyncIndexManagerDecorator extends IndexManagerDecorator {
     }
 
     @Override
-    public boolean removeIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException {
+    public boolean removeIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
         writeLock.lock();
         try {
             return super.removeIndex(table, identifier);

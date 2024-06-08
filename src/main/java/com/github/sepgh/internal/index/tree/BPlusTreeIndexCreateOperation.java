@@ -2,6 +2,7 @@ package com.github.sepgh.internal.index.tree;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
 import com.github.sepgh.internal.index.tree.node.cluster.InternalClusterTreeNode;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.storage.session.IndexIOSession;
@@ -12,48 +13,48 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-public class BPlusTreeIndexCreateOperation {
+public class BPlusTreeIndexCreateOperation<K extends Comparable<K>> {
     private final int degree;
-    private final int table;
-    private final IndexIOSession indexIOSession;
+    private final IndexIOSession<K> indexIOSession;
+    private final ClusterIdentifier.Strategy<K> strategy;
 
-    public BPlusTreeIndexCreateOperation(int degree, int table, IndexIOSession indexIOSession) {
+    public BPlusTreeIndexCreateOperation(int degree, IndexIOSession<K> indexIOSession, ClusterIdentifier.Strategy<K> strategy) {
         this.degree = degree;
-        this.table = table;
         this.indexIOSession = indexIOSession;
+        this.strategy = strategy;
     }
 
-    public BaseClusterTreeNode addIndex(BaseClusterTreeNode root, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
-        List<BaseClusterTreeNode> path = new LinkedList<>();
+    public BaseClusterTreeNode<K> addIndex(BaseClusterTreeNode<K> root, K identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
+        List<BaseClusterTreeNode<K>> path = new LinkedList<>();
         BPlusTreeUtils.getPathToResponsibleNode(indexIOSession, path, root, identifier, degree);
 
 
         /* variables to fill and use in while */
-        long idForParentToStore = identifier;
-        BaseClusterTreeNode newChildForParent = null;
-        BaseClusterTreeNode answer = null;
+        K idForParentToStore = identifier;
+        BaseClusterTreeNode<K> newChildForParent = null;
+        BaseClusterTreeNode<K> answer = null;
 
         for (int i = 0; i < path.size(); i++){
-            BaseClusterTreeNode currentNode = path.get(i);
+            BaseClusterTreeNode<K> currentNode = path.get(i);
 
             if (i == 0){
                 /* current node is a leaf which should handle storing the data */
 
                 /* If current node has space, store and exit */
                 if (currentNode.getKeyList(degree).size() < (degree - 1)){
-                    ((LeafClusterTreeNode) currentNode).addKeyValue(identifier, pointer, degree);
+                    ((LeafClusterTreeNode<K>) currentNode).addKeyValue(identifier, pointer, degree);
                     indexIOSession.write(currentNode);
                     indexIOSession.commit();
                     return currentNode;
                 }
 
                 /* Current node didn't have any space, so let's create a sibling and split */
-                LeafClusterTreeNode newSiblingLeafNode = new LeafClusterTreeNode(indexIOSession.getIndexStorageManager().getEmptyNode());
-                List<LeafClusterTreeNode.KeyValue> passingKeyValues = ((LeafClusterTreeNode) currentNode).split(identifier, pointer, degree);
+                LeafClusterTreeNode<K> newSiblingLeafNode = new LeafClusterTreeNode<>(indexIOSession.getIndexStorageManager().getEmptyNode(), strategy);
+                List<LeafClusterTreeNode.KeyValue<K>> passingKeyValues = ((LeafClusterTreeNode<K>) currentNode).split(identifier, pointer, degree);
                 newSiblingLeafNode.setKeyValues(passingKeyValues, degree);
                 indexIOSession.write(newSiblingLeafNode); // we want the node to have a pointer so that we can fix siblings
                 /* Fix sibling pointers */
-                fixSiblingPointers((LeafClusterTreeNode) currentNode, newSiblingLeafNode, table);
+                fixSiblingPointers((LeafClusterTreeNode<K>) currentNode, newSiblingLeafNode);
                 indexIOSession.write(newSiblingLeafNode);
                 indexIOSession.write(currentNode);
 
@@ -62,7 +63,7 @@ public class BPlusTreeIndexCreateOperation {
                 /* this leaf doesn't have a parent! create one and deal with it right here! */
                 if (path.size() == 1) {
                     currentNode.unsetAsRoot();
-                    InternalClusterTreeNode newRoot = new InternalClusterTreeNode(indexIOSession.getIndexStorageManager().getEmptyNode());
+                    InternalClusterTreeNode<K> newRoot = new InternalClusterTreeNode<K>(indexIOSession.getIndexStorageManager().getEmptyNode(), strategy);
                     newRoot.setAsRoot();
                     newRoot.addChildPointers(
                             passingKeyValues.getFirst().key(),
@@ -83,11 +84,11 @@ public class BPlusTreeIndexCreateOperation {
 
                 /* current node is an internal node */
 
-                InternalClusterTreeNode currentInternalTreeNode = (InternalClusterTreeNode) currentNode;
+                InternalClusterTreeNode<K> currentInternalTreeNode = (InternalClusterTreeNode<K>) currentNode;
                 if (currentInternalTreeNode.getKeyList(degree).size() < degree - 1) {
                     /* current internal node can store the key */
                     int indexOfAddedKey = currentInternalTreeNode.addKey(idForParentToStore, degree);
-                    if (newChildForParent.getKeyList(degree).getFirst() < idForParentToStore){
+                    if (newChildForParent.getKeyList(degree).getFirst().compareTo(idForParentToStore) < 0){
                         currentInternalTreeNode.addChildAtIndex(indexOfAddedKey, newChildForParent.getPointer());
                     } else {
                         currentInternalTreeNode.addChildAtIndex(indexOfAddedKey + 1, newChildForParent.getPointer());
@@ -99,19 +100,19 @@ public class BPlusTreeIndexCreateOperation {
 
 
                 /* current internal node cant store the key, split and ask parent */
-                List<InternalClusterTreeNode.ChildPointers> passingChildPointers = currentInternalTreeNode.addAndSplit(idForParentToStore, newChildForParent.getPointer(), degree);
-                InternalClusterTreeNode.ChildPointers firstPassingChildPointers = passingChildPointers.getFirst();
+                List<InternalClusterTreeNode.ChildPointers<K>> passingChildPointers = currentInternalTreeNode.addAndSplit(idForParentToStore, newChildForParent.getPointer(), degree);
+                InternalClusterTreeNode.ChildPointers<K> firstPassingChildPointers = passingChildPointers.getFirst();
                 idForParentToStore = firstPassingChildPointers.getKey();
                 passingChildPointers.removeFirst();
 
-                InternalClusterTreeNode newInternalSibling = new InternalClusterTreeNode(indexIOSession.getIndexStorageManager().getEmptyNode());
+                InternalClusterTreeNode<K> newInternalSibling = new InternalClusterTreeNode<K>(indexIOSession.getIndexStorageManager().getEmptyNode(), strategy);
                 newInternalSibling.setChildPointers(passingChildPointers, degree, true);
                 indexIOSession.write(newInternalSibling);
 
                 // Current node was root and needs a new parent
                 if (currentInternalTreeNode.isRoot()){
                     currentInternalTreeNode.unsetAsRoot();
-                    InternalClusterTreeNode newRoot = new InternalClusterTreeNode(indexIOSession.getIndexStorageManager().getEmptyNode());
+                    InternalClusterTreeNode<K> newRoot = new InternalClusterTreeNode<K>(indexIOSession.getIndexStorageManager().getEmptyNode(), strategy);
                     newRoot.setAsRoot();
 
                     newRoot.addChildPointers(
@@ -136,14 +137,14 @@ public class BPlusTreeIndexCreateOperation {
         throw new RuntimeException("Logic error: probably failed to store index?");
     }
 
-    private void fixSiblingPointers(LeafClusterTreeNode currentNode, LeafClusterTreeNode newLeafTreeNode, int table) throws ExecutionException, InterruptedException, IOException {
+    private void fixSiblingPointers(LeafClusterTreeNode<K> currentNode, LeafClusterTreeNode<K> newLeafTreeNode) throws ExecutionException, InterruptedException, IOException {
         Optional<Pointer> currentNodeNextSiblingPointer = currentNode.getNextSiblingPointer(degree);
         currentNode.setNextSiblingPointer(newLeafTreeNode.getPointer(), degree);
         newLeafTreeNode.setPreviousSiblingPointer(currentNode.getPointer(), degree);
         if (currentNodeNextSiblingPointer.isPresent()){
             newLeafTreeNode.setNextSiblingPointer(currentNodeNextSiblingPointer.get(), degree);
 
-            LeafClusterTreeNode currentNextSibling = (LeafClusterTreeNode) indexIOSession.read(currentNodeNextSiblingPointer.get());
+            LeafClusterTreeNode<K> currentNextSibling = (LeafClusterTreeNode<K>) indexIOSession.read(currentNodeNextSiblingPointer.get());
             currentNextSibling.setPreviousSiblingPointer(newLeafTreeNode.getPointer(), degree);
             indexIOSession.write(currentNextSibling);
         }

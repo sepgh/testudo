@@ -9,9 +9,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class TableLevelAsyncIndexManagerDecorator extends IndexManagerDecorator {
+public class TableLevelAsyncIndexManagerDecorator<K extends Comparable<K>> extends IndexManagerDecorator<K> {
     private final Map<Integer, LockManager> lockManagerPool = new ConcurrentHashMap<>();
-    public TableLevelAsyncIndexManagerDecorator(IndexManager indexManager) {
+    public TableLevelAsyncIndexManagerDecorator(IndexManager<K> indexManager) {
         super(indexManager);
     }
 
@@ -20,7 +20,7 @@ public class TableLevelAsyncIndexManagerDecorator extends IndexManagerDecorator 
     }
 
     @Override
-    public BaseClusterTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
+    public BaseClusterTreeNode<K> addIndex(int table, K identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
         LockManager lockManager = getLockManager(table);
         lockManager.writeLock.lock();
         try {
@@ -31,7 +31,7 @@ public class TableLevelAsyncIndexManagerDecorator extends IndexManagerDecorator 
     }
 
     @Override
-    public Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException {
+    public Optional<Pointer> getIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
         LockManager lockManager = getLockManager(table);
         lockManager.readLock.lock();
         try {
@@ -42,7 +42,7 @@ public class TableLevelAsyncIndexManagerDecorator extends IndexManagerDecorator 
     }
 
     @Override
-    public boolean removeIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException {
+    public boolean removeIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
         LockManager lockManager = getLockManager(table);
         lockManager.writeLock.lock();
         try {
@@ -52,7 +52,7 @@ public class TableLevelAsyncIndexManagerDecorator extends IndexManagerDecorator 
         }
     }
 
-    private class LockManager {
+    public static class LockManager {
         private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
         private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
         private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();

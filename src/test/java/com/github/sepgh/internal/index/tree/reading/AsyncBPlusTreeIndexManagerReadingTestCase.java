@@ -5,6 +5,7 @@ import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.TableLevelAsyncIndexManagerDecorator;
 import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
@@ -91,11 +92,11 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new TableLevelAsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, compactFileIndexStorageManager));
+        IndexManager<Long> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        indexManager.addIndex(1, 10, dataPointer);
-        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 10);
+        indexManager.addIndex(1, 10L, dataPointer);
+        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 10L);
 
         Assertions.assertTrue(optionalPointer.isPresent());
         Assertions.assertEquals(dataPointer, optionalPointer.get());
@@ -107,7 +108,7 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new TableLevelAsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, compactFileIndexStorageManager));
+        IndexManager<Long> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
@@ -135,11 +136,11 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager indexManager = new TableLevelAsyncIndexManagerDecorator(new BPlusTreeIndexManager(degree, compactFileIndexStorageManager));
+        IndexManager<Long> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        indexManager.addIndex(1, 10, dataPointer);
-        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 100);
+        indexManager.addIndex(1, 10L, dataPointer);
+        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 100L);
 
         Assertions.assertFalse(optionalPointer.isPresent());
     }

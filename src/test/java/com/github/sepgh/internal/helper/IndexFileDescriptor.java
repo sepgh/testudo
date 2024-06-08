@@ -3,6 +3,7 @@ package com.github.sepgh.internal.helper;
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
 import com.github.sepgh.internal.index.tree.node.cluster.InternalClusterTreeNode;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.storage.header.HeaderManager;
@@ -22,7 +23,7 @@ public class IndexFileDescriptor {
     private final HeaderManager headerManager;
     private final EngineConfig engineConfig;
 
-    public void describe() throws IOException, ExecutionException, InterruptedException {
+    public <K extends Comparable<K>> void describe(ClusterIdentifier.Strategy<K> strategy) throws IOException, ExecutionException, InterruptedException {
         long paddingCounts = asynchronousFileChannel.size() / engineConfig.getPaddedSize();
 
         for (int i = 0; i < paddingCounts; i++){
@@ -34,18 +35,18 @@ public class IndexFileDescriptor {
                 continue;
             }
 
-            BaseClusterTreeNode baseClusterTreeNode = BaseClusterTreeNode.fromBytes(bytes);
+            BaseClusterTreeNode<K> baseClusterTreeNode = BaseClusterTreeNode.fromBytes(bytes, strategy);
             if (baseClusterTreeNode.getType() == BaseClusterTreeNode.Type.LEAF)
-                this.printLeafNode((LeafClusterTreeNode) baseClusterTreeNode, offset);
+                this.printLeafNode((LeafClusterTreeNode<K>) baseClusterTreeNode, offset);
             else if (baseClusterTreeNode.getType() == BaseClusterTreeNode.Type.INTERNAL)
-                this.printInternalNode((InternalClusterTreeNode) baseClusterTreeNode, offset);
+                this.printInternalNode((InternalClusterTreeNode<K>) baseClusterTreeNode, offset);
             else
                 System.out.println("Empty leaf?");
         }
 
     }
 
-    private void printInternalNode(InternalClusterTreeNode node, int offset) {
+    private void printInternalNode(InternalClusterTreeNode<?> node, int offset) {
         System.out.println();
         System.out.println(HashCode.fromBytes(node.toBytes()));
         System.out.printf("Offset: %d%n", offset);
@@ -67,15 +68,15 @@ public class IndexFileDescriptor {
         System.out.println("===========================");
     }
 
-    private void printLeafNode(LeafClusterTreeNode node, int offset){
+    private <K extends Comparable<K>> void printLeafNode(LeafClusterTreeNode<K> node, int offset){
         System.out.println();
         System.out.println(HashCode.fromBytes(node.toBytes()));
         System.out.printf("Offset: %d%n", offset);
         System.out.printf("Node Header:  root(%s) [leaf] %n", node.isRoot() ? "T" : "F");
         StringBuilder stringBuilder = new StringBuilder();
-        Iterator<LeafClusterTreeNode.KeyValue> entryIterator = node.getKeyValues(engineConfig.getBTreeDegree());
+        Iterator<LeafClusterTreeNode.KeyValue<K>> entryIterator = node.getKeyValues(engineConfig.getBTreeDegree());
         while (entryIterator.hasNext()) {
-            LeafClusterTreeNode.KeyValue next = entryIterator.next();
+            LeafClusterTreeNode.KeyValue<K> next = entryIterator.next();
             stringBuilder
                     .append("\t")
                     .append("K: ")

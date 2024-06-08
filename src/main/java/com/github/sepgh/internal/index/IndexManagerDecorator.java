@@ -6,21 +6,21 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-public class IndexManagerDecorator implements IndexManager {
-    private final IndexManager indexManager;
+public class IndexManagerDecorator<K extends Comparable<K>> implements IndexManager<K> {
+    private final IndexManager<K> indexManager;
 
-    public IndexManagerDecorator(IndexManager indexManager) {
+    public IndexManagerDecorator(IndexManager<K> indexManager) {
         this.indexManager = indexManager;
     }
 
-    public BaseClusterTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException{
+    public BaseClusterTreeNode<K> addIndex(int table, K identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException{
         return this.indexManager.addIndex(table, identifier, pointer);
     }
-    public Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException {
+    public Optional<Pointer> getIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
         return this.indexManager.getIndex(table, identifier);
     }
 
-    public boolean removeIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException {
+    public boolean removeIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
         return this.indexManager.removeIndex(table, identifier);
     }
 

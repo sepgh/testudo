@@ -5,6 +5,7 @@ import com.github.sepgh.internal.helper.IndexFileDescriptor;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
@@ -147,7 +148,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
+        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
 
 
         for (int tableId = 1; tableId <= 2; tableId++){
@@ -173,7 +174,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
+        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
 
         IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
                 AsynchronousFileChannel.open(
@@ -193,7 +194,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
             indexManager.addIndex(2, testIdentifiers.get(index) * 10, samplePointer);
             index++;
             runs++;
-            indexFileDescriptor.describe();
+            indexFileDescriptor.describe(ClusterIdentifier.LONG);
         }
 
 
@@ -246,7 +247,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager);
+        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
 
 
         IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
@@ -264,7 +265,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
 
             for (long testIdentifier : testIdentifiers) {
                 indexManager.addIndex(tableId, testIdentifier, samplePointer);
-                indexFileDescriptor.describe();
+                indexFileDescriptor.describe(ClusterIdentifier.LONG);
             }
 
             Optional<IndexStorageManager.NodeData> optional = compactFileIndexStorageManager.getRoot(tableId).get();

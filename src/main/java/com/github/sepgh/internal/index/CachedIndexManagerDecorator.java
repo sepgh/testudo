@@ -11,30 +11,30 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
-public class CachedIndexManagerDecorator extends IndexManagerDecorator {
-    private final Cache<TableIdentifier, Pointer> cache;
+public class CachedIndexManagerDecorator<K extends Comparable<K>> extends IndexManagerDecorator<K> {
+    private final Cache<TableIdentifier<K>, Pointer> cache;
     private final Map<Integer, Integer> sizeCache;
 
-    public CachedIndexManagerDecorator(IndexManager indexManager, int maxSize) {
+    public CachedIndexManagerDecorator(IndexManager<K> indexManager, int maxSize) {
         this(indexManager, CacheBuilder.newBuilder().maximumSize(maxSize).initialCapacity(10).build());
     }
-    public CachedIndexManagerDecorator(IndexManager indexManager, Cache<TableIdentifier, Pointer> cache) {
+    public CachedIndexManagerDecorator(IndexManager<K> indexManager, Cache<TableIdentifier<K>, Pointer> cache) {
         super(indexManager);
         this.cache = cache;
         this.sizeCache = new ConcurrentHashMap<>();
     }
 
     @Override
-    public BaseClusterTreeNode addIndex(int table, long identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
-        BaseClusterTreeNode baseClusterTreeNode = super.addIndex(table, identifier, pointer);
-        cache.put(new TableIdentifier(table, identifier), pointer);
+    public BaseClusterTreeNode<K> addIndex(int table, K identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
+        BaseClusterTreeNode<K> baseClusterTreeNode = super.addIndex(table, identifier, pointer);
+        cache.put(new TableIdentifier<>(table, identifier), pointer);
         sizeCache.computeIfPresent(table, (k, v) -> v + 1);
         return baseClusterTreeNode;
     }
 
     @Override
-    public Optional<Pointer> getIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException {
-        TableIdentifier lookup = new TableIdentifier(table, identifier);
+    public Optional<Pointer> getIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
+        TableIdentifier<K> lookup = new TableIdentifier<>(table, identifier);
         Pointer optionalPointer = cache.getIfPresent(lookup);
         if (optionalPointer != null)
             return Optional.of(optionalPointer);
@@ -44,9 +44,9 @@ public class CachedIndexManagerDecorator extends IndexManagerDecorator {
     }
 
     @Override
-    public boolean removeIndex(int table, long identifier) throws ExecutionException, InterruptedException, IOException {
+    public boolean removeIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
         if (super.removeIndex(table, identifier)) {
-            cache.invalidate(new TableIdentifier(table, identifier));
+            cache.invalidate(new TableIdentifier<>(table, identifier));
             sizeCache.computeIfPresent(table, (k, v) -> v - 1);
             return true;
         }
@@ -64,12 +64,12 @@ public class CachedIndexManagerDecorator extends IndexManagerDecorator {
         });
     }
 
-    public record TableIdentifier(int table, long identifier){
+    public record TableIdentifier<K extends Comparable<K>>(int table, K identifier){
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            TableIdentifier that = (TableIdentifier) o;
+            TableIdentifier<K> that = (TableIdentifier<K>) o;
             return table == that.table && identifier == that.identifier;
         }
 

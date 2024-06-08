@@ -129,10 +129,10 @@ public class TreeNodeUtils {
      * @param index to read they key at
      * @return key value at index
      */
-    public static <E extends Comparable<E>, F extends NodeInnerObj<E>> F getKeyAtIndex(AbstractTreeNode treeNode, int index, Class<? extends NodeInnerObj<E>> nodeInnerObjectClass, int keySize, int valueSize) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public static <E extends Comparable<E>> NodeInnerObj<E> getKeyAtIndex(AbstractTreeNode treeNode, int index, Class<? extends NodeInnerObj<E>> nodeInnerObjectClass, int keySize, int valueSize) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         int keyStartIndex = getKeyStartOffset(treeNode, index, keySize, valueSize);
         Constructor<? extends NodeInnerObj<E>> nodeInnerObjectConstructor = getNodeInnerObjectConstructor(nodeInnerObjectClass);
-        return (F) nodeInnerObjectConstructor.newInstance(treeNode.getData(), keyStartIndex);
+        return nodeInnerObjectConstructor.newInstance(treeNode.getData(), keyStartIndex);
     }
 
     public static void removeKeyAtIndex(AbstractTreeNode treeNode, int index, int keySize, int valueSize) {
@@ -186,18 +186,18 @@ public class TreeNodeUtils {
      *       binary search could be used
      *       alternatively, we can hold a space for metadata which keeps track of the number of keys or values stored
      */
-    public static <K extends Comparable<K>, A extends NodeInnerObj<K>, V extends Comparable<V>, B extends NodeInnerObj<V>> int addKeyValueAndGetIndex(
+    public static <K extends Comparable<K>, V extends Comparable<V>> int addKeyValueAndGetIndex(
             AbstractTreeNode treeNode,
             int degree,
-            Class<? extends A> keyInnerObjectClass,
+            Class<? extends NodeInnerObj<K>> keyInnerObjectClass,
             K key,
             int keySize,
-            Class<? extends B> valueInnerObjectClass,
+            Class<? extends NodeInnerObj<V>> valueInnerObjectClass,
             V value,
             int valueSize
     ) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         int indexToFill = -1;
-        A keyAtIndex;
+        NodeInnerObj<K> keyAtIndex;
         for (int i = 0; i < degree - 1; i++){
             keyAtIndex = getKeyAtIndex(treeNode, i, keyInnerObjectClass, keySize, valueSize);
             K data = keyAtIndex.data();
