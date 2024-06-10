@@ -3,7 +3,7 @@ package com.github.sepgh.internal.index.tree.node.data;
 import com.github.sepgh.internal.utils.BinaryUtils;
 import com.google.common.primitives.Ints;
 
-public class IntegerIdentifier extends NodeInnerObj<Integer> {
+public class IntegerIdentifier extends NodeData<Integer> {
     public static final int BYTES = Integer.BYTES + 1;
 
     public IntegerIdentifier(byte[] bytes, int beginning) {

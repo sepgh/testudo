@@ -3,7 +3,7 @@ package com.github.sepgh.internal.index.tree.node.data;
 import com.github.sepgh.internal.utils.BinaryUtils;
 import com.google.common.primitives.Longs;
 
-public class NoZeroLongIdentifier extends NodeInnerObj<Long> {
+public class NoZeroLongIdentifier extends NodeData<Long> {
     public static final int BYTES = Long.BYTES;
 
     public NoZeroLongIdentifier(byte[] bytes, int beginning) {

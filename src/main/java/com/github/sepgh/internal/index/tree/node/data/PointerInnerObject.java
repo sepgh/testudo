@@ -2,7 +2,7 @@ package com.github.sepgh.internal.index.tree.node.data;
 
 import com.github.sepgh.internal.index.Pointer;
 
-public class PointerInnerObject extends NodeInnerObj<Pointer> {
+public class PointerInnerObject extends NodeData<Pointer> {
     public static final int BYTES = Pointer.BYTES;
 
     public PointerInnerObject(byte[] bytes, int beginning) {

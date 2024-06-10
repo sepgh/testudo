@@ -2,7 +2,7 @@ package com.github.sepgh.internal.index.tree.node;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.TreeNodeUtils;
-import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.NodeData;
 import com.github.sepgh.internal.index.tree.node.data.PointerInnerObject;
 import com.github.sepgh.internal.utils.CollectionUtils;
 import com.google.common.collect.ImmutableList;
@@ -14,7 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<K> {
-    public InternalTreeNode(byte[] data, NodeInnerObj.Strategy<K> strategy) {
+    public InternalTreeNode(byte[] data, NodeData.Strategy<K> strategy) {
         super(data, strategy);
         setType(Type.INTERNAL);
     }
@@ -233,25 +233,25 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
         @SneakyThrows
         @Override
         public boolean hasNext() {
-            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree, keyStrategy.getNodeInnerObjClass(), keyStrategy.size(), Pointer.BYTES);
+            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree, keyStrategy.getNodeDataClass(), keyStrategy.size(), Pointer.BYTES);
         }
 
         @SneakyThrows
         @Override
         public ChildPointers<K> next() {
-            NodeInnerObj<K> nodeInnerObj = (NodeInnerObj<K>) TreeNodeUtils.getKeyAtIndex(node, cursor, keyStrategy.getNodeInnerObjClass(), keyStrategy.size(), PointerInnerObject.BYTES);
+            NodeData<K> nodeData = (NodeData<K>) TreeNodeUtils.getKeyAtIndex(node, cursor, keyStrategy.getNodeDataClass(), keyStrategy.size(), PointerInnerObject.BYTES);
             ChildPointers childPointers = null;
             if (cursor == 0){
                 childPointers = new ChildPointers<K>(
                         cursor,
-                        nodeInnerObj.data(),
+                        nodeData.data(),
                         TreeNodeUtils.getChildPointerAtIndex(node, 0, keyStrategy.size()),
                         TreeNodeUtils.getChildPointerAtIndex(node, 1, keyStrategy.size())
                 );
             } else {
                 childPointers = new ChildPointers(
                         cursor,
-                        nodeInnerObj.data(),
+                        nodeData.data(),
                         lastRightPointer,
                         TreeNodeUtils.getChildPointerAtIndex(node, cursor + 1, keyStrategy.size())
                 );

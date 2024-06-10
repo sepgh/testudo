@@ -5,7 +5,7 @@ import com.github.sepgh.internal.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.NodeData;
 import com.github.sepgh.internal.storage.session.IndexIOSession;
 
 import java.io.IOException;
@@ -17,17 +17,17 @@ import java.util.concurrent.ExecutionException;
 public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Comparable<V>> {
     private final int degree;
     private final IndexIOSession<K> indexIOSession;
-    private final NodeInnerObj.Strategy<K> keyStrategy;
-    private final NodeInnerObj.Strategy<V> valueStrategy;
+    private final NodeData.Strategy<K> keyStrategy;
+    private final NodeData.Strategy<V> valueStrategy;
 
-    public BPlusTreeIndexCreateOperation(int degree, IndexIOSession<K> indexIOSession, NodeInnerObj.Strategy<K> keyStrategy, NodeInnerObj.Strategy<V> valueStrategy) {
+    public BPlusTreeIndexCreateOperation(int degree, IndexIOSession<K> indexIOSession, NodeData.Strategy<K> keyStrategy, NodeData.Strategy<V> valueStrategy) {
         this.degree = degree;
         this.indexIOSession = indexIOSession;
         this.keyStrategy = keyStrategy;
         this.valueStrategy = valueStrategy;
     }
 
-    public AbstractTreeNode<K> addIndex(AbstractTreeNode<K> root, K identifier, V value) throws ExecutionException, InterruptedException, IOException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public AbstractTreeNode<K> addIndex(AbstractTreeNode<K> root, K identifier, V value) throws ExecutionException, InterruptedException, IOException, NodeData.InvalidValueForNodeInnerObj {
         List<AbstractTreeNode<K>> path = new LinkedList<>();
         BPlusTreeUtils.getPathToResponsibleNode(indexIOSession, path, root, identifier, degree);
 

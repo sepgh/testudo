@@ -7,7 +7,7 @@ import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.NodeData;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import com.github.sepgh.internal.storage.session.ImmediateCommitIndexIOSession;
@@ -22,11 +22,11 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
     private final IndexStorageManager indexStorageManager;
     private final IndexIOSessionFactory indexIOSessionFactory;
     private final int degree;
-    private final NodeInnerObj.Strategy<K> keyStrategy;
-    private final NodeInnerObj.Strategy<V> valueStrategy;
+    private final NodeData.Strategy<K> keyStrategy;
+    private final NodeData.Strategy<V> valueStrategy;
     private final NodeFactory<K> nodeFactory;
 
-    public BPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, IndexIOSessionFactory indexIOSessionFactory, NodeInnerObj.Strategy<K> keyStrategy, NodeInnerObj.Strategy<V> valueStrategy, NodeFactory<K> nodeFactory){
+    public BPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, IndexIOSessionFactory indexIOSessionFactory, NodeData.Strategy<K> keyStrategy, NodeData.Strategy<V> valueStrategy, NodeFactory<K> nodeFactory){
         this.degree = degree;
         this.indexStorageManager = indexStorageManager;
         this.indexIOSessionFactory = indexIOSessionFactory;
@@ -35,12 +35,12 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
         this.nodeFactory = nodeFactory;
     }
 
-    public BPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, NodeInnerObj.Strategy<K> keyStrategy, NodeInnerObj.Strategy<V> valueStrategy, NodeFactory<K> nodeFactory){
+    public BPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, NodeData.Strategy<K> keyStrategy, NodeData.Strategy<V> valueStrategy, NodeFactory<K> nodeFactory){
         this(degree, indexStorageManager, ImmediateCommitIndexIOSession.Factory.getInstance(), keyStrategy, valueStrategy, nodeFactory);
     }
 
     @Override
-    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException, NodeData.InvalidValueForNodeInnerObj {
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table, nodeFactory);
         AbstractTreeNode<K> root = getRoot(indexIOSession);
         return new BPlusTreeIndexCreateOperation<>(degree, indexIOSession, keyStrategy, valueStrategy).addIndex(root, identifier, value);

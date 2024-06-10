@@ -7,7 +7,7 @@ import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.NodeData;
 import com.github.sepgh.internal.index.tree.node.data.PointerInnerObject;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.IndexTreeNodeIO;
@@ -105,7 +105,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
      *     ├── 011
      *     └── 012
      */
-    public void testRemovingLeftToRight(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void testRemovingLeftToRight(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
@@ -119,7 +119,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 2L));
         Assertions.assertFalse(indexManager.removeIndex(1, 2L));
 
-        NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+        NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
         // Check Tree
         InternalTreeNode<Long> root = (InternalTreeNode<Long>) nodeFactory.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size());
@@ -290,10 +290,10 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
 
     }
 
-    public void testRemovingRightToLeft(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void testRemovingRightToLeft(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
-        NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+        NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
 
         for (Long testIdentifier : testIdentifiers) {
             indexManager.addIndex(1, testIdentifier, samplePointer);
@@ -455,10 +455,10 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
     }
 
 
-    public void testRemovingRoot(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void testRemovingRoot(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
-        NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+        NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
 
         for (Long testIdentifier : testIdentifiers) {
             indexManager.addIndex(1, testIdentifier, samplePointer);
@@ -572,7 +572,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
                 try {
                     indexManager.addIndex(1, testIdentifier, samplePointer);
                 } catch (ExecutionException | InterruptedException | IOException |
-                         NodeInnerObj.InvalidValueForNodeInnerObj e) {
+                         NodeData.InvalidValueForNodeInnerObj e) {
                     throw new RuntimeException(e);
                 } finally {
                     countDownLatch.countDown();

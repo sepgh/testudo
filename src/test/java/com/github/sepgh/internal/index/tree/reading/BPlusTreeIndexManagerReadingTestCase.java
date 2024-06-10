@@ -4,7 +4,7 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.NodeData;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
@@ -84,11 +84,11 @@ public class BPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexSuccessfully() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void findIndexSuccessfully() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager(degree, compactFileIndexStorageManager, NodeData.Strategy.LONG);
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(1, 10L, dataPointer);
@@ -100,11 +100,11 @@ public class BPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void getTableSize() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void getTableSize() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeData.Strategy.LONG);
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         for(long i = 1; i <= 100; i++)
@@ -116,11 +116,11 @@ public class BPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexFailure() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void findIndexFailure() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeData.Strategy.LONG);
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(1, 10L, dataPointer);
@@ -130,11 +130,11 @@ public class BPlusTreeIndexManagerReadingTestCase {
     }
     @Test
     @Timeout(value = 2)
-    public void readAndWriteZero() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void readAndWriteZero() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeData.Strategy.LONG);
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(1, 0L, dataPointer);

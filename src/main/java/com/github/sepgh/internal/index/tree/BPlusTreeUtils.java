@@ -5,7 +5,7 @@ import com.github.sepgh.internal.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
-import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.NodeData;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import com.github.sepgh.internal.storage.session.IndexIOSession;
@@ -50,7 +50,7 @@ public class BPlusTreeUtils {
         }
     }
 
-    public static <K extends Comparable<K>, V extends Comparable<V>> AbstractLeafTreeNode<K, V> getResponsibleNode(IndexStorageManager indexStorageManager, AbstractTreeNode<K> node, K identifier, int table, int degree, NodeFactory<K> nodeFactory, NodeInnerObj.Strategy<V> valueStrategy) throws ExecutionException, InterruptedException, IOException {
+    public static <K extends Comparable<K>, V extends Comparable<V>> AbstractLeafTreeNode<K, V> getResponsibleNode(IndexStorageManager indexStorageManager, AbstractTreeNode<K> node, K identifier, int table, int degree, NodeFactory<K> nodeFactory, NodeData.Strategy<V> valueStrategy) throws ExecutionException, InterruptedException, IOException {
         if (node.isLeaf()){
             return (AbstractLeafTreeNode<K, V>) node;
         }

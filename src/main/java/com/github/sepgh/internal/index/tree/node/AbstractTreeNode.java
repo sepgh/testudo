@@ -2,7 +2,7 @@ package com.github.sepgh.internal.index.tree.node;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.TreeNodeUtils;
-import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.NodeData;
 import com.google.common.collect.ImmutableList;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,9 +29,9 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
     private final byte[] data;
     @Getter
     private boolean modified = false;
-    protected final NodeInnerObj.Strategy<K> keyStrategy;
+    protected final NodeData.Strategy<K> keyStrategy;
 
-    public AbstractTreeNode(byte[] data, NodeInnerObj.Strategy<K> keyStrategy) {
+    public AbstractTreeNode(byte[] data, NodeData.Strategy<K> keyStrategy) {
         this.data = data;
         this.keyStrategy = keyStrategy;
     }
@@ -77,7 +77,7 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
     }
 
     public Iterator<K> getKeys(int degree, int valueSize){
-        return new TreeNodeKeysIterator<K>(this, degree, keyStrategy.getNodeInnerObjClass(), keyStrategy.size(), valueSize);
+        return new TreeNodeKeysIterator<K>(this, degree, keyStrategy.getNodeDataClass(), keyStrategy.size(), valueSize);
     }
 
     public List<K> getKeyList(int degree, int valueSize){
@@ -123,13 +123,13 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
     private static class TreeNodeKeysIterator<K extends Comparable<K>> implements Iterator<K> {
         private final AbstractTreeNode<K> node;
         private final int degree;
-        private final Class<? extends NodeInnerObj<K>> kClass;
+        private final Class<? extends NodeData<K>> kClass;
         private final int keySize;
         private final int valueSize;
         private int cursor; // Cursor points to current key index, not current byte
         private boolean hasNext = true;
 
-        private TreeNodeKeysIterator(AbstractTreeNode<K> node, int degree, Class<? extends NodeInnerObj<K>> kClass, int keySize, int valueSize) {
+        private TreeNodeKeysIterator(AbstractTreeNode<K> node, int degree, Class<? extends NodeData<K>> kClass, int keySize, int valueSize) {
             this.node = node;
             this.degree = degree;
             this.kClass = kClass;
@@ -150,9 +150,9 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
         @SneakyThrows
         @Override
         public K next() {
-            NodeInnerObj<K> nodeInnerObj = TreeNodeUtils.getKeyAtIndex(this.node, cursor, kClass, keySize, valueSize);
+            NodeData<K> nodeData = TreeNodeUtils.getKeyAtIndex(this.node, cursor, kClass, keySize, valueSize);
             cursor++;
-            return nodeInnerObj.data();
+            return nodeData.data();
         }
     }
 }

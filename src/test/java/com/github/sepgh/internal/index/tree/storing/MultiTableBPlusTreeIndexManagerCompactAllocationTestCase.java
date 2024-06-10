@@ -5,7 +5,7 @@ import com.github.sepgh.internal.helper.IndexFileDescriptor;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.NodeData;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
@@ -141,14 +141,14 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
      *     └── 012   [LEAF NODE 6]
      */
     @Test
-    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeData.Strategy.LONG);
 
 
         for (int tableId = 1; tableId <= 2; tableId++){
@@ -167,14 +167,14 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
 
 
     @Test
-    public void testMultiSplitAddIndexDifferentAddOrders() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void testMultiSplitAddIndexDifferentAddOrders() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeData.Strategy.LONG);
 
         IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
                 AsynchronousFileChannel.open(
@@ -194,7 +194,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
             indexManager.addIndex(2, testIdentifiers.get(index) * 10, samplePointer);
             index++;
             runs++;
-            indexFileDescriptor.describe(NodeInnerObj.Strategy.LONG);
+            indexFileDescriptor.describe(NodeData.Strategy.LONG);
         }
 
 
@@ -239,7 +239,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
      *     └── 012
      */
     @Test
-    public void testMultiSplitAddIndex2() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void testMultiSplitAddIndex2() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 4L, 9L, 6L, 10L, 8L, 3L, 2L, 11L, 5L, 7L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
@@ -247,7 +247,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeData.Strategy.LONG);
 
 
         IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
@@ -265,7 +265,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
 
             for (long testIdentifier : testIdentifiers) {
                 indexManager.addIndex(tableId, testIdentifier, samplePointer);
-                indexFileDescriptor.describe(NodeInnerObj.Strategy.LONG);
+                indexFileDescriptor.describe(NodeData.Strategy.LONG);
             }
 
             Optional<IndexStorageManager.NodeData> optional = compactFileIndexStorageManager.getRoot(tableId).get();

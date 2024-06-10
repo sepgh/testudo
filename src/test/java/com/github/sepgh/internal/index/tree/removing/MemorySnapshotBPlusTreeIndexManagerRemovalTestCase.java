@@ -3,7 +3,7 @@ package com.github.sepgh.internal.index.tree.removing;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.NodeData;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.session.MemorySnapshotIndexIOSession;
 import org.junit.jupiter.api.Test;
@@ -18,13 +18,13 @@ public class MemorySnapshotBPlusTreeIndexManagerRemovalTestCase extends BPlusTre
 
     @Override
     protected IndexManager<Long, Pointer> getIndexManager(IndexStorageManager indexStorageManager) {
-        return new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, MemorySnapshotIndexIOSession.Factory.getInstance(), NodeInnerObj.Strategy.LONG);
+        return new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, MemorySnapshotIndexIOSession.Factory.getInstance(), NodeData.Strategy.LONG);
     }
 
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
         super.testRemovingLeftToRight();
     }
 
@@ -32,14 +32,14 @@ public class MemorySnapshotBPlusTreeIndexManagerRemovalTestCase extends BPlusTre
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
         super.testRemovingRightToLeft();
     }
 
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
         super.testRemovingRoot();
     }
 

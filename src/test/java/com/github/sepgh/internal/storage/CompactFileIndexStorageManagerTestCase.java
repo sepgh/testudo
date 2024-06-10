@@ -6,7 +6,7 @@ import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.NodeData;
 import com.github.sepgh.internal.index.tree.node.data.PointerInnerObject;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
@@ -116,7 +116,7 @@ public class CompactFileIndexStorageManagerTestCase {
     public void canReadNodeSuccessfully() throws ExecutionException, InterruptedException, IOException {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
 
 
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
@@ -157,7 +157,7 @@ public class CompactFileIndexStorageManagerTestCase {
     @Test
     public void canReadAndUpdateNodeSuccessfully() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
 
 
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
@@ -182,7 +182,7 @@ public class CompactFileIndexStorageManagerTestCase {
             Assertions.assertEquals(100, leafTreeNode.getKeyValueList(2).get(0).value().getChunk());
             Assertions.assertEquals(100, leafTreeNode.getKeyValueList(2).get(0).value().getPosition());
 
-        } catch (NodeInnerObj.InvalidValueForNodeInnerObj e) {
+        } catch (NodeData.InvalidValueForNodeInnerObj e) {
             throw new RuntimeException(e);
         } finally {
             compactFileIndexStorageManager.close();
@@ -192,7 +192,7 @@ public class CompactFileIndexStorageManagerTestCase {
     @Test
     public void canWriteNewNodeAndAllocate() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
 
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         try {

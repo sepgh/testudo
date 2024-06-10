@@ -6,7 +6,7 @@ import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.index.tree.node.data.LongIdentifier;
-import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.NodeData;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -57,7 +57,7 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyInternalTreeNodeChildren(){
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
 
         AbstractTreeNode<Long> node = nodeFactory.fromBytes(singleKeyInternalNodeRepresentation);
 
@@ -84,7 +84,7 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyInternalTreeNodeChildrenIteration() {
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
 
         AbstractTreeNode<Long> node = nodeFactory.fromBytes(singleKeyInternalNodeRepresentation);
 
@@ -105,7 +105,7 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyInternalNodeKeysIteration(){
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
         AbstractTreeNode<Long> node = nodeFactory.fromBytes(singleKeyInternalNodeRepresentation);
 
         Assertions.assertInstanceOf(InternalTreeNode.class, node);
@@ -124,7 +124,7 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyLeafNodeKeysIteration(){
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
 
         AbstractTreeNode<Long> node = nodeFactory.fromBytes(singleKeyLeafNodeRepresentation);
 
@@ -149,7 +149,7 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyLeafNodeKeyValueIteration(){
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
 
         AbstractTreeNode<Long> node = nodeFactory.fromBytes(singleKeyLeafNodeRepresentation);
 

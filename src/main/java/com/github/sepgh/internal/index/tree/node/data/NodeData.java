@@ -4,11 +4,11 @@ import com.github.sepgh.internal.index.Pointer;
 import lombok.Getter;
 
 @Getter
-public abstract class NodeInnerObj<V extends Comparable<V>> {
+public abstract class NodeData<V extends Comparable<V>> {
     protected byte[] bytes;
     protected int beginning;
 
-    public NodeInnerObj(byte[] bytes, int beginning) {
+    public NodeData(byte[] bytes, int beginning) {
         this.bytes = new byte[this.size()];
         System.arraycopy(
                 bytes,
@@ -19,11 +19,11 @@ public abstract class NodeInnerObj<V extends Comparable<V>> {
         );
     }
 
-    public NodeInnerObj(byte[] bytes) {
+    public NodeData(byte[] bytes) {
         this(bytes, 0);
     }
 
-    public NodeInnerObj(V v){
+    public NodeData(V v){
         this.bytes = this.valueToByteArray(v);
         this.beginning = 0;
     }
@@ -35,32 +35,32 @@ public abstract class NodeInnerObj<V extends Comparable<V>> {
     public abstract int size();
 
     public static class InvalidValueForNodeInnerObj extends Exception {
-        public InvalidValueForNodeInnerObj(Object object, Class<? extends NodeInnerObj<?>> innerObjClass) {
+        public InvalidValueForNodeInnerObj(Object object, Class<? extends NodeData<?>> innerObjClass) {
             super(("%s is not a valid value for NodeInnerObj of type " + innerObjClass).formatted(object.toString()));
         }
     }
 
 
     public interface Strategy<K extends Comparable<K>> {
-        Class<? extends NodeInnerObj<K>> getNodeInnerObjClass();
-        Class<K> getValueClass();
-        NodeInnerObj<K> fromObject(K k);
+        Class<? extends NodeData<K>> getNodeDataClass();
+        Class<K> getDataClass();
+        NodeData<K> fromObject(K k);
         int size();
         default boolean isValid(K identifier){return true;}
 
-        NodeInnerObj.Strategy<Integer> INTEGER = new NodeInnerObj.Strategy<Integer>() {
+        NodeData.Strategy<Integer> INTEGER = new NodeData.Strategy<Integer>() {
             @Override
-            public Class<? extends NodeInnerObj<Integer>> getNodeInnerObjClass() {
+            public Class<? extends NodeData<Integer>> getNodeDataClass() {
                 return IntegerIdentifier.class;
             }
 
             @Override
-            public Class<Integer> getValueClass() {
+            public Class<Integer> getDataClass() {
                 return Integer.TYPE;
             }
 
             @Override
-            public NodeInnerObj<Integer> fromObject(Integer integer) {
+            public NodeData<Integer> fromObject(Integer integer) {
                 return new IntegerIdentifier(integer);
             }
 
@@ -69,19 +69,19 @@ public abstract class NodeInnerObj<V extends Comparable<V>> {
                 return IntegerIdentifier.BYTES;
             }
         };
-        NodeInnerObj.Strategy<Long> LONG = new NodeInnerObj.Strategy<Long>() {
+        NodeData.Strategy<Long> LONG = new NodeData.Strategy<Long>() {
             @Override
-            public Class<? extends NodeInnerObj<Long>> getNodeInnerObjClass() {
+            public Class<? extends NodeData<Long>> getNodeDataClass() {
                 return LongIdentifier.class;
             }
 
             @Override
-            public Class<Long> getValueClass() {
+            public Class<Long> getDataClass() {
                 return Long.TYPE;
             }
 
             @Override
-            public NodeInnerObj<Long> fromObject(Long aLong) {
+            public NodeData<Long> fromObject(Long aLong) {
                 return new LongIdentifier(aLong);
             }
 
@@ -91,19 +91,19 @@ public abstract class NodeInnerObj<V extends Comparable<V>> {
             }
         };
 
-        NodeInnerObj.Strategy<Long> NO_ZERO_LONG = new NodeInnerObj.Strategy<Long>() {
+        NodeData.Strategy<Long> NO_ZERO_LONG = new NodeData.Strategy<Long>() {
             @Override
-            public Class<? extends NodeInnerObj<Long>> getNodeInnerObjClass() {
+            public Class<? extends NodeData<Long>> getNodeDataClass() {
                 return NoZeroLongIdentifier.class;
             }
 
             @Override
-            public Class<Long> getValueClass() {
+            public Class<Long> getDataClass() {
                 return Long.TYPE;
             }
 
             @Override
-            public NodeInnerObj<Long> fromObject(Long aLong) {
+            public NodeData<Long> fromObject(Long aLong) {
                 return new NoZeroLongIdentifier(aLong);
             }
 
@@ -118,19 +118,19 @@ public abstract class NodeInnerObj<V extends Comparable<V>> {
             }
         };
 
-        NodeInnerObj.Strategy<Integer> NO_ZERO_INTEGER = new NodeInnerObj.Strategy<Integer>() {
+        NodeData.Strategy<Integer> NO_ZERO_INTEGER = new NodeData.Strategy<Integer>() {
             @Override
-            public Class<? extends NodeInnerObj<Integer>> getNodeInnerObjClass() {
+            public Class<? extends NodeData<Integer>> getNodeDataClass() {
                 return NoZeroIntegerIdentifier.class;
             }
 
             @Override
-            public Class<Integer> getValueClass() {
+            public Class<Integer> getDataClass() {
                 return Integer.TYPE;
             }
 
             @Override
-            public NodeInnerObj<Integer> fromObject(Integer integer) {
+            public NodeData<Integer> fromObject(Integer integer) {
                 return new NoZeroIntegerIdentifier(integer);
             }
 
@@ -145,19 +145,19 @@ public abstract class NodeInnerObj<V extends Comparable<V>> {
             }
         };
 
-        NodeInnerObj.Strategy<Pointer> POINTER = new NodeInnerObj.Strategy<Pointer>() {
+        NodeData.Strategy<Pointer> POINTER = new NodeData.Strategy<Pointer>() {
             @Override
-            public Class<? extends NodeInnerObj<Pointer>> getNodeInnerObjClass() {
+            public Class<? extends NodeData<Pointer>> getNodeDataClass() {
                 return PointerInnerObject.class;
             }
 
             @Override
-            public Class<Pointer> getValueClass() {
+            public Class<Pointer> getDataClass() {
                 return Pointer.class;
             }
 
             @Override
-            public NodeInnerObj<Pointer> fromObject(Pointer pointer) {
+            public NodeData<Pointer> fromObject(Pointer pointer) {
                 return new PointerInnerObject(pointer);
             }
 

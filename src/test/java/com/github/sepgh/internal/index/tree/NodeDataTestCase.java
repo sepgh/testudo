@@ -4,7 +4,7 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.NodeData;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.github.sepgh.internal.storage.BaseFileIndexStorageManager.INDEX_FILE_NAME;
 
-public class NodeInnerObjTestCase {
+public class NodeDataTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private Header header;
@@ -80,11 +80,11 @@ public class NodeInnerObjTestCase {
     }
 
     @Test
-    public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.INTEGER);
+        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeData.Strategy.INTEGER);
 
         for (int i = 0; i < 13; i ++){
             indexManager.addIndex(1, i, Pointer.empty());
@@ -104,13 +104,13 @@ public class NodeInnerObjTestCase {
 
     }
     @Test
-    public void test_NoZeroIntegerIdentifier() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void test_NoZeroIntegerIdentifier() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.NO_ZERO_INTEGER);
+        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeData.Strategy.NO_ZERO_INTEGER);
 
-        Assertions.assertThrows(NodeInnerObj.InvalidValueForNodeInnerObj.class, () -> {
+        Assertions.assertThrows(NodeData.InvalidValueForNodeInnerObj.class, () -> {
             indexManager.addIndex(1, 0, Pointer.empty());
         });
 
@@ -133,13 +133,13 @@ public class NodeInnerObjTestCase {
     }
 
     @Test
-    public void test_NoZeroLongIdentifier() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void test_NoZeroLongIdentifier() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.NO_ZERO_LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeData.Strategy.NO_ZERO_LONG);
 
-        Assertions.assertThrows(NodeInnerObj.InvalidValueForNodeInnerObj.class, () -> {
+        Assertions.assertThrows(NodeData.InvalidValueForNodeInnerObj.class, () -> {
             indexManager.addIndex(1, 0L, Pointer.empty());
         });
 

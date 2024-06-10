@@ -7,7 +7,7 @@ import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.NodeData;
 import com.github.sepgh.internal.index.tree.node.data.PointerInnerObject;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
@@ -139,7 +139,7 @@ public class MultiTableBPlusTreeIndexManagerCompactTestCase {
      *     └── 012
      */
     @Test
-    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
@@ -147,7 +147,7 @@ public class MultiTableBPlusTreeIndexManagerCompactTestCase {
         for (int tableId = 1; tableId <= 2; tableId++){
             HeaderManager headerManager = new InMemoryHeaderManager(header);
             CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
+            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeData.Strategy.LONG);
 
 
 
@@ -191,13 +191,13 @@ public class MultiTableBPlusTreeIndexManagerCompactTestCase {
      *     └── 012
      */
     @Test
-    public void testMultiSplitAddIndex2() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void testMultiSplitAddIndex2() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 4L, 9L, 6L, 10L, 8L, 3L, 2L, 11L, 5L, 7L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeData.Strategy.LONG);
 
         IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
                 AsynchronousFileChannel.open(
@@ -215,7 +215,7 @@ public class MultiTableBPlusTreeIndexManagerCompactTestCase {
             AbstractTreeNode<Long> lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
                 lastTreeNode = indexManager.addIndex(tableId, testIdentifier, samplePointer);
-                indexFileDescriptor.describe(NodeInnerObj.Strategy.LONG);
+                indexFileDescriptor.describe(NodeData.Strategy.LONG);
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());
