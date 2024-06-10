@@ -27,13 +27,9 @@ public class Pointer implements Comparable<Pointer> {
         this.type = type;
         this.position = position;
         this.chunk = chunk;
-//        if (position < 0){
-//            throw new RuntimeException("F");
-//        }
     }
 
     public static Pointer fromBytes(byte[] bytes, int position){
-//        System.out.println(HashCode.fromBytes(bytes));
         return new Pointer(
                 bytes[position],
                 BinaryUtils.bytesToLong(bytes, position + 1),

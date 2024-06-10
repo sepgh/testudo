@@ -47,7 +47,7 @@ public class Header {
         private String name;
         private int id;
         private List<IndexChunk> chunks;
-        private IndexChunk root;
+        private volatile IndexChunk root;
         private boolean initialized;
 
         public Optional<IndexChunk> getIndexChunk(int id){

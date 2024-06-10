@@ -4,8 +4,8 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.TableLevelAsyncIndexManagerDecorator;
-import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
+import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
@@ -92,7 +92,7 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Long> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG));
+        IndexManager<Long, Pointer> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(1, 10L, dataPointer);
@@ -108,7 +108,7 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Long> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG));
+        IndexManager<Long, Pointer> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
@@ -136,7 +136,7 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Long> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG));
+        IndexManager<Long, Pointer> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(1, 10L, dataPointer);

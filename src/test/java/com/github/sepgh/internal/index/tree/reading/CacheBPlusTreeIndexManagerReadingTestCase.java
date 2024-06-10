@@ -1,9 +1,12 @@
 package com.github.sepgh.internal.index.tree.reading;
 
 import com.github.sepgh.internal.EngineConfig;
-import com.github.sepgh.internal.index.*;
-import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
+import com.github.sepgh.internal.index.CachedIndexManagerDecorator;
+import com.github.sepgh.internal.index.IndexManager;
+import com.github.sepgh.internal.index.Pointer;
+import com.github.sepgh.internal.index.TableLevelAsyncIndexManagerDecorator;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
+import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
 import com.github.sepgh.internal.storage.CachedIndexStorageManagerDecorator;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
@@ -88,7 +91,7 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 30);
 
-        IndexManager<Long> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new BPlusTreeIndexManager<>(degree, indexStorageManager, ClusterIdentifier.LONG));
+        IndexManager<Long, Pointer> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, NodeInnerObj.Strategy.LONG));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         for (long i = 0; i < 20; i++){
@@ -108,8 +111,8 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
         indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 12);
 
-        indexManager = new TableLevelAsyncIndexManagerDecorator<>(new BPlusTreeIndexManager<>(degree, indexStorageManager, ClusterIdentifier.LONG));
-        IndexManager<Long> finalIndexManager = indexManager;
+        indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, NodeInnerObj.Strategy.LONG));
+        IndexManager<Long, Pointer> finalIndexManager = indexManager;
         Assertions.assertThrows(IOException.class, () -> {
             finalIndexManager.getIndex(1, 10L);
         }, "Nothing available to read.");
@@ -122,7 +125,7 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 12);
 
-        IndexManager<Long> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new BPlusTreeIndexManager<>(degree, indexStorageManager, ClusterIdentifier.LONG));
+        IndexManager<Long, Pointer> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, NodeInnerObj.Strategy.LONG));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         for (long i = 0; i < 20; i++){
@@ -144,8 +147,8 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Long> indexManager = new CachedIndexManagerDecorator<>(
-                new BPlusTreeIndexManager<>(degree, indexStorageManager, ClusterIdentifier.LONG),
+        IndexManager<Long, Pointer> indexManager = new CachedIndexManagerDecorator<>(
+                new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, NodeInnerObj.Strategy.LONG),
                 20
         );
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
@@ -169,8 +172,8 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
     public void findIndexFailure_cachedIndexManager() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager<Long> indexManager = new CachedIndexManagerDecorator<>(
-                new BPlusTreeIndexManager<>(degree, indexStorageManager, ClusterIdentifier.LONG),
+        IndexManager<Long, Pointer> indexManager = new CachedIndexManagerDecorator<>(
+                new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, NodeInnerObj.Strategy.LONG),
                 20
         );
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);

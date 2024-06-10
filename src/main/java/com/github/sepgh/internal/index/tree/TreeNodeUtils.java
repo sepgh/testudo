@@ -2,7 +2,7 @@ package com.github.sepgh.internal.index.tree;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
-import com.github.sepgh.internal.index.tree.node.cluster.InternalClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
 
 import java.lang.reflect.Constructor;
@@ -24,7 +24,7 @@ public class TreeNodeUtils {
      * @return bool true, if the first byte of the current cursor position is not 0x00
      *         Note that index is the index of the pointer object we want to refer to, not the byte position in byte array
      */
-    public static boolean hasChildPointerAtIndex(AbstractTreeNode treeNode, int index, int keySize){
+    public static boolean hasChildPointerAtIndex(AbstractTreeNode<?> treeNode, int index, int keySize){
         if (OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + keySize)) > treeNode.getData().length)
             return false;
 
@@ -37,14 +37,14 @@ public class TreeNodeUtils {
      * @param treeNode node to read/write from/to
      * @param index to check child pointer
      * @return Pointer to child node at index
-     */public static Pointer getChildPointerAtIndex(AbstractTreeNode treeNode, int index, int keySize){
+     */public static Pointer getChildPointerAtIndex(AbstractTreeNode<?> treeNode, int index, int keySize){
         return Pointer.fromBytes(treeNode.getData(), OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + keySize)));
     }
 
     // Todo: this function will shift the remaining space after next child to current child (which we wanted to remove) despite other children existing.
     //       The performance could improve (reduce copy call) by checking if next child exists at all first.
     // Todo: additional to above Todo, currently this function is always called at latest index first, so the whole size check is unnecessary for now
-    public static void removeChildAtIndex(AbstractTreeNode treeNode, int index, int keySize) {
+    public static void removeChildAtIndex(AbstractTreeNode<?> treeNode, int index, int keySize) {
         System.arraycopy(
                 new byte[Pointer.BYTES],
                 0,
@@ -59,7 +59,7 @@ public class TreeNodeUtils {
      * @param index index of the pointer to set
      * @param pointer object to set
      */
-    public static void setPointerToChild(AbstractTreeNode treeNode, int index, Pointer pointer, int keySize){
+    public static void setPointerToChild(AbstractTreeNode<?> treeNode, int index, Pointer pointer, int keySize){
         if (index == 0){
             System.arraycopy(pointer.toBytes(), 0, treeNode.getData(), OFFSET_TREE_NODE_FLAGS_END, Pointer.BYTES);
         } else {
@@ -78,7 +78,7 @@ public class TreeNodeUtils {
      * @param index of the key we are looking for
      * @return the offset where the key is found at
      */
-    private static int getKeyStartOffset(AbstractTreeNode treeNode, int index, int keySize, int valueSize) {
+    private static int getKeyStartOffset(AbstractTreeNode<?> treeNode, int index, int keySize, int valueSize) {
         if (!treeNode.isLeaf()){
             return OFFSET_INTERNAL_NODE_KEY_BEGIN + (index * (keySize + valueSize));
         } else {
@@ -99,7 +99,7 @@ public class TreeNodeUtils {
      * @param index of the key to check existence
      * @return boolean state of existence of a key in index
      */
-    public static <E extends Comparable<E>> boolean hasKeyAtIndex(AbstractTreeNode treeNode, int index, int degree, Class<? extends NodeInnerObj<E>> nodeInnerObjectClass, int keySize, int valueSize) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public static <E extends Comparable<E>> boolean hasKeyAtIndex(AbstractTreeNode<?> treeNode, int index, int degree, Class<? extends NodeInnerObj<E>> nodeInnerObjectClass, int keySize, int valueSize) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (index >= degree - 1)
             return false;
 
@@ -113,7 +113,7 @@ public class TreeNodeUtils {
     }
 
 
-    public static <E extends Comparable<E>> void setKeyAtIndex(AbstractTreeNode treeNode, int index, NodeInnerObj<E> nodeInnerObj, int valueSize) {
+    public static <E extends Comparable<E>> void setKeyAtIndex(AbstractTreeNode<?> treeNode, int index, NodeInnerObj<E> nodeInnerObj, int valueSize) {
         int keyStartIndex = getKeyStartOffset(treeNode, index, nodeInnerObj.size(), valueSize);
         System.arraycopy(
                 nodeInnerObj.getBytes(),
@@ -129,13 +129,13 @@ public class TreeNodeUtils {
      * @param index to read they key at
      * @return key value at index
      */
-    public static <E extends Comparable<E>> NodeInnerObj<E> getKeyAtIndex(AbstractTreeNode treeNode, int index, Class<? extends NodeInnerObj<E>> nodeInnerObjectClass, int keySize, int valueSize) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public static <E extends Comparable<E>> NodeInnerObj<E> getKeyAtIndex(AbstractTreeNode<?> treeNode, int index, Class<? extends NodeInnerObj<E>> nodeInnerObjectClass, int keySize, int valueSize) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         int keyStartIndex = getKeyStartOffset(treeNode, index, keySize, valueSize);
         Constructor<? extends NodeInnerObj<E>> nodeInnerObjectConstructor = getNodeInnerObjectConstructor(nodeInnerObjectClass);
         return nodeInnerObjectConstructor.newInstance(treeNode.getData(), keyStartIndex);
     }
 
-    public static void removeKeyAtIndex(AbstractTreeNode treeNode, int index, int keySize, int valueSize) {
+    public static void removeKeyAtIndex(AbstractTreeNode<?> treeNode, int index, int keySize, int valueSize) {
         System.arraycopy(
                 new byte[keySize],
                 0,
@@ -145,8 +145,8 @@ public class TreeNodeUtils {
         );
     }
 
-    public static <K extends Comparable<K>, A extends NodeInnerObj<K>, V extends Comparable<V>, B extends NodeInnerObj<V>> Map.Entry<K, V> getKeyValuePointerAtIndex(
-            AbstractTreeNode treeNode,
+    public static <K extends Comparable<K>, A extends NodeInnerObj<K>, V extends Comparable<V>, B extends NodeInnerObj<V>> Map.Entry<K, V> getKeyValueAtIndex(
+            AbstractTreeNode<K> treeNode,
             int index,
             Class<? extends A> keyInnerObjectClass,
             int keySize,
@@ -160,7 +160,7 @@ public class TreeNodeUtils {
         );
     }
 
-    public static <K extends Comparable<K>, V extends Comparable<V>> void setKeyValueAtIndex(AbstractTreeNode treeNode, int index, NodeInnerObj<K> keyInnerObj, NodeInnerObj<V> valueInnerObj) {
+    public static <K extends Comparable<K>, V extends Comparable<V>> void setKeyValueAtIndex(AbstractTreeNode<?> treeNode, int index, NodeInnerObj<K> keyInnerObj, NodeInnerObj<V> valueInnerObj) {
         System.arraycopy(
                 keyInnerObj.getBytes(),
                 0,
@@ -187,19 +187,19 @@ public class TreeNodeUtils {
      *       alternatively, we can hold a space for metadata which keeps track of the number of keys or values stored
      */
     public static <K extends Comparable<K>, V extends Comparable<V>> int addKeyValueAndGetIndex(
-            AbstractTreeNode treeNode,
+            AbstractTreeNode<?> treeNode,
             int degree,
-            Class<? extends NodeInnerObj<K>> keyInnerObjectClass,
+            NodeInnerObj.Strategy<K> keyStrategy,
             K key,
             int keySize,
-            Class<? extends NodeInnerObj<V>> valueInnerObjectClass,
+            NodeInnerObj.Strategy<V> valueStrategy,
             V value,
             int valueSize
     ) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         int indexToFill = -1;
         NodeInnerObj<K> keyAtIndex;
         for (int i = 0; i < degree - 1; i++){
-            keyAtIndex = getKeyAtIndex(treeNode, i, keyInnerObjectClass, keySize, valueSize);
+            keyAtIndex = getKeyAtIndex(treeNode, i, keyStrategy.getNodeInnerObjClass(), keySize, valueSize);
             K data = keyAtIndex.data();
             if (!keyAtIndex.exists() || data.compareTo(key) > 0){
                 indexToFill = i;
@@ -227,8 +227,8 @@ public class TreeNodeUtils {
         setKeyValueAtIndex(
                 treeNode,
                 indexToFill,
-                getNodeInnerObjectConstructorForValue(keyInnerObjectClass, (Class<K>) key.getClass()).newInstance(key),
-                getNodeInnerObjectConstructorForValue(valueInnerObjectClass, (Class<V>) value.getClass()).newInstance(value)
+                keyStrategy.fromObject(key),
+                valueStrategy.fromObject(value)
         );
 
         System.arraycopy(
@@ -245,7 +245,7 @@ public class TreeNodeUtils {
 
     // Todo: this function will shift the remaining space after next KV to current KV (which we wanted to remove) despite other KV existing.
     //       The performance could improve (reduce copy call) by checking if next KV exists at all first.
-    public static void removeKeyValueAtIndex(AbstractTreeNode treeNode, int index, int keySize, int valueSize) {
+    public static void removeKeyValueAtIndex(AbstractTreeNode<?> treeNode, int index, int keySize, int valueSize) {
         int nextIndexOffset = getKeyStartOffset(treeNode, index + 1, keySize, valueSize);
         if (nextIndexOffset < treeNode.getData().length - SIZE_LEAF_NODE_SIBLING_POINTERS){
             System.arraycopy(
@@ -273,7 +273,7 @@ public class TreeNodeUtils {
         }
     }
 
-    public static Optional<Pointer> getPreviousPointer(AbstractTreeNode treeNode, int degree, int keySize, int valueSize){
+    public static Optional<Pointer> getPreviousPointer(AbstractTreeNode<?> treeNode, int degree, int keySize, int valueSize){
         if (treeNode.getData()[OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * (keySize + valueSize))] == (byte) 0x0){
             return Optional.empty();
         }
@@ -283,7 +283,7 @@ public class TreeNodeUtils {
         );
     }
 
-    public static void setPreviousPointer(AbstractTreeNode treeNode, int degree, Pointer pointer, int keySize, int valueSize) {
+    public static void setPreviousPointer(AbstractTreeNode<?> treeNode, int degree, Pointer pointer, int keySize, int valueSize) {
         System.arraycopy(
                 pointer.toBytes(),
                 0,
@@ -293,7 +293,7 @@ public class TreeNodeUtils {
         );
     }
 
-    public static Optional<Pointer> getNextPointer(AbstractTreeNode treeNode, int degree, int keySize, int valueSize) {
+    public static Optional<Pointer> getNextPointer(AbstractTreeNode<?> treeNode, int degree, int keySize, int valueSize) {
         if (treeNode.getData()[OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * (keySize + valueSize)) + Pointer.BYTES] == (byte) 0x0){
             return Optional.empty();
         }
@@ -303,7 +303,7 @@ public class TreeNodeUtils {
         );
     }
 
-    public static void setNextPointer(AbstractTreeNode treeNode, int degree, Pointer pointer, int keySize, int valueSize) {
+    public static void setNextPointer(AbstractTreeNode<?> treeNode, int degree, Pointer pointer, int keySize, int valueSize) {
         System.arraycopy(
                 pointer.toBytes(),
                 0,
@@ -313,7 +313,7 @@ public class TreeNodeUtils {
         );
     }
 
-    public static void cleanChildrenPointers(InternalClusterTreeNode treeNode, int degree, int keySize, int valueSize) {
+    public static void cleanChildrenPointers(InternalTreeNode<?> treeNode, int degree, int keySize, int valueSize) {
         int len = ((degree - 1) * ((keySize + valueSize)) + Pointer.BYTES);
         System.arraycopy(
                 new byte[len],

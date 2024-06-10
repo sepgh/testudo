@@ -4,10 +4,11 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.helper.IndexFileDescriptor;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
-import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.AbstractLeafTreeNode;
+import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
+import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.PointerInnerObject;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
@@ -146,18 +147,18 @@ public class MultiTableBPlusTreeIndexManagerCompactTestCase {
         for (int tableId = 1; tableId <= 2; tableId++){
             HeaderManager headerManager = new InMemoryHeaderManager(header);
             CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-            IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
+            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
 
 
 
-            BaseClusterTreeNode<Long> lastTreeNode = null;
+            AbstractTreeNode<Long> lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
                 lastTreeNode = indexManager.addIndex(tableId, testIdentifier, samplePointer);
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());
-            Assertions.assertEquals(2, lastTreeNode.getKeyList(degree).size());
-            Assertions.assertEquals(samplePointer.getPosition(), ((LeafClusterTreeNode<Long>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
+            Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerInnerObject.BYTES).size());
+            Assertions.assertEquals(samplePointer.getPosition(), ((AbstractLeafTreeNode<Long, Pointer>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
             StoredTreeStructureVerifier.testOrderedTreeStructure(compactFileIndexStorageManager, tableId, 1, degree);
         }
@@ -196,7 +197,7 @@ public class MultiTableBPlusTreeIndexManagerCompactTestCase {
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
 
         IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
                 AsynchronousFileChannel.open(
@@ -211,15 +212,15 @@ public class MultiTableBPlusTreeIndexManagerCompactTestCase {
 
         for (int tableId = 1; tableId <= 2; tableId++){
 
-            BaseClusterTreeNode<Long> lastTreeNode = null;
+            AbstractTreeNode<Long> lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
                 lastTreeNode = indexManager.addIndex(tableId, testIdentifier, samplePointer);
-                indexFileDescriptor.describe(ClusterIdentifier.LONG);
+                indexFileDescriptor.describe(NodeInnerObj.Strategy.LONG);
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());
-            Assertions.assertEquals(2, lastTreeNode.getKeyList(degree).size());
-            Assertions.assertEquals(samplePointer.getPosition(), ((LeafClusterTreeNode<Long>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
+            Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerInnerObject.BYTES).size());
+            Assertions.assertEquals(samplePointer.getPosition(), ((AbstractLeafTreeNode<Long, Pointer>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
             StoredTreeStructureVerifier.testUnOrderedTreeStructure1(compactFileIndexStorageManager, tableId, 1, degree);
 

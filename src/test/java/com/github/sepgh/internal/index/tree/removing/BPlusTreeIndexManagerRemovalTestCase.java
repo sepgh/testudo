@@ -1,9 +1,10 @@
 package com.github.sepgh.internal.index.tree.removing;
 
 import com.github.sepgh.internal.index.IndexManager;
+import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.TableLevelAsyncIndexManagerDecorator;
-import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
+import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
@@ -21,21 +22,21 @@ public class BPlusTreeIndexManagerRemovalTestCase extends BaseBPlusTreeIndexMana
         return new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
     }
 
-    protected IndexManager<Long> getIndexManager(IndexStorageManager indexStorageManager) {
-        return new BPlusTreeIndexManager<>(degree, indexStorageManager, ClusterIdentifier.LONG);
+    protected IndexManager<Long, Pointer> getIndexManager(IndexStorageManager indexStorageManager) {
+        return new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, NodeInnerObj.Strategy.LONG);
     }
 
     @Test
     public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
-        IndexManager<Long> indexManager = getIndexManager(indexStorageManager);
+        IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
         super.testRemovingLeftToRight(indexManager, indexStorageManager);
     }
 
     @Test
     public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
-        IndexManager<Long> indexManager = getIndexManager(indexStorageManager);
+        IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
         super.testRemovingRightToLeft(indexManager, indexStorageManager);
     }
 
@@ -43,7 +44,7 @@ public class BPlusTreeIndexManagerRemovalTestCase extends BaseBPlusTreeIndexMana
     @Test
     public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
-        IndexManager<Long> indexManager = getIndexManager(indexStorageManager);
+        IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
         super.testRemovingRoot(indexManager, indexStorageManager);
     }
 
@@ -51,8 +52,8 @@ public class BPlusTreeIndexManagerRemovalTestCase extends BaseBPlusTreeIndexMana
     @Timeout(2)
     public void testRemovingLeftToRightAsync() throws IOException, ExecutionException, InterruptedException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
-        IndexManager<Long> indexManager = getIndexManager(indexStorageManager);
-        IndexManager<Long> asycnIndexManager = new TableLevelAsyncIndexManagerDecorator<>(indexManager);
+        IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
+        IndexManager<Long, Pointer> asycnIndexManager = new TableLevelAsyncIndexManagerDecorator<>(indexManager);
         super.testRemovingLeftToRightAsync(asycnIndexManager);
     }
 

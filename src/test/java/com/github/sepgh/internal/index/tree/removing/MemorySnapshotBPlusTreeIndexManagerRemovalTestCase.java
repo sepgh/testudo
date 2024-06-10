@@ -1,8 +1,9 @@
 package com.github.sepgh.internal.index.tree.removing;
 
 import com.github.sepgh.internal.index.IndexManager;
-import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
+import com.github.sepgh.internal.index.Pointer;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
+import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.session.MemorySnapshotIndexIOSession;
 import org.junit.jupiter.api.Test;
@@ -16,8 +17,8 @@ import java.util.concurrent.ExecutionException;
 public class MemorySnapshotBPlusTreeIndexManagerRemovalTestCase extends BPlusTreeIndexManagerRemovalTestCase {
 
     @Override
-    protected IndexManager<Long> getIndexManager(IndexStorageManager indexStorageManager) {
-        return new BPlusTreeIndexManager<>(degree, indexStorageManager, MemorySnapshotIndexIOSession.Factory.getInstance(), ClusterIdentifier.LONG);
+    protected IndexManager<Long, Pointer> getIndexManager(IndexStorageManager indexStorageManager) {
+        return new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, MemorySnapshotIndexIOSession.Factory.getInstance(), NodeInnerObj.Strategy.LONG);
     }
 
     @Test

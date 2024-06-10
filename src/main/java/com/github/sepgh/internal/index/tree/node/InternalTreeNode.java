@@ -1,4 +1,4 @@
-package com.github.sepgh.internal.index.tree.node.cluster;
+package com.github.sepgh.internal.index.tree.node;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.TreeNodeUtils;
@@ -13,8 +13,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class InternalClusterTreeNode<K extends Comparable<K>> extends BaseClusterTreeNode<K> {
-    public InternalClusterTreeNode(byte[] data, ClusterIdentifier.Strategy<K> strategy) {
+public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<K> {
+    public InternalTreeNode(byte[] data, NodeInnerObj.Strategy<K> strategy) {
         super(data, strategy);
         setType(Type.INTERNAL);
     }
@@ -30,20 +30,36 @@ public class InternalClusterTreeNode<K extends Comparable<K>> extends BaseCluste
     public void setChildPointers(List<ChildPointers<K>> childPointers, int degree, boolean cleanRest){
         modified();
         if (cleanRest)
-            TreeNodeUtils.cleanChildrenPointers(this, degree, clusterIdentifierStrategy.size(), PointerInnerObject.BYTES);
+            TreeNodeUtils.cleanChildrenPointers(this, degree, keyStrategy.size(), PointerInnerObject.BYTES);
         int i = 0;
         for (ChildPointers<K> keyPointer : childPointers) {
             keyPointer.setIndex(i);
-            TreeNodeUtils.setKeyAtIndex(this, keyPointer.index, clusterIdentifierStrategy.fromObject(keyPointer.key), PointerInnerObject.BYTES);
+            TreeNodeUtils.setKeyAtIndex(this, keyPointer.index, keyStrategy.fromObject(keyPointer.key), PointerInnerObject.BYTES);
             if (i == 0){
-                TreeNodeUtils.setPointerToChild(this, 0, keyPointer.left, clusterIdentifierStrategy.size());
-                TreeNodeUtils.setPointerToChild(this, 1, keyPointer.right, clusterIdentifierStrategy.size());
+                TreeNodeUtils.setPointerToChild(this, 0, keyPointer.left, keyStrategy.size());
+                TreeNodeUtils.setPointerToChild(this, 1, keyPointer.right, keyStrategy.size());
             } else {
-                TreeNodeUtils.setPointerToChild(this, keyPointer.index + 1, keyPointer.right, clusterIdentifierStrategy.size());
+                TreeNodeUtils.setPointerToChild(this, keyPointer.index + 1, keyPointer.right, keyStrategy.size());
             }
             i++;
         }
 
+    }
+
+    public Iterator<K> getKeys(int degree){
+        return super.getKeys(degree, Pointer.BYTES);
+    }
+
+    public List<K> getKeyList(int degree){
+        return ImmutableList.copyOf(getKeys(degree));
+    }
+
+    public void setKey(int index, K key){
+        super.setKey(index,key, PointerInnerObject.BYTES);
+    }
+
+    public void removeKey(int idx, int degree) {
+        super.removeKey(idx, degree, PointerInnerObject.BYTES);
     }
 
     public int addKey(K identifier, int degree) {
@@ -52,7 +68,7 @@ public class InternalClusterTreeNode<K extends Comparable<K>> extends BaseCluste
         keyList.add(idx, identifier);
 
         for (int j = idx; j < keyList.size() && j < degree - 1; j++){
-            TreeNodeUtils.setKeyAtIndex(this, j, clusterIdentifierStrategy.fromObject(keyList.get(j)), Pointer.BYTES);
+            TreeNodeUtils.setKeyAtIndex(this, j, keyStrategy.fromObject(keyList.get(j)), PointerInnerObject.BYTES);
         }
 
         return idx;
@@ -62,14 +78,14 @@ public class InternalClusterTreeNode<K extends Comparable<K>> extends BaseCluste
         modified();
         int i = this.addKey(identifier, degree);
         if (left != null){
-            TreeNodeUtils.setPointerToChild(this, i, left, clusterIdentifierStrategy.size());
+            TreeNodeUtils.setPointerToChild(this, i, left, keyStrategy.size());
         }
         else if (clearForNull)
-            TreeNodeUtils.removeChildAtIndex(this, i, clusterIdentifierStrategy.size());
+            TreeNodeUtils.removeChildAtIndex(this, i, keyStrategy.size());
         if (right != null)
-            TreeNodeUtils.setPointerToChild(this, i+1, right, clusterIdentifierStrategy.size());
+            TreeNodeUtils.setPointerToChild(this, i+1, right, keyStrategy.size());
         else if (clearForNull)
-            TreeNodeUtils.removeChildAtIndex(this, i + 1, clusterIdentifierStrategy.size());
+            TreeNodeUtils.removeChildAtIndex(this, i + 1, keyStrategy.size());
     }
 
     public void addChildPointers(ChildPointers<K> childPointers, int degree) {
@@ -101,11 +117,11 @@ public class InternalClusterTreeNode<K extends Comparable<K>> extends BaseCluste
     }
 
     public void setChildAtIndex(int index, Pointer pointer){
-        TreeNodeUtils.setPointerToChild(this, index, pointer, clusterIdentifierStrategy.size());
+        TreeNodeUtils.setPointerToChild(this, index, pointer, keyStrategy.size());
     }
 
     public Pointer getChildAtIndex(int index) {
-        return TreeNodeUtils.getChildPointerAtIndex(this, index, clusterIdentifierStrategy.size());
+        return TreeNodeUtils.getChildPointerAtIndex(this, index, keyStrategy.size());
     }
 
     public int getIndexOfChild(Pointer pointer){
@@ -164,37 +180,37 @@ public class InternalClusterTreeNode<K extends Comparable<K>> extends BaseCluste
 
     public void removeChild(int idx, int degree) {
         List<Pointer> pointerList = this.getChildrenList();
-        TreeNodeUtils.removeChildAtIndex(this, idx, clusterIdentifierStrategy.size());
+        TreeNodeUtils.removeChildAtIndex(this, idx, keyStrategy.size());
         List<Pointer> subList = pointerList.subList(idx + 1, pointerList.size());
         int lastIndex = -1;
         for (int i = 0; i < subList.size(); i++) {
             lastIndex = idx + i;
-            TreeNodeUtils.setPointerToChild(this, lastIndex, subList.get(i), clusterIdentifierStrategy.size());
+            TreeNodeUtils.setPointerToChild(this, lastIndex, subList.get(i), keyStrategy.size());
         }
         if (lastIndex != -1){
             for (int i = lastIndex + 1; i < degree; i++){
-                TreeNodeUtils.removeChildAtIndex(this, i, clusterIdentifierStrategy.size());
+                TreeNodeUtils.removeChildAtIndex(this, i, keyStrategy.size());
             }
         }
     }
 
     private static class ChildrenIterator implements Iterator<Pointer> {
 
-        private final BaseClusterTreeNode<?> node;
+        private final InternalTreeNode<?> node;
         private int cursor = 0;
 
-        private ChildrenIterator(BaseClusterTreeNode<?> node) {
+        private ChildrenIterator(InternalTreeNode<?> node) {
             this.node = node;
         }
 
         @Override
         public boolean hasNext() {
-            return TreeNodeUtils.hasChildPointerAtIndex(this.node, cursor, node.clusterIdentifierStrategy.size());
+            return TreeNodeUtils.hasChildPointerAtIndex(this.node, cursor, node.keyStrategy.size());
         }
 
         @Override
         public Pointer next() {
-            Pointer pointer = TreeNodeUtils.getChildPointerAtIndex(this.node, cursor, node.clusterIdentifierStrategy.size());
+            Pointer pointer = TreeNodeUtils.getChildPointerAtIndex(this.node, cursor, node.keyStrategy.size());
             cursor++;
             return pointer;
         }
@@ -205,10 +221,10 @@ public class InternalClusterTreeNode<K extends Comparable<K>> extends BaseCluste
         private int cursor = 0;
         private Pointer lastRightPointer;
 
-        private final BaseClusterTreeNode<K> node;
+        private final InternalTreeNode<K> node;
         private final int degree;
 
-        private ChildPointersIterator(BaseClusterTreeNode<K> node, int degree) {
+        private ChildPointersIterator(InternalTreeNode<K> node, int degree) {
             this.node = node;
             this.degree = degree;
         }
@@ -217,27 +233,27 @@ public class InternalClusterTreeNode<K extends Comparable<K>> extends BaseCluste
         @SneakyThrows
         @Override
         public boolean hasNext() {
-            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree, clusterIdentifierStrategy.getNodeInnerObjClass(), clusterIdentifierStrategy.size(), Pointer.BYTES);
+            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree, keyStrategy.getNodeInnerObjClass(), keyStrategy.size(), Pointer.BYTES);
         }
 
         @SneakyThrows
         @Override
         public ChildPointers<K> next() {
-            NodeInnerObj<K> nodeInnerObj = (NodeInnerObj<K>) TreeNodeUtils.getKeyAtIndex(node, cursor, clusterIdentifierStrategy.getNodeInnerObjClass(), clusterIdentifierStrategy.size(), PointerInnerObject.BYTES);
+            NodeInnerObj<K> nodeInnerObj = (NodeInnerObj<K>) TreeNodeUtils.getKeyAtIndex(node, cursor, keyStrategy.getNodeInnerObjClass(), keyStrategy.size(), PointerInnerObject.BYTES);
             ChildPointers childPointers = null;
             if (cursor == 0){
                 childPointers = new ChildPointers<K>(
                         cursor,
                         nodeInnerObj.data(),
-                        TreeNodeUtils.getChildPointerAtIndex(node, 0, clusterIdentifierStrategy.size()),
-                        TreeNodeUtils.getChildPointerAtIndex(node, 1, clusterIdentifierStrategy.size())
+                        TreeNodeUtils.getChildPointerAtIndex(node, 0, keyStrategy.size()),
+                        TreeNodeUtils.getChildPointerAtIndex(node, 1, keyStrategy.size())
                 );
             } else {
                 childPointers = new ChildPointers(
                         cursor,
                         nodeInnerObj.data(),
                         lastRightPointer,
-                        TreeNodeUtils.getChildPointerAtIndex(node, cursor + 1, clusterIdentifierStrategy.size())
+                        TreeNodeUtils.getChildPointerAtIndex(node, cursor + 1, keyStrategy.size())
                 );
             }
             lastRightPointer = childPointers.getRight();

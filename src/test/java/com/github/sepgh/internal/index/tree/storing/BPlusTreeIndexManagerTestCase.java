@@ -4,11 +4,14 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.TableLevelAsyncIndexManagerDecorator;
-import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
-import com.github.sepgh.internal.index.tree.node.cluster.InternalClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.AbstractLeafTreeNode;
+import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
+import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
+import com.github.sepgh.internal.index.tree.node.NodeFactory;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.PointerInnerObject;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
@@ -22,10 +25,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 import static com.github.sepgh.internal.storage.CompactFileIndexStorageManager.INDEX_FILE_NAME;
 
@@ -56,11 +56,13 @@ public class BPlusTreeIndexManagerTestCase {
                                         .id(1)
                                         .name("test")
                                         .chunks(
-                                                Collections.singletonList(
-                                                        Header.IndexChunk.builder()
-                                                                .chunk(0)
-                                                                .offset(0)
-                                                                .build()
+                                                new CopyOnWriteArrayList<>(
+                                                        Collections.singletonList(
+                                                                Header.IndexChunk.builder()
+                                                                        .chunk(0)
+                                                                        .offset(0)
+                                                                        .build()
+                                                        )
                                                 )
                                         )
                                         .root(
@@ -96,19 +98,19 @@ public class BPlusTreeIndexManagerTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
-        BaseClusterTreeNode<Long> baseClusterTreeNode = indexManager.addIndex(1, 10L, new Pointer(Pointer.TYPE_DATA, 100, 0));
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
+        AbstractTreeNode<Long> baseClusterTreeNode = indexManager.addIndex(1, 10L, new Pointer(Pointer.TYPE_DATA, 100, 0));
 
         Assertions.assertTrue(baseClusterTreeNode.isRoot());
         Assertions.assertEquals(0, baseClusterTreeNode.getPointer().getPosition());
         Assertions.assertEquals(0, baseClusterTreeNode.getPointer().getChunk());
 
         IndexStorageManager.NodeData nodeData = compactFileIndexStorageManager.readNode(1, baseClusterTreeNode.getPointer()).get();
-        LeafClusterTreeNode<Long> leafTreeNode = new LeafClusterTreeNode<>(nodeData.bytes(), ClusterIdentifier.LONG);
+        LeafClusterTreeNode<Long> leafTreeNode = new LeafClusterTreeNode<>(nodeData.bytes(), NodeInnerObj.Strategy.LONG);
         Assertions.assertTrue(leafTreeNode.isRoot());
-        Iterator<LeafClusterTreeNode.KeyValue<Long>> entryIterator = leafTreeNode.getKeyValues(degree);
+        Iterator<LeafClusterTreeNode.KeyValue<Long, Pointer>> entryIterator = leafTreeNode.getKeyValues(degree);
         Assertions.assertTrue(entryIterator.hasNext());
-        LeafClusterTreeNode.KeyValue<Long> pointerEntry = entryIterator.next();
+        LeafClusterTreeNode.KeyValue<Long, Pointer> pointerEntry = entryIterator.next();
         Assertions.assertEquals(pointerEntry.key(), 10);
         Assertions.assertEquals(pointerEntry.value().getPosition(), 100);
     }
@@ -132,45 +134,46 @@ public class BPlusTreeIndexManagerTestCase {
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
 
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager<Long> indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
 
 
-        BaseClusterTreeNode<Long> lastTreeNode = null;
+        AbstractTreeNode<Long> lastTreeNode = null;
         for (Long testIdentifier : testIdentifiers) {
             lastTreeNode = indexManager.addIndex(1, testIdentifier, samplePointer);
         }
 
         Assertions.assertTrue(lastTreeNode.isLeaf());
-        Assertions.assertEquals(2, lastTreeNode.getKeyList(degree).size());
-        Assertions.assertEquals(samplePointer.getPosition(), ((LeafClusterTreeNode<Long>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
+        Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerInnerObject.BYTES).size());
+        Assertions.assertEquals(samplePointer.getPosition(), ((AbstractLeafTreeNode<Long, Pointer>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
         Optional<IndexStorageManager.NodeData> optional = compactFileIndexStorageManager.getRoot(1).get();
         Assertions.assertTrue(optional.isPresent());
 
-        BaseClusterTreeNode<Long> rootNode = BaseClusterTreeNode.fromBytes(optional.get().bytes(), ClusterIdentifier.LONG);
+        AbstractTreeNode<Long> rootNode = nodeFactory.fromBytes(optional.get().bytes());
         Assertions.assertTrue(rootNode.isRoot());
         Assertions.assertFalse(rootNode.isLeaf());
 
-        Assertions.assertEquals(1, rootNode.getKeyList(degree).size());
+        Assertions.assertEquals(1, rootNode.getKeyList(degree, PointerInnerObject.BYTES).size());
 
         testIdentifiers.sort(Long::compareTo);
 
-        List<InternalClusterTreeNode.ChildPointers<Long>> children = ((InternalClusterTreeNode<Long>) rootNode).getChildPointersList(degree);
+        List<InternalTreeNode.ChildPointers<Long>> children = ((InternalTreeNode<Long>) rootNode).getChildPointersList(degree);
         Assertions.assertEquals(1, children.size());
         Assertions.assertNotNull(children.get(0).getLeft());
         Assertions.assertNotNull(children.get(0).getRight());
-        Assertions.assertEquals(testIdentifiers.get(2), rootNode.getKeyList(degree).get(0));
+        Assertions.assertEquals(testIdentifiers.get(2), rootNode.getKeyList(degree, PointerInnerObject.BYTES).get(0));
 
         // First child
-        LeafClusterTreeNode<Long> childLeafTreeNode = new LeafClusterTreeNode<>(compactFileIndexStorageManager.readNode(1, children.get(0).getLeft()).get().bytes(), ClusterIdentifier.LONG);
-        List<LeafClusterTreeNode.KeyValue<Long>> keyValueList = childLeafTreeNode.getKeyValueList(degree);
+        LeafClusterTreeNode<Long> childLeafTreeNode = new LeafClusterTreeNode<>(compactFileIndexStorageManager.readNode(1, children.get(0).getLeft()).get().bytes(), NodeInnerObj.Strategy.LONG);
+        List<LeafClusterTreeNode.KeyValue<Long, Pointer>> keyValueList = childLeafTreeNode.getKeyValueList(degree);
         Assertions.assertEquals(testIdentifiers.get(0), keyValueList.get(0).key());
         Assertions.assertEquals(testIdentifiers.get(1), keyValueList.get(1).key());
 
         //Second child
-        LeafClusterTreeNode<Long> secondChildLeafTreeNode = new LeafClusterTreeNode<>(compactFileIndexStorageManager.readNode(1, children.get(0).getRight()).get().bytes(), ClusterIdentifier.LONG);
+        LeafClusterTreeNode<Long> secondChildLeafTreeNode = new LeafClusterTreeNode<>(compactFileIndexStorageManager.readNode(1, children.get(0).getRight()).get().bytes(), NodeInnerObj.Strategy.LONG);
         keyValueList = secondChildLeafTreeNode.getKeyValueList(degree);
         Assertions.assertEquals(testIdentifiers.get(2), keyValueList.get(0).key());
         Assertions.assertEquals(testIdentifiers.get(3), keyValueList.get(1).key());
@@ -217,17 +220,17 @@ public class BPlusTreeIndexManagerTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
 
 
-        BaseClusterTreeNode<Long> lastTreeNode = null;
+        AbstractTreeNode<Long> lastTreeNode = null;
         for (Long testIdentifier : testIdentifiers) {
             lastTreeNode = indexManager.addIndex(1, testIdentifier, samplePointer);
         }
 
         Assertions.assertTrue(lastTreeNode.isLeaf());
-        Assertions.assertEquals(2, lastTreeNode.getKeyList(degree).size());
-        Assertions.assertEquals(samplePointer.getPosition(), ((LeafClusterTreeNode<Long>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
+        Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerInnerObject.BYTES).size());
+        Assertions.assertEquals(samplePointer.getPosition(), ((AbstractLeafTreeNode<Long, Pointer>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
         StoredTreeStructureVerifier.testOrderedTreeStructure(compactFileIndexStorageManager, 1, 1, degree);
 
@@ -243,7 +246,7 @@ public class BPlusTreeIndexManagerTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager<Long> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG));
+        IndexManager<Long, Pointer> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG));
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         CountDownLatch countDownLatch = new CountDownLatch(testIdentifiers.size());

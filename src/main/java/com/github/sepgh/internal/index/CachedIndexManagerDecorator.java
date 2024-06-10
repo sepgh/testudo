@@ -1,6 +1,6 @@
 package com.github.sepgh.internal.index;
 
-import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
@@ -11,35 +11,35 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
-public class CachedIndexManagerDecorator<K extends Comparable<K>> extends IndexManagerDecorator<K> {
-    private final Cache<TableIdentifier<K>, Pointer> cache;
+public class CachedIndexManagerDecorator<K extends Comparable<K>, V extends Comparable<V>> extends IndexManagerDecorator<K, V> {
+    private final Cache<TableIdentifier<K>, V> cache;
     private final Map<Integer, Integer> sizeCache;
 
-    public CachedIndexManagerDecorator(IndexManager<K> indexManager, int maxSize) {
+    public CachedIndexManagerDecorator(IndexManager<K, V> indexManager, int maxSize) {
         this(indexManager, CacheBuilder.newBuilder().maximumSize(maxSize).initialCapacity(10).build());
     }
-    public CachedIndexManagerDecorator(IndexManager<K> indexManager, Cache<TableIdentifier<K>, Pointer> cache) {
+    public CachedIndexManagerDecorator(IndexManager<K, V> indexManager, Cache<TableIdentifier<K>, V> cache) {
         super(indexManager);
         this.cache = cache;
         this.sizeCache = new ConcurrentHashMap<>();
     }
 
     @Override
-    public BaseClusterTreeNode<K> addIndex(int table, K identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
-        BaseClusterTreeNode<K> baseClusterTreeNode = super.addIndex(table, identifier, pointer);
-        cache.put(new TableIdentifier<>(table, identifier), pointer);
+    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException {
+        AbstractTreeNode<K> baseClusterTreeNode = super.addIndex(table, identifier, value);
+        cache.put(new TableIdentifier<>(table, identifier), value);
         sizeCache.computeIfPresent(table, (k, v) -> v + 1);
         return baseClusterTreeNode;
     }
 
     @Override
-    public Optional<Pointer> getIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
+    public Optional<V> getIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
         TableIdentifier<K> lookup = new TableIdentifier<>(table, identifier);
-        Pointer optionalPointer = cache.getIfPresent(lookup);
+        V optionalPointer = cache.getIfPresent(lookup);
         if (optionalPointer != null)
             return Optional.of(optionalPointer);
-        Optional<Pointer> output = super.getIndex(table, identifier);
-        output.ifPresent(pointer -> cache.put(lookup, pointer));
+        Optional<V> output = super.getIndex(table, identifier);
+        output.ifPresent(value -> cache.put(lookup, value));
         return output;
     }
 

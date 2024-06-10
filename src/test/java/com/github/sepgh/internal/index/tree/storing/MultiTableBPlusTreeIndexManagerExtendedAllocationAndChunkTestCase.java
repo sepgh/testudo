@@ -4,8 +4,8 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.DBLevelAsyncIndexManagerDecorator;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
+import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
 import com.github.sepgh.internal.storage.ExtendedFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
@@ -148,7 +148,7 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager<Long> indexManager = new BPlusTreeIndexManager(degree, extendedFileIndexStorageManager, ClusterIdentifier.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, extendedFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
 
         for (int tableId = 1; tableId <= 2; tableId++){
 
@@ -177,12 +177,11 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
 
         LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(), 1);
         ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig, limitedFileHandlerPool);
-        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, extendedFileIndexStorageManager, ClusterIdentifier.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, extendedFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
 
         for (int tableId = 1; tableId <= 2; tableId++) {
-            int finalTableId = tableId;
             for (long testIdentifier : testIdentifiers) {
-                indexManager.addIndex(finalTableId, testIdentifier, samplePointer);
+                indexManager.addIndex(tableId, testIdentifier, samplePointer);
             }
         }
 
@@ -206,12 +205,11 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
 
         LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(),2);
         ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig, limitedFileHandlerPool);
-        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, extendedFileIndexStorageManager, ClusterIdentifier.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, extendedFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
 
         for (int tableId = 1; tableId <= 2; tableId++) {
-            int finalTableId = tableId;
             for (long testIdentifier : testIdentifiers) {
-                indexManager.addIndex(finalTableId, testIdentifier, samplePointer);
+                indexManager.addIndex(tableId, testIdentifier, samplePointer);
             }
         }
 
@@ -236,7 +234,7 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager<Long> indexManager = new DBLevelAsyncIndexManagerDecorator<>(new BPlusTreeIndexManager<>(degree, extendedFileIndexStorageManager, ClusterIdentifier.LONG));
+        IndexManager<Long, Pointer> indexManager = new DBLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, extendedFileIndexStorageManager, NodeInnerObj.Strategy.LONG));
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         CountDownLatch countDownLatch = new CountDownLatch((2 * testIdentifiers.size()) - 2);
@@ -315,7 +313,7 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, extendedFileIndexStorageManager, ClusterIdentifier.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, extendedFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
 
         for (int tableId = 1; tableId <= 2; tableId++){
 

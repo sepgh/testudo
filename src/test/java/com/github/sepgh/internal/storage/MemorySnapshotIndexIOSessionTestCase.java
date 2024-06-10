@@ -3,8 +3,9 @@ package com.github.sepgh.internal.storage;
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
+import com.github.sepgh.internal.index.tree.node.NodeFactory;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
+import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.storage.session.IndexIOSession;
@@ -86,13 +87,13 @@ public class MemorySnapshotIndexIOSessionTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, ClusterIdentifier.LONG);
-        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, indexStorageManager, new IndexIOSessionFactory() {
+        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG));
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new IndexIOSessionFactory() {
             @Override
-            public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, ClusterIdentifier.Strategy<K> strategy) {
+            public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, NodeFactory<K> nodeFactory) {
                 return (IndexIOSession<K>) indexIOSession;
             }
-        }, ClusterIdentifier.LONG);
+        }, NodeInnerObj.Strategy.LONG);
 
         for (long i = 1; i < 12; i++){
             indexManager.addIndex(1, i, Pointer.empty());
@@ -109,7 +110,7 @@ public class MemorySnapshotIndexIOSessionTestCase {
         method.invoke(indexIOSession);
 
         // Since the same indexIOSession instance shouldn't be used to re-read after rollback we create a new instance
-        indexManager = new BPlusTreeIndexManager<>(degree, indexStorageManager, ClusterIdentifier.LONG);
+        indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, NodeInnerObj.Strategy.LONG);
         Assertions.assertFalse(indexManager.getIndex(1, 12L).isPresent());
 
     }
@@ -120,15 +121,14 @@ public class MemorySnapshotIndexIOSessionTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        final IndexIOSession indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, ClusterIdentifier.LONG);
-        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, indexStorageManager, new IndexIOSessionFactory() {
+        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG));
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new IndexIOSessionFactory() {
             @Override
-            public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, ClusterIdentifier.Strategy<K> strategy) {
-                return indexIOSession;
+            public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, NodeFactory<K> nodeFactory) {
+                return (IndexIOSession<K>) indexIOSession;
             }
-        }, ClusterIdentifier.LONG);
-
-        IndexManager<Long> indexManager2 = new BPlusTreeIndexManager<>(degree, indexStorageManager, ClusterIdentifier.LONG);
+        }, NodeInnerObj.Strategy.LONG);
+        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, NodeInnerObj.Strategy.LONG);
 
         for (long i = 1; i < 13; i++){
             indexManager2.addIndex(1, i, Pointer.empty());

@@ -1,6 +1,6 @@
 package com.github.sepgh.internal.index;
 
-import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 
 import java.io.IOException;
 import java.util.Map;
@@ -9,9 +9,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class TableLevelAsyncIndexManagerDecorator<K extends Comparable<K>> extends IndexManagerDecorator<K> {
+public class TableLevelAsyncIndexManagerDecorator<K extends Comparable<K>, V extends Comparable<V>> extends IndexManagerDecorator<K, V> {
     private final Map<Integer, LockManager> lockManagerPool = new ConcurrentHashMap<>();
-    public TableLevelAsyncIndexManagerDecorator(IndexManager<K> indexManager) {
+    public TableLevelAsyncIndexManagerDecorator(IndexManager<K, V> indexManager) {
         super(indexManager);
     }
 
@@ -20,18 +20,18 @@ public class TableLevelAsyncIndexManagerDecorator<K extends Comparable<K>> exten
     }
 
     @Override
-    public BaseClusterTreeNode<K> addIndex(int table, K identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
+    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException {
         LockManager lockManager = getLockManager(table);
         lockManager.writeLock.lock();
         try {
-            return super.addIndex(table, identifier, pointer);
+            return super.addIndex(table, identifier, value);
         } finally {
             lockManager.writeLock.unlock();
         }
     }
 
     @Override
-    public Optional<Pointer> getIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
+    public Optional<V> getIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
         LockManager lockManager = getLockManager(table);
         lockManager.readLock.lock();
         try {

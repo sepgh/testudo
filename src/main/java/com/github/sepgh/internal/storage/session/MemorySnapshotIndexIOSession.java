@@ -1,8 +1,8 @@
 package com.github.sepgh.internal.storage.session;
 
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
+import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
+import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import lombok.Getter;
@@ -16,25 +16,25 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
     protected final IndexStorageManager indexStorageManager;
     protected final int table;
     protected final Set<Pointer> updated = new HashSet<>();
-    protected final Map<Pointer, BaseClusterTreeNode<K>> pool = new HashMap<>();
-    protected final Map<Pointer, BaseClusterTreeNode<K>> original = new HashMap<>();
+    protected final Map<Pointer, AbstractTreeNode<K>> pool = new HashMap<>();
+    protected final Map<Pointer, AbstractTreeNode<K>> original = new HashMap<>();
     protected final List<Pointer> created = new LinkedList<>();
     protected final List<Pointer> deleted = new LinkedList<>();
-    protected BaseClusterTreeNode<K> root;
-    private final ClusterIdentifier.Strategy<K> strategy;
+    protected AbstractTreeNode<K> root;
+    private final NodeFactory<K> nodeFactory;
 
-    public MemorySnapshotIndexIOSession(IndexStorageManager indexStorageManager, int table, ClusterIdentifier.Strategy<K> strategy) {
+    public MemorySnapshotIndexIOSession(IndexStorageManager indexStorageManager, int table, NodeFactory<K> nodeFactory) {
         this.indexStorageManager = indexStorageManager;
         this.table = table;
-        this.strategy = strategy;
+        this.nodeFactory = nodeFactory;
     }
 
     @Override
-    public Optional<BaseClusterTreeNode<K>> getRoot() throws ExecutionException, InterruptedException {
+    public Optional<AbstractTreeNode<K>> getRoot() throws ExecutionException, InterruptedException {
         if (root == null){
             Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table).get();
             if (optional.isPresent()){
-                BaseClusterTreeNode<K> baseClusterTreeNode = BaseClusterTreeNode.fromNodeData(optional.get(), strategy);
+                AbstractTreeNode<K> baseClusterTreeNode = nodeFactory.fromNodeData(optional.get());
                 this.root = baseClusterTreeNode;
                 return Optional.of(baseClusterTreeNode);
             }
@@ -46,7 +46,7 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
     }
 
     @Override
-    public IndexStorageManager.NodeData write(BaseClusterTreeNode<K> node) throws IOException, ExecutionException, InterruptedException {
+    public IndexStorageManager.NodeData write(AbstractTreeNode<K> node) throws IOException, ExecutionException, InterruptedException {
         IndexStorageManager.NodeData nodeData = IndexTreeNodeIO.write(indexStorageManager, table, node).get();
         this.created.add(nodeData.pointer());
         this.pool.put(nodeData.pointer(), node);
@@ -56,7 +56,7 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
     }
 
     @Override
-    public BaseClusterTreeNode<K> read(Pointer pointer) throws ExecutionException, InterruptedException, IOException {
+    public AbstractTreeNode<K> read(Pointer pointer) throws ExecutionException, InterruptedException, IOException {
         if (deleted.contains(pointer))
             return null;
 
@@ -66,33 +66,29 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
         if (created.contains(pointer))
             return pool.get(pointer);
 
-        BaseClusterTreeNode<K> baseClusterTreeNode = IndexTreeNodeIO.read(indexStorageManager, table, pointer, strategy);
+        AbstractTreeNode<K> baseClusterTreeNode = IndexTreeNodeIO.read(indexStorageManager, table, pointer, nodeFactory);
         pool.put(pointer, baseClusterTreeNode);
 
         byte[] copy = new byte[baseClusterTreeNode.getData().length];
         System.arraycopy(baseClusterTreeNode.getData(), 0, copy, 0, copy.length);
-        original.put(pointer, BaseClusterTreeNode.fromNodeData(new IndexStorageManager.NodeData(pointer, copy), strategy));
+        original.put(pointer, nodeFactory.fromNodeData(new IndexStorageManager.NodeData(pointer, copy)));
         if (baseClusterTreeNode.isRoot())
             this.root = baseClusterTreeNode;
         return baseClusterTreeNode;
     }
 
-    @SafeVarargs
-    @Override
-    public final void update(BaseClusterTreeNode<K>... nodes) throws IOException, InterruptedException {
-        for (BaseClusterTreeNode<K> node : nodes) {
-            pool.put(
-                    node.getPointer(),
-                    node
-            );
-            updated.add(node.getPointer());
-            if (node.isRoot())
-                root = node;
-        }
+    public final void update(AbstractTreeNode<K> node) throws IOException, InterruptedException {
+        pool.put(
+                node.getPointer(),
+                node
+        );
+        updated.add(node.getPointer());
+        if (node.isRoot())
+            root = node;
     }
 
     @Override
-    public void remove(BaseClusterTreeNode<K> node) throws ExecutionException, InterruptedException {
+    public void remove(AbstractTreeNode<K> node) throws ExecutionException, InterruptedException {
         deleted.add(node.getPointer());
     }
 
@@ -123,7 +119,7 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
         }
 
         for (Pointer pointer : updated) {
-            BaseClusterTreeNode<K> baseClusterTreeNode = original.get(pointer);
+            AbstractTreeNode<K> baseClusterTreeNode = original.get(pointer);
             IndexTreeNodeIO.update(indexStorageManager, table, baseClusterTreeNode);
         }
 
@@ -145,8 +141,8 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
         }
 
         @Override
-        public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, ClusterIdentifier.Strategy<K> strategy) {
-            return new MemorySnapshotIndexIOSession<>(indexStorageManager, table, strategy);
+        public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, NodeFactory<K> nodeFactory) {
+            return new MemorySnapshotIndexIOSession<>(indexStorageManager, table, nodeFactory);
         }
     }
 

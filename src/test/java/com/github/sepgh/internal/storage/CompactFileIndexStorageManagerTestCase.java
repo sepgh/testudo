@@ -2,10 +2,12 @@ package com.github.sepgh.internal.storage;
 
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
-import com.github.sepgh.internal.index.tree.node.cluster.InternalClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
+import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
+import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
+import com.github.sepgh.internal.index.tree.node.data.PointerInnerObject;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import org.junit.jupiter.api.AfterEach;
@@ -23,6 +25,8 @@ import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static com.github.sepgh.internal.index.tree.node.AbstractTreeNode.*;
+import static com.github.sepgh.internal.index.tree.node.AbstractTreeNode.Type.INTERNAL;
 import static com.github.sepgh.internal.storage.CompactFileIndexStorageManager.INDEX_FILE_NAME;
 
 public class CompactFileIndexStorageManagerTestCase {
@@ -30,7 +34,7 @@ public class CompactFileIndexStorageManagerTestCase {
     private EngineConfig engineConfig;
     private Header header;
     private final byte[] singleKeyLeafNodeRepresentation = {
-            ((byte) (0x00 | BaseClusterTreeNode.ROOT_BIT | BaseClusterTreeNode.TYPE_LEAF_NODE_BIT)), // Leaf
+            ((byte) (0x00 | ROOT_BIT | TYPE_LEAF_NODE_BIT)), // Leaf
 
             0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F,  // Key 1
 
@@ -41,7 +45,7 @@ public class CompactFileIndexStorageManagerTestCase {
             // >> End pointer to child 1
     };
     private final byte[] singleKeyInternalNodeRepresentation = {
-            ((byte) (0x00 | BaseClusterTreeNode.ROOT_BIT | BaseClusterTreeNode.TYPE_INTERNAL_NODE_BIT)), // Not leaf
+            ((byte) (0x00 | ROOT_BIT | TYPE_INTERNAL_NODE_BIT)), // Not leaf
 
             // >> Start pointer to child 1
             Pointer.TYPE_NODE,  // type
@@ -112,6 +116,8 @@ public class CompactFileIndexStorageManagerTestCase {
     public void canReadNodeSuccessfully() throws ExecutionException, InterruptedException, IOException {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+
 
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         try {
@@ -120,9 +126,9 @@ public class CompactFileIndexStorageManagerTestCase {
             IndexStorageManager.NodeData nodeData = future.get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
 
-            BaseClusterTreeNode<Long> treeNode = BaseClusterTreeNode.fromBytes(nodeData.bytes(), ClusterIdentifier.LONG);
+            AbstractTreeNode<Long> treeNode = nodeFactory.fromBytes(nodeData.bytes());
 
-            Iterator<Long> keys = treeNode.getKeys(2);
+            Iterator<Long> keys = treeNode.getKeys(2, PointerInnerObject.BYTES);
 
             Assertions.assertTrue(treeNode.isRoot());
             Assertions.assertTrue(keys.hasNext());
@@ -133,12 +139,12 @@ public class CompactFileIndexStorageManagerTestCase {
             nodeData = future.get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
 
-            treeNode = BaseClusterTreeNode.fromBytes(nodeData.bytes(), ClusterIdentifier.LONG);
+            treeNode = nodeFactory.fromBytes(nodeData.bytes());
 
-            Iterator<InternalClusterTreeNode.ChildPointers<Long>> children = ((InternalClusterTreeNode<Long>) treeNode).getChildPointers(2);
+            Iterator<InternalTreeNode.ChildPointers<Long>> children = ((InternalTreeNode<Long>) treeNode).getChildPointers(2);
 
             Assertions.assertTrue(children.hasNext());
-            InternalClusterTreeNode.ChildPointers<Long> childPointers = children.next();
+            InternalTreeNode.ChildPointers<Long> childPointers = children.next();
             Assertions.assertTrue(childPointers.getLeft().isNodePointer());
             Assertions.assertEquals(1, childPointers.getLeft().getPosition());
             Assertions.assertEquals(1, childPointers.getLeft().getChunk());
@@ -151,6 +157,8 @@ public class CompactFileIndexStorageManagerTestCase {
     @Test
     public void canReadAndUpdateNodeSuccessfully() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+
 
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         try {
@@ -159,14 +167,14 @@ public class CompactFileIndexStorageManagerTestCase {
             IndexStorageManager.NodeData nodeData = future.get();
             Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
 
-            LeafClusterTreeNode<Long> leafTreeNode = (LeafClusterTreeNode) BaseClusterTreeNode.fromBytes(nodeData.bytes(), ClusterIdentifier.LONG);
+            LeafClusterTreeNode<Long> leafTreeNode = (LeafClusterTreeNode) nodeFactory.fromBytes(nodeData.bytes());
             leafTreeNode.setKeyValue(0, new LeafClusterTreeNode.KeyValue(10L, new Pointer(Pointer.TYPE_DATA, 100, 100)));
 
             compactFileIndexStorageManager.updateNode(1, leafTreeNode.getData(), nodeData.pointer()).get();
 
             future = compactFileIndexStorageManager.readNode(1, 0, 0);
             nodeData = future.get();
-            leafTreeNode = (LeafClusterTreeNode<Long>) BaseClusterTreeNode.fromBytes(nodeData.bytes(), ClusterIdentifier.LONG);
+            leafTreeNode = (LeafClusterTreeNode<Long>) nodeFactory.fromBytes(nodeData.bytes());
 
             Assertions.assertTrue(leafTreeNode.getKeyValues(2).hasNext());
 
@@ -182,12 +190,13 @@ public class CompactFileIndexStorageManagerTestCase {
     @Test
     public void canWriteNewNodeAndAllocate() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
 
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         try {
 
             byte[] emptyNode = compactFileIndexStorageManager.getEmptyNode();
-            BaseClusterTreeNode<Long> baseClusterTreeNode = BaseClusterTreeNode.fromBytes(emptyNode, BaseClusterTreeNode.Type.INTERNAL, ClusterIdentifier.LONG);
+            AbstractTreeNode<Long> baseClusterTreeNode = nodeFactory.fromBytes(emptyNode, INTERNAL);
             baseClusterTreeNode.setAsRoot();
 
             IndexStorageManager.NodeData nodeData = compactFileIndexStorageManager.writeNewNode(1, baseClusterTreeNode.getData()).get();

@@ -18,8 +18,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode.TYPE_INTERNAL_NODE_BIT;
-import static com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode.TYPE_LEAF_NODE_BIT;
+import static com.github.sepgh.internal.index.tree.node.AbstractTreeNode.TYPE_INTERNAL_NODE_BIT;
+import static com.github.sepgh.internal.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
 
 public abstract class BaseFileIndexStorageManager implements IndexStorageManager {
     protected final Path path;

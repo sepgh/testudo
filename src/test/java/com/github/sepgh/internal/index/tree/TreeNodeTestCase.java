@@ -1,20 +1,24 @@
 package com.github.sepgh.internal.index.tree;
 
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
-import com.github.sepgh.internal.index.tree.node.cluster.InternalClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
+import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
+import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.index.tree.node.data.LongIdentifier;
+import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 import java.util.List;
 
+import static com.github.sepgh.internal.index.tree.node.AbstractTreeNode.TYPE_INTERNAL_NODE_BIT;
+import static com.github.sepgh.internal.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
+
 public class TreeNodeTestCase {
     private final byte[] singleKeyInternalNodeRepresentation = {
-            BaseClusterTreeNode.TYPE_INTERNAL_NODE_BIT, // Not leaf
+            TYPE_INTERNAL_NODE_BIT, // Not leaf
 
             // >> Start pointer to child 1
             Pointer.TYPE_NODE,  // type
@@ -32,7 +36,7 @@ public class TreeNodeTestCase {
     };
 
     private final byte[] singleKeyLeafNodeRepresentation = {
-            BaseClusterTreeNode.TYPE_LEAF_NODE_BIT, // leaf
+            TYPE_LEAF_NODE_BIT, // leaf
 
             0x01,0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F,  // Key 1
 
@@ -53,10 +57,12 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyInternalTreeNodeChildren(){
-        BaseClusterTreeNode<Long> node = BaseClusterTreeNode.fromBytes(singleKeyInternalNodeRepresentation, ClusterIdentifier.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
 
-        Assertions.assertInstanceOf(InternalClusterTreeNode.class, node);
-        InternalClusterTreeNode<Long> treeNode = (InternalClusterTreeNode<Long>) node;
+        AbstractTreeNode<Long> node = nodeFactory.fromBytes(singleKeyInternalNodeRepresentation);
+
+        Assertions.assertInstanceOf(InternalTreeNode.class, node);
+        InternalTreeNode<Long> treeNode = (InternalTreeNode<Long>) node;
 
         Pointer child0Pointer = TreeNodeUtils.getChildPointerAtIndex(treeNode, 0, LongIdentifier.BYTES);
         Assertions.assertNotNull(child0Pointer);
@@ -78,12 +84,14 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyInternalTreeNodeChildrenIteration() {
-        BaseClusterTreeNode<Long> node = BaseClusterTreeNode.fromBytes(singleKeyInternalNodeRepresentation, ClusterIdentifier.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
 
-        Assertions.assertInstanceOf(InternalClusterTreeNode.class, node);
-        InternalClusterTreeNode<Long> treeNode = (InternalClusterTreeNode<Long>) node;
+        AbstractTreeNode<Long> node = nodeFactory.fromBytes(singleKeyInternalNodeRepresentation);
 
-        List<InternalClusterTreeNode.ChildPointers<Long>> childPointersList = treeNode.getChildPointersList(3);
+        Assertions.assertInstanceOf(InternalTreeNode.class, node);
+        InternalTreeNode<Long> treeNode = (InternalTreeNode<Long>) node;
+
+        List<InternalTreeNode.ChildPointers<Long>> childPointersList = treeNode.getChildPointersList(3);
         Assertions.assertEquals(1, childPointersList.size());
 
         Assertions.assertTrue(childPointersList.get(0).getLeft().isNodePointer());
@@ -97,10 +105,11 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyInternalNodeKeysIteration(){
-        BaseClusterTreeNode<Long> node = BaseClusterTreeNode.fromBytes(singleKeyInternalNodeRepresentation, ClusterIdentifier.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+        AbstractTreeNode<Long> node = nodeFactory.fromBytes(singleKeyInternalNodeRepresentation);
 
-        Assertions.assertInstanceOf(InternalClusterTreeNode.class, node);
-        InternalClusterTreeNode<Long> treeNode = (InternalClusterTreeNode<Long>) node;
+        Assertions.assertInstanceOf(InternalTreeNode.class, node);
+        InternalTreeNode<Long> treeNode = (InternalTreeNode<Long>) node;
 
         Iterator<Long> iterator = treeNode.getKeys(3);
         Assertions.assertTrue(iterator.hasNext());
@@ -115,7 +124,9 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyLeafNodeKeysIteration(){
-        BaseClusterTreeNode<Long> node = BaseClusterTreeNode.fromBytes(singleKeyLeafNodeRepresentation, ClusterIdentifier.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+
+        AbstractTreeNode<Long> node = nodeFactory.fromBytes(singleKeyLeafNodeRepresentation);
 
         Assertions.assertInstanceOf(LeafClusterTreeNode.class, node);
         LeafClusterTreeNode<Long> treeNode = (LeafClusterTreeNode<Long>) node;
@@ -138,15 +149,17 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyLeafNodeKeyValueIteration(){
-        BaseClusterTreeNode<Long> node = BaseClusterTreeNode.fromBytes(singleKeyLeafNodeRepresentation, ClusterIdentifier.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
+
+        AbstractTreeNode<Long> node = nodeFactory.fromBytes(singleKeyLeafNodeRepresentation);
 
         Assertions.assertInstanceOf(LeafClusterTreeNode.class, node);
         LeafClusterTreeNode<Long> treeNode = (LeafClusterTreeNode<Long>) node;
 
-        Iterator<LeafClusterTreeNode.KeyValue<Long>> iterator = treeNode.getKeyValues(3);
+        Iterator<LeafClusterTreeNode.KeyValue<Long, Pointer>> iterator = treeNode.getKeyValues(3);
 
         Assertions.assertTrue(iterator.hasNext());
-        LeafClusterTreeNode.KeyValue<Long> next = iterator.next();
+        LeafClusterTreeNode.KeyValue<Long, Pointer> next = iterator.next();
         Assertions.assertEquals(15, next.key());
         Pointer pointer = next.value();
         Assertions.assertFalse(pointer.isNodePointer());

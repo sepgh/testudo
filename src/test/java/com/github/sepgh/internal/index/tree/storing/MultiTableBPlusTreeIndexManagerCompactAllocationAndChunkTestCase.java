@@ -4,8 +4,8 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.helper.IndexFileDescriptor;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.BPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.cluster.ClusterIdentifier;
+import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
+import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
@@ -141,7 +141,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
 
 
         for (int tableId = 1; tableId <= 2; tableId++){
@@ -171,7 +171,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
 
         LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(), 1);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, limitedFileHandlerPool);
-        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
 
         for (int tableId = 1; tableId <= 2; tableId++) {
             int finalTableId = tableId;
@@ -200,7 +200,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
 
         LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(), 2);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, limitedFileHandlerPool);
-        IndexManager<Long> indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
 
         for (int tableId = 1; tableId <= 2; tableId++) {
             int finalTableId = tableId;
@@ -229,7 +229,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager<Long> indexManager = new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
 
         IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
                 AsynchronousFileChannel.open(
@@ -249,7 +249,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
             indexManager.addIndex(2, testIdentifiers.get(index) * 10, samplePointer);
             index++;
             runs++;
-            indexFileDescriptor.describe(ClusterIdentifier.LONG);
+            indexFileDescriptor.describe(NodeInnerObj.Strategy.LONG);
         }
 
 
@@ -299,7 +299,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        IndexManager<Long> indexManager = new BPlusTreeIndexManager(degree, compactFileIndexStorageManager, ClusterIdentifier.LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
 
         for (int tableId = 1; tableId <= 2; tableId++){
 

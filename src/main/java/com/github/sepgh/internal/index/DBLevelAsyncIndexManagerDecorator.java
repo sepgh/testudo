@@ -1,32 +1,32 @@
 package com.github.sepgh.internal.index;
 
-import com.github.sepgh.internal.index.tree.node.cluster.BaseClusterTreeNode;
+import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class DBLevelAsyncIndexManagerDecorator<K extends Comparable<K>> extends IndexManagerDecorator<K> {
+public class DBLevelAsyncIndexManagerDecorator<K extends Comparable<K>, V extends Comparable<V>> extends IndexManagerDecorator<K, V> {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
-    public DBLevelAsyncIndexManagerDecorator(IndexManager<K> indexManager) {
+    public DBLevelAsyncIndexManagerDecorator(IndexManager<K, V> indexManager) {
         super(indexManager);
     }
     
     @Override
-    public BaseClusterTreeNode<K> addIndex(int table, K identifier, Pointer pointer) throws ExecutionException, InterruptedException, IOException {
+    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException {
         writeLock.lock();
         try {
-            return super.addIndex(table, identifier, pointer);
+            return super.addIndex(table, identifier, value);
         } finally {
             writeLock.unlock();
         }
     }
 
     @Override
-    public Optional<Pointer> getIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
+    public Optional<V> getIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
         readLock.lock();
         try {
             return super.getIndex(table, identifier);
