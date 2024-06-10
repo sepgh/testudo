@@ -45,6 +45,10 @@ public abstract class NodeData<V extends Comparable<V>> {
         Class<? extends NodeData<K>> getNodeDataClass();
         Class<K> getDataClass();
         NodeData<K> fromObject(K k);
+        NodeData<K> fromBytes(byte[] bytes, int beginning);
+        default NodeData<K> fromBytes(byte[] bytes) {
+            return this.fromBytes(bytes, 0);
+        }
         int size();
         default boolean isValid(K identifier){return true;}
 
@@ -62,6 +66,11 @@ public abstract class NodeData<V extends Comparable<V>> {
             @Override
             public NodeData<Integer> fromObject(Integer integer) {
                 return new IntegerIdentifier(integer);
+            }
+
+            @Override
+            public NodeData<Integer> fromBytes(byte[] bytes, int beginning) {
+                return new IntegerIdentifier(bytes, beginning);
             }
 
             @Override
@@ -85,6 +94,10 @@ public abstract class NodeData<V extends Comparable<V>> {
                 return new LongIdentifier(aLong);
             }
 
+            @Override
+            public NodeData<Long> fromBytes(byte[] bytes, int beginning) {
+                return new LongIdentifier(bytes, beginning);
+            }
             @Override
             public int size() {
                 return LongIdentifier.BYTES;
@@ -113,6 +126,10 @@ public abstract class NodeData<V extends Comparable<V>> {
             }
 
             @Override
+            public NodeData<Long> fromBytes(byte[] bytes, int beginning) {
+                return new NoZeroLongIdentifier(bytes, beginning);
+            }
+            @Override
             public boolean isValid(Long identifier) {
                 return identifier != 0;
             }
@@ -140,6 +157,10 @@ public abstract class NodeData<V extends Comparable<V>> {
             }
 
             @Override
+            public NodeData<Integer> fromBytes(byte[] bytes, int beginning) {
+                return new NoZeroIntegerIdentifier(bytes, beginning);
+            }
+            @Override
             public boolean isValid(Integer identifier) {
                 return identifier != 0;
             }
@@ -160,7 +181,10 @@ public abstract class NodeData<V extends Comparable<V>> {
             public NodeData<Pointer> fromObject(Pointer pointer) {
                 return new PointerInnerObject(pointer);
             }
-
+            @Override
+            public NodeData<Pointer> fromBytes(byte[] bytes, int beginning) {
+                return new PointerInnerObject(bytes, beginning);
+            }
             @Override
             public int size() {
                 return PointerInnerObject.BYTES;

@@ -143,14 +143,14 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
             if (!hasNext)
                 return false;
 
-            hasNext = TreeNodeUtils.hasKeyAtIndex(this.node, cursor, degree, kClass, keySize, valueSize);
+            hasNext = TreeNodeUtils.hasKeyAtIndex(this.node, cursor, degree, this.node.keyStrategy, valueSize);
             return hasNext;
         }
 
         @SneakyThrows
         @Override
         public K next() {
-            NodeData<K> nodeData = TreeNodeUtils.getKeyAtIndex(this.node, cursor, kClass, keySize, valueSize);
+            NodeData<K> nodeData = TreeNodeUtils.getKeyAtIndex(this.node, cursor, this.node.keyStrategy, valueSize);
             cursor++;
             return nodeData.data();
         }

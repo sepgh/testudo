@@ -5,8 +5,6 @@ import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.data.NodeData;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.AbstractMap;
 import java.util.Map;
 import java.util.Optional;
@@ -86,30 +84,20 @@ public class TreeNodeUtils {
         }
     }
 
-    private static <E extends Comparable<E>> Constructor<? extends NodeData<E>> getNodeInnerObjectConstructor(Class<? extends NodeData<E>> nodeInnerObjectClass) throws NoSuchMethodException {
-        return nodeInnerObjectClass.getConstructor(byte[].class, Integer.TYPE);
-    }
-
-    private static <E extends Comparable<E>> Constructor<? extends NodeData<E>> getNodeInnerObjectConstructorForValue(Class<? extends NodeData<E>> nodeInnerObjectClass, Class<E> eClass) throws NoSuchMethodException {
-        return nodeInnerObjectClass.getConstructor(eClass);
-    }
-
     /**
      * @param treeNode to read/write from/to
      * @param index of the key to check existence
      * @return boolean state of existence of a key in index
      */
-    public static <E extends Comparable<E>> boolean hasKeyAtIndex(AbstractTreeNode<?> treeNode, int index, int degree, Class<? extends NodeData<E>> nodeInnerObjectClass, int keySize, int valueSize) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public static <K extends Comparable<K>> boolean hasKeyAtIndex(AbstractTreeNode<?> treeNode, int index, int degree, NodeData.Strategy<K> keyStrategy, int valueSize) {
         if (index >= degree - 1)
             return false;
 
-        int keyStartIndex = getKeyStartOffset(treeNode, index, keySize, valueSize);
-        if (keyStartIndex + keySize > treeNode.getData().length)
+        int keyStartIndex = getKeyStartOffset(treeNode, index, keyStrategy.size(), valueSize);
+        if (keyStartIndex + keyStrategy.size() > treeNode.getData().length)
             return false;
 
-        Constructor<? extends NodeData<E>> constructor = getNodeInnerObjectConstructor(nodeInnerObjectClass);
-        NodeData<E> nodeData = constructor.newInstance(treeNode.getData(), keyStartIndex);
-        return nodeData.exists();
+        return keyStrategy.fromBytes(treeNode.getData(), keyStartIndex).exists();
     }
 
 
@@ -129,10 +117,9 @@ public class TreeNodeUtils {
      * @param index to read they key at
      * @return key value at index
      */
-    public static <E extends Comparable<E>> NodeData<E> getKeyAtIndex(AbstractTreeNode<?> treeNode, int index, Class<? extends NodeData<E>> nodeInnerObjectClass, int keySize, int valueSize) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        int keyStartIndex = getKeyStartOffset(treeNode, index, keySize, valueSize);
-        Constructor<? extends NodeData<E>> nodeInnerObjectConstructor = getNodeInnerObjectConstructor(nodeInnerObjectClass);
-        return nodeInnerObjectConstructor.newInstance(treeNode.getData(), keyStartIndex);
+    public static <K extends Comparable<K>> NodeData<K> getKeyAtIndex(AbstractTreeNode<?> treeNode, int index, NodeData.Strategy<K> kStrategy, int valueSize) {
+        int keyStartIndex = getKeyStartOffset(treeNode, index, kStrategy.size(), valueSize);
+        return kStrategy.fromBytes(treeNode.getData(), keyStartIndex);
     }
 
     public static void removeKeyAtIndex(AbstractTreeNode<?> treeNode, int index, int keySize, int valueSize) {
@@ -145,18 +132,16 @@ public class TreeNodeUtils {
         );
     }
 
-    public static <K extends Comparable<K>, A extends NodeData<K>, V extends Comparable<V>, B extends NodeData<V>> Map.Entry<K, V> getKeyValueAtIndex(
+    public static <K extends Comparable<K>, V extends Comparable<V>> Map.Entry<K, V> getKeyValueAtIndex(
             AbstractTreeNode<K> treeNode,
             int index,
-            Class<? extends A> keyInnerObjectClass,
-            int keySize,
-            Class<? extends B> valueInnerObjectClass,
-            int valueSize
-    ) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        int keyStartIndex = getKeyStartOffset(treeNode, index, keySize, valueSize);
-        return new AbstractMap.SimpleImmutableEntry<>(
-                getNodeInnerObjectConstructor(keyInnerObjectClass).newInstance(treeNode.getData(), keyStartIndex).data(),
-                getNodeInnerObjectConstructor(valueInnerObjectClass).newInstance(treeNode.getData(), keyStartIndex + keySize).data()
+            NodeData.Strategy<K> kStrategy,
+            NodeData.Strategy<V> vStrategy
+    ){
+        int keyStartIndex = getKeyStartOffset(treeNode, index, kStrategy.size(), vStrategy.size());
+        return new AbstractMap.SimpleImmutableEntry<K, V>(
+                kStrategy.fromBytes(treeNode.getData(), keyStartIndex).data(),
+                vStrategy.fromBytes(treeNode.getData(), keyStartIndex + kStrategy.size()).data()
         );
     }
 
@@ -195,11 +180,11 @@ public class TreeNodeUtils {
             NodeData.Strategy<V> valueStrategy,
             V value,
             int valueSize
-    ) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+    ) {
         int indexToFill = -1;
         NodeData<K> keyAtIndex;
         for (int i = 0; i < degree - 1; i++){
-            keyAtIndex = getKeyAtIndex(treeNode, i, keyStrategy.getNodeDataClass(), keySize, valueSize);
+            keyAtIndex = getKeyAtIndex(treeNode, i, keyStrategy, valueSize);
             K data = keyAtIndex.data();
             if (!keyAtIndex.exists() || data.compareTo(key) > 0){
                 indexToFill = i;

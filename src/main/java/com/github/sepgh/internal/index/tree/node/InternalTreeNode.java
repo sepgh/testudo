@@ -233,13 +233,13 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
         @SneakyThrows
         @Override
         public boolean hasNext() {
-            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree, keyStrategy.getNodeDataClass(), keyStrategy.size(), Pointer.BYTES);
+            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree, keyStrategy, Pointer.BYTES);
         }
 
         @SneakyThrows
         @Override
         public ChildPointers<K> next() {
-            NodeData<K> nodeData = (NodeData<K>) TreeNodeUtils.getKeyAtIndex(node, cursor, keyStrategy.getNodeDataClass(), keyStrategy.size(), PointerInnerObject.BYTES);
+            NodeData<K> nodeData = TreeNodeUtils.getKeyAtIndex(node, cursor, keyStrategy, PointerInnerObject.BYTES);
             ChildPointers childPointers = null;
             if (cursor == 0){
                 childPointers = new ChildPointers<K>(

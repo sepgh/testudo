@@ -7,7 +7,6 @@ import com.github.sepgh.internal.utils.CollectionUtils;
 import com.google.common.collect.ImmutableList;
 import lombok.SneakyThrows;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<V>> extends AbstractTreeNode<K> {
@@ -96,11 +95,7 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         if (!keyStrategy.isValid(identifier)) {
             throw new NodeData.InvalidValueForNodeInnerObj(identifier, keyStrategy.getNodeDataClass());
         }
-        try {
-            return TreeNodeUtils.addKeyValueAndGetIndex(this, degree, keyStrategy, identifier, keyStrategy.size(), valueStrategy, v, valueStrategy.size());
-        } catch (InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
+        return TreeNodeUtils.addKeyValueAndGetIndex(this, degree, keyStrategy, identifier, keyStrategy.size(), valueStrategy, v, valueStrategy.size());
     }
 
     public int addKeyValue(KeyValue<K, V> keyValue, int degree) throws NodeData.InvalidValueForNodeInnerObj {
@@ -142,7 +137,7 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         @SneakyThrows
         @Override
         public boolean hasNext() {
-            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree, keyStrategy.getNodeDataClass(), keyStrategy.size(), valueStrategy.size());
+            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree, keyStrategy, valueStrategy.size());
         }
 
         @SneakyThrows
@@ -151,10 +146,8 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
             Map.Entry<K, V> kvAtIndex = TreeNodeUtils.getKeyValueAtIndex(
                     node,
                     cursor,
-                    keyStrategy.getNodeDataClass(),
-                    keyStrategy.size(),
-                    valueStrategy.getNodeDataClass(),
-                    valueStrategy.size()
+                    keyStrategy,
+                    valueStrategy
             );
             cursor++;
             return new KeyValue<>(kvAtIndex.getKey(), kvAtIndex.getValue());
