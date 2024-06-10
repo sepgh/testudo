@@ -105,7 +105,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
      *     ├── 011
      *     └── 012
      */
-    public void testRemovingLeftToRight(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException {
+    public void testRemovingLeftToRight(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
@@ -290,7 +290,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
 
     }
 
-    public void testRemovingRightToLeft(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException {
+    public void testRemovingRightToLeft(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
         NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
@@ -455,7 +455,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
     }
 
 
-    public void testRemovingRoot(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException {
+    public void testRemovingRoot(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
         NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeInnerObj.Strategy.LONG);
@@ -571,7 +571,8 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
             executorService.submit(() -> {
                 try {
                     indexManager.addIndex(1, testIdentifier, samplePointer);
-                } catch (ExecutionException | InterruptedException | IOException e) {
+                } catch (ExecutionException | InterruptedException | IOException |
+                         NodeInnerObj.InvalidValueForNodeInnerObj e) {
                     throw new RuntimeException(e);
                 } finally {
                     countDownLatch.countDown();

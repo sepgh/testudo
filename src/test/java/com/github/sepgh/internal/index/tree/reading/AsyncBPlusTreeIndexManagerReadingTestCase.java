@@ -88,7 +88,7 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexSuccessfully() throws IOException, ExecutionException, InterruptedException {
+    public void findIndexSuccessfully() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
@@ -118,7 +118,8 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
             executorService.submit(() -> {
                 try {
                     indexManager.addIndex(1, finalI, dataPointer);
-                } catch (ExecutionException | InterruptedException | IOException e) {
+                } catch (ExecutionException | InterruptedException | IOException |
+                         NodeInnerObj.InvalidValueForNodeInnerObj e) {
                     throw new RuntimeException(e);
                 } finally {
                     countDownLatch.countDown();
@@ -132,7 +133,7 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexFailure() throws IOException, ExecutionException, InterruptedException {
+    public void findIndexFailure() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 

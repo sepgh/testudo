@@ -1,6 +1,7 @@
 package com.github.sepgh.internal.index;
 
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
+import com.github.sepgh.internal.index.tree.node.data.NodeInnerObj;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
@@ -25,7 +26,7 @@ public class CachedIndexManagerDecorator<K extends Comparable<K>, V extends Comp
     }
 
     @Override
-    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException {
+    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException, NodeInnerObj.InvalidValueForNodeInnerObj {
         AbstractTreeNode<K> baseClusterTreeNode = super.addIndex(table, identifier, value);
         cache.put(new TableIdentifier<>(table, identifier), value);
         sizeCache.computeIfPresent(table, (k, v) -> v + 1);

@@ -27,14 +27,14 @@ public class BPlusTreeIndexManagerRemovalTestCase extends BaseBPlusTreeIndexMana
     }
 
     @Test
-    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException {
+    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
         super.testRemovingLeftToRight(indexManager, indexStorageManager);
     }
 
     @Test
-    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException {
+    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
         super.testRemovingRightToLeft(indexManager, indexStorageManager);
@@ -42,7 +42,7 @@ public class BPlusTreeIndexManagerRemovalTestCase extends BaseBPlusTreeIndexMana
 
 
     @Test
-    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException {
+    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
         super.testRemovingRoot(indexManager, indexStorageManager);

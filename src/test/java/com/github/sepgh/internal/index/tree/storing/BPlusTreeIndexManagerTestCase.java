@@ -94,7 +94,7 @@ public class BPlusTreeIndexManagerTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void addIndex() throws IOException, ExecutionException, InterruptedException {
+    public void addIndex() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
@@ -117,7 +117,7 @@ public class BPlusTreeIndexManagerTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void testSingleSplitAddIndex() throws IOException, ExecutionException, InterruptedException {
+    public void testSingleSplitAddIndex() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         Random random = new Random();
 
         List<Long> testIdentifiers = new ArrayList<>(degree);
@@ -212,7 +212,7 @@ public class BPlusTreeIndexManagerTestCase {
      */
     @Test
     @Timeout(value = 2)
-    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException {
+    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
@@ -255,7 +255,8 @@ public class BPlusTreeIndexManagerTestCase {
                 try {
                     indexManager.addIndex(1, testIdentifier, samplePointer);
                     countDownLatch.countDown();
-                } catch (ExecutionException | InterruptedException | IOException e) {
+                } catch (ExecutionException | InterruptedException | IOException |
+                         NodeInnerObj.InvalidValueForNodeInnerObj e) {
                     throw new RuntimeException(e);
                 }
             });

@@ -27,7 +27,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
         this.valueStrategy = valueStrategy;
     }
 
-    public AbstractTreeNode<K> addIndex(AbstractTreeNode<K> root, K identifier, V value) throws ExecutionException, InterruptedException, IOException {
+    public AbstractTreeNode<K> addIndex(AbstractTreeNode<K> root, K identifier, V value) throws ExecutionException, InterruptedException, IOException, NodeInnerObj.InvalidValueForNodeInnerObj {
         List<AbstractTreeNode<K>> path = new LinkedList<>();
         BPlusTreeUtils.getPathToResponsibleNode(indexIOSession, path, root, identifier, degree);
 

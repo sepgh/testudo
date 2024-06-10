@@ -40,7 +40,7 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
     }
 
     @Override
-    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException {
+    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException, NodeInnerObj.InvalidValueForNodeInnerObj {
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table, nodeFactory);
         AbstractTreeNode<K> root = getRoot(indexIOSession);
         return new BPlusTreeIndexCreateOperation<>(degree, indexIOSession, keyStrategy, valueStrategy).addIndex(root, identifier, value);

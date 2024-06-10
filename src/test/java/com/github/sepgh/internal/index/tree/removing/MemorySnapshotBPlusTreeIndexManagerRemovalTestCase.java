@@ -24,7 +24,7 @@ public class MemorySnapshotBPlusTreeIndexManagerRemovalTestCase extends BPlusTre
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException {
+    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         super.testRemovingLeftToRight();
     }
 
@@ -32,14 +32,14 @@ public class MemorySnapshotBPlusTreeIndexManagerRemovalTestCase extends BPlusTre
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException {
+    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         super.testRemovingRightToLeft();
     }
 
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException {
+    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         super.testRemovingRoot();
     }
 

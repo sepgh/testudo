@@ -7,6 +7,7 @@ import com.github.sepgh.internal.utils.CollectionUtils;
 import com.google.common.collect.ImmutableList;
 import lombok.SneakyThrows;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<V>> extends AbstractTreeNode<K> {
@@ -60,7 +61,7 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         return ImmutableList.copyOf(getKeyValues(degree));
     }
 
-    public void setKeyValues(List<KeyValue<K, V>> keyValueList, int degree){
+    public void setKeyValues(List<KeyValue<K, V>> keyValueList, int degree) throws NodeInnerObj.InvalidValueForNodeInnerObj {
         modified();
         for (int i = 0; i < keyValueList.size(); i++){
             KeyValue<K, V> keyValue = keyValueList.get(i);
@@ -71,11 +72,14 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         }
     }
 
-    public void setKeyValue(int index, KeyValue<K, V> keyValue){
+    public void setKeyValue(int index, KeyValue<K, V> keyValue) throws NodeInnerObj.InvalidValueForNodeInnerObj {
+        if (!keyStrategy.isValid(keyValue.key)) {
+            throw new NodeInnerObj.InvalidValueForNodeInnerObj(keyValue.key, keyStrategy.getNodeInnerObjClass());
+        }
         TreeNodeUtils.setKeyValueAtIndex(this, index, keyStrategy.fromObject(keyValue.key()), valueStrategy.fromObject(keyValue.value()));
     }
 
-    public List<KeyValue<K, V>> split(K identifier, V v, int degree){
+    public List<KeyValue<K, V>> split(K identifier, V v, int degree) throws NodeInnerObj.InvalidValueForNodeInnerObj {
         int mid = (degree - 1) / 2;
 
         List<KeyValue<K, V>> allKeyValues = new ArrayList<>(getKeyValueList(degree));
@@ -88,12 +92,18 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         return allKeyValues.subList(mid + 1, allKeyValues.size());
     }
 
-    @SneakyThrows
-    public int addKeyValue(K identifier, V v, int degree) {
-        return TreeNodeUtils.addKeyValueAndGetIndex(this, degree, keyStrategy, identifier, keyStrategy.size(), valueStrategy, v, valueStrategy.size());
+    public int addKeyValue(K identifier, V v, int degree) throws NodeInnerObj.InvalidValueForNodeInnerObj {
+        if (!keyStrategy.isValid(identifier)) {
+            throw new NodeInnerObj.InvalidValueForNodeInnerObj(identifier, keyStrategy.getNodeInnerObjClass());
+        }
+        try {
+            return TreeNodeUtils.addKeyValueAndGetIndex(this, degree, keyStrategy, identifier, keyStrategy.size(), valueStrategy, v, valueStrategy.size());
+        } catch (InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public int addKeyValue(KeyValue<K, V> keyValue, int degree) {
+    public int addKeyValue(KeyValue<K, V> keyValue, int degree) throws NodeInnerObj.InvalidValueForNodeInnerObj {
         return this.addKeyValue(keyValue.key, keyValue.value, degree);
     }
 
@@ -101,7 +111,7 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         TreeNodeUtils.removeKeyValueAtIndex(this, index, keyStrategy.size(), valueStrategy.size());
     }
 
-    public boolean removeKeyValue(K key, int degree) {
+    public boolean removeKeyValue(K key, int degree) throws NodeInnerObj.InvalidValueForNodeInnerObj {
         List<KeyValue<K, V>> keyValueList = new ArrayList<>(this.getKeyValueList(degree));
         boolean removed = keyValueList.removeIf(keyValue -> keyValue.key.compareTo(key) == 0);
         setKeyValues(keyValueList, degree);

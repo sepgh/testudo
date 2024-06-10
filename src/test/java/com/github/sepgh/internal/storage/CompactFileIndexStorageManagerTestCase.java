@@ -182,6 +182,8 @@ public class CompactFileIndexStorageManagerTestCase {
             Assertions.assertEquals(100, leafTreeNode.getKeyValueList(2).get(0).value().getChunk());
             Assertions.assertEquals(100, leafTreeNode.getKeyValueList(2).get(0).value().getPosition());
 
+        } catch (NodeInnerObj.InvalidValueForNodeInnerObj e) {
+            throw new RuntimeException(e);
         } finally {
             compactFileIndexStorageManager.close();
         }

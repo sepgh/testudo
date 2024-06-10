@@ -1,4 +1,4 @@
-package com.github.sepgh.internal.index.tree.reading;
+package com.github.sepgh.internal.index.tree;
 
 import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
@@ -9,20 +9,21 @@ import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-import static com.github.sepgh.internal.storage.CompactFileIndexStorageManager.INDEX_FILE_NAME;
+import static com.github.sepgh.internal.storage.BaseFileIndexStorageManager.INDEX_FILE_NAME;
 
-public class BPlusTreeIndexManagerReadingTestCase {
+public class NodeInnerObjTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private Header header;
@@ -30,12 +31,12 @@ public class BPlusTreeIndexManagerReadingTestCase {
 
     @BeforeEach
     public void setUp() throws IOException {
-        dbPath = Files.createTempDirectory("TEST_BTreeIndexManagerReadingTestCase");
+        dbPath = Files.createTempDirectory("TEST_NodeInnerObjTestCase");
         engineConfig = EngineConfig.builder()
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
                 .build();
-        engineConfig.setBTreeMaxFileSize(12L * engineConfig.getPaddedSize());
+        engineConfig.setBTreeMaxFileSize(4L * engineConfig.getPaddedSize());
 
         byte[] writingBytes = new byte[]{};
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
@@ -76,70 +77,89 @@ public class BPlusTreeIndexManagerReadingTestCase {
     public void destroy() throws IOException {
         Path indexPath0 = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.delete(indexPath0);
-        try {
-            Path indexPath1 = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 1));
-            Files.delete(indexPath1);
-        } catch (NoSuchFileException ignored){}
     }
 
     @Test
-    @Timeout(value = 2)
-    public void findIndexSuccessfully() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
-        Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
+        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.INTEGER);
 
-        indexManager.addIndex(1, 10L, dataPointer);
-        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 10L);
+        for (int i = 0; i < 13; i ++){
+            indexManager.addIndex(1, i, Pointer.empty());
+        }
 
-        Assertions.assertTrue(optionalPointer.isPresent());
-        Assertions.assertEquals(dataPointer, optionalPointer.get());
+        for (int i = 0; i < 13; i ++){
+            Assertions.assertTrue(indexManager.getIndex(1, i).isPresent());
+        }
+
+        for (int i = 0; i < 13; i ++){
+            Assertions.assertTrue(indexManager.removeIndex(1, i));
+        }
+
+        for (int i = 0; i < 13; i ++){
+            Assertions.assertFalse(indexManager.getIndex(1, i).isPresent());
+        }
+
+    }
+    @Test
+    public void test_NoZeroIntegerIdentifier() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+        HeaderManager headerManager = new InMemoryHeaderManager(header);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+
+        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.NO_ZERO_INTEGER);
+
+        Assertions.assertThrows(NodeInnerObj.InvalidValueForNodeInnerObj.class, () -> {
+            indexManager.addIndex(1, 0, Pointer.empty());
+        });
+
+        for (int i = 1; i < 13; i ++){
+            indexManager.addIndex(1, i, Pointer.empty());
+        }
+
+        for (int i = 1; i < 13; i ++){
+            Assertions.assertTrue(indexManager.getIndex(1, i).isPresent());
+        }
+
+        for (int i = 1; i < 13; i ++){
+            Assertions.assertTrue(indexManager.removeIndex(1, i));
+        }
+
+        for (int i = 1; i < 13; i ++){
+            Assertions.assertFalse(indexManager.getIndex(1, i).isPresent());
+        }
+
     }
 
     @Test
-    @Timeout(value = 2)
-    public void getTableSize() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
+    public void test_NoZeroLongIdentifier() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
-        Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.NO_ZERO_LONG);
 
-        for(long i = 1; i <= 100; i++)
-            indexManager.addIndex(1, i, dataPointer);
+        Assertions.assertThrows(NodeInnerObj.InvalidValueForNodeInnerObj.class, () -> {
+            indexManager.addIndex(1, 0L, Pointer.empty());
+        });
 
-        Assertions.assertEquals(100, indexManager.size(1));
+        for (long i = 1; i < 13; i ++){
+            indexManager.addIndex(1, i, Pointer.empty());
+        }
+
+        for (long i = 1; i < 13; i ++){
+            Assertions.assertTrue(indexManager.getIndex(1, i).isPresent());
+        }
+
+        for (long i = 1; i < 13; i ++){
+            Assertions.assertTrue(indexManager.removeIndex(1, i));
+        }
+
+        for (long i = 1; i < 13; i ++){
+            Assertions.assertFalse(indexManager.getIndex(1, i).isPresent());
+        }
+
     }
 
 
-    @Test
-    @Timeout(value = 2)
-    public void findIndexFailure() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
-        HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
-        Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
-
-        indexManager.addIndex(1, 10L, dataPointer);
-        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 100L);
-
-        Assertions.assertFalse(optionalPointer.isPresent());
-    }
-    @Test
-    @Timeout(value = 2)
-    public void readAndWriteZero() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
-        HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeInnerObj.Strategy.LONG);
-        Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
-
-        indexManager.addIndex(1, 0L, dataPointer);
-        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 0L);
-        Assertions.assertTrue(optionalPointer.isPresent());
-        Assertions.assertEquals(dataPointer, optionalPointer.get());
-    }
 }

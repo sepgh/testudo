@@ -41,15 +41,27 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
 
             if (i == 0){   // Leaf
                 AbstractLeafTreeNode<K, ?> leafNode = (AbstractLeafTreeNode<K, ?>) currentNode;
-                result = leafNode.removeKeyValue(identifier, degree);
+                try {
+                    result = leafNode.removeKeyValue(identifier, degree);
+                } catch (NodeInnerObj.InvalidValueForNodeInnerObj e) {
+                    throw new RuntimeException(e);
+                }
                 indexIOSession.update(leafNode);
 
                 if (result && !leafNode.isRoot() && leafNode.getKeyList(degree).size() < minKeys){   // Under filled
                     InternalTreeNode<K> parentNode = (InternalTreeNode<K>) path.get(i + 1);
-                    this.fillNode(leafNode, parentNode, parentNode.getIndexOfChild(currentNode.getPointer()));
+                    try {
+                        this.fillNode(leafNode, parentNode, parentNode.getIndexOfChild(currentNode.getPointer()));
+                    } catch (NodeInnerObj.InvalidValueForNodeInnerObj e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             } else {  // internal
-                this.checkInternalNode((InternalTreeNode<K>) path.get(i), path, i, identifier);
+                try {
+                    this.checkInternalNode((InternalTreeNode<K>) path.get(i), path, i, identifier);
+                } catch (NodeInnerObj.InvalidValueForNodeInnerObj e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
         indexIOSession.commit();
@@ -96,7 +108,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
         return cur.getKeyList(degree, valueStrategy.size()).getFirst();
     }
 
-    private void checkInternalNode(InternalTreeNode<K> internalTreeNode, List<AbstractTreeNode<K>> path, int nodeIndex, K identifier) throws ExecutionException, InterruptedException, IOException {
+    private void checkInternalNode(InternalTreeNode<K> internalTreeNode, List<AbstractTreeNode<K>> path, int nodeIndex, K identifier) throws ExecutionException, InterruptedException, IOException, NodeInnerObj.InvalidValueForNodeInnerObj {
         List<K> keyList = internalTreeNode.getKeyList(degree);
         if (nodeIndex == path.size() - 1 && keyList.isEmpty())
             return;
@@ -131,7 +143,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
         indexIOSession.update(internalTreeNode);
     }
 
-    private void fillNode(AbstractTreeNode<K> currentNode, InternalTreeNode<K> parentNode, int idx) throws IOException, ExecutionException, InterruptedException {
+    private void fillNode(AbstractTreeNode<K> currentNode, InternalTreeNode<K> parentNode, int idx) throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         boolean borrowed;
         if (idx == 0){  // Leaf was at the beginning, check if we can borrow from right
             borrowed = tryBorrowRight(parentNode, idx, currentNode);
@@ -151,7 +163,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
         }
     }
 
-    private boolean tryBorrowRight(InternalTreeNode<K> parentNode, int idx, AbstractTreeNode<K> child) throws ExecutionException, InterruptedException, IOException {
+    private boolean tryBorrowRight(InternalTreeNode<K> parentNode, int idx, AbstractTreeNode<K> child) throws ExecutionException, InterruptedException, IOException, NodeInnerObj.InvalidValueForNodeInnerObj {
         AbstractTreeNode<K> sibling = indexIOSession.read(parentNode.getChildrenList().get(idx + 1));
         if (sibling.getKeyList(degree, valueStrategy.size()).size() > minKeys){
             this.borrowFromNext(parentNode, idx, child);
@@ -160,7 +172,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
         return false;
     }
 
-    private boolean tryBorrowLeft(InternalTreeNode<K> parentNode, int idx, AbstractTreeNode<K> child) throws ExecutionException, InterruptedException, IOException {
+    private boolean tryBorrowLeft(InternalTreeNode<K> parentNode, int idx, AbstractTreeNode<K> child) throws ExecutionException, InterruptedException, IOException, NodeInnerObj.InvalidValueForNodeInnerObj {
         AbstractTreeNode<K> sibling = indexIOSession.read(parentNode.getChildrenList().get(idx - 1));
         if (sibling.getKeyList(degree, valueStrategy.size()).size() > minKeys){
             this.borrowFromPrev(parentNode, idx, child);
@@ -179,7 +191,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
      * @param idx index of child in parent
      * @param optionalChild nullable child node, if not provided it will be calculated based on idx
      */
-    private void borrowFromPrev(InternalTreeNode<K> parent, int idx, @Nullable AbstractTreeNode<K> optionalChild) throws ExecutionException, InterruptedException, IOException {
+    private void borrowFromPrev(InternalTreeNode<K> parent, int idx, @Nullable AbstractTreeNode<K> optionalChild) throws ExecutionException, InterruptedException, IOException, NodeInnerObj.InvalidValueForNodeInnerObj {
         AbstractTreeNode<K> child = optionalChild != null ? optionalChild : indexIOSession.read(parent.getChildrenList().get(idx));
         AbstractTreeNode<K> sibling = indexIOSession.read(parent.getChildrenList().get(idx - 1));
 
@@ -272,9 +284,17 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
 
             List<AbstractLeafTreeNode.KeyValue<K, V>> keyValueList = new ArrayList<>(siblingLeafNode.getKeyValueList(degree));
             AbstractLeafTreeNode.KeyValue<K, V> keyValue = keyValueList.removeFirst();
-            siblingLeafNode.setKeyValues(keyValueList, degree);
+            try {
+                siblingLeafNode.setKeyValues(keyValueList, degree);
+            } catch (NodeInnerObj.InvalidValueForNodeInnerObj e) {
+                throw new RuntimeException(e);
+            }
             parent.setKey(idx, keyValueList.getFirst().key());
-            childLeafNode.addKeyValue(keyValue, degree);
+            try {
+                childLeafNode.addKeyValue(keyValue, degree);
+            } catch (NodeInnerObj.InvalidValueForNodeInnerObj e) {
+                throw new RuntimeException(e);
+            }
 
         }
 
@@ -337,7 +357,11 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
             ArrayList<AbstractLeafTreeNode.KeyValue<K, V>> keyValueList = new ArrayList<>(childLeafTreeNode.getKeyValueList(degree));
             keyValueList.addAll(((AbstractLeafTreeNode<K, V>) sibling).getKeyValueList(degree));
             Collections.sort(keyValueList);
-            ((AbstractLeafTreeNode<K, V>) child).setKeyValues(keyValueList, degree);
+            try {
+                ((AbstractLeafTreeNode<K, V>) child).setKeyValues(keyValueList, degree);
+            } catch (NodeInnerObj.InvalidValueForNodeInnerObj e) {
+                throw new RuntimeException(e);
+            }
         }
 
         int keyToRemoveIndex = siblingIndex == 0 ? siblingIndex : siblingIndex - 1;

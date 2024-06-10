@@ -86,7 +86,7 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexSuccessfully_cachedStorage() throws IOException, ExecutionException, InterruptedException {
+    public void findIndexSuccessfully_cachedStorage() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 30);
@@ -120,7 +120,7 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexFailure_cachedStorage() throws IOException, ExecutionException, InterruptedException {
+    public void findIndexFailure_cachedStorage() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 12);
@@ -143,7 +143,7 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexSuccessfully_cachedIndexManager() throws IOException, ExecutionException, InterruptedException {
+    public void findIndexSuccessfully_cachedIndexManager() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
@@ -169,7 +169,7 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexFailure_cachedIndexManager() throws IOException, ExecutionException, InterruptedException {
+    public void findIndexFailure_cachedIndexManager() throws IOException, ExecutionException, InterruptedException, NodeInnerObj.InvalidValueForNodeInnerObj {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         IndexManager<Long, Pointer> indexManager = new CachedIndexManagerDecorator<>(

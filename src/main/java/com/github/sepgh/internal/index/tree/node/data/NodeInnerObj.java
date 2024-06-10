@@ -34,12 +34,19 @@ public abstract class NodeInnerObj<V extends Comparable<V>> {
     public abstract V data();
     public abstract int size();
 
+    public static class InvalidValueForNodeInnerObj extends Exception {
+        public InvalidValueForNodeInnerObj(Object object, Class<? extends NodeInnerObj<?>> innerObjClass) {
+            super(("%s is not a valid value for NodeInnerObj of type " + innerObjClass).formatted(object.toString()));
+        }
+    }
 
-    public interface Strategy<E extends Comparable<E>> {
-        Class<? extends NodeInnerObj<E>> getNodeInnerObjClass();
-        Class<E> getValueClass();
-        NodeInnerObj<E> fromObject(E e);
+
+    public interface Strategy<K extends Comparable<K>> {
+        Class<? extends NodeInnerObj<K>> getNodeInnerObjClass();
+        Class<K> getValueClass();
+        NodeInnerObj<K> fromObject(K k);
         int size();
+        default boolean isValid(K identifier){return true;}
 
         NodeInnerObj.Strategy<Integer> INTEGER = new NodeInnerObj.Strategy<Integer>() {
             @Override
@@ -104,6 +111,11 @@ public abstract class NodeInnerObj<V extends Comparable<V>> {
             public int size() {
                 return NoZeroLongIdentifier.BYTES;
             }
+
+            @Override
+            public boolean isValid(Long identifier) {
+                return identifier != 0;
+            }
         };
 
         NodeInnerObj.Strategy<Integer> NO_ZERO_INTEGER = new NodeInnerObj.Strategy<Integer>() {
@@ -125,6 +137,11 @@ public abstract class NodeInnerObj<V extends Comparable<V>> {
             @Override
             public int size() {
                 return NoZeroIntegerIdentifier.BYTES;
+            }
+
+            @Override
+            public boolean isValid(Integer identifier) {
+                return identifier != 0;
             }
         };
 
@@ -149,5 +166,6 @@ public abstract class NodeInnerObj<V extends Comparable<V>> {
                 return PointerInnerObject.BYTES;
             }
         };
+
     }
 }
