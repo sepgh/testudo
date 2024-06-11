@@ -3,7 +3,7 @@ package com.github.sepgh.internal.index.tree;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.NodeData;
+import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
 
 import java.util.AbstractMap;
 import java.util.Map;
@@ -39,9 +39,7 @@ public class TreeNodeUtils {
         return Pointer.fromBytes(treeNode.getData(), OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + keySize)));
     }
 
-    // Todo: this function will shift the remaining space after next child to current child (which we wanted to remove) despite other children existing.
-    //       The performance could improve (reduce copy call) by checking if next child exists at all first.
-    // Todo: additional to above Todo, currently this function is always called at latest index first, so the whole size check is unnecessary for now
+    // This will not pull remaining children (won't shift them one step behind)
     public static void removeChildAtIndex(AbstractTreeNode<?> treeNode, int index, int keySize) {
         System.arraycopy(
                 new byte[Pointer.BYTES],
@@ -89,26 +87,26 @@ public class TreeNodeUtils {
      * @param index of the key to check existence
      * @return boolean state of existence of a key in index
      */
-    public static <K extends Comparable<K>> boolean hasKeyAtIndex(AbstractTreeNode<?> treeNode, int index, int degree, NodeData.Strategy<K> keyStrategy, int valueSize) {
+    public static <K extends Comparable<K>> boolean hasKeyAtIndex(AbstractTreeNode<?> treeNode, int index, int degree, BinaryObjectWrapper<K> binaryObjectWrapper, int valueSize) {
         if (index >= degree - 1)
             return false;
 
-        int keyStartIndex = getKeyStartOffset(treeNode, index, keyStrategy.size(), valueSize);
-        if (keyStartIndex + keyStrategy.size() > treeNode.getData().length)
+        int keyStartIndex = getKeyStartOffset(treeNode, index, binaryObjectWrapper.size(), valueSize);
+        if (keyStartIndex + binaryObjectWrapper.size() > treeNode.getData().length)
             return false;
 
-        return keyStrategy.fromBytes(treeNode.getData(), keyStartIndex).exists();
+        return binaryObjectWrapper.load(treeNode.getData(), keyStartIndex).hasValue();
     }
 
 
-    public static <E extends Comparable<E>> void setKeyAtIndex(AbstractTreeNode<?> treeNode, int index, NodeData<E> nodeData, int valueSize) {
-        int keyStartIndex = getKeyStartOffset(treeNode, index, nodeData.size(), valueSize);
+    public static <E extends Comparable<E>> void setKeyAtIndex(AbstractTreeNode<?> treeNode, int index, BinaryObjectWrapper<E> binaryObjectWrapper, int valueSize) {
+        int keyStartIndex = getKeyStartOffset(treeNode, index, binaryObjectWrapper.size(), valueSize);
         System.arraycopy(
-                nodeData.getBytes(),
+                binaryObjectWrapper.getBytes(),
                 0,
                 treeNode.getData(),
                 keyStartIndex,
-                nodeData.size()
+                binaryObjectWrapper.size()
         );
     }
 
@@ -117,9 +115,9 @@ public class TreeNodeUtils {
      * @param index to read they key at
      * @return key value at index
      */
-    public static <K extends Comparable<K>> NodeData<K> getKeyAtIndex(AbstractTreeNode<?> treeNode, int index, NodeData.Strategy<K> kStrategy, int valueSize) {
+    public static <K extends Comparable<K>> BinaryObjectWrapper<K> getKeyAtIndex(AbstractTreeNode<?> treeNode, int index, BinaryObjectWrapper<K> kStrategy, int valueSize) {
         int keyStartIndex = getKeyStartOffset(treeNode, index, kStrategy.size(), valueSize);
-        return kStrategy.fromBytes(treeNode.getData(), keyStartIndex);
+        return kStrategy.load(treeNode.getData(), keyStartIndex);
     }
 
     public static void removeKeyAtIndex(AbstractTreeNode<?> treeNode, int index, int keySize, int valueSize) {
@@ -135,17 +133,17 @@ public class TreeNodeUtils {
     public static <K extends Comparable<K>, V extends Comparable<V>> Map.Entry<K, V> getKeyValueAtIndex(
             AbstractTreeNode<K> treeNode,
             int index,
-            NodeData.Strategy<K> kStrategy,
-            NodeData.Strategy<V> vStrategy
+            BinaryObjectWrapper<K> kStrategy,
+            BinaryObjectWrapper<V> vStrategy
     ){
         int keyStartIndex = getKeyStartOffset(treeNode, index, kStrategy.size(), vStrategy.size());
         return new AbstractMap.SimpleImmutableEntry<K, V>(
-                kStrategy.fromBytes(treeNode.getData(), keyStartIndex).data(),
-                vStrategy.fromBytes(treeNode.getData(), keyStartIndex + kStrategy.size()).data()
+                kStrategy.load(treeNode.getData(), keyStartIndex).asObject(),
+                vStrategy.load(treeNode.getData(), keyStartIndex + kStrategy.size()).asObject()
         );
     }
 
-    public static <K extends Comparable<K>, V extends Comparable<V>> void setKeyValueAtIndex(AbstractTreeNode<?> treeNode, int index, NodeData<K> keyInnerObj, NodeData<V> valueInnerObj) {
+    public static <K extends Comparable<K>, V extends Comparable<V>> void setKeyValueAtIndex(AbstractTreeNode<?> treeNode, int index, BinaryObjectWrapper<K> keyInnerObj, BinaryObjectWrapper<V> valueInnerObj) {
         System.arraycopy(
                 keyInnerObj.getBytes(),
                 0,
@@ -174,19 +172,19 @@ public class TreeNodeUtils {
     public static <K extends Comparable<K>, V extends Comparable<V>> int addKeyValueAndGetIndex(
             AbstractTreeNode<?> treeNode,
             int degree,
-            NodeData.Strategy<K> keyStrategy,
+            BinaryObjectWrapper<K> binaryObjectWrapper,
             K key,
             int keySize,
-            NodeData.Strategy<V> valueStrategy,
+            BinaryObjectWrapper<V> valueStrategy,
             V value,
             int valueSize
-    ) {
+    ) throws BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         int indexToFill = -1;
-        NodeData<K> keyAtIndex;
+        BinaryObjectWrapper<K> keyAtIndex;
         for (int i = 0; i < degree - 1; i++){
-            keyAtIndex = getKeyAtIndex(treeNode, i, keyStrategy, valueSize);
-            K data = keyAtIndex.data();
-            if (!keyAtIndex.exists() || data.compareTo(key) > 0){
+            keyAtIndex = getKeyAtIndex(treeNode, i, binaryObjectWrapper, valueSize);
+            K data = keyAtIndex.asObject();
+            if (!keyAtIndex.hasValue() || data.compareTo(key) > 0){
                 indexToFill = i;
                 break;
             }
@@ -212,8 +210,8 @@ public class TreeNodeUtils {
         setKeyValueAtIndex(
                 treeNode,
                 indexToFill,
-                keyStrategy.fromObject(key),
-                valueStrategy.fromObject(value)
+                binaryObjectWrapper.load(key),
+                valueStrategy.load(value)
         );
 
         System.arraycopy(

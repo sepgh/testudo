@@ -1,7 +1,7 @@
 package com.github.sepgh.internal.index;
 
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.NodeData;
+import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
 
 import java.io.IOException;
 import java.util.Map;
@@ -21,7 +21,7 @@ public class TableLevelAsyncIndexManagerDecorator<K extends Comparable<K>, V ext
     }
 
     @Override
-    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException, NodeData.InvalidValueForNodeInnerObj {
+    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         LockManager lockManager = getLockManager(table);
         lockManager.writeLock.lock();
         try {

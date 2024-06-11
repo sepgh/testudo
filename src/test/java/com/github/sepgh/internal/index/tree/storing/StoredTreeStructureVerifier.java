@@ -5,8 +5,8 @@ import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.NodeData;
-import com.github.sepgh.internal.index.tree.node.data.PointerInnerObject;
+import com.github.sepgh.internal.index.tree.node.data.LongBinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.PointerBinaryObjectWrapper;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import org.junit.jupiter.api.Assertions;
@@ -42,13 +42,13 @@ public class StoredTreeStructureVerifier {
     public static void testUnOrderedTreeStructure1(IndexStorageManager indexStorageManager, int table, long multi, int degree) throws ExecutionException, InterruptedException, IOException {
         Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table).get();
         Assertions.assertTrue(optional.isPresent());
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
 
         AbstractTreeNode<Long> rootNode = nodeFactory.fromBytes(optional.get().bytes());
         Assertions.assertTrue(rootNode.isRoot());
         Assertions.assertFalse(rootNode.isLeaf());
 
-        Assertions.assertEquals(multi * 9, rootNode.getKeys(degree, PointerInnerObject.BYTES).next());
+        Assertions.assertEquals(multi * 9, rootNode.getKeys(degree, PointerBinaryObjectWrapper.BYTES).next());
 
         // Checking root child at left
         InternalTreeNode<Long> leftChildInternalNode = (InternalTreeNode<Long>) IndexTreeNodeIO.read(indexStorageManager, table, ((InternalTreeNode<Long>) rootNode).getChildPointersList(degree).get(0).getLeft(), nodeFactory);
@@ -165,13 +165,13 @@ public class StoredTreeStructureVerifier {
     public static void testOrderedTreeStructure(IndexStorageManager indexStorageManager, int table, long multi, int degree) throws ExecutionException, InterruptedException, IOException {
         Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table).get();
         Assertions.assertTrue(optional.isPresent());
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
 
         AbstractTreeNode<Long> rootNode = nodeFactory.fromBytes(optional.get().bytes());
         Assertions.assertTrue(rootNode.isRoot());
         Assertions.assertFalse(rootNode.isLeaf());
 
-        Assertions.assertEquals(multi*7, rootNode.getKeys(degree, PointerInnerObject.BYTES).next());
+        Assertions.assertEquals(multi*7, rootNode.getKeys(degree, PointerBinaryObjectWrapper.BYTES).next());
 
         // Checking root child at left
         InternalTreeNode<Long> leftChildInternalNode = (InternalTreeNode<Long>) nodeFactory.fromBytes(

@@ -6,8 +6,9 @@ import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.NodeData;
-import com.github.sepgh.internal.index.tree.node.data.PointerInnerObject;
+import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.LongBinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.PointerBinaryObjectWrapper;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import org.junit.jupiter.api.AfterEach;
@@ -116,7 +117,7 @@ public class CompactFileIndexStorageManagerTestCase {
     public void canReadNodeSuccessfully() throws ExecutionException, InterruptedException, IOException {
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
 
 
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
@@ -128,7 +129,7 @@ public class CompactFileIndexStorageManagerTestCase {
 
             AbstractTreeNode<Long> treeNode = nodeFactory.fromBytes(nodeData.bytes());
 
-            Iterator<Long> keys = treeNode.getKeys(2, PointerInnerObject.BYTES);
+            Iterator<Long> keys = treeNode.getKeys(2, PointerBinaryObjectWrapper.BYTES);
 
             Assertions.assertTrue(treeNode.isRoot());
             Assertions.assertTrue(keys.hasNext());
@@ -157,7 +158,7 @@ public class CompactFileIndexStorageManagerTestCase {
     @Test
     public void canReadAndUpdateNodeSuccessfully() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
 
 
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
@@ -182,7 +183,7 @@ public class CompactFileIndexStorageManagerTestCase {
             Assertions.assertEquals(100, leafTreeNode.getKeyValueList(2).get(0).value().getChunk());
             Assertions.assertEquals(100, leafTreeNode.getKeyValueList(2).get(0).value().getPosition());
 
-        } catch (NodeData.InvalidValueForNodeInnerObj e) {
+        } catch (BinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
             throw new RuntimeException(e);
         } finally {
             compactFileIndexStorageManager.close();
@@ -192,7 +193,7 @@ public class CompactFileIndexStorageManagerTestCase {
     @Test
     public void canWriteNewNodeAndAllocate() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
 
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
         try {

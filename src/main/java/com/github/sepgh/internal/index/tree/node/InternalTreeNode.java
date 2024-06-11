@@ -2,8 +2,8 @@ package com.github.sepgh.internal.index.tree.node;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.TreeNodeUtils;
-import com.github.sepgh.internal.index.tree.node.data.NodeData;
-import com.github.sepgh.internal.index.tree.node.data.PointerInnerObject;
+import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.PointerBinaryObjectWrapper;
 import com.github.sepgh.internal.utils.CollectionUtils;
 import com.google.common.collect.ImmutableList;
 import lombok.*;
@@ -14,7 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<K> {
-    public InternalTreeNode(byte[] data, NodeData.Strategy<K> strategy) {
+    public InternalTreeNode(byte[] data, BinaryObjectWrapper<K> strategy) {
         super(data, strategy);
         setType(Type.INTERNAL);
     }
@@ -30,11 +30,15 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
     public void setChildPointers(List<ChildPointers<K>> childPointers, int degree, boolean cleanRest){
         modified();
         if (cleanRest)
-            TreeNodeUtils.cleanChildrenPointers(this, degree, keyStrategy.size(), PointerInnerObject.BYTES);
+            TreeNodeUtils.cleanChildrenPointers(this, degree, keyStrategy.size(), PointerBinaryObjectWrapper.BYTES);
         int i = 0;
         for (ChildPointers<K> keyPointer : childPointers) {
             keyPointer.setIndex(i);
-            TreeNodeUtils.setKeyAtIndex(this, keyPointer.index, keyStrategy.fromObject(keyPointer.key), PointerInnerObject.BYTES);
+            try {
+                TreeNodeUtils.setKeyAtIndex(this, keyPointer.index, keyStrategy.load(keyPointer.key), PointerBinaryObjectWrapper.BYTES);
+            } catch (BinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
+                throw new RuntimeException(e);
+            }
             if (i == 0){
                 TreeNodeUtils.setPointerToChild(this, 0, keyPointer.left, keyStrategy.size());
                 TreeNodeUtils.setPointerToChild(this, 1, keyPointer.right, keyStrategy.size());
@@ -54,21 +58,23 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
         return ImmutableList.copyOf(getKeys(degree));
     }
 
+    @SneakyThrows
     public void setKey(int index, K key){
-        super.setKey(index,key, PointerInnerObject.BYTES);
+        super.setKey(index,key, PointerBinaryObjectWrapper.BYTES);
     }
 
     public void removeKey(int idx, int degree) {
-        super.removeKey(idx, degree, PointerInnerObject.BYTES);
+        super.removeKey(idx, degree, PointerBinaryObjectWrapper.BYTES);
     }
 
+    @SneakyThrows
     public int addKey(K identifier, int degree) {
         List<K> keyList = new ArrayList<>(this.getKeyList(degree));
         int idx = CollectionUtils.indexToInsert(keyList, identifier);
         keyList.add(idx, identifier);
 
         for (int j = idx; j < keyList.size() && j < degree - 1; j++){
-            TreeNodeUtils.setKeyAtIndex(this, j, keyStrategy.fromObject(keyList.get(j)), PointerInnerObject.BYTES);
+            TreeNodeUtils.setKeyAtIndex(this, j, keyStrategy.load(keyList.get(j)), PointerBinaryObjectWrapper.BYTES);
         }
 
         return idx;
@@ -162,8 +168,7 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
         List<ChildPointers<K>> toKeep = childPointersList.subList(0, mid + 1);
         this.setChildPointers(toKeep, degree, true);
 
-        List<ChildPointers<K>> toPass = childPointersList.subList(mid + 1, keyList.size());
-        return toPass;
+        return childPointersList.subList(mid + 1, keyList.size());
     }
 
     public void setKeys(List<K> childKeyList) {
@@ -239,19 +244,19 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
         @SneakyThrows
         @Override
         public ChildPointers<K> next() {
-            NodeData<K> nodeData = TreeNodeUtils.getKeyAtIndex(node, cursor, keyStrategy, PointerInnerObject.BYTES);
-            ChildPointers childPointers = null;
+            BinaryObjectWrapper<K> binaryObjectWrapper = TreeNodeUtils.getKeyAtIndex(node, cursor, keyStrategy, PointerBinaryObjectWrapper.BYTES);
+            ChildPointers<K> childPointers = null;
             if (cursor == 0){
-                childPointers = new ChildPointers<K>(
+                childPointers = new ChildPointers<>(
                         cursor,
-                        nodeData.data(),
+                        binaryObjectWrapper.asObject(),
                         TreeNodeUtils.getChildPointerAtIndex(node, 0, keyStrategy.size()),
                         TreeNodeUtils.getChildPointerAtIndex(node, 1, keyStrategy.size())
                 );
             } else {
-                childPointers = new ChildPointers(
+                childPointers = new ChildPointers<>(
                         cursor,
-                        nodeData.data(),
+                        binaryObjectWrapper.asObject(),
                         lastRightPointer,
                         TreeNodeUtils.getChildPointerAtIndex(node, cursor + 1, keyStrategy.size())
                 );

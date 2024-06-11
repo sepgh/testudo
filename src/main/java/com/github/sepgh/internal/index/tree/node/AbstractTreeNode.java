@@ -2,7 +2,7 @@ package com.github.sepgh.internal.index.tree.node;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.TreeNodeUtils;
-import com.github.sepgh.internal.index.tree.node.data.NodeData;
+import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
 import com.google.common.collect.ImmutableList;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,9 +29,9 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
     private final byte[] data;
     @Getter
     private boolean modified = false;
-    protected final NodeData.Strategy<K> keyStrategy;
+    protected final BinaryObjectWrapper<K> keyStrategy;
 
-    public AbstractTreeNode(byte[] data, NodeData.Strategy<K> keyStrategy) {
+    public AbstractTreeNode(byte[] data, BinaryObjectWrapper<K> keyStrategy) {
         this.data = data;
         this.keyStrategy = keyStrategy;
     }
@@ -77,15 +77,15 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
     }
 
     public Iterator<K> getKeys(int degree, int valueSize){
-        return new TreeNodeKeysIterator<K>(this, degree, keyStrategy.getNodeDataClass(), keyStrategy.size(), valueSize);
+        return new TreeNodeKeysIterator<K>(this, degree, valueSize);
     }
 
     public List<K> getKeyList(int degree, int valueSize){
         return ImmutableList.copyOf(getKeys(degree, valueSize));
     }
 
-    public void setKey(int index, K key, int valueSize){
-        TreeNodeUtils.setKeyAtIndex(this, index, keyStrategy.fromObject(key), valueSize);
+    public void setKey(int index, K key, int valueSize) throws BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+        TreeNodeUtils.setKeyAtIndex(this, index, keyStrategy.load(key), valueSize);
     }
 
     @SneakyThrows
@@ -99,7 +99,7 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
             TreeNodeUtils.setKeyAtIndex(
                     this,
                     lastIndex,
-                    keyStrategy.fromObject(subList.get(i)),
+                    keyStrategy.load(subList.get(i)),
                     valueSize
             );
         }
@@ -123,17 +123,13 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
     private static class TreeNodeKeysIterator<K extends Comparable<K>> implements Iterator<K> {
         private final AbstractTreeNode<K> node;
         private final int degree;
-        private final Class<? extends NodeData<K>> kClass;
-        private final int keySize;
         private final int valueSize;
         private int cursor; // Cursor points to current key index, not current byte
         private boolean hasNext = true;
 
-        private TreeNodeKeysIterator(AbstractTreeNode<K> node, int degree, Class<? extends NodeData<K>> kClass, int keySize, int valueSize) {
+        private TreeNodeKeysIterator(AbstractTreeNode<K> node, int degree, int valueSize) {
             this.node = node;
             this.degree = degree;
-            this.kClass = kClass;
-            this.keySize = keySize;
             this.valueSize = valueSize;
         }
 
@@ -150,9 +146,9 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
         @SneakyThrows
         @Override
         public K next() {
-            NodeData<K> nodeData = TreeNodeUtils.getKeyAtIndex(this.node, cursor, this.node.keyStrategy, valueSize);
+            BinaryObjectWrapper<K> binaryObjectWrapper = TreeNodeUtils.getKeyAtIndex(this.node, cursor, this.node.keyStrategy, valueSize);
             cursor++;
-            return nodeData.data();
+            return binaryObjectWrapper.asObject();
         }
     }
 }

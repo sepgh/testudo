@@ -6,7 +6,7 @@ import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.NodeData;
+import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.utils.FileUtils;
 import com.google.common.hash.HashCode;
@@ -24,7 +24,7 @@ public class IndexFileDescriptor {
     private final HeaderManager headerManager;
     private final EngineConfig engineConfig;
 
-    public <K extends Comparable<K>> void describe(NodeData.Strategy<K> strategy) throws IOException, ExecutionException, InterruptedException {
+    public <K extends Comparable<K>> void describe(BinaryObjectWrapper<K> strategy) throws IOException, ExecutionException, InterruptedException {
         long paddingCounts = asynchronousFileChannel.size() / engineConfig.getPaddedSize();
 
         for (int i = 0; i < paddingCounts; i++){

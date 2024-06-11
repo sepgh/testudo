@@ -2,7 +2,7 @@ package com.github.sepgh.internal.index.tree.node;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.NodeData;
+import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 
 import static com.github.sepgh.internal.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
@@ -15,9 +15,9 @@ public interface NodeFactory<K extends Comparable<K>> {
 
     class ClusterNodeFactory<K extends Comparable<K>> implements NodeFactory<K> {
 
-        private final NodeData.Strategy<K> keyStrategy;
+        private final BinaryObjectWrapper<K> keyStrategy;
 
-        public ClusterNodeFactory(NodeData.Strategy<K> keyStrategy) {
+        public ClusterNodeFactory(BinaryObjectWrapper<K> keyStrategy) {
             this.keyStrategy = keyStrategy;
         }
 

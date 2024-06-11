@@ -13,7 +13,7 @@ public class FileUtils {
         asynchronousFileChannel.read(
                 buffer,
                 position,
-                buffer, new CompletionHandler<Integer, ByteBuffer>() {
+                buffer, new CompletionHandler<>() {
                     @Override
                     public void completed(Integer result, ByteBuffer attachment) {
                         attachment.flip();
@@ -90,7 +90,7 @@ public class FileUtils {
         byteBuffer.put(content);
         byteBuffer.flip();
 
-        asynchronousFileChannel.write(byteBuffer, position, null, new CompletionHandler<Integer, Object>() {
+        asynchronousFileChannel.write(byteBuffer, position, null, new CompletionHandler<>() {
             @Override
             public void completed(Integer result, Object attachment) {
                 future.complete(result);

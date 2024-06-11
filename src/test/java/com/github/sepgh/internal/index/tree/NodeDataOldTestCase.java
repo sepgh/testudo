@@ -4,7 +4,10 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.data.NodeData;
+import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.IntegerBinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.NoZeroIntegerBinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.NoZeroLongBinaryObjectWrapper;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
@@ -23,7 +26,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.github.sepgh.internal.storage.BaseFileIndexStorageManager.INDEX_FILE_NAME;
 
-public class NodeDataTestCase {
+public class NodeDataOldTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private Header header;
@@ -80,11 +83,11 @@ public class NodeDataTestCase {
     }
 
     @Test
-    public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
+    public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeData.Strategy.INTEGER);
+        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new IntegerBinaryObjectWrapper());
 
         for (int i = 0; i < 13; i ++){
             indexManager.addIndex(1, i, Pointer.empty());
@@ -104,13 +107,13 @@ public class NodeDataTestCase {
 
     }
     @Test
-    public void test_NoZeroIntegerIdentifier() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
+    public void test_NoZeroIntegerIdentifier() throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeData.Strategy.NO_ZERO_INTEGER);
+        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new NoZeroIntegerBinaryObjectWrapper());
 
-        Assertions.assertThrows(NodeData.InvalidValueForNodeInnerObj.class, () -> {
+        Assertions.assertThrows(BinaryObjectWrapper.InvalidBinaryObjectWrapperValue.class, () -> {
             indexManager.addIndex(1, 0, Pointer.empty());
         });
 
@@ -133,13 +136,13 @@ public class NodeDataTestCase {
     }
 
     @Test
-    public void test_NoZeroLongIdentifier() throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
+    public void test_NoZeroLongIdentifier() throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, NodeData.Strategy.NO_ZERO_LONG);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new NoZeroLongBinaryObjectWrapper());
 
-        Assertions.assertThrows(NodeData.InvalidValueForNodeInnerObj.class, () -> {
+        Assertions.assertThrows(BinaryObjectWrapper.InvalidBinaryObjectWrapperValue.class, () -> {
             indexManager.addIndex(1, 0L, Pointer.empty());
         });
 

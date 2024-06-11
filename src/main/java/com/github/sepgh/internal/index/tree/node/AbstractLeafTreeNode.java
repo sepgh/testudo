@@ -2,7 +2,7 @@ package com.github.sepgh.internal.index.tree.node;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.TreeNodeUtils;
-import com.github.sepgh.internal.index.tree.node.data.NodeData;
+import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
 import com.github.sepgh.internal.utils.CollectionUtils;
 import com.google.common.collect.ImmutableList;
 import lombok.SneakyThrows;
@@ -10,9 +10,9 @@ import lombok.SneakyThrows;
 import java.util.*;
 
 public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<V>> extends AbstractTreeNode<K> {
-    protected final NodeData.Strategy<V> valueStrategy;
+    protected final BinaryObjectWrapper<V> valueStrategy;
 
-    public AbstractLeafTreeNode(byte[] data, NodeData.Strategy<K> keyStrategy, NodeData.Strategy<V> valueStrategy) {
+    public AbstractLeafTreeNode(byte[] data, BinaryObjectWrapper<K> keyStrategy, BinaryObjectWrapper<V> valueStrategy) {
         super(data, keyStrategy);
         this.valueStrategy = valueStrategy;
         setType(Type.LEAF);
@@ -60,7 +60,7 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         return ImmutableList.copyOf(getKeyValues(degree));
     }
 
-    public void setKeyValues(List<KeyValue<K, V>> keyValueList, int degree) throws NodeData.InvalidValueForNodeInnerObj {
+    public void setKeyValues(List<KeyValue<K, V>> keyValueList, int degree) throws BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         modified();
         for (int i = 0; i < keyValueList.size(); i++){
             KeyValue<K, V> keyValue = keyValueList.get(i);
@@ -71,14 +71,11 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         }
     }
 
-    public void setKeyValue(int index, KeyValue<K, V> keyValue) throws NodeData.InvalidValueForNodeInnerObj {
-        if (!keyStrategy.isValid(keyValue.key)) {
-            throw new NodeData.InvalidValueForNodeInnerObj(keyValue.key, keyStrategy.getNodeDataClass());
-        }
-        TreeNodeUtils.setKeyValueAtIndex(this, index, keyStrategy.fromObject(keyValue.key()), valueStrategy.fromObject(keyValue.value()));
+    public void setKeyValue(int index, KeyValue<K, V> keyValue) throws BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+        TreeNodeUtils.setKeyValueAtIndex(this, index, keyStrategy.load(keyValue.key()), valueStrategy.load(keyValue.value()));
     }
 
-    public List<KeyValue<K, V>> split(K identifier, V v, int degree) throws NodeData.InvalidValueForNodeInnerObj {
+    public List<KeyValue<K, V>> split(K identifier, V v, int degree) throws BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         int mid = (degree - 1) / 2;
 
         List<KeyValue<K, V>> allKeyValues = new ArrayList<>(getKeyValueList(degree));
@@ -91,14 +88,11 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         return allKeyValues.subList(mid + 1, allKeyValues.size());
     }
 
-    public int addKeyValue(K identifier, V v, int degree) throws NodeData.InvalidValueForNodeInnerObj {
-        if (!keyStrategy.isValid(identifier)) {
-            throw new NodeData.InvalidValueForNodeInnerObj(identifier, keyStrategy.getNodeDataClass());
-        }
+    public int addKeyValue(K identifier, V v, int degree) throws BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         return TreeNodeUtils.addKeyValueAndGetIndex(this, degree, keyStrategy, identifier, keyStrategy.size(), valueStrategy, v, valueStrategy.size());
     }
 
-    public int addKeyValue(KeyValue<K, V> keyValue, int degree) throws NodeData.InvalidValueForNodeInnerObj {
+    public int addKeyValue(KeyValue<K, V> keyValue, int degree) throws BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         return this.addKeyValue(keyValue.key, keyValue.value, degree);
     }
 
@@ -106,7 +100,7 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         TreeNodeUtils.removeKeyValueAtIndex(this, index, keyStrategy.size(), valueStrategy.size());
     }
 
-    public boolean removeKeyValue(K key, int degree) throws NodeData.InvalidValueForNodeInnerObj {
+    public boolean removeKeyValue(K key, int degree) throws BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         List<KeyValue<K, V>> keyValueList = new ArrayList<>(this.getKeyValueList(degree));
         boolean removed = keyValueList.removeIf(keyValue -> keyValue.key.compareTo(key) == 0);
         setKeyValues(keyValueList, degree);

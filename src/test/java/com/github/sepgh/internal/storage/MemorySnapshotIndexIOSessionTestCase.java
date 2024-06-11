@@ -5,7 +5,8 @@ import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.data.NodeData;
+import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.LongBinaryObjectWrapper;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.storage.session.IndexIOSession;
@@ -83,17 +84,17 @@ public class MemorySnapshotIndexIOSessionTestCase {
 
     @Timeout(2)
     @Test
-    public void testCreateRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, NodeData.InvalidValueForNodeInnerObj {
+    public void testCreateRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG));
+        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper()));
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new IndexIOSessionFactory() {
             @Override
             public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, NodeFactory<K> nodeFactory) {
                 return (IndexIOSession<K>) indexIOSession;
             }
-        }, NodeData.Strategy.LONG);
+        }, new LongBinaryObjectWrapper());
 
         for (long i = 1; i < 12; i++){
             indexManager.addIndex(1, i, Pointer.empty());
@@ -110,25 +111,25 @@ public class MemorySnapshotIndexIOSessionTestCase {
         method.invoke(indexIOSession);
 
         // Since the same indexIOSession instance shouldn't be used to re-read after rollback we create a new instance
-        indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, NodeData.Strategy.LONG);
+        indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongBinaryObjectWrapper());
         Assertions.assertFalse(indexManager.getIndex(1, 12L).isPresent());
 
     }
 
     @Timeout(2)
     @Test
-    public void testDeleteRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, NodeData.InvalidValueForNodeInnerObj {
+    public void testDeleteRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
-        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG));
+        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper()));
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new IndexIOSessionFactory() {
             @Override
             public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, NodeFactory<K> nodeFactory) {
                 return (IndexIOSession<K>) indexIOSession;
             }
-        }, NodeData.Strategy.LONG);
-        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, NodeData.Strategy.LONG);
+        }, new LongBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongBinaryObjectWrapper());
 
         for (long i = 1; i < 13; i++){
             indexManager2.addIndex(1, i, Pointer.empty());

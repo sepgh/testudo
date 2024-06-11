@@ -5,8 +5,7 @@ import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.LongIdentifier;
-import com.github.sepgh.internal.index.tree.node.data.NodeData;
+import com.github.sepgh.internal.index.tree.node.data.LongBinaryObjectWrapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -57,14 +56,14 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyInternalTreeNodeChildren(){
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
 
         AbstractTreeNode<Long> node = nodeFactory.fromBytes(singleKeyInternalNodeRepresentation);
 
         Assertions.assertInstanceOf(InternalTreeNode.class, node);
         InternalTreeNode<Long> treeNode = (InternalTreeNode<Long>) node;
 
-        Pointer child0Pointer = TreeNodeUtils.getChildPointerAtIndex(treeNode, 0, LongIdentifier.BYTES);
+        Pointer child0Pointer = TreeNodeUtils.getChildPointerAtIndex(treeNode, 0, LongBinaryObjectWrapper.BYTES);
         Assertions.assertNotNull(child0Pointer);
 
         Assertions.assertTrue(child0Pointer.isNodePointer());
@@ -72,19 +71,19 @@ public class TreeNodeTestCase {
         Assertions.assertEquals(1, child0Pointer.getChunk());
 
 
-        Pointer child1Pointer = TreeNodeUtils.getChildPointerAtIndex(treeNode, 1, LongIdentifier.BYTES);
+        Pointer child1Pointer = TreeNodeUtils.getChildPointerAtIndex(treeNode, 1, LongBinaryObjectWrapper.BYTES);
         Assertions.assertNotNull(child1Pointer);
 
         Assertions.assertTrue(child1Pointer.isNodePointer());
         Assertions.assertEquals(2, child1Pointer.getPosition());
         Assertions.assertEquals(2, child1Pointer.getChunk());
 
-        Assertions.assertThrows(ArrayIndexOutOfBoundsException.class, () -> TreeNodeUtils.getChildPointerAtIndex(treeNode, 2, LongIdentifier.BYTES));
+        Assertions.assertThrows(ArrayIndexOutOfBoundsException.class, () -> TreeNodeUtils.getChildPointerAtIndex(treeNode, 2, LongBinaryObjectWrapper.BYTES));
     }
 
     @Test
     public void testSingleKeyInternalTreeNodeChildrenIteration() {
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
 
         AbstractTreeNode<Long> node = nodeFactory.fromBytes(singleKeyInternalNodeRepresentation);
 
@@ -105,7 +104,7 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyInternalNodeKeysIteration(){
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
         AbstractTreeNode<Long> node = nodeFactory.fromBytes(singleKeyInternalNodeRepresentation);
 
         Assertions.assertInstanceOf(InternalTreeNode.class, node);
@@ -124,7 +123,7 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyLeafNodeKeysIteration(){
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
 
         AbstractTreeNode<Long> node = nodeFactory.fromBytes(singleKeyLeafNodeRepresentation);
 
@@ -149,7 +148,7 @@ public class TreeNodeTestCase {
 
     @Test
     public void testSingleKeyLeafNodeKeyValueIteration(){
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
 
         AbstractTreeNode<Long> node = nodeFactory.fromBytes(singleKeyLeafNodeRepresentation);
 

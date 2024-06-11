@@ -7,8 +7,9 @@ import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.NodeData;
-import com.github.sepgh.internal.index.tree.node.data.PointerInnerObject;
+import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.LongBinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.PointerBinaryObjectWrapper;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import com.github.sepgh.internal.storage.header.Header;
@@ -105,7 +106,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
      *     ├── 011
      *     └── 012
      */
-    public void testRemovingLeftToRight(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
+    public void testRemovingLeftToRight(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
@@ -119,7 +120,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(indexManager.removeIndex(1, 2L));
         Assertions.assertFalse(indexManager.removeIndex(1, 2L));
 
-        NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
+        NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
         // Check Tree
         InternalTreeNode<Long> root = (InternalTreeNode<Long>) nodeFactory.fromNodeData(indexStorageManager.getRoot(1).get().get());
         Assertions.assertEquals(1, root.getKeyList(degree).size());
@@ -216,12 +217,12 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(11, root.getKeyList(degree).getLast(), "" + root.getKeyList(degree));
 
         AbstractTreeNode<Long> leafNodeAtLeft = IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst(), nodeFactory);
-        Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree, PointerInnerObject.BYTES).size(), "" + leafNodeAtLeft.getKeyList(degree, PointerInnerObject.BYTES));
-        Assertions.assertEquals(8, leafNodeAtLeft.getKeyList(degree, PointerInnerObject.BYTES).getFirst(), "" + leafNodeAtLeft.getKeyList(degree, PointerInnerObject.BYTES));
+        Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).size(), "" + leafNodeAtLeft.getKeyList(degree, PointerBinaryObjectWrapper.BYTES));
+        Assertions.assertEquals(8, leafNodeAtLeft.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).getFirst(), "" + leafNodeAtLeft.getKeyList(degree, PointerBinaryObjectWrapper.BYTES));
         AbstractTreeNode<Long> leafNodeAtMid = IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().get(1), nodeFactory);
-        Assertions.assertEquals(2, leafNodeAtMid.getKeyList(degree, PointerInnerObject.BYTES).size());
-        Assertions.assertEquals(9, leafNodeAtMid.getKeyList(degree, PointerInnerObject.BYTES).getFirst());
-        Assertions.assertEquals(10, leafNodeAtMid.getKeyList(degree, PointerInnerObject.BYTES).getLast());
+        Assertions.assertEquals(2, leafNodeAtMid.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).size());
+        Assertions.assertEquals(9, leafNodeAtMid.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).getFirst());
+        Assertions.assertEquals(10, leafNodeAtMid.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).getLast());
 
         Assertions.assertTrue(indexManager.removeIndex(1, 8L));
         Assertions.assertFalse(indexManager.removeIndex(1, 8L));
@@ -232,8 +233,8 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(11, root.getKeyList(degree).getLast(), "" + root.getKeyList(degree));
 
         leafNodeAtLeft = (LeafClusterTreeNode<Long>) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst(), nodeFactory);
-        Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree, PointerInnerObject.BYTES).size());
-        Assertions.assertEquals(9, leafNodeAtLeft.getKeyList(degree, PointerInnerObject.BYTES).getFirst());
+        Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).size());
+        Assertions.assertEquals(9, leafNodeAtLeft.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).getFirst());
 
 
         Assertions.assertTrue(indexManager.removeIndex(1, 9L));
@@ -244,8 +245,8 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(11, root.getKeyList(degree).getFirst());
 
         leafNodeAtLeft = (LeafClusterTreeNode<Long>) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst(), nodeFactory);
-        Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree, PointerInnerObject.BYTES).size());
-        Assertions.assertEquals(10, leafNodeAtLeft.getKeyList(degree, PointerInnerObject.BYTES).getFirst());
+        Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).size());
+        Assertions.assertEquals(10, leafNodeAtLeft.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).getFirst());
 
         LeafClusterTreeNode<Long> leafNodeAtRight = (LeafClusterTreeNode<Long>) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast(), nodeFactory);
         Assertions.assertEquals(2, leafNodeAtRight.getKeyList(degree).size());
@@ -264,12 +265,12 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(12, root.getKeyList(degree).getFirst());
 
         leafNodeAtLeft = (LeafClusterTreeNode<Long>) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst(), nodeFactory);
-        Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree, PointerInnerObject.BYTES).size());
-        Assertions.assertEquals(11, leafNodeAtLeft.getKeyList(degree, PointerInnerObject.BYTES).getFirst());
+        Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).size());
+        Assertions.assertEquals(11, leafNodeAtLeft.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).getFirst());
 
         leafNodeAtRight = (LeafClusterTreeNode<Long>) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast(), nodeFactory);
-        Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree, PointerInnerObject.BYTES).size());
-        Assertions.assertEquals(12, leafNodeAtRight.getKeyList(degree, PointerInnerObject.BYTES).getFirst());
+        Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).size());
+        Assertions.assertEquals(12, leafNodeAtRight.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).getFirst());
 
 
         Assertions.assertTrue(indexManager.getIndex(1, 11L).isPresent());
@@ -277,23 +278,23 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertFalse(indexManager.removeIndex(1, 11L));
 
         AbstractTreeNode<Long> bRoot = nodeFactory.fromNodeData(indexStorageManager.getRoot(1).get().get());
-        Assertions.assertEquals(1, bRoot.getKeyList(degree, PointerInnerObject.BYTES).size());
-        Assertions.assertEquals(12, bRoot.getKeyList(degree, PointerInnerObject.BYTES).getFirst());
+        Assertions.assertEquals(1, bRoot.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).size());
+        Assertions.assertEquals(12, bRoot.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).getFirst());
         Assertions.assertEquals(AbstractTreeNode.Type.LEAF, bRoot.getType());
 
         Assertions.assertTrue(indexManager.getIndex(1, 12L).isPresent());
         Assertions.assertTrue(indexManager.removeIndex(1, 12L));
         Assertions.assertFalse(indexManager.removeIndex(1, 12L));
         bRoot = nodeFactory.fromNodeData(indexStorageManager.getRoot(1).get().get());
-        Assertions.assertEquals(0, bRoot.getKeyList(degree, PointerInnerObject.BYTES).size());
+        Assertions.assertEquals(0, bRoot.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).size());
         Assertions.assertEquals(AbstractTreeNode.Type.LEAF, bRoot.getType());
 
     }
 
-    public void testRemovingRightToLeft(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
+    public void testRemovingRightToLeft(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
-        NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
+        NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
 
         for (Long testIdentifier : testIdentifiers) {
             indexManager.addIndex(1, testIdentifier, samplePointer);
@@ -396,8 +397,8 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(5, root.getKeyList(degree).getLast());
 
         AbstractTreeNode<Long> leafNodeAtRight = IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast(), nodeFactory);
-        Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree, PointerInnerObject.BYTES).size());
-        Assertions.assertEquals(5, leafNodeAtRight.getKeyList(degree, PointerInnerObject.BYTES).getFirst());
+        Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).size());
+        Assertions.assertEquals(5, leafNodeAtRight.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).getFirst());
 
 
         Assertions.assertTrue(indexManager.removeIndex(1, 5L));
@@ -409,8 +410,8 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(4, root.getKeyList(degree).getLast());
 
         leafNodeAtRight = IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast(), nodeFactory);
-        Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree, PointerInnerObject.BYTES).size());
-        Assertions.assertEquals(4, leafNodeAtRight.getKeyList(degree, PointerInnerObject.BYTES).getFirst());
+        Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).size());
+        Assertions.assertEquals(4, leafNodeAtRight.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).getFirst());
 
 
         Assertions.assertTrue(indexManager.removeIndex(1, 4L));
@@ -421,8 +422,8 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(3, root.getKeyList(degree).getFirst());
 
         leafNodeAtRight = IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast(), nodeFactory);
-        Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree, PointerInnerObject.BYTES).size());
-        Assertions.assertEquals(3, leafNodeAtRight.getKeyList(degree, PointerInnerObject.BYTES).getFirst());
+        Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).size());
+        Assertions.assertEquals(3, leafNodeAtRight.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).getFirst());
 
 
         Assertions.assertTrue(indexManager.removeIndex(1, 3L));
@@ -433,32 +434,32 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(2, root.getKeyList(degree).getFirst());
 
         leafNodeAtRight = IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getLast(), nodeFactory);
-        Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree, PointerInnerObject.BYTES).size());
-        Assertions.assertEquals(2, leafNodeAtRight.getKeyList(degree, PointerInnerObject.BYTES).getFirst());
+        Assertions.assertEquals(1, leafNodeAtRight.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).size());
+        Assertions.assertEquals(2, leafNodeAtRight.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).getFirst());
 
         Assertions.assertTrue(indexManager.getIndex(1, 2L).isPresent());
         Assertions.assertTrue(indexManager.removeIndex(1, 2L));
         Assertions.assertFalse(indexManager.removeIndex(1, 2L));
 
         AbstractTreeNode<Long> bRoot = nodeFactory.fromNodeData(indexStorageManager.getRoot(1).get().get());
-        Assertions.assertEquals(1, bRoot.getKeyList(degree, PointerInnerObject.BYTES).size());
-        Assertions.assertEquals(1, bRoot.getKeyList(degree, PointerInnerObject.BYTES).getFirst());
+        Assertions.assertEquals(1, bRoot.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).size());
+        Assertions.assertEquals(1, bRoot.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).getFirst());
         Assertions.assertEquals(AbstractTreeNode.Type.LEAF, bRoot.getType());
 
         Assertions.assertTrue(indexManager.getIndex(1, 1L).isPresent());
         Assertions.assertTrue(indexManager.removeIndex(1, 1L));
         Assertions.assertFalse(indexManager.removeIndex(1, 1L));
         bRoot = nodeFactory.fromNodeData(indexStorageManager.getRoot(1).get().get());
-        Assertions.assertEquals(0, bRoot.getKeyList(degree, PointerInnerObject.BYTES).size());
+        Assertions.assertEquals(0, bRoot.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).size());
         Assertions.assertEquals(AbstractTreeNode.Type.LEAF, bRoot.getType());
 
     }
 
 
-    public void testRemovingRoot(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, NodeData.InvalidValueForNodeInnerObj {
+    public void testRemovingRoot(IndexManager<Long, Pointer> indexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
-        NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(NodeData.Strategy.LONG);
+        NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
 
         for (Long testIdentifier : testIdentifiers) {
             indexManager.addIndex(1, testIdentifier, samplePointer);
@@ -555,8 +556,8 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         Assertions.assertFalse(indexManager.removeIndex(1, 12L));
 
         AbstractTreeNode<Long> lRoot = nodeFactory.fromNodeData(indexStorageManager.getRoot(1).get().get());
-        Assertions.assertEquals(1, lRoot.getKeyList(degree, PointerInnerObject.BYTES).size(), "" +  root.getKeyList(degree));
-        Assertions.assertEquals(1, lRoot.getKeyList(degree, PointerInnerObject.BYTES).getFirst());
+        Assertions.assertEquals(1, lRoot.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).size(), "" +  root.getKeyList(degree));
+        Assertions.assertEquals(1, lRoot.getKeyList(degree, PointerBinaryObjectWrapper.BYTES).getFirst());
         Assertions.assertEquals(AbstractTreeNode.Type.LEAF, lRoot.getType());
 
     }
@@ -572,7 +573,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
                 try {
                     indexManager.addIndex(1, testIdentifier, samplePointer);
                 } catch (ExecutionException | InterruptedException | IOException |
-                         NodeData.InvalidValueForNodeInnerObj e) {
+                         BinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
                     throw new RuntimeException(e);
                 } finally {
                     countDownLatch.countDown();
