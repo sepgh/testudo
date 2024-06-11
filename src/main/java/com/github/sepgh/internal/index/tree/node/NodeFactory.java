@@ -15,17 +15,17 @@ public interface NodeFactory<K extends Comparable<K>> {
 
     class ClusterNodeFactory<K extends Comparable<K>> implements NodeFactory<K> {
 
-        private final BinaryObjectWrapper<K> keyStrategy;
+        private final BinaryObjectWrapper<K> keyBinaryObjectWrapper;
 
-        public ClusterNodeFactory(BinaryObjectWrapper<K> keyStrategy) {
-            this.keyStrategy = keyStrategy;
+        public ClusterNodeFactory(BinaryObjectWrapper<K> keyBinaryObjectWrapper) {
+            this.keyBinaryObjectWrapper = keyBinaryObjectWrapper;
         }
 
         @Override
         public AbstractTreeNode<K> fromBytes(byte[] bytes) {
             if ((bytes[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT)
-                return new LeafClusterTreeNode<>(bytes, keyStrategy);
-            return new InternalTreeNode<>(bytes, keyStrategy);
+                return new LeafClusterTreeNode<>(bytes, keyBinaryObjectWrapper);
+            return new InternalTreeNode<>(bytes, keyBinaryObjectWrapper);
         }
 
         @Override
@@ -44,8 +44,8 @@ public interface NodeFactory<K extends Comparable<K>> {
         public AbstractTreeNode<K> fromBytes(byte[] bytes, AbstractTreeNode.Type type) {
             bytes[0] = type.getSign();
             if (type.equals(AbstractTreeNode.Type.LEAF))
-                return new LeafClusterTreeNode<>(bytes, keyStrategy);
-            return new InternalTreeNode<>(bytes, keyStrategy);
+                return new LeafClusterTreeNode<>(bytes, keyBinaryObjectWrapper);
+            return new InternalTreeNode<>(bytes, keyBinaryObjectWrapper);
         }
     }
 

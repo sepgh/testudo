@@ -24,7 +24,7 @@ public class IndexFileDescriptor {
     private final HeaderManager headerManager;
     private final EngineConfig engineConfig;
 
-    public <K extends Comparable<K>> void describe(BinaryObjectWrapper<K> strategy) throws IOException, ExecutionException, InterruptedException {
+    public <K extends Comparable<K>> void describe(BinaryObjectWrapper<K> binaryObjectWrapper) throws IOException, ExecutionException, InterruptedException {
         long paddingCounts = asynchronousFileChannel.size() / engineConfig.getPaddedSize();
 
         for (int i = 0; i < paddingCounts; i++){
@@ -36,7 +36,7 @@ public class IndexFileDescriptor {
                 continue;
             }
 
-            AbstractTreeNode<K> baseClusterTreeNode = new NodeFactory.ClusterNodeFactory<>(strategy).fromBytes(bytes);
+            AbstractTreeNode<K> baseClusterTreeNode = new NodeFactory.ClusterNodeFactory<>(binaryObjectWrapper).fromBytes(bytes);
             if (baseClusterTreeNode.getType() == AbstractTreeNode.Type.LEAF)
                 this.printLeafNode((LeafClusterTreeNode<K>) baseClusterTreeNode, offset);
             else if (baseClusterTreeNode.getType() == AbstractTreeNode.Type.INTERNAL)

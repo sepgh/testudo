@@ -50,13 +50,13 @@ public class BPlusTreeUtils {
         }
     }
 
-    public static <K extends Comparable<K>, V extends Comparable<V>> AbstractLeafTreeNode<K, V> getResponsibleNode(IndexStorageManager indexStorageManager, AbstractTreeNode<K> node, K identifier, int table, int degree, NodeFactory<K> nodeFactory, BinaryObjectWrapper<V> valueStrategy) throws ExecutionException, InterruptedException, IOException {
+    public static <K extends Comparable<K>, V extends Comparable<V>> AbstractLeafTreeNode<K, V> getResponsibleNode(IndexStorageManager indexStorageManager, AbstractTreeNode<K> node, K identifier, int table, int degree, NodeFactory<K> nodeFactory, BinaryObjectWrapper<V> valueBinaryObjectWrapper) throws ExecutionException, InterruptedException, IOException {
         if (node.isLeaf()){
             return (AbstractLeafTreeNode<K, V>) node;
         }
 
         List<Pointer> childrenList = ((InternalTreeNode<K>) node).getChildrenList();
-        List<K> keys = node.getKeyList(degree, valueStrategy.size());
+        List<K> keys = node.getKeyList(degree, valueBinaryObjectWrapper.size());
         int i;
         K keyAtIndex;
         boolean flag = false;
@@ -76,7 +76,7 @@ public class BPlusTreeUtils {
                     table,
                     degree,
                     nodeFactory,
-                    valueStrategy
+                    valueBinaryObjectWrapper
             );
         } else {
             return getResponsibleNode(
@@ -86,7 +86,7 @@ public class BPlusTreeUtils {
                     table,
                     degree,
                     nodeFactory,
-                    valueStrategy
+                    valueBinaryObjectWrapper
             );
         }
 

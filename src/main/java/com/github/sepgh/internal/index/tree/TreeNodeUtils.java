@@ -114,9 +114,9 @@ public class TreeNodeUtils {
      * @param index to read they key at
      * @return key value at index
      */
-    public static <K extends Comparable<K>> BinaryObjectWrapper<K> getKeyAtIndex(AbstractTreeNode<?> treeNode, int index, BinaryObjectWrapper<K> kStrategy, int valueSize) {
-        int keyStartIndex = getKeyStartOffset(treeNode, index, kStrategy.size(), valueSize);
-        return kStrategy.load(treeNode.getData(), keyStartIndex);
+    public static <K extends Comparable<K>> BinaryObjectWrapper<K> getKeyAtIndex(AbstractTreeNode<?> treeNode, int index, BinaryObjectWrapper<K> kBinaryObjectWrapper, int valueSize) {
+        int keyStartIndex = getKeyStartOffset(treeNode, index, kBinaryObjectWrapper.size(), valueSize);
+        return kBinaryObjectWrapper.load(treeNode.getData(), keyStartIndex);
     }
 
     public static void removeKeyAtIndex(AbstractTreeNode<?> treeNode, int index, int keySize, int valueSize) {
@@ -132,13 +132,13 @@ public class TreeNodeUtils {
     public static <K extends Comparable<K>, V extends Comparable<V>> Map.Entry<K, V> getKeyValueAtIndex(
             AbstractTreeNode<K> treeNode,
             int index,
-            BinaryObjectWrapper<K> kStrategy,
-            BinaryObjectWrapper<V> vStrategy
+            BinaryObjectWrapper<K> kBinaryObjectWrapper,
+            BinaryObjectWrapper<V> vBinaryObjectWrapper
     ){
-        int keyStartIndex = getKeyStartOffset(treeNode, index, kStrategy.size(), vStrategy.size());
+        int keyStartIndex = getKeyStartOffset(treeNode, index, kBinaryObjectWrapper.size(), vBinaryObjectWrapper.size());
         return new AbstractMap.SimpleImmutableEntry<K, V>(
-                kStrategy.load(treeNode.getData(), keyStartIndex).asObject(),
-                vStrategy.load(treeNode.getData(), keyStartIndex + kStrategy.size()).asObject()
+                kBinaryObjectWrapper.load(treeNode.getData(), keyStartIndex).asObject(),
+                vBinaryObjectWrapper.load(treeNode.getData(), keyStartIndex + kBinaryObjectWrapper.size()).asObject()
         );
     }
 
@@ -174,7 +174,7 @@ public class TreeNodeUtils {
             BinaryObjectWrapper<K> binaryObjectWrapper,
             K key,
             int keySize,
-            BinaryObjectWrapper<V> valueStrategy,
+            BinaryObjectWrapper<V> valueBinaryObjectWrapper,
             V value,
             int valueSize
     ) throws BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
@@ -210,7 +210,7 @@ public class TreeNodeUtils {
                 treeNode,
                 indexToFill,
                 binaryObjectWrapper.load(key),
-                valueStrategy.load(value)
+                valueBinaryObjectWrapper.load(value)
         );
 
         System.arraycopy(

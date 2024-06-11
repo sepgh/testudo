@@ -26,7 +26,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.github.sepgh.internal.storage.BaseFileIndexStorageManager.INDEX_FILE_NAME;
 
-public class NodeDataOldTestCase {
+public class BinaryObjectWrapperTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private Header header;
@@ -34,7 +34,7 @@ public class NodeDataOldTestCase {
 
     @BeforeEach
     public void setUp() throws IOException {
-        dbPath = Files.createTempDirectory("TEST_NodeInnerObjTestCase");
+        dbPath = Files.createTempDirectory("TEST_BinaryObjectWrapperTestCase");
         engineConfig = EngineConfig.builder()
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
