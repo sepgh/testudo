@@ -12,8 +12,7 @@ public class NoZeroLongBinaryObjectWrapper implements BinaryObjectWrapper<Long> 
     public NoZeroLongBinaryObjectWrapper load(Long aLong) throws InvalidBinaryObjectWrapperValue {
         if (aLong == 0)
             throw new InvalidBinaryObjectWrapperValue(aLong, this.getClass());
-        this.bytes = new byte[BYTES];
-        System.arraycopy(Longs.toByteArray(aLong), 0, this.bytes, 0, Long.BYTES);
+        this.bytes = Longs.toByteArray(aLong);
         return this;
     }
 

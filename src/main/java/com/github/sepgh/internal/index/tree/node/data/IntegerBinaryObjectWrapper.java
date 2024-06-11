@@ -10,7 +10,7 @@ public class IntegerBinaryObjectWrapper implements BinaryObjectWrapper<Integer> 
     private byte[] bytes;
     @Override
     public IntegerBinaryObjectWrapper load(Integer integer) {
-        this.bytes = new byte[BYTES];
+        this.bytes = new byte[this.size()];
         this.bytes[0] = 0x01;
         System.arraycopy(Ints.toByteArray(integer), 0, this.bytes, 1, Integer.BYTES);
         return this;
@@ -18,9 +18,8 @@ public class IntegerBinaryObjectWrapper implements BinaryObjectWrapper<Integer> 
 
     @Override
     public IntegerBinaryObjectWrapper load(byte[] bytes, int beginning) {
-        this.bytes = new byte[BYTES];
-        this.bytes[0] = bytes[0];
-        System.arraycopy(bytes, beginning, this.bytes, 1, Integer.BYTES);
+        this.bytes = new byte[this.size()];
+        System.arraycopy(bytes, beginning, this.bytes, 0, this.size());
         return this;
     }
 

@@ -16,7 +16,7 @@ public class PointerBinaryObjectWrapper implements BinaryObjectWrapper<Pointer> 
     @Override
     public PointerBinaryObjectWrapper load(byte[] bytes, int beginning) {
         this.bytes = new byte[BYTES];
-        System.arraycopy(bytes, beginning, this.bytes, 1, Pointer.BYTES);
+        System.arraycopy(bytes, beginning, this.bytes, 0, Pointer.BYTES);
         return this;
     }
 
@@ -32,7 +32,7 @@ public class PointerBinaryObjectWrapper implements BinaryObjectWrapper<Pointer> 
 
     @Override
     public boolean hasValue() {
-        return bytes[0] == 0x01;
+        return bytes[0] != 0x00;
     }
 
     @Override

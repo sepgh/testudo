@@ -87,15 +87,14 @@ public class TreeNodeUtils {
      * @param index of the key to check existence
      * @return boolean state of existence of a key in index
      */
-    public static <K extends Comparable<K>> boolean hasKeyAtIndex(AbstractTreeNode<?> treeNode, int index, int degree, BinaryObjectWrapper<K> binaryObjectWrapper, int valueSize) {
+    public static <K extends Comparable<K>> boolean hasKeyAtIndex(AbstractTreeNode<?> treeNode, int index, int degree, BinaryObjectWrapper<K> kBinaryObjectWrapper, int valueSize) {
         if (index >= degree - 1)
             return false;
 
-        int keyStartIndex = getKeyStartOffset(treeNode, index, binaryObjectWrapper.size(), valueSize);
-        if (keyStartIndex + binaryObjectWrapper.size() > treeNode.getData().length)
+        int keyStartIndex = getKeyStartOffset(treeNode, index, kBinaryObjectWrapper.size(), valueSize);
+        if (keyStartIndex + kBinaryObjectWrapper.size() > treeNode.getData().length)
             return false;
-
-        return binaryObjectWrapper.load(treeNode.getData(), keyStartIndex).hasValue();
+        return kBinaryObjectWrapper.load(treeNode.getData(), keyStartIndex).hasValue();
     }
 
 

@@ -12,8 +12,7 @@ public class NoZeroIntegerBinaryObjectWrapper implements BinaryObjectWrapper<Int
     public NoZeroIntegerBinaryObjectWrapper load(Integer integer) throws InvalidBinaryObjectWrapperValue {
         if (integer == 0)
             throw new InvalidBinaryObjectWrapperValue(integer, this.getClass());
-        this.bytes = new byte[BYTES];
-        System.arraycopy(Ints.toByteArray(integer), 0, this.bytes, 0, Integer.BYTES);
+        this.bytes = Ints.toByteArray(integer);
         return this;
     }
 

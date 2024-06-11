@@ -1,6 +1,7 @@
 package com.github.sepgh.internal;
 
 import com.github.sepgh.internal.index.Pointer;
+import com.github.sepgh.internal.index.tree.node.data.LongBinaryObjectWrapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -2,9 +2,7 @@ package com.github.sepgh.internal.index.tree.node.data;
 
 import com.github.sepgh.internal.utils.BinaryUtils;
 import com.google.common.primitives.Longs;
-import lombok.Getter;
 
-@Getter
 public class LongBinaryObjectWrapper implements BinaryObjectWrapper<Long> {
     public static int BYTES = Long.BYTES + 1;
     private byte[] bytes;
@@ -19,8 +17,13 @@ public class LongBinaryObjectWrapper implements BinaryObjectWrapper<Long> {
     @Override
     public LongBinaryObjectWrapper load(byte[] bytes, int beginning) {
         this.bytes = new byte[BYTES];
-        this.bytes[0] = bytes[0];
-        System.arraycopy(bytes, beginning, this.bytes, 1, Long.BYTES);
+        System.arraycopy(
+                bytes,
+                beginning,
+                this.bytes,
+                0,
+                this.size()
+        );
         return this;
     }
 
@@ -42,5 +45,10 @@ public class LongBinaryObjectWrapper implements BinaryObjectWrapper<Long> {
     @Override
     public int size() {
         return BYTES;
+    }
+
+    @Override
+    public byte[] getBytes() {
+        return bytes;
     }
 }

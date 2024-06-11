@@ -26,6 +26,7 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         return super.getKeyList(degree, valueStrategy.size());
     }
 
+    @SneakyThrows
     public void setKey(int index, K key) {
         super.setKey(index, key, valueStrategy.size());
     }

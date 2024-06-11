@@ -238,7 +238,7 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
         @SneakyThrows
         @Override
         public boolean hasNext() {
-            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree, keyStrategy, Pointer.BYTES);
+            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree, keyStrategy, PointerBinaryObjectWrapper.BYTES);
         }
 
         @SneakyThrows
