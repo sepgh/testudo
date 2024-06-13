@@ -34,6 +34,7 @@ public class CompactFileIndexStorageManagerTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private Header header;
+    private int degree = 1;
     private final byte[] singleKeyLeafNodeRepresentation = {
             ((byte) (0x00 | ROOT_BIT | TYPE_LEAF_NODE_BIT)), // Leaf
 
@@ -67,14 +68,14 @@ public class CompactFileIndexStorageManagerTestCase {
     public void setUp() throws IOException {
         dbPath = Files.createTempDirectory("TEST_IndexFileManagerTestCase");
         engineConfig = EngineConfig.builder()
-                .bTreeDegree(1)
+                .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(1)
                 .build();
-        engineConfig.setBTreeMaxFileSize(3L * engineConfig.getPaddedSize());
+        engineConfig.setBTreeMaxFileSize(3L * BTreeSizeCalculator.getClusteredBPlusTreeSize(1, LongBinaryObjectWrapper.BYTES));
 
-        byte[] writingBytes = new byte[engineConfig.getPaddedSize() * 2];
+        byte[] writingBytes = new byte[BTreeSizeCalculator.getClusteredBPlusTreeSize(1, LongBinaryObjectWrapper.BYTES) * 2];
         System.arraycopy(singleKeyLeafNodeRepresentation, 0, writingBytes, 0, singleKeyLeafNodeRepresentation.length);
-        System.arraycopy(singleKeyInternalNodeRepresentation, 0, writingBytes, engineConfig.getPaddedSize(), singleKeyInternalNodeRepresentation.length);
+        System.arraycopy(singleKeyInternalNodeRepresentation, 0, writingBytes, BTreeSizeCalculator.getClusteredBPlusTreeSize(1, LongBinaryObjectWrapper.BYTES), singleKeyInternalNodeRepresentation.length);
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 
@@ -120,12 +121,12 @@ public class CompactFileIndexStorageManagerTestCase {
         NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
 
 
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         try {
             CompletableFuture<IndexStorageManager.NodeData> future = compactFileIndexStorageManager.readNode(1, 0, 0);
 
             IndexStorageManager.NodeData nodeData = future.get();
-            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
+            Assertions.assertEquals(BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES), nodeData.bytes().length);
 
             AbstractTreeNode<Long> treeNode = nodeFactory.fromBytes(nodeData.bytes());
 
@@ -136,9 +137,9 @@ public class CompactFileIndexStorageManagerTestCase {
             Assertions.assertEquals(15, keys.next());
 
 
-            future = compactFileIndexStorageManager.readNode(1, engineConfig.getPaddedSize(), 0);
+            future = compactFileIndexStorageManager.readNode(1, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES), 0);
             nodeData = future.get();
-            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
+            Assertions.assertEquals(BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES), nodeData.bytes().length);
 
             treeNode = nodeFactory.fromBytes(nodeData.bytes());
 
@@ -161,12 +162,12 @@ public class CompactFileIndexStorageManagerTestCase {
         NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
 
 
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         try {
             CompletableFuture<IndexStorageManager.NodeData> future = compactFileIndexStorageManager.readNode(1, 0, 0);
 
             IndexStorageManager.NodeData nodeData = future.get();
-            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
+            Assertions.assertEquals(BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES), nodeData.bytes().length);
 
             LeafClusterTreeNode<Long> leafTreeNode = (LeafClusterTreeNode) nodeFactory.fromBytes(nodeData.bytes());
             leafTreeNode.setKeyValue(0, new LeafClusterTreeNode.KeyValue(10L, new Pointer(Pointer.TYPE_DATA, 100, 100)));
@@ -195,7 +196,7 @@ public class CompactFileIndexStorageManagerTestCase {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
 
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         try {
 
             byte[] emptyNode = compactFileIndexStorageManager.getEmptyNode();
@@ -203,18 +204,18 @@ public class CompactFileIndexStorageManagerTestCase {
             baseClusterTreeNode.setAsRoot();
 
             IndexStorageManager.NodeData nodeData = compactFileIndexStorageManager.writeNewNode(1, baseClusterTreeNode.getData()).get();
-            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
-            Assertions.assertEquals(2L * engineConfig.getPaddedSize(), nodeData.pointer().getPosition());
+            Assertions.assertEquals(BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES), nodeData.bytes().length);
+            Assertions.assertEquals(2L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES), nodeData.pointer().getPosition());
             Assertions.assertEquals(0, nodeData.pointer().getChunk());
 
             nodeData = compactFileIndexStorageManager.writeNewNode(1, baseClusterTreeNode.getData()).get();
-            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
+            Assertions.assertEquals(BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES), nodeData.bytes().length);
             Assertions.assertEquals(0, nodeData.pointer().getPosition());
             Assertions.assertEquals(1, nodeData.pointer().getChunk());
 
             nodeData = compactFileIndexStorageManager.writeNewNode(1, baseClusterTreeNode.getData()).get();
-            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.bytes().length);
-            Assertions.assertEquals(engineConfig.getPaddedSize(), nodeData.pointer().getPosition());
+            Assertions.assertEquals(BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES), nodeData.bytes().length);
+            Assertions.assertEquals(BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES), nodeData.pointer().getPosition());
             Assertions.assertEquals(1, nodeData.pointer().getChunk());
 
         } finally {

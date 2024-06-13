@@ -8,10 +8,7 @@ import com.github.sepgh.internal.index.TableLevelAsyncIndexManagerDecorator;
 import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
 import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
 import com.github.sepgh.internal.index.tree.node.data.LongBinaryObjectWrapper;
-import com.github.sepgh.internal.storage.CachedIndexStorageManagerDecorator;
-import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
-import com.github.sepgh.internal.storage.InMemoryHeaderManager;
-import com.github.sepgh.internal.storage.IndexStorageManager;
+import com.github.sepgh.internal.storage.*;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import org.junit.jupiter.api.Assertions;
@@ -44,7 +41,7 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
                 .build();
-        engineConfig.setBTreeMaxFileSize(12L * engineConfig.getPaddedSize());
+        engineConfig.setBTreeMaxFileSize(12L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
 
         byte[] writingBytes = new byte[]{};
         indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
@@ -89,7 +86,7 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
     @Timeout(value = 2)
     public void findIndexSuccessfully_cachedStorage() throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 30);
 
         IndexManager<Long, Pointer> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongBinaryObjectWrapper()));
@@ -109,7 +106,7 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
 
         indexStorageManager.close();
 
-        indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 12);
 
         indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongBinaryObjectWrapper()));
@@ -123,7 +120,7 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
     @Timeout(value = 2)
     public void findIndexFailure_cachedStorage() throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 12);
 
         IndexManager<Long, Pointer> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongBinaryObjectWrapper()));
@@ -146,7 +143,7 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
     @Timeout(value = 2)
     public void findIndexSuccessfully_cachedIndexManager() throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
 
         IndexManager<Long, Pointer> indexManager = new CachedIndexManagerDecorator<>(
                 new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongBinaryObjectWrapper()),
@@ -172,7 +169,7 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
     @Timeout(value = 2)
     public void findIndexFailure_cachedIndexManager() throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         IndexManager<Long, Pointer> indexManager = new CachedIndexManagerDecorator<>(
                 new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongBinaryObjectWrapper()),
                 20

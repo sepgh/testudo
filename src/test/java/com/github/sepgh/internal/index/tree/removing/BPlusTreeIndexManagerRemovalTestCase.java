@@ -6,6 +6,7 @@ import com.github.sepgh.internal.index.TableLevelAsyncIndexManagerDecorator;
 import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
 import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
 import com.github.sepgh.internal.index.tree.node.data.LongBinaryObjectWrapper;
+import com.github.sepgh.internal.storage.BTreeSizeCalculator;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
@@ -20,7 +21,7 @@ public class BPlusTreeIndexManagerRemovalTestCase extends BaseBPlusTreeIndexMana
 
     protected IndexStorageManager getIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        return new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        return new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
     }
 
     protected IndexManager<Long, Pointer> getIndexManager(IndexStorageManager indexStorageManager) {

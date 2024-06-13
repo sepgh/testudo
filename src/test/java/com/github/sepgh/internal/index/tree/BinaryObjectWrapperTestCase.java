@@ -4,10 +4,8 @@ import com.github.sepgh.internal.EngineConfig;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
-import com.github.sepgh.internal.index.tree.node.data.IntegerBinaryObjectWrapper;
-import com.github.sepgh.internal.index.tree.node.data.NoZeroIntegerBinaryObjectWrapper;
-import com.github.sepgh.internal.index.tree.node.data.NoZeroLongBinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.*;
+import com.github.sepgh.internal.storage.BTreeSizeCalculator;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
@@ -39,7 +37,7 @@ public class BinaryObjectWrapperTestCase {
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
                 .build();
-        engineConfig.setBTreeMaxFileSize(4L * engineConfig.getPaddedSize());
+        engineConfig.setBTreeMaxFileSize(4L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
 
         byte[] writingBytes = new byte[]{};
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
@@ -85,7 +83,7 @@ public class BinaryObjectWrapperTestCase {
     @Test
     public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
 
         IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new IntegerBinaryObjectWrapper());
 
@@ -109,7 +107,7 @@ public class BinaryObjectWrapperTestCase {
     @Test
     public void test_NoZeroIntegerIdentifier() throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
 
         IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new NoZeroIntegerBinaryObjectWrapper());
 
@@ -138,7 +136,7 @@ public class BinaryObjectWrapperTestCase {
     @Test
     public void test_NoZeroLongIdentifier() throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
 
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new NoZeroLongBinaryObjectWrapper());
 

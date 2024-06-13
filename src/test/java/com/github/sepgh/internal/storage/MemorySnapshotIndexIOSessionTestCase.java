@@ -40,7 +40,7 @@ public class MemorySnapshotIndexIOSessionTestCase {
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(5)
                 .build();
-        engineConfig.setBTreeMaxFileSize(20L * engineConfig.getPaddedSize());
+        engineConfig.setBTreeMaxFileSize(20L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
 
         byte[] writingBytes = new byte[]{};
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
@@ -87,7 +87,7 @@ public class MemorySnapshotIndexIOSessionTestCase {
     public void testCreateRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
-        IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper()));
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new IndexIOSessionFactory() {
             @Override
@@ -121,7 +121,7 @@ public class MemorySnapshotIndexIOSessionTestCase {
     public void testDeleteRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
-        IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper()));
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new IndexIOSessionFactory() {
             @Override

@@ -10,6 +10,7 @@ import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexMa
 import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
 import com.github.sepgh.internal.index.tree.node.data.LongBinaryObjectWrapper;
 import com.github.sepgh.internal.index.tree.node.data.PointerBinaryObjectWrapper;
+import com.github.sepgh.internal.storage.BTreeSizeCalculator;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.header.Header;
@@ -45,9 +46,9 @@ public class MultiTableBPlusTreeIndexManagerCompactTestCase {
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(10)
                 .build();
-        engineConfig.setBTreeMaxFileSize(2 * 15L * engineConfig.getPaddedSize());
+        engineConfig.setBTreeMaxFileSize(2 * 15L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
 
-        byte[] writingBytes = new byte[2 * 13 * engineConfig.getPaddedSize()];
+        byte[] writingBytes = new byte[2 * 13 * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES)];
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 
@@ -81,14 +82,14 @@ public class MultiTableBPlusTreeIndexManagerCompactTestCase {
                                                 Collections.singletonList(
                                                         Header.IndexChunk.builder()
                                                                 .chunk(0)
-                                                                .offset(12L * engineConfig.getPaddedSize())
+                                                                .offset(12L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES))
                                                                 .build()
                                                 )
                                         )
                                         .root(
                                                 Header.IndexChunk.builder()
                                                         .chunk(0)
-                                                        .offset(12L * engineConfig.getPaddedSize())
+                                                        .offset(12L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES))
                                                         .build()
                                         )
                                         .initialized(true)
@@ -147,7 +148,7 @@ public class MultiTableBPlusTreeIndexManagerCompactTestCase {
 
         for (int tableId = 1; tableId <= 2; tableId++){
             HeaderManager headerManager = new InMemoryHeaderManager(header);
-            CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+            CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
             IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongBinaryObjectWrapper());
 
 
@@ -197,7 +198,7 @@ public class MultiTableBPlusTreeIndexManagerCompactTestCase {
         List<Long> testIdentifiers = Arrays.asList(1L, 4L, 9L, 6L, 10L, 8L, 3L, 2L, 11L, 5L, 7L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongBinaryObjectWrapper());
 
         IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(

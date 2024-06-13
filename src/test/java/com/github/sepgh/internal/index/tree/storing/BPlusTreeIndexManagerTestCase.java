@@ -13,6 +13,7 @@ import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
 import com.github.sepgh.internal.index.tree.node.data.LongBinaryObjectWrapper;
 import com.github.sepgh.internal.index.tree.node.data.PointerBinaryObjectWrapper;
+import com.github.sepgh.internal.storage.BTreeSizeCalculator;
 import com.github.sepgh.internal.storage.CompactFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
@@ -43,7 +44,7 @@ public class BPlusTreeIndexManagerTestCase {
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
                 .build();
-        engineConfig.setBTreeMaxFileSize(4L * engineConfig.getPaddedSize());
+        engineConfig.setBTreeMaxFileSize(4L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
 
         byte[] writingBytes = new byte[]{};
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
@@ -97,7 +98,7 @@ public class BPlusTreeIndexManagerTestCase {
     @Timeout(value = 2)
     public void addIndex() throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
 
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongBinaryObjectWrapper());
         AbstractTreeNode<Long> baseClusterTreeNode = indexManager.addIndex(1, 10L, new Pointer(Pointer.TYPE_DATA, 100, 0));
@@ -137,7 +138,7 @@ public class BPlusTreeIndexManagerTestCase {
 
         NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongBinaryObjectWrapper());
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongBinaryObjectWrapper());
 
 
@@ -220,7 +221,7 @@ public class BPlusTreeIndexManagerTestCase {
 
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongBinaryObjectWrapper());
 
 
@@ -246,7 +247,7 @@ public class BPlusTreeIndexManagerTestCase {
 
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         IndexManager<Long, Pointer> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongBinaryObjectWrapper()));
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);

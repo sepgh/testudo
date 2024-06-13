@@ -18,13 +18,13 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager {
-    public CompactFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) throws IOException, ExecutionException, InterruptedException {
-        super(path, headerManager, engineConfig, fileHandlerPool);
+    public CompactFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpaceMax) throws IOException, ExecutionException, InterruptedException {
+        super(path, headerManager, engineConfig, fileHandlerPool, binarySpaceMax);
         this.initialize();
     }
 
-    public CompactFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig) throws IOException, ExecutionException, InterruptedException {
-        super(path, headerManager, engineConfig);
+    public CompactFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig, int binarySpaceMax) throws IOException, ExecutionException, InterruptedException {
+        super(path, headerManager, engineConfig, binarySpaceMax);
         this.initialize();
     }
 
@@ -41,7 +41,7 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
                     try (ManagedFileHandler managedFileHandler = this.getManagedFileHandler(table.getId(), chunkId)){
                         AsynchronousFileChannel asynchronousFileChannel = managedFileHandler.getAsynchronousFileChannel();
                         if (asynchronousFileChannel.size() != engineConfig.getBTreeMaxFileSize()){
-                            long position = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
+                            long position = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize()).get();
                             table.setChunks(Collections.singletonList(new Header.IndexChunk(chunkId, position)));
                             table.setInitialized(true);
                             stored = true;
@@ -73,7 +73,7 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
                 managedFileHandler.close();
                 return getAllocatedSpaceForNewNode(tableId, chunk + 1);
             } else {
-                Long position = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
+                Long position = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize()).get();
                 managedFileHandler.close();
                 List<Header.IndexChunk> newChunks = new ArrayList<>(table.getChunks());
                 newChunks.add(new Header.IndexChunk(chunk, position));
@@ -91,12 +91,12 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
         if (fileSize > 0){
             long positionToCheck =
                     isLastTable ?
-                            fileSize - engineConfig.indexGrowthAllocationSize()
+                            fileSize - this.getIndexGrowthAllocationSize()
                             :
-                            tablesIncludingChunk.get(indexOfTable + 1).getIndexChunk(chunk).get().getOffset() - engineConfig.indexGrowthAllocationSize();
+                            tablesIncludingChunk.get(indexOfTable + 1).getIndexChunk(chunk).get().getOffset() - this.getIndexGrowthAllocationSize();
 
             if (positionToCheck > 0 && positionToCheck > tablesIncludingChunk.get(indexOfTable).getIndexChunk(chunk).get().getOffset()) {
-                byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, engineConfig.indexGrowthAllocationSize()).get();
+                byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, this.getIndexGrowthAllocationSize()).get();
                 Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
                 if (optionalAdditionalPosition.isPresent()){
                     long finalPosition = positionToCheck + optionalAdditionalPosition.get();
@@ -114,18 +114,18 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
 
         long allocatedOffset;
         if (isLastTable){
-            allocatedOffset = FileUtils.allocate(asynchronousFileChannel, engineConfig.indexGrowthAllocationSize()).get();
+            allocatedOffset = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize()).get();
         } else {
             allocatedOffset = FileUtils.allocate(
                     asynchronousFileChannel,
                     tablesIncludingChunk.get(indexOfTable + 1).getIndexChunk(chunk).get().getOffset(),
-                    engineConfig.indexGrowthAllocationSize()
+                    this.getIndexGrowthAllocationSize()
             ).get();
 
             for (int i = indexOfTable + 1; i < tablesIncludingChunk.size(); i++){
                 Header.Table nextTable = tablesIncludingChunk.get(i);
                 Header.IndexChunk indexChunk = nextTable.getIndexChunk(chunk).get();
-                indexChunk.setOffset(indexChunk.getOffset() + engineConfig.indexGrowthAllocationSize());
+                indexChunk.setOffset(indexChunk.getOffset() + this.getIndexGrowthAllocationSize());
             }
             headerManager.update();
         }

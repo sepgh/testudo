@@ -7,6 +7,7 @@ import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
 import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
 import com.github.sepgh.internal.index.tree.node.data.LongBinaryObjectWrapper;
+import com.github.sepgh.internal.storage.BTreeSizeCalculator;
 import com.github.sepgh.internal.storage.ExtendedFileIndexStorageManager;
 import com.github.sepgh.internal.storage.InMemoryHeaderManager;
 import com.github.sepgh.internal.storage.IndexStorageManager;
@@ -49,9 +50,9 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
                 .fileAcquireUnit(TimeUnit.SECONDS)
                 .bTreeGrowthNodeAllocationCount(1)
                 .build();
-        engineConfig.setBTreeMaxFileSize(4L * engineConfig.getPaddedSize());
+        engineConfig.setBTreeMaxFileSize(4L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
 
-        byte[] writingBytes = new byte[2 * engineConfig.getPaddedSize()];
+        byte[] writingBytes = new byte[2 * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES)];
         Path indexPath = Path.of(dbPath.toString(), String.format("%s-%d.%d", INDEX_FILE_NAME, 1, 0));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 
@@ -88,7 +89,7 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
                                                 Collections.singletonList(
                                                         Header.IndexChunk.builder()
                                                                 .chunk(0)
-                                                                .offset(2L * engineConfig.getPaddedSize())
+                                                                .offset(2L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES))
                                                                 .build()
                                                 )
                                         )
@@ -148,7 +149,7 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, extendedFileIndexStorageManager, new LongBinaryObjectWrapper());
 
         for (int tableId = 1; tableId <= 2; tableId++){
@@ -177,7 +178,7 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
 
 
         LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(), 1);
-        ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig, limitedFileHandlerPool);
+        ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig, limitedFileHandlerPool, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, extendedFileIndexStorageManager, new LongBinaryObjectWrapper());
 
         for (int tableId = 1; tableId <= 2; tableId++) {
@@ -205,7 +206,7 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
 
 
         LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(),2);
-        ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig, limitedFileHandlerPool);
+        ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig, limitedFileHandlerPool, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, extendedFileIndexStorageManager, new LongBinaryObjectWrapper());
 
         for (int tableId = 1; tableId <= 2; tableId++) {
@@ -234,7 +235,7 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         IndexManager<Long, Pointer> indexManager = new DBLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, extendedFileIndexStorageManager, new LongBinaryObjectWrapper()));
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
@@ -315,7 +316,7 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig);
+        ExtendedFileIndexStorageManager extendedFileIndexStorageManager = new ExtendedFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, extendedFileIndexStorageManager, new LongBinaryObjectWrapper());
 
         for (int tableId = 1; tableId <= 2; tableId++){

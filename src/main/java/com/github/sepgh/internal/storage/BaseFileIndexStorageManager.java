@@ -26,17 +26,28 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
     protected final HeaderManager headerManager;
     protected final EngineConfig engineConfig;
     protected final FileHandlerPool fileHandlerPool;
+    protected final int binarySpace;
     public static final String INDEX_FILE_NAME = "index";
-
-    public BaseFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) {
+    public BaseFileIndexStorageManager(
+            Path path,
+            HeaderManager headerManager,
+            EngineConfig engineConfig,
+            FileHandlerPool fileHandlerPool,
+            int binarySpace
+    ) {
         this.path = path;
         this.headerManager = headerManager;
         this.engineConfig = engineConfig;
         this.fileHandlerPool = fileHandlerPool;
+        this.binarySpace = binarySpace;
     }
 
-    public BaseFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig) {
-        this(path, headerManager, engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()));
+    public BaseFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig, int binarySpace) {
+        this(path, headerManager, engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()), binarySpace);
+    }
+
+    protected int getIndexGrowthAllocationSize(){
+        return engineConfig.getBTreeGrowthNodeAllocationCount() * this.binarySpace;
     }
 
     protected abstract Path getIndexFilePath(int table, int chunk);
@@ -74,7 +85,7 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
         FileUtils.readBytes(
                 acquireFileChannel(table, root.getChunk()),
                 headerTable.getIndexChunk(root.getChunk()).get().getOffset()  + root.getOffset(),
-                engineConfig.getPaddedSize()
+                this.binarySpace
         ).whenComplete((bytes, throwable) -> {
             releaseFileChannel(table, root.getChunk());
             if (throwable != null){
@@ -99,7 +110,7 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
 
     @Override
     public byte[] getEmptyNode() {
-        return new byte[engineConfig.getPaddedSize()];
+        return new byte[this.binarySpace];
     }
 
     @Override
@@ -110,7 +121,7 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
         AsynchronousFileChannel asynchronousFileChannel = acquireFileChannel(table, chunk);
         if (asynchronousFileChannel.size() == 0)
             throw new IOException("Nothing available to read.");
-        FileUtils.readBytes(asynchronousFileChannel, filePosition, engineConfig.getPaddedSize()).whenComplete((bytes, throwable) -> {
+        FileUtils.readBytes(asynchronousFileChannel, filePosition, this.binarySpace).whenComplete((bytes, throwable) -> {
             releaseFileChannel(table, chunk);
             if (throwable != null){
                 output.completeExceptionally(throwable);
@@ -131,9 +142,9 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
         CompletableFuture<NodeData> output = new CompletableFuture<>();
         Header.Table headerTable = headerManager.getHeader().getTableOfId(table).get();
         Pointer pointer = this.getAllocatedSpaceForNewNode(table, headerTable.getChunks().getLast().getChunk());
-        if (data.length < engineConfig.getPaddedSize()){
-            byte[] finalData = new byte[engineConfig.getPaddedSize()];
-            System.arraycopy(data, 0, finalData, 0, engineConfig.getPaddedSize());
+        if (data.length < this.binarySpace){
+            byte[] finalData = new byte[this.binarySpace];
+            System.arraycopy(data, 0, finalData, 0, this.binarySpace);
             data = finalData;
         }
 
@@ -197,7 +208,7 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
      */
     protected Optional<Integer> getPossibleAllocationLocation(byte[] bytes){
         for (int i = 0; i < engineConfig.getBTreeGrowthNodeAllocationCount(); i++){
-            int position = i * engineConfig.getPaddedSize();
+            int position = i * this.binarySpace;
             if ((bytes[position] & TYPE_LEAF_NODE_BIT) != TYPE_LEAF_NODE_BIT && (bytes[position] & TYPE_INTERNAL_NODE_BIT) != TYPE_INTERNAL_NODE_BIT){
                 return Optional.of(position);
             }
@@ -229,7 +240,7 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
     @Override
     public CompletableFuture<Integer> removeNode(int table, Pointer pointer) throws InterruptedException {
         long offset = headerManager.getHeader().getTableOfId(table).get().getIndexChunk(pointer.getChunk()).get().getOffset() + pointer.getPosition();
-        return FileUtils.write(acquireFileChannel(table, pointer.getChunk()), offset, new byte[engineConfig.getPaddedSize()]).whenComplete((integer, throwable) -> releaseFileChannel(table, pointer.getChunk()));
+        return FileUtils.write(acquireFileChannel(table, pointer.getChunk()), offset, new byte[this.binarySpace]).whenComplete((integer, throwable) -> releaseFileChannel(table, pointer.getChunk()));
     }
 
 }

@@ -10,6 +10,7 @@ import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
 import com.github.sepgh.internal.index.tree.node.data.LongBinaryObjectWrapper;
 import com.github.sepgh.internal.index.tree.node.data.PointerBinaryObjectWrapper;
+import com.github.sepgh.internal.storage.BTreeSizeCalculator;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import com.github.sepgh.internal.storage.header.Header;
@@ -45,7 +46,7 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
                 .build();
-        engineConfig.setBTreeMaxFileSize(15L * engineConfig.getPaddedSize());
+        engineConfig.setBTreeMaxFileSize(15L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
 
         byte[] writingBytes = new byte[]{};
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));

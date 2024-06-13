@@ -7,6 +7,8 @@ import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.LongBinaryObjectWrapper;
+import com.github.sepgh.internal.storage.BTreeSizeCalculator;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.utils.FileUtils;
 import com.google.common.hash.HashCode;
@@ -25,11 +27,11 @@ public class IndexFileDescriptor {
     private final EngineConfig engineConfig;
 
     public <K extends Comparable<K>> void describe(BinaryObjectWrapper<K> binaryObjectWrapper) throws IOException, ExecutionException, InterruptedException {
-        long paddingCounts = asynchronousFileChannel.size() / engineConfig.getPaddedSize();
+        long paddingCounts = asynchronousFileChannel.size() / BTreeSizeCalculator.getClusteredBPlusTreeSize(engineConfig.getBTreeDegree(), LongBinaryObjectWrapper.BYTES);
 
         for (int i = 0; i < paddingCounts; i++){
-            int offset = i * engineConfig.getPaddedSize();
-            byte[] bytes = FileUtils.readBytes(this.asynchronousFileChannel, offset, engineConfig.getPaddedSize()).get();
+            int offset = i * BTreeSizeCalculator.getClusteredBPlusTreeSize(engineConfig.getBTreeDegree(), LongBinaryObjectWrapper.BYTES);
+            byte[] bytes = FileUtils.readBytes(this.asynchronousFileChannel, offset, BTreeSizeCalculator.getClusteredBPlusTreeSize(engineConfig.getBTreeDegree(), LongBinaryObjectWrapper.BYTES)).get();
 
             if (bytes.length == 0 || bytes[0] == 0){
                 this.printEmptyNode(offset);

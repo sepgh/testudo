@@ -1,7 +1,5 @@
 package com.github.sepgh.internal;
 
-import com.github.sepgh.internal.index.Pointer;
-import com.github.sepgh.internal.index.tree.node.data.LongBinaryObjectWrapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,36 +20,6 @@ public class EngineConfig {
     @Builder.Default
     private long bTreeMaxFileSize = -1L;
 
-    @Builder.Default
-    private Integer cachedPaddingSize = null;
-
-    public int getPaddedSize(){
-        if (this.cachedPaddingSize != null){
-            return this.cachedPaddingSize;
-        }
-        int i = this.bTreeNodeSize() % 8;
-        if (i == 0){
-            cachedPaddingSize = this.bTreeNodeSize();
-            return cachedPaddingSize;
-        }
-        cachedPaddingSize = this.bTreeNodeSize() + 8 - i;
-        return cachedPaddingSize;
-    }
-
-    public long getBTreeMaxFileSize() {
-        if (this.bTreeMaxFileSize == -1)
-            return Double.valueOf(Math.pow(1024, 3) * getPaddedSize()).longValue();
-        else
-            return this.bTreeMaxFileSize;
-    }
-
-    public int indexGrowthAllocationSize() {
-        return this.bTreeGrowthNodeAllocationCount * getPaddedSize();
-    }
-
-    public int bTreeNodeSize(){
-        return 1 + (this.getBTreeDegree() * (LongBinaryObjectWrapper.BYTES + Pointer.BYTES)) + (2 * Pointer.BYTES);
-    }
 
     public static class Default {
         public static final int DEFAULT_BTREE_NODE_DEGREE = 4;
