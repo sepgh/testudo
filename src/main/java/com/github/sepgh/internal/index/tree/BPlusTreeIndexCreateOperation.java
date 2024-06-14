@@ -5,7 +5,7 @@ import com.github.sepgh.internal.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.github.sepgh.internal.storage.session.IndexIOSession;
 
 import java.io.IOException;
@@ -17,17 +17,17 @@ import java.util.concurrent.ExecutionException;
 public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Comparable<V>> {
     private final int degree;
     private final IndexIOSession<K> indexIOSession;
-    private final BinaryObjectWrapper<K> keyBinaryObjectWrapper;
-    private final BinaryObjectWrapper<V> valueBinaryObjectWrapper;
+    private final ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper;
+    private final ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper;
 
-    public BPlusTreeIndexCreateOperation(int degree, IndexIOSession<K> indexIOSession, BinaryObjectWrapper<K> keyBinaryObjectWrapper, BinaryObjectWrapper<V> valueBinaryObjectWrapper) {
+    public BPlusTreeIndexCreateOperation(int degree, IndexIOSession<K> indexIOSession, ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper) {
         this.degree = degree;
         this.indexIOSession = indexIOSession;
-        this.keyBinaryObjectWrapper = keyBinaryObjectWrapper;
-        this.valueBinaryObjectWrapper = valueBinaryObjectWrapper;
+        this.keyImmutableBinaryObjectWrapper = keyImmutableBinaryObjectWrapper;
+        this.valueImmutableBinaryObjectWrapper = valueImmutableBinaryObjectWrapper;
     }
 
-    public AbstractTreeNode<K> addIndex(AbstractTreeNode<K> root, K identifier, V value) throws ExecutionException, InterruptedException, IOException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public AbstractTreeNode<K> addIndex(AbstractTreeNode<K> root, K identifier, V value) throws ExecutionException, InterruptedException, IOException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         List<AbstractTreeNode<K>> path = new LinkedList<>();
         BPlusTreeUtils.getPathToResponsibleNode(indexIOSession, path, root, identifier, degree);
 
@@ -44,7 +44,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
                 /* current node is a leaf which should handle storing the data */
 
                 /* If current node has space, store and exit */
-                if (currentNode.getKeyList(degree, valueBinaryObjectWrapper.size()).size() < (degree - 1)){
+                if (currentNode.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).size() < (degree - 1)){
                     ((AbstractLeafTreeNode<K, V>) currentNode).addKeyValue(identifier, value, degree);
                     indexIOSession.write(currentNode);
                     indexIOSession.commit();
@@ -52,7 +52,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
                 }
 
                 /* Current node didn't have any space, so let's create a sibling and split */
-                AbstractLeafTreeNode<K, V> newSiblingLeafNode = new AbstractLeafTreeNode<>(indexIOSession.getIndexStorageManager().getEmptyNode(), keyBinaryObjectWrapper, valueBinaryObjectWrapper);
+                AbstractLeafTreeNode<K, V> newSiblingLeafNode = new AbstractLeafTreeNode<>(indexIOSession.getIndexStorageManager().getEmptyNode(), keyImmutableBinaryObjectWrapper, valueImmutableBinaryObjectWrapper);
                 List<LeafClusterTreeNode.KeyValue<K, V>> passingKeyValues = ((AbstractLeafTreeNode<K, V>) currentNode).split(identifier, value, degree);
                 newSiblingLeafNode.setKeyValues(passingKeyValues, degree);
                 indexIOSession.write(newSiblingLeafNode); // we want the node to have a value so that we can fix siblings
@@ -61,12 +61,12 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
                 indexIOSession.write(newSiblingLeafNode);
                 indexIOSession.write(currentNode);
 
-                answer = currentNode.getKeyList(degree, valueBinaryObjectWrapper.size()).contains(identifier) ? currentNode : newSiblingLeafNode;
+                answer = currentNode.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).contains(identifier) ? currentNode : newSiblingLeafNode;
 
                 /* this leaf doesn't have a parent! create one and deal with it right here! */
                 if (path.size() == 1) {
                     currentNode.unsetAsRoot();
-                    InternalTreeNode<K> newRoot = new InternalTreeNode<>(indexIOSession.getIndexStorageManager().getEmptyNode(), keyBinaryObjectWrapper);
+                    InternalTreeNode<K> newRoot = new InternalTreeNode<>(indexIOSession.getIndexStorageManager().getEmptyNode(), keyImmutableBinaryObjectWrapper);
                     newRoot.setAsRoot();
                     newRoot.addChildPointers(
                             passingKeyValues.getFirst().key(),
@@ -91,7 +91,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
                 if (currentInternalTreeNode.getKeyList(degree).size() < degree - 1) {
                     /* current internal node can store the key */
                     int indexOfAddedKey = currentInternalTreeNode.addKey(idForParentToStore, degree);
-                    if (newChildForParent.getKeyList(degree, valueBinaryObjectWrapper.size()).getFirst().compareTo(idForParentToStore) < 0){
+                    if (newChildForParent.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).getFirst().compareTo(idForParentToStore) < 0){
                         currentInternalTreeNode.addChildAtIndex(indexOfAddedKey, newChildForParent.getPointer());
                     } else {
                         currentInternalTreeNode.addChildAtIndex(indexOfAddedKey + 1, newChildForParent.getPointer());
@@ -108,14 +108,14 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
                 idForParentToStore = firstPassingChildPointers.getKey();
                 passingChildPointers.removeFirst();
 
-                InternalTreeNode<K> newInternalSibling = new InternalTreeNode<K>(indexIOSession.getIndexStorageManager().getEmptyNode(), keyBinaryObjectWrapper);
+                InternalTreeNode<K> newInternalSibling = new InternalTreeNode<K>(indexIOSession.getIndexStorageManager().getEmptyNode(), keyImmutableBinaryObjectWrapper);
                 newInternalSibling.setChildPointers(passingChildPointers, degree, true);
                 indexIOSession.write(newInternalSibling);
 
                 // Current node was root and needs a new parent
                 if (currentInternalTreeNode.isRoot()){
                     currentInternalTreeNode.unsetAsRoot();
-                    InternalTreeNode<K> newRoot = new InternalTreeNode<K>(indexIOSession.getIndexStorageManager().getEmptyNode(), keyBinaryObjectWrapper);
+                    InternalTreeNode<K> newRoot = new InternalTreeNode<K>(indexIOSession.getIndexStorageManager().getEmptyNode(), keyImmutableBinaryObjectWrapper);
                     newRoot.setAsRoot();
 
                     newRoot.addChildPointers(

@@ -5,7 +5,7 @@ import com.github.sepgh.internal.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
-import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.github.sepgh.internal.storage.session.IndexIOSession;
 
 import javax.annotation.Nullable;
@@ -18,15 +18,15 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
     private final int table;
     private final IndexIOSession<K> indexIOSession;
     private final int minKeys;
-    private final BinaryObjectWrapper<V> valueBinaryObjectWrapper;
+    private final ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper;
     private final NodeFactory<K> nodeFactory;
 
-    public BPlusTreeIndexDeleteOperation(int degree, int table, IndexIOSession<K> indexIOSession, BinaryObjectWrapper<V> valueBinaryObjectWrapper, NodeFactory<K> nodeFactory) {
+    public BPlusTreeIndexDeleteOperation(int degree, int table, IndexIOSession<K> indexIOSession, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper, NodeFactory<K> nodeFactory) {
         this.degree = degree;
         this.table = table;
         this.indexIOSession = indexIOSession;
         this.minKeys = (degree - 1) / 2;
-        this.valueBinaryObjectWrapper = valueBinaryObjectWrapper;
+        this.valueImmutableBinaryObjectWrapper = valueImmutableBinaryObjectWrapper;
         this.nodeFactory = nodeFactory;
     }
 
@@ -43,7 +43,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
                 AbstractLeafTreeNode<K, ?> leafNode = (AbstractLeafTreeNode<K, ?>) currentNode;
                 try {
                     result = leafNode.removeKeyValue(identifier, degree);
-                } catch (BinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
+                } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
                     throw new RuntimeException(e);
                 }
                 indexIOSession.update(leafNode);
@@ -52,14 +52,14 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
                     InternalTreeNode<K> parentNode = (InternalTreeNode<K>) path.get(i + 1);
                     try {
                         this.fillNode(leafNode, parentNode, parentNode.getIndexOfChild(currentNode.getPointer()));
-                    } catch (BinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
+                    } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
                         throw new RuntimeException(e);
                     }
                 }
             } else {  // internal
                 try {
                     this.checkInternalNode((InternalTreeNode<K>) path.get(i), path, i, identifier);
-                } catch (BinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
+                } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
                     throw new RuntimeException(e);
                 }
             }
@@ -74,14 +74,14 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
         List<Pointer> childrenList = node.getChildrenList();
         if (idx != 0){
             AbstractTreeNode<K> leftIDXChild = indexIOSession.read(childrenList.get(idx - 1));
-            if (leftIDXChild.getKeyList(degree, valueBinaryObjectWrapper.size()).size() >= minKeys){
+            if (leftIDXChild.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).size() >= minKeys){
                 K pred = this.getPredecessor(node, idx);
                 node.setKey(idx, pred);
                 indexIOSession.update(node);
             }
         } else {
             AbstractTreeNode<K> rightIDXChild = indexIOSession.read(childrenList.get(idx + 1));
-            if (rightIDXChild.getKeyList(degree, valueBinaryObjectWrapper.size()).size() >= minKeys) {
+            if (rightIDXChild.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).size() >= minKeys) {
                 K succ = getSuccessor(node, idx);
                 node.setKey(idx, succ);
                 indexIOSession.update(node);
@@ -95,9 +95,9 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
     private K getPredecessor(InternalTreeNode<K> node, int idx) throws ExecutionException, InterruptedException, IOException {
         AbstractTreeNode<K> cur = indexIOSession.read(node.getChildrenList().get(idx));
         while (!cur.isLeaf()) {
-            cur = indexIOSession.read(node.getChildrenList().get(cur.getKeyList(degree, valueBinaryObjectWrapper.size()).size()));
+            cur = indexIOSession.read(node.getChildrenList().get(cur.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).size()));
         }
-        return cur.getKeyList(degree, valueBinaryObjectWrapper.size()).getLast();
+        return cur.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).getLast();
     }
 
     private K getSuccessor(InternalTreeNode<K> node, int idx) throws ExecutionException, InterruptedException, IOException {
@@ -105,10 +105,10 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
         while (!cur.isLeaf()) {
             cur = indexIOSession.read(((InternalTreeNode<K>) cur).getChildrenList().getFirst());
         }
-        return cur.getKeyList(degree, valueBinaryObjectWrapper.size()).getFirst();
+        return cur.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).getFirst();
     }
 
-    private void checkInternalNode(InternalTreeNode<K> internalTreeNode, List<AbstractTreeNode<K>> path, int nodeIndex, K identifier) throws ExecutionException, InterruptedException, IOException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    private void checkInternalNode(InternalTreeNode<K> internalTreeNode, List<AbstractTreeNode<K>> path, int nodeIndex, K identifier) throws ExecutionException, InterruptedException, IOException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         List<K> keyList = internalTreeNode.getKeyList(degree);
         if (nodeIndex == path.size() - 1 && keyList.isEmpty())
             return;
@@ -136,14 +136,14 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
                 table,
                 degree,
                 nodeFactory,
-                valueBinaryObjectWrapper
+                valueImmutableBinaryObjectWrapper
         );
 
         internalTreeNode.setKey(indexOfKey, leafTreeNode.getKeyList(degree).getLast());
         indexIOSession.update(internalTreeNode);
     }
 
-    private void fillNode(AbstractTreeNode<K> currentNode, InternalTreeNode<K> parentNode, int idx) throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    private void fillNode(AbstractTreeNode<K> currentNode, InternalTreeNode<K> parentNode, int idx) throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         boolean borrowed;
         if (idx == 0){  // Leaf was at the beginning, check if we can borrow from right
             borrowed = tryBorrowRight(parentNode, idx, currentNode);
@@ -163,18 +163,18 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
         }
     }
 
-    private boolean tryBorrowRight(InternalTreeNode<K> parentNode, int idx, AbstractTreeNode<K> child) throws ExecutionException, InterruptedException, IOException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    private boolean tryBorrowRight(InternalTreeNode<K> parentNode, int idx, AbstractTreeNode<K> child) throws ExecutionException, InterruptedException, IOException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         AbstractTreeNode<K> sibling = indexIOSession.read(parentNode.getChildrenList().get(idx + 1));
-        if (sibling.getKeyList(degree, valueBinaryObjectWrapper.size()).size() > minKeys){
+        if (sibling.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).size() > minKeys){
             this.borrowFromNext(parentNode, idx, child);
             return true;
         }
         return false;
     }
 
-    private boolean tryBorrowLeft(InternalTreeNode<K> parentNode, int idx, AbstractTreeNode<K> child) throws ExecutionException, InterruptedException, IOException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    private boolean tryBorrowLeft(InternalTreeNode<K> parentNode, int idx, AbstractTreeNode<K> child) throws ExecutionException, InterruptedException, IOException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         AbstractTreeNode<K> sibling = indexIOSession.read(parentNode.getChildrenList().get(idx - 1));
-        if (sibling.getKeyList(degree, valueBinaryObjectWrapper.size()).size() > minKeys){
+        if (sibling.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).size() > minKeys){
             this.borrowFromPrev(parentNode, idx, child);
             return true;
         }
@@ -191,7 +191,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
      * @param idx index of child in parent
      * @param optionalChild nullable child node, if not provided it will be calculated based on idx
      */
-    private void borrowFromPrev(InternalTreeNode<K> parent, int idx, @Nullable AbstractTreeNode<K> optionalChild) throws ExecutionException, InterruptedException, IOException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    private void borrowFromPrev(InternalTreeNode<K> parent, int idx, @Nullable AbstractTreeNode<K> optionalChild) throws ExecutionException, InterruptedException, IOException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         AbstractTreeNode<K> child = optionalChild != null ? optionalChild : indexIOSession.read(parent.getChildrenList().get(idx));
         AbstractTreeNode<K> sibling = indexIOSession.read(parent.getChildrenList().get(idx - 1));
 
@@ -286,13 +286,13 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
             AbstractLeafTreeNode.KeyValue<K, V> keyValue = keyValueList.removeFirst();
             try {
                 siblingLeafNode.setKeyValues(keyValueList, degree);
-            } catch (BinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
+            } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
                 throw new RuntimeException(e);
             }
             parent.setKey(idx, keyValueList.getFirst().key());
             try {
                 childLeafNode.addKeyValue(keyValue, degree);
-            } catch (BinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
+            } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
                 throw new RuntimeException(e);
             }
 
@@ -319,7 +319,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
         AbstractTreeNode<K> sibling = indexIOSession.read(parent.getChildrenList().get(siblingIndex));
         AbstractTreeNode<K> toRemove = sibling;
 
-        if (sibling.getKeyList(degree, valueBinaryObjectWrapper.size()).size() > child.getKeyList(degree, valueBinaryObjectWrapper.size()).size()){
+        if (sibling.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).size() > child.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).size()){
             // Sibling has more keys, lets merge from child to sibling and remove child
             AbstractTreeNode<K> temp = child;
             child = sibling;
@@ -339,7 +339,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
 
             InternalTreeNode<K> childInternalTreeNode = (InternalTreeNode<K>) child;
             List<K> childKeyList = new ArrayList<>(childInternalTreeNode.getKeyList(degree));
-            childKeyList.addAll(sibling.getKeyList(degree, valueBinaryObjectWrapper.size()));
+            childKeyList.addAll(sibling.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()));
             childKeyList.sort(K::compareTo);
             childInternalTreeNode.setKeys(childKeyList);
 
@@ -359,7 +359,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
             Collections.sort(keyValueList);
             try {
                 ((AbstractLeafTreeNode<K, V>) child).setKeyValues(keyValueList, degree);
-            } catch (BinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
+            } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
                 throw new RuntimeException(e);
             }
         }

@@ -2,8 +2,8 @@ package com.github.sepgh.internal.index.tree.node;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.TreeNodeUtils;
-import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
-import com.github.sepgh.internal.index.tree.node.data.PointerBinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.PointerImmutableBinaryObjectWrapper;
 import com.github.sepgh.internal.utils.CollectionUtils;
 import com.google.common.collect.ImmutableList;
 import lombok.*;
@@ -14,8 +14,8 @@ import java.util.Iterator;
 import java.util.List;
 
 public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<K> {
-    public InternalTreeNode(byte[] data, BinaryObjectWrapper<K> binaryObjectWrapper) {
-        super(data, binaryObjectWrapper);
+    public InternalTreeNode(byte[] data, ImmutableBinaryObjectWrapper<K> immutableBinaryObjectWrapper) {
+        super(data, immutableBinaryObjectWrapper);
         setType(Type.INTERNAL);
     }
 
@@ -30,20 +30,20 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
     public void setChildPointers(List<ChildPointers<K>> childPointers, int degree, boolean cleanRest){
         modified();
         if (cleanRest)
-            TreeNodeUtils.cleanChildrenPointers(this, degree, keyBinaryObjectWrapper.size(), PointerBinaryObjectWrapper.BYTES);
+            TreeNodeUtils.cleanChildrenPointers(this, degree, keyImmutableBinaryObjectWrapper.size(), PointerImmutableBinaryObjectWrapper.BYTES);
         int i = 0;
         for (ChildPointers<K> keyPointer : childPointers) {
             keyPointer.setIndex(i);
             try {
-                TreeNodeUtils.setKeyAtIndex(this, keyPointer.index, keyBinaryObjectWrapper.load(keyPointer.key), PointerBinaryObjectWrapper.BYTES);
-            } catch (BinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
+                TreeNodeUtils.setKeyAtIndex(this, keyPointer.index, keyImmutableBinaryObjectWrapper.load(keyPointer.key), PointerImmutableBinaryObjectWrapper.BYTES);
+            } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
                 throw new RuntimeException(e);
             }
             if (i == 0){
-                TreeNodeUtils.setPointerToChild(this, 0, keyPointer.left, keyBinaryObjectWrapper.size());
-                TreeNodeUtils.setPointerToChild(this, 1, keyPointer.right, keyBinaryObjectWrapper.size());
+                TreeNodeUtils.setPointerToChild(this, 0, keyPointer.left, keyImmutableBinaryObjectWrapper.size());
+                TreeNodeUtils.setPointerToChild(this, 1, keyPointer.right, keyImmutableBinaryObjectWrapper.size());
             } else {
-                TreeNodeUtils.setPointerToChild(this, keyPointer.index + 1, keyPointer.right, keyBinaryObjectWrapper.size());
+                TreeNodeUtils.setPointerToChild(this, keyPointer.index + 1, keyPointer.right, keyImmutableBinaryObjectWrapper.size());
             }
             i++;
         }
@@ -60,11 +60,11 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
 
     @SneakyThrows
     public void setKey(int index, K key){
-        super.setKey(index,key, PointerBinaryObjectWrapper.BYTES);
+        super.setKey(index,key, PointerImmutableBinaryObjectWrapper.BYTES);
     }
 
     public void removeKey(int idx, int degree) {
-        super.removeKey(idx, degree, PointerBinaryObjectWrapper.BYTES);
+        super.removeKey(idx, degree, PointerImmutableBinaryObjectWrapper.BYTES);
     }
 
     @SneakyThrows
@@ -74,7 +74,7 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
         keyList.add(idx, identifier);
 
         for (int j = idx; j < keyList.size() && j < degree - 1; j++){
-            TreeNodeUtils.setKeyAtIndex(this, j, keyBinaryObjectWrapper.load(keyList.get(j)), PointerBinaryObjectWrapper.BYTES);
+            TreeNodeUtils.setKeyAtIndex(this, j, keyImmutableBinaryObjectWrapper.load(keyList.get(j)), PointerImmutableBinaryObjectWrapper.BYTES);
         }
 
         return idx;
@@ -84,14 +84,14 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
         modified();
         int i = this.addKey(identifier, degree);
         if (left != null){
-            TreeNodeUtils.setPointerToChild(this, i, left, keyBinaryObjectWrapper.size());
+            TreeNodeUtils.setPointerToChild(this, i, left, keyImmutableBinaryObjectWrapper.size());
         }
         else if (clearForNull)
-            TreeNodeUtils.removeChildAtIndex(this, i, keyBinaryObjectWrapper.size());
+            TreeNodeUtils.removeChildAtIndex(this, i, keyImmutableBinaryObjectWrapper.size());
         if (right != null)
-            TreeNodeUtils.setPointerToChild(this, i+1, right, keyBinaryObjectWrapper.size());
+            TreeNodeUtils.setPointerToChild(this, i+1, right, keyImmutableBinaryObjectWrapper.size());
         else if (clearForNull)
-            TreeNodeUtils.removeChildAtIndex(this, i + 1, keyBinaryObjectWrapper.size());
+            TreeNodeUtils.removeChildAtIndex(this, i + 1, keyImmutableBinaryObjectWrapper.size());
     }
 
     public void addChildPointers(ChildPointers<K> childPointers, int degree) {
@@ -123,11 +123,11 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
     }
 
     public void setChildAtIndex(int index, Pointer pointer){
-        TreeNodeUtils.setPointerToChild(this, index, pointer, keyBinaryObjectWrapper.size());
+        TreeNodeUtils.setPointerToChild(this, index, pointer, keyImmutableBinaryObjectWrapper.size());
     }
 
     public Pointer getChildAtIndex(int index) {
-        return TreeNodeUtils.getChildPointerAtIndex(this, index, keyBinaryObjectWrapper.size());
+        return TreeNodeUtils.getChildPointerAtIndex(this, index, keyImmutableBinaryObjectWrapper.size());
     }
 
     public int getIndexOfChild(Pointer pointer){
@@ -185,16 +185,16 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
 
     public void removeChild(int idx, int degree) {
         List<Pointer> pointerList = this.getChildrenList();
-        TreeNodeUtils.removeChildAtIndex(this, idx, keyBinaryObjectWrapper.size());
+        TreeNodeUtils.removeChildAtIndex(this, idx, keyImmutableBinaryObjectWrapper.size());
         List<Pointer> subList = pointerList.subList(idx + 1, pointerList.size());
         int lastIndex = -1;
         for (int i = 0; i < subList.size(); i++) {
             lastIndex = idx + i;
-            TreeNodeUtils.setPointerToChild(this, lastIndex, subList.get(i), keyBinaryObjectWrapper.size());
+            TreeNodeUtils.setPointerToChild(this, lastIndex, subList.get(i), keyImmutableBinaryObjectWrapper.size());
         }
         if (lastIndex != -1){
             for (int i = lastIndex + 1; i < degree; i++){
-                TreeNodeUtils.removeChildAtIndex(this, i, keyBinaryObjectWrapper.size());
+                TreeNodeUtils.removeChildAtIndex(this, i, keyImmutableBinaryObjectWrapper.size());
             }
         }
     }
@@ -210,12 +210,12 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
 
         @Override
         public boolean hasNext() {
-            return TreeNodeUtils.hasChildPointerAtIndex(this.node, cursor, node.keyBinaryObjectWrapper.size());
+            return TreeNodeUtils.hasChildPointerAtIndex(this.node, cursor, node.keyImmutableBinaryObjectWrapper.size());
         }
 
         @Override
         public Pointer next() {
-            Pointer pointer = TreeNodeUtils.getChildPointerAtIndex(this.node, cursor, node.keyBinaryObjectWrapper.size());
+            Pointer pointer = TreeNodeUtils.getChildPointerAtIndex(this.node, cursor, node.keyImmutableBinaryObjectWrapper.size());
             cursor++;
             return pointer;
         }
@@ -238,27 +238,27 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
         @SneakyThrows
         @Override
         public boolean hasNext() {
-            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree, keyBinaryObjectWrapper, PointerBinaryObjectWrapper.BYTES);
+            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree, keyImmutableBinaryObjectWrapper, PointerImmutableBinaryObjectWrapper.BYTES);
         }
 
         @SneakyThrows
         @Override
         public ChildPointers<K> next() {
-            BinaryObjectWrapper<K> binaryObjectWrapper = TreeNodeUtils.getKeyAtIndex(node, cursor, keyBinaryObjectWrapper, PointerBinaryObjectWrapper.BYTES);
+            ImmutableBinaryObjectWrapper<K> immutableBinaryObjectWrapper = TreeNodeUtils.getKeyAtIndex(node, cursor, keyImmutableBinaryObjectWrapper, PointerImmutableBinaryObjectWrapper.BYTES);
             ChildPointers<K> childPointers = null;
             if (cursor == 0){
                 childPointers = new ChildPointers<>(
                         cursor,
-                        binaryObjectWrapper.asObject(),
-                        TreeNodeUtils.getChildPointerAtIndex(node, 0, keyBinaryObjectWrapper.size()),
-                        TreeNodeUtils.getChildPointerAtIndex(node, 1, keyBinaryObjectWrapper.size())
+                        immutableBinaryObjectWrapper.asObject(),
+                        TreeNodeUtils.getChildPointerAtIndex(node, 0, keyImmutableBinaryObjectWrapper.size()),
+                        TreeNodeUtils.getChildPointerAtIndex(node, 1, keyImmutableBinaryObjectWrapper.size())
                 );
             } else {
                 childPointers = new ChildPointers<>(
                         cursor,
-                        binaryObjectWrapper.asObject(),
+                        immutableBinaryObjectWrapper.asObject(),
                         lastRightPointer,
-                        TreeNodeUtils.getChildPointerAtIndex(node, cursor + 1, keyBinaryObjectWrapper.size())
+                        TreeNodeUtils.getChildPointerAtIndex(node, cursor + 1, keyImmutableBinaryObjectWrapper.size())
                 );
             }
             lastRightPointer = childPointers.getRight();

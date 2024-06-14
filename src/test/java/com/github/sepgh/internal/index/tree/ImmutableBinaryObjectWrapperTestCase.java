@@ -8,34 +8,27 @@ import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
-import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.index.tree.node.data.*;
 import com.github.sepgh.internal.storage.*;
 import com.github.sepgh.internal.storage.header.Header;
 import com.github.sepgh.internal.storage.header.HeaderManager;
-import com.google.common.hash.HashCode;
-import com.google.common.primitives.Longs;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static com.github.sepgh.internal.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
 import static com.github.sepgh.internal.storage.BaseFileIndexStorageManager.INDEX_FILE_NAME;
 
-public class BinaryObjectWrapperTestCase {
+public class ImmutableBinaryObjectWrapperTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private Header header;
@@ -48,7 +41,7 @@ public class BinaryObjectWrapperTestCase {
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
                 .build();
-        engineConfig.setBTreeMaxFileSize(4L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
+        engineConfig.setBTreeMaxFileSize(4L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 
         byte[] writingBytes = new byte[]{};
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
@@ -92,11 +85,11 @@ public class BinaryObjectWrapperTestCase {
     }
 
     @Test
-    public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 
-        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new IntegerBinaryObjectWrapper());
+        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new IntegerImmutableBinaryObjectWrapper());
 
         for (int i = 0; i < 13; i ++){
             indexManager.addIndex(1, i, Pointer.empty());
@@ -116,13 +109,13 @@ public class BinaryObjectWrapperTestCase {
 
     }
     @Test
-    public void test_NoZeroIntegerIdentifier() throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void test_NoZeroIntegerIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 
-        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new NoZeroIntegerBinaryObjectWrapper());
+        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new NoZeroIntegerImmutableBinaryObjectWrapper());
 
-        Assertions.assertThrows(BinaryObjectWrapper.InvalidBinaryObjectWrapperValue.class, () -> {
+        Assertions.assertThrows(ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue.class, () -> {
             indexManager.addIndex(1, 0, Pointer.empty());
         });
 
@@ -145,13 +138,13 @@ public class BinaryObjectWrapperTestCase {
     }
 
     @Test
-    public void test_NoZeroLongIdentifier() throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void test_NoZeroLongIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongBinaryObjectWrapper.BYTES));
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new NoZeroLongBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new NoZeroLongImmutableBinaryObjectWrapper());
 
-        Assertions.assertThrows(BinaryObjectWrapper.InvalidBinaryObjectWrapperValue.class, () -> {
+        Assertions.assertThrows(ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue.class, () -> {
             indexManager.addIndex(1, 0L, Pointer.empty());
         });
 
@@ -174,30 +167,30 @@ public class BinaryObjectWrapperTestCase {
     }
 
     @Test
-    public void test_CustomBinaryObjectWrapper() throws IOException, ExecutionException, InterruptedException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void test_CustomBinaryObjectWrapper() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, new BTreeSizeCalculator(degree, 20, Pointer.BYTES).calculate());
 
-        BinaryObjectWrapper<String> keyBinaryObjectWrapper = new StringBinaryObjectWrapper();
+        ImmutableBinaryObjectWrapper<String> keyImmutableBinaryObjectWrapper = new StringImmutableBinaryObjectWrapper();
 
         NodeFactory<String> nodeFactory = new NodeFactory<>() {
             @Override
             public AbstractTreeNode<String> fromBytes(byte[] bytes) {
                 if ((bytes[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT)
-                    return new AbstractLeafTreeNode<>(bytes, keyBinaryObjectWrapper, new PointerBinaryObjectWrapper());
-                return new InternalTreeNode<>(bytes, keyBinaryObjectWrapper);
+                    return new AbstractLeafTreeNode<>(bytes, keyImmutableBinaryObjectWrapper, new PointerImmutableBinaryObjectWrapper());
+                return new InternalTreeNode<>(bytes, keyImmutableBinaryObjectWrapper);
             }
 
             @Override
             public AbstractTreeNode<String> fromBytes(byte[] bytes, AbstractTreeNode.Type type) {
                 if (type.equals(AbstractTreeNode.Type.LEAF))
-                    return new AbstractLeafTreeNode<>(bytes, keyBinaryObjectWrapper, new PointerBinaryObjectWrapper());
-                return new InternalTreeNode<>(bytes, keyBinaryObjectWrapper);
+                    return new AbstractLeafTreeNode<>(bytes, keyImmutableBinaryObjectWrapper, new PointerImmutableBinaryObjectWrapper());
+                return new InternalTreeNode<>(bytes, keyImmutableBinaryObjectWrapper);
             }
         };
 
 
-        IndexManager<String, Pointer> indexManager = new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, keyBinaryObjectWrapper, new PointerBinaryObjectWrapper(), nodeFactory);
+        IndexManager<String, Pointer> indexManager = new BPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, keyImmutableBinaryObjectWrapper, new PointerImmutableBinaryObjectWrapper(), nodeFactory);
 
 
         indexManager.addIndex(1, "AAA", Pointer.empty());
@@ -225,7 +218,7 @@ public class BinaryObjectWrapperTestCase {
 
 
         IndexStorageManager.NodeData rootNodeData = compactFileIndexStorageManager.getRoot(1).get().get();
-        InternalTreeNode<String> rootInternalTreeNode = new InternalTreeNode<>(rootNodeData.bytes(), keyBinaryObjectWrapper);
+        InternalTreeNode<String> rootInternalTreeNode = new InternalTreeNode<>(rootNodeData.bytes(), keyImmutableBinaryObjectWrapper);
         rootInternalTreeNode.setPointer(rootNodeData.pointer());
 
 
@@ -261,19 +254,19 @@ public class BinaryObjectWrapperTestCase {
 
     }
 
-    private static class StringBinaryObjectWrapper implements BinaryObjectWrapper<String> {
+    private static class StringImmutableBinaryObjectWrapper implements ImmutableBinaryObjectWrapper<String> {
         private final int BYTES = 20;
         private byte[] bytes;
 
-        public StringBinaryObjectWrapper() {
+        public StringImmutableBinaryObjectWrapper() {
         }
 
-        public StringBinaryObjectWrapper(byte[] bytes) {
+        public StringImmutableBinaryObjectWrapper(byte[] bytes) {
             this.bytes = bytes;
         }
 
         @Override
-        public BinaryObjectWrapper<String> load(String s) throws InvalidBinaryObjectWrapperValue {
+        public ImmutableBinaryObjectWrapper<String> load(String s) throws InvalidBinaryObjectWrapperValue {
             byte[] temp = s.getBytes(StandardCharsets.UTF_8);
             if (temp.length > BYTES) {
                 throw new InvalidBinaryObjectWrapperValue(s, this.getClass());
@@ -287,11 +280,11 @@ public class BinaryObjectWrapperTestCase {
                 result[i] = 0;
             }
 
-            return new StringBinaryObjectWrapper(result);
+            return new StringImmutableBinaryObjectWrapper(result);
         }
 
         @Override
-        public BinaryObjectWrapper<String> load(byte[] bytes, int beginning) {
+        public ImmutableBinaryObjectWrapper<String> load(byte[] bytes, int beginning) {
             this.bytes = new byte[BYTES];
             System.arraycopy(
                     bytes,
@@ -310,11 +303,6 @@ public class BinaryObjectWrapperTestCase {
                 len++;
             }
             return new String(bytes, 0, len, StandardCharsets.UTF_8);
-        }
-
-        @Override
-        public Class<String> getObjectClass() {
-            return String.class;
         }
 
         @Override

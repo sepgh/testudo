@@ -6,8 +6,8 @@ import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
-import com.github.sepgh.internal.index.tree.node.data.LongBinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.LongImmutableBinaryObjectWrapper;
 import com.github.sepgh.internal.storage.BTreeSizeCalculator;
 import com.github.sepgh.internal.storage.header.HeaderManager;
 import com.github.sepgh.internal.utils.FileUtils;
@@ -26,19 +26,19 @@ public class IndexFileDescriptor {
     private final HeaderManager headerManager;
     private final EngineConfig engineConfig;
 
-    public <K extends Comparable<K>> void describe(BinaryObjectWrapper<K> binaryObjectWrapper) throws IOException, ExecutionException, InterruptedException {
-        long paddingCounts = asynchronousFileChannel.size() / BTreeSizeCalculator.getClusteredBPlusTreeSize(engineConfig.getBTreeDegree(), LongBinaryObjectWrapper.BYTES);
+    public <K extends Comparable<K>> void describe(ImmutableBinaryObjectWrapper<K> immutableBinaryObjectWrapper) throws IOException, ExecutionException, InterruptedException {
+        long paddingCounts = asynchronousFileChannel.size() / BTreeSizeCalculator.getClusteredBPlusTreeSize(engineConfig.getBTreeDegree(), LongImmutableBinaryObjectWrapper.BYTES);
 
         for (int i = 0; i < paddingCounts; i++){
-            int offset = i * BTreeSizeCalculator.getClusteredBPlusTreeSize(engineConfig.getBTreeDegree(), LongBinaryObjectWrapper.BYTES);
-            byte[] bytes = FileUtils.readBytes(this.asynchronousFileChannel, offset, BTreeSizeCalculator.getClusteredBPlusTreeSize(engineConfig.getBTreeDegree(), LongBinaryObjectWrapper.BYTES)).get();
+            int offset = i * BTreeSizeCalculator.getClusteredBPlusTreeSize(engineConfig.getBTreeDegree(), LongImmutableBinaryObjectWrapper.BYTES);
+            byte[] bytes = FileUtils.readBytes(this.asynchronousFileChannel, offset, BTreeSizeCalculator.getClusteredBPlusTreeSize(engineConfig.getBTreeDegree(), LongImmutableBinaryObjectWrapper.BYTES)).get();
 
             if (bytes.length == 0 || bytes[0] == 0){
                 this.printEmptyNode(offset);
                 continue;
             }
 
-            AbstractTreeNode<K> baseClusterTreeNode = new NodeFactory.ClusterNodeFactory<>(binaryObjectWrapper).fromBytes(bytes);
+            AbstractTreeNode<K> baseClusterTreeNode = new NodeFactory.ClusterNodeFactory<>(immutableBinaryObjectWrapper).fromBytes(bytes);
             if (baseClusterTreeNode.getType() == AbstractTreeNode.Type.LEAF)
                 this.printLeafNode((LeafClusterTreeNode<K>) baseClusterTreeNode, offset);
             else if (baseClusterTreeNode.getType() == AbstractTreeNode.Type.INTERNAL)

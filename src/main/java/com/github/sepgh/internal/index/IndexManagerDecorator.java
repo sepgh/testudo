@@ -1,7 +1,7 @@
 package com.github.sepgh.internal.index;
 
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.ImmutableBinaryObjectWrapper;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -14,7 +14,7 @@ public class IndexManagerDecorator<K extends Comparable<K>, V extends Comparable
         this.indexManager = indexManager;
     }
 
-    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         return this.indexManager.addIndex(table, identifier, value);
     }
     public Optional<V> getIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {

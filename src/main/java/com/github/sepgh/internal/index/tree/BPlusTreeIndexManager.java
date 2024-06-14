@@ -7,7 +7,7 @@ import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
 import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.github.sepgh.internal.storage.IndexStorageManager;
 import com.github.sepgh.internal.storage.IndexTreeNodeIO;
 import com.github.sepgh.internal.storage.session.ImmediateCommitIndexIOSession;
@@ -24,58 +24,58 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
     private final IndexStorageManager indexStorageManager;
     private final IndexIOSessionFactory indexIOSessionFactory;
     private final int degree;
-    private final BinaryObjectWrapper<K> keyBinaryObjectWrapper;
-    private final BinaryObjectWrapper<V> valueBinaryObjectWrapper;
+    private final ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper;
+    private final ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper;
     private final NodeFactory<K> nodeFactory;
 
-    public BPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, IndexIOSessionFactory indexIOSessionFactory, BinaryObjectWrapper<K> keyBinaryObjectWrapper, BinaryObjectWrapper<V> valueBinaryObjectWrapper, NodeFactory<K> nodeFactory){
+    public BPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, IndexIOSessionFactory indexIOSessionFactory, ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper, NodeFactory<K> nodeFactory){
         this.degree = degree;
         this.indexStorageManager = indexStorageManager;
         this.indexIOSessionFactory = indexIOSessionFactory;
-        this.keyBinaryObjectWrapper = keyBinaryObjectWrapper;
-        this.valueBinaryObjectWrapper = valueBinaryObjectWrapper;
+        this.keyImmutableBinaryObjectWrapper = keyImmutableBinaryObjectWrapper;
+        this.valueImmutableBinaryObjectWrapper = valueImmutableBinaryObjectWrapper;
         this.nodeFactory = nodeFactory;
     }
 
-    public BPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, BinaryObjectWrapper<K> keyBinaryObjectWrapper, BinaryObjectWrapper<V> valueBinaryObjectWrapper, NodeFactory<K> nodeFactory){
-        this(degree, indexStorageManager, ImmediateCommitIndexIOSession.Factory.getInstance(), keyBinaryObjectWrapper, valueBinaryObjectWrapper, nodeFactory);
+    public BPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper, NodeFactory<K> nodeFactory){
+        this(degree, indexStorageManager, ImmediateCommitIndexIOSession.Factory.getInstance(), keyImmutableBinaryObjectWrapper, valueImmutableBinaryObjectWrapper, nodeFactory);
     }
 
-    public BPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, IndexIOSessionFactory indexIOSessionFactory, BinaryObjectWrapper<K> keyBinaryObjectWrapper, BinaryObjectWrapper<V> valueBinaryObjectWrapper){
-        this(degree, indexStorageManager, indexIOSessionFactory, keyBinaryObjectWrapper, valueBinaryObjectWrapper, new NodeFactory<K>() {
+    public BPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, IndexIOSessionFactory indexIOSessionFactory, ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper){
+        this(degree, indexStorageManager, indexIOSessionFactory, keyImmutableBinaryObjectWrapper, valueImmutableBinaryObjectWrapper, new NodeFactory<K>() {
             @Override
             public AbstractTreeNode<K> fromBytes(byte[] bytes) {
                 if ((bytes[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT)
-                    return new AbstractLeafTreeNode<>(bytes, keyBinaryObjectWrapper, valueBinaryObjectWrapper);
-                return new InternalTreeNode<>(bytes, keyBinaryObjectWrapper);
+                    return new AbstractLeafTreeNode<>(bytes, keyImmutableBinaryObjectWrapper, valueImmutableBinaryObjectWrapper);
+                return new InternalTreeNode<>(bytes, keyImmutableBinaryObjectWrapper);
             }
 
             @Override
             public AbstractTreeNode<K> fromBytes(byte[] bytes, AbstractTreeNode.Type type) {
                 if (type.equals(AbstractTreeNode.Type.LEAF))
-                    return new AbstractLeafTreeNode<>(bytes, keyBinaryObjectWrapper, valueBinaryObjectWrapper);
-                return new InternalTreeNode<>(bytes, keyBinaryObjectWrapper);
+                    return new AbstractLeafTreeNode<>(bytes, keyImmutableBinaryObjectWrapper, valueImmutableBinaryObjectWrapper);
+                return new InternalTreeNode<>(bytes, keyImmutableBinaryObjectWrapper);
             }
         });
 
     }
 
-    public BPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, BinaryObjectWrapper<K> keyBinaryObjectWrapper, BinaryObjectWrapper<V> valueBinaryObjectWrapper){
-        this(degree, indexStorageManager, ImmediateCommitIndexIOSession.Factory.getInstance(), keyBinaryObjectWrapper, valueBinaryObjectWrapper);
+    public BPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper){
+        this(degree, indexStorageManager, ImmediateCommitIndexIOSession.Factory.getInstance(), keyImmutableBinaryObjectWrapper, valueImmutableBinaryObjectWrapper);
     }
 
     @Override
-    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException, BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table, nodeFactory);
         AbstractTreeNode<K> root = getRoot(indexIOSession);
-        return new BPlusTreeIndexCreateOperation<>(degree, indexIOSession, keyBinaryObjectWrapper, valueBinaryObjectWrapper).addIndex(root, identifier, value);
+        return new BPlusTreeIndexCreateOperation<>(degree, indexIOSession, keyImmutableBinaryObjectWrapper, valueImmutableBinaryObjectWrapper).addIndex(root, identifier, value);
     }
 
     @Override
     public Optional<V> getIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table, nodeFactory);
 
-        AbstractLeafTreeNode<K, V> baseTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, table, degree, nodeFactory, valueBinaryObjectWrapper);
+        AbstractLeafTreeNode<K, V> baseTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, table, degree, nodeFactory, valueImmutableBinaryObjectWrapper);
         for (AbstractLeafTreeNode.KeyValue<K, V> entry : baseTreeNode.getKeyValueList(degree)) {
             if (entry.key() == identifier)
                 return Optional.of(entry.value());
@@ -88,7 +88,7 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
     public boolean removeIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table, nodeFactory);
         AbstractTreeNode<K> root = getRoot(indexIOSession);
-        return new BPlusTreeIndexDeleteOperation<>(degree, table, indexIOSession, valueBinaryObjectWrapper, nodeFactory).removeIndex(root, identifier);
+        return new BPlusTreeIndexDeleteOperation<>(degree, table, indexIOSession, valueImmutableBinaryObjectWrapper, nodeFactory).removeIndex(root, identifier);
     }
 
     @Override
@@ -99,7 +99,7 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
 
         AbstractTreeNode<K> root = nodeFactory.fromNodeData(optionalNodeData.get());
         if (root.isLeaf()){
-            return root.getKeyList(degree, valueBinaryObjectWrapper.size()).size();
+            return root.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).size();
         }
 
         AbstractTreeNode<K> curr = root;
@@ -107,11 +107,11 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
             curr = IndexTreeNodeIO.read(indexStorageManager, table, ((InternalTreeNode<K>) curr).getChildrenList().getFirst(), nodeFactory);
         }
 
-        int size = curr.getKeyList(degree, valueBinaryObjectWrapper.size()).size();
+        int size = curr.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).size();
         Optional<Pointer> optionalNext = ((LeafClusterTreeNode<K>) curr).getNextSiblingPointer(degree);
         while (optionalNext.isPresent()){
             AbstractTreeNode<K> nextNode = IndexTreeNodeIO.read(indexStorageManager, table, optionalNext.get(), nodeFactory);
-            size += nextNode.getKeyList(degree, valueBinaryObjectWrapper.size()).size();
+            size += nextNode.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).size();
             optionalNext = ((LeafClusterTreeNode<K>) nextNode).getNextSiblingPointer(degree);
         }
 

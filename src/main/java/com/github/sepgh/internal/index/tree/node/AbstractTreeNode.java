@@ -2,7 +2,7 @@ package com.github.sepgh.internal.index.tree.node;
 
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.TreeNodeUtils;
-import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
+import com.github.sepgh.internal.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.google.common.collect.ImmutableList;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,11 +29,11 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
     private final byte[] data;
     @Getter
     private boolean modified = false;
-    protected final BinaryObjectWrapper<K> keyBinaryObjectWrapper;
+    protected final ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper;
 
-    public AbstractTreeNode(byte[] data, BinaryObjectWrapper<K> keyBinaryObjectWrapper) {
+    public AbstractTreeNode(byte[] data, ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper) {
         this.data = data;
-        this.keyBinaryObjectWrapper = keyBinaryObjectWrapper;
+        this.keyImmutableBinaryObjectWrapper = keyImmutableBinaryObjectWrapper;
     }
 
     public boolean isLeaf(){   //  0 0  &  0 0
@@ -84,14 +84,14 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
         return ImmutableList.copyOf(getKeys(degree, valueSize));
     }
 
-    public void setKey(int index, K key, int valueSize) throws BinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
-        TreeNodeUtils.setKeyAtIndex(this, index, keyBinaryObjectWrapper.load(key), valueSize);
+    public void setKey(int index, K key, int valueSize) throws ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+        TreeNodeUtils.setKeyAtIndex(this, index, keyImmutableBinaryObjectWrapper.load(key), valueSize);
     }
 
     @SneakyThrows
     public void removeKey(int idx, int degree, int valueSize) {
         List<K> keyList = this.getKeyList(degree, valueSize);
-        TreeNodeUtils.removeKeyAtIndex(this, idx, keyBinaryObjectWrapper.size(), valueSize);
+        TreeNodeUtils.removeKeyAtIndex(this, idx, keyImmutableBinaryObjectWrapper.size(), valueSize);
         List<K> subList = keyList.subList(idx + 1, keyList.size());
         int lastIndex = -1;
         for (int i = 0; i < subList.size(); i++) {
@@ -99,13 +99,13 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
             TreeNodeUtils.setKeyAtIndex(
                     this,
                     lastIndex,
-                    keyBinaryObjectWrapper.load(subList.get(i)),
+                    keyImmutableBinaryObjectWrapper.load(subList.get(i)),
                     valueSize
             );
         }
         if (lastIndex != -1){
             for (int i = lastIndex + 1; i < degree - 1; i++){
-                TreeNodeUtils.removeKeyAtIndex(this, i, keyBinaryObjectWrapper.size(), valueSize);
+                TreeNodeUtils.removeKeyAtIndex(this, i, keyImmutableBinaryObjectWrapper.size(), valueSize);
             }
         }
     }
@@ -139,16 +139,16 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
             if (!hasNext)
                 return false;
 
-            hasNext = TreeNodeUtils.hasKeyAtIndex(this.node, cursor, degree, this.node.keyBinaryObjectWrapper, valueSize);
+            hasNext = TreeNodeUtils.hasKeyAtIndex(this.node, cursor, degree, this.node.keyImmutableBinaryObjectWrapper, valueSize);
             return hasNext;
         }
 
         @SneakyThrows
         @Override
         public K next() {
-            BinaryObjectWrapper<K> binaryObjectWrapper = TreeNodeUtils.getKeyAtIndex(this.node, cursor, this.node.keyBinaryObjectWrapper, valueSize);
+            ImmutableBinaryObjectWrapper<K> immutableBinaryObjectWrapper = TreeNodeUtils.getKeyAtIndex(this.node, cursor, this.node.keyImmutableBinaryObjectWrapper, valueSize);
             cursor++;
-            return binaryObjectWrapper.asObject();
+            return immutableBinaryObjectWrapper.asObject();
         }
     }
 }
