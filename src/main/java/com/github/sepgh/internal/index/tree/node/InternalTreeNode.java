@@ -157,7 +157,7 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
         childPointersList.add(i, new ChildPointers<>(
                         0,
                         identifier,
-                        childPointersList.get(i-1).getRight(),
+                        childPointersList.get(i == 0 ? 0 : i-1).getRight(),
                         pointer  // Setting right pointer at index
                 )
         );

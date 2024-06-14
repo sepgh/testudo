@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+import static com.github.sepgh.internal.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
+
 public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable<V>> implements IndexManager<K, V> {
     private final IndexStorageManager indexStorageManager;
     private final IndexIOSessionFactory indexIOSessionFactory;
@@ -37,6 +39,29 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
 
     public BPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, BinaryObjectWrapper<K> keyBinaryObjectWrapper, BinaryObjectWrapper<V> valueBinaryObjectWrapper, NodeFactory<K> nodeFactory){
         this(degree, indexStorageManager, ImmediateCommitIndexIOSession.Factory.getInstance(), keyBinaryObjectWrapper, valueBinaryObjectWrapper, nodeFactory);
+    }
+
+    public BPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, IndexIOSessionFactory indexIOSessionFactory, BinaryObjectWrapper<K> keyBinaryObjectWrapper, BinaryObjectWrapper<V> valueBinaryObjectWrapper){
+        this(degree, indexStorageManager, indexIOSessionFactory, keyBinaryObjectWrapper, valueBinaryObjectWrapper, new NodeFactory<K>() {
+            @Override
+            public AbstractTreeNode<K> fromBytes(byte[] bytes) {
+                if ((bytes[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT)
+                    return new AbstractLeafTreeNode<>(bytes, keyBinaryObjectWrapper, valueBinaryObjectWrapper);
+                return new InternalTreeNode<>(bytes, keyBinaryObjectWrapper);
+            }
+
+            @Override
+            public AbstractTreeNode<K> fromBytes(byte[] bytes, AbstractTreeNode.Type type) {
+                if (type.equals(AbstractTreeNode.Type.LEAF))
+                    return new AbstractLeafTreeNode<>(bytes, keyBinaryObjectWrapper, valueBinaryObjectWrapper);
+                return new InternalTreeNode<>(bytes, keyBinaryObjectWrapper);
+            }
+        });
+
+    }
+
+    public BPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, BinaryObjectWrapper<K> keyBinaryObjectWrapper, BinaryObjectWrapper<V> valueBinaryObjectWrapper){
+        this(degree, indexStorageManager, ImmediateCommitIndexIOSession.Factory.getInstance(), keyBinaryObjectWrapper, valueBinaryObjectWrapper);
     }
 
     @Override
@@ -100,7 +125,7 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
         }
 
         byte[] emptyNode = indexStorageManager.getEmptyNode();
-        LeafClusterTreeNode<K> leafTreeNode = (LeafClusterTreeNode<K>) nodeFactory.fromBytes(emptyNode, AbstractTreeNode.Type.LEAF);
+        AbstractLeafTreeNode<K, ?> leafTreeNode = (AbstractLeafTreeNode<K, ?>) nodeFactory.fromBytes(emptyNode, AbstractTreeNode.Type.LEAF);
         leafTreeNode.setAsRoot();
 
         IndexStorageManager.NodeData nodeData = indexIOSession.write(leafTreeNode);

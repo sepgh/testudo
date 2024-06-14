@@ -9,8 +9,15 @@ import static com.github.sepgh.internal.index.tree.node.AbstractTreeNode.TYPE_LE
 
 public interface NodeFactory<K extends Comparable<K>> {
     AbstractTreeNode<K> fromBytes(byte[] bytes);
-    AbstractTreeNode<K> fromBytes(byte[] bytes, Pointer pointer);
-    AbstractTreeNode<K> fromNodeData(IndexStorageManager.NodeData nodeData);
+    default AbstractTreeNode<K> fromBytes(byte[] bytes, Pointer pointer) {
+        AbstractTreeNode<K> treeNode = this.fromBytes(bytes);
+        treeNode.setPointer(pointer);
+        return treeNode;
+    }
+
+    default AbstractTreeNode<K> fromNodeData(IndexStorageManager.NodeData nodeData){
+        return this.fromBytes(nodeData.bytes(), nodeData.pointer());
+    }
     AbstractTreeNode<K> fromBytes(byte[] emptyNode, AbstractTreeNode.Type type);
 
     class ClusterNodeFactory<K extends Comparable<K>> implements NodeFactory<K> {
@@ -26,18 +33,6 @@ public interface NodeFactory<K extends Comparable<K>> {
             if ((bytes[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT)
                 return new LeafClusterTreeNode<>(bytes, keyBinaryObjectWrapper);
             return new InternalTreeNode<>(bytes, keyBinaryObjectWrapper);
-        }
-
-        @Override
-        public AbstractTreeNode<K> fromBytes(byte[] bytes, Pointer pointer) {
-            AbstractTreeNode<K> treeNode = this.fromBytes(bytes);
-            treeNode.setPointer(pointer);
-            return treeNode;
-        }
-
-        @Override
-        public AbstractTreeNode<K> fromNodeData(IndexStorageManager.NodeData nodeData) {
-            return this.fromBytes(nodeData.bytes(), nodeData.pointer());
         }
 
         @Override

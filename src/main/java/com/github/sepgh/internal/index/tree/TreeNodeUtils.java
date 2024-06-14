@@ -4,6 +4,7 @@ import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.data.BinaryObjectWrapper;
+import com.google.common.hash.HashCode;
 
 import java.util.AbstractMap;
 import java.util.Map;
@@ -150,6 +151,7 @@ public class TreeNodeUtils {
                 OFFSET_LEAF_NODE_KEY_BEGIN + (index * (keyInnerObj.size() + valueInnerObj.size())),
                 keyInnerObj.size()
         );
+
 
         System.arraycopy(
                 valueInnerObj.getBytes(),
