@@ -1,6 +1,8 @@
 package com.github.sepgh.internal.index.tree;
 
 import com.github.sepgh.internal.EngineConfig;
+import com.github.sepgh.internal.exception.IndexExistsException;
+import com.github.sepgh.internal.exception.InternalOperationException;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.AbstractLeafTreeNode;
@@ -85,7 +87,7 @@ public class ImmutableBinaryObjectWrapperTestCase {
     }
 
     @Test
-    public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 
@@ -109,7 +111,7 @@ public class ImmutableBinaryObjectWrapperTestCase {
 
     }
     @Test
-    public void test_NoZeroIntegerIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void test_NoZeroIntegerIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 
@@ -138,7 +140,7 @@ public class ImmutableBinaryObjectWrapperTestCase {
     }
 
     @Test
-    public void test_NoZeroLongIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void test_NoZeroLongIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 
@@ -167,7 +169,7 @@ public class ImmutableBinaryObjectWrapperTestCase {
     }
 
     @Test
-    public void test_CustomBinaryObjectWrapper() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void test_CustomBinaryObjectWrapper() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, new BTreeSizeCalculator(degree, 20, Pointer.BYTES).calculate());
 

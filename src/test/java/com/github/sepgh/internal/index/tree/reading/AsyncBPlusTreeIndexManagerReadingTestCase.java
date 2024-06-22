@@ -1,6 +1,8 @@
 package com.github.sepgh.internal.index.tree.reading;
 
 import com.github.sepgh.internal.EngineConfig;
+import com.github.sepgh.internal.exception.IndexExistsException;
+import com.github.sepgh.internal.exception.InternalOperationException;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.TableLevelAsyncIndexManagerDecorator;
@@ -90,7 +92,7 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexSuccessfully() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void findIndexSuccessfully() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 
@@ -106,7 +108,7 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void getTableSize() throws IOException, ExecutionException, InterruptedException {
+    public void getTableSize() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 
@@ -120,8 +122,8 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
             executorService.submit(() -> {
                 try {
                     indexManager.addIndex(1, finalI, dataPointer);
-                } catch (ExecutionException | InterruptedException | IOException |
-                         ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
+                } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue | IndexExistsException |
+                         InternalOperationException e) {
                     throw new RuntimeException(e);
                 } finally {
                     countDownLatch.countDown();
@@ -135,7 +137,7 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexFailure() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void findIndexFailure() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 

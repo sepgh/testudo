@@ -1,5 +1,6 @@
 package com.github.sepgh.internal.index.tree;
 
+import com.github.sepgh.internal.exception.InternalOperationException;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
@@ -16,7 +17,7 @@ import java.util.concurrent.ExecutionException;
 
 public class BPlusTreeUtils {
 
-    public static <K extends Comparable<K>> void getPathToResponsibleNode(IndexIOSession<K> indexIOSession, List<AbstractTreeNode<K>> path, AbstractTreeNode<K> node, K identifier, int degree) throws ExecutionException, InterruptedException, IOException {
+    public static <K extends Comparable<K>> void getPathToResponsibleNode(IndexIOSession<K> indexIOSession, List<AbstractTreeNode<K>> path, AbstractTreeNode<K> node, K identifier, int degree) throws InternalOperationException {
         if (node.getType() == AbstractTreeNode.Type.LEAF){
             path.addFirst(node);
             return;
@@ -50,7 +51,7 @@ public class BPlusTreeUtils {
         }
     }
 
-    public static <K extends Comparable<K>, V extends Comparable<V>> AbstractLeafTreeNode<K, V> getResponsibleNode(IndexStorageManager indexStorageManager, AbstractTreeNode<K> node, K identifier, int table, int degree, NodeFactory<K> nodeFactory, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper) throws ExecutionException, InterruptedException, IOException {
+    public static <K extends Comparable<K>, V extends Comparable<V>> AbstractLeafTreeNode<K, V> getResponsibleNode(IndexStorageManager indexStorageManager, AbstractTreeNode<K> node, K identifier, int table, int degree, NodeFactory<K> nodeFactory, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper) throws InternalOperationException {
         if (node.isLeaf()){
             return (AbstractLeafTreeNode<K, V>) node;
         }
@@ -68,26 +69,31 @@ public class BPlusTreeUtils {
             }
         }
 
-        if (flag) {
-            return getResponsibleNode(
-                    indexStorageManager,
-                    IndexTreeNodeIO.read(indexStorageManager, table, childrenList.get(i), nodeFactory),
-                    identifier,
-                    table,
-                    degree,
-                    nodeFactory,
-                    valueImmutableBinaryObjectWrapper
-            );
-        } else {
-            return getResponsibleNode(
-                    indexStorageManager,
-                    IndexTreeNodeIO.read(indexStorageManager, table, childrenList.getLast(), nodeFactory),
-                    identifier,
-                    table,
-                    degree,
-                    nodeFactory,
-                    valueImmutableBinaryObjectWrapper
-            );
+        try {
+
+            if (flag) {
+                return getResponsibleNode(
+                        indexStorageManager,
+                        IndexTreeNodeIO.read(indexStorageManager, table, childrenList.get(i), nodeFactory),
+                        identifier,
+                        table,
+                        degree,
+                        nodeFactory,
+                        valueImmutableBinaryObjectWrapper
+                );
+            } else {
+                return getResponsibleNode(
+                        indexStorageManager,
+                        IndexTreeNodeIO.read(indexStorageManager, table, childrenList.getLast(), nodeFactory),
+                        identifier,
+                        table,
+                        degree,
+                        nodeFactory,
+                        valueImmutableBinaryObjectWrapper
+                );
+            }
+        } catch (ExecutionException | InterruptedException | IOException e) {
+            throw new InternalOperationException(e);
         }
 
     }

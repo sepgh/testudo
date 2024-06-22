@@ -1,5 +1,7 @@
 package com.github.sepgh.internal.index.tree;
 
+import com.github.sepgh.internal.exception.IndexExistsException;
+import com.github.sepgh.internal.exception.InternalOperationException;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
@@ -7,11 +9,9 @@ import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
 import com.github.sepgh.internal.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.github.sepgh.internal.storage.session.IndexIOSession;
 
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Comparable<V>> {
     private final int degree;
@@ -26,7 +26,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
         this.valueImmutableBinaryObjectWrapper = valueImmutableBinaryObjectWrapper;
     }
 
-    public AbstractTreeNode<K> addIndex(AbstractTreeNode<K> root, K identifier, V value) throws ExecutionException, InterruptedException, IOException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public AbstractTreeNode<K> addIndex(AbstractTreeNode<K> root, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
         List<AbstractTreeNode<K>> path = new LinkedList<>();
         BPlusTreeUtils.getPathToResponsibleNode(indexIOSession, path, root, identifier, degree);
 
@@ -42,8 +42,13 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
             if (i == 0){
                 /* current node is a leaf which should handle storing the data */
 
+                List<K> currentNodeKeyList = currentNode.getKeyList(degree, valueImmutableBinaryObjectWrapper.size());
+
+                if (currentNodeKeyList.contains(identifier))
+                    throw new IndexExistsException();
+
                 /* If current node has space, store and exit */
-                if (currentNode.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).size() < (degree - 1)){
+                if (currentNodeKeyList.size() < (degree - 1)){
                     ((AbstractLeafTreeNode<K, V>) currentNode).addKeyValue(identifier, value, degree);
                     indexIOSession.write(currentNode);
                     indexIOSession.commit();
@@ -60,7 +65,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
                 indexIOSession.write(newSiblingLeafNode);
                 indexIOSession.write(currentNode);
 
-                answer = currentNode.getKeyList(degree, valueImmutableBinaryObjectWrapper.size()).contains(identifier) ? currentNode : newSiblingLeafNode;
+                answer = currentNodeKeyList.contains(identifier) ? currentNode : newSiblingLeafNode;
 
                 /* this leaf doesn't have a parent! create one and deal with it right here! */
                 if (path.size() == 1) {
@@ -138,7 +143,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
         throw new RuntimeException("Logic error: probably failed to store index?");
     }
 
-    private void fixSiblingPointers(AbstractLeafTreeNode<K, V> currentNode, AbstractLeafTreeNode<K, V> newLeafTreeNode) throws ExecutionException, InterruptedException, IOException {
+    private void fixSiblingPointers(AbstractLeafTreeNode<K, V> currentNode, AbstractLeafTreeNode<K, V> newLeafTreeNode) throws InternalOperationException {
         Optional<Pointer> currentNodeNextSiblingPointer = currentNode.getNextSiblingPointer(degree);
         currentNode.setNextSiblingPointer(newLeafTreeNode.getPointer(), degree);
         newLeafTreeNode.setPreviousSiblingPointer(currentNode.getPointer(), degree);

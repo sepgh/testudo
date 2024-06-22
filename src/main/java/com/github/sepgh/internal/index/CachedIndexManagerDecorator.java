@@ -1,16 +1,17 @@
 package com.github.sepgh.internal.index;
 
+import com.github.sepgh.internal.exception.IndexExistsException;
+import com.github.sepgh.internal.exception.InternalOperationException;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class CachedIndexManagerDecorator<K extends Comparable<K>, V extends Comparable<V>> extends IndexManagerDecorator<K, V> {
     private final Cache<TableIdentifier<K>, V> cache;
@@ -26,7 +27,7 @@ public class CachedIndexManagerDecorator<K extends Comparable<K>, V extends Comp
     }
 
     @Override
-    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
         AbstractTreeNode<K> baseClusterTreeNode = super.addIndex(table, identifier, value);
         cache.put(new TableIdentifier<>(table, identifier), value);
         sizeCache.computeIfPresent(table, (k, v) -> v + 1);
@@ -34,7 +35,7 @@ public class CachedIndexManagerDecorator<K extends Comparable<K>, V extends Comp
     }
 
     @Override
-    public Optional<V> getIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
+    public Optional<V> getIndex(int table, K identifier) throws InternalOperationException {
         TableIdentifier<K> lookup = new TableIdentifier<>(table, identifier);
         V optionalPointer = cache.getIfPresent(lookup);
         if (optionalPointer != null)
@@ -45,7 +46,7 @@ public class CachedIndexManagerDecorator<K extends Comparable<K>, V extends Comp
     }
 
     @Override
-    public boolean removeIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
+    public boolean removeIndex(int table, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         if (super.removeIndex(table, identifier)) {
             cache.invalidate(new TableIdentifier<>(table, identifier));
             sizeCache.computeIfPresent(table, (k, v) -> v - 1);
@@ -55,14 +56,22 @@ public class CachedIndexManagerDecorator<K extends Comparable<K>, V extends Comp
     }
 
     @Override
-    public int size(int table) {
-        return sizeCache.computeIfAbsent(table, key -> {
+    public int size(int table) throws InternalOperationException {
+        AtomicReference<InternalOperationException> atomicExceptionReference = new AtomicReference<>();
+        int size = sizeCache.computeIfAbsent(table, key -> {
             try {
                 return super.size(table);
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);
+            } catch (InternalOperationException e) {
+                atomicExceptionReference.set(e);
+                return -1;
             }
         });
+
+        InternalOperationException exception = atomicExceptionReference.get();
+        if (exception != null)
+            throw exception;
+
+        return size;
     }
 
     public record TableIdentifier<K extends Comparable<K>>(int table, K identifier){

@@ -1,5 +1,7 @@
 package com.github.sepgh.internal.index.tree.removing;
 
+import com.github.sepgh.internal.exception.IndexExistsException;
+import com.github.sepgh.internal.exception.InternalOperationException;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
@@ -25,7 +27,7 @@ public class MemorySnapshotBPlusTreeIndexManagerRemovalTestCase extends BPlusTre
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
         super.testRemovingLeftToRight();
     }
 
@@ -33,14 +35,14 @@ public class MemorySnapshotBPlusTreeIndexManagerRemovalTestCase extends BPlusTre
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
         super.testRemovingRightToLeft();
     }
 
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
         super.testRemovingRoot();
     }
 
@@ -48,7 +50,7 @@ public class MemorySnapshotBPlusTreeIndexManagerRemovalTestCase extends BPlusTre
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingLeftToRightAsync() throws IOException, ExecutionException, InterruptedException {
+    public void testRemovingLeftToRightAsync() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         super.testRemovingLeftToRightAsync();
     }
 }

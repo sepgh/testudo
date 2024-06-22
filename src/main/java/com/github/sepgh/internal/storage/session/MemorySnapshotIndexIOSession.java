@@ -1,5 +1,6 @@
 package com.github.sepgh.internal.storage.session;
 
+import com.github.sepgh.internal.exception.InternalOperationException;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
@@ -30,9 +31,14 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
     }
 
     @Override
-    public Optional<AbstractTreeNode<K>> getRoot() throws ExecutionException, InterruptedException {
+    public Optional<AbstractTreeNode<K>> getRoot() throws InternalOperationException {
         if (root == null){
-            Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table).get();
+            Optional<IndexStorageManager.NodeData> optional = null;
+            try {
+                optional = indexStorageManager.getRoot(table).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new InternalOperationException(e);
+            }
             if (optional.isPresent()){
                 AbstractTreeNode<K> baseClusterTreeNode = nodeFactory.fromNodeData(optional.get());
                 this.root = baseClusterTreeNode;
@@ -46,8 +52,13 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
     }
 
     @Override
-    public IndexStorageManager.NodeData write(AbstractTreeNode<K> node) throws IOException, ExecutionException, InterruptedException {
-        IndexStorageManager.NodeData nodeData = IndexTreeNodeIO.write(indexStorageManager, table, node).get();
+    public IndexStorageManager.NodeData write(AbstractTreeNode<K> node) throws InternalOperationException {
+        IndexStorageManager.NodeData nodeData = null;
+        try {
+            nodeData = IndexTreeNodeIO.write(indexStorageManager, table, node).get();
+        } catch (InterruptedException | ExecutionException | IOException e) {
+            throw new InternalOperationException(e);
+        }
         this.created.add(nodeData.pointer());
         this.pool.put(nodeData.pointer(), node);
         if (node.isRoot())
@@ -56,7 +67,7 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
     }
 
     @Override
-    public AbstractTreeNode<K> read(Pointer pointer) throws ExecutionException, InterruptedException, IOException {
+    public AbstractTreeNode<K> read(Pointer pointer) throws InternalOperationException {
         if (deleted.contains(pointer))
             return null;
 
@@ -66,7 +77,12 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
         if (created.contains(pointer))
             return pool.get(pointer);
 
-        AbstractTreeNode<K> baseClusterTreeNode = IndexTreeNodeIO.read(indexStorageManager, table, pointer, nodeFactory);
+        AbstractTreeNode<K> baseClusterTreeNode = null;
+        try {
+            baseClusterTreeNode = IndexTreeNodeIO.read(indexStorageManager, table, pointer, nodeFactory);
+        } catch (ExecutionException | InterruptedException | IOException e) {
+            throw new InternalOperationException(e);
+        }
         pool.put(pointer, baseClusterTreeNode);
 
         byte[] copy = new byte[baseClusterTreeNode.getData().length];
@@ -77,7 +93,7 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
         return baseClusterTreeNode;
     }
 
-    public final void update(AbstractTreeNode<K> node) throws IOException, InterruptedException {
+    public final void update(AbstractTreeNode<K> node) throws InternalOperationException {
         pool.put(
                 node.getPointer(),
                 node
@@ -88,27 +104,39 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
     }
 
     @Override
-    public void remove(AbstractTreeNode<K> node) throws ExecutionException, InterruptedException {
+    public void remove(AbstractTreeNode<K> node) throws InternalOperationException {
         deleted.add(node.getPointer());
     }
 
 
     @Override
-    public void commit() throws InterruptedException, IOException, ExecutionException {
+    public void commit() throws InternalOperationException {
         for (Pointer pointer : deleted) {
             try {
                 IndexTreeNodeIO.remove(indexStorageManager, table, pointer);
             } catch (ExecutionException | InterruptedException e) {
-                this.rollback();
+                try {
+                    this.rollback();
+                } catch (IOException | InterruptedException | ExecutionException ex) {
+                    throw new InternalOperationException(ex);
+                }
             }
         }
 
         try {
             for (Pointer pointer : updated) {
-                IndexTreeNodeIO.update(indexStorageManager, table, pool.get(pointer));
+                try {
+                    IndexTreeNodeIO.update(indexStorageManager, table, pool.get(pointer));
+                } catch (ExecutionException e) {
+                    throw new InternalOperationException(e);
+                }
             }
         } catch (InterruptedException | IOException e) {
-            this.rollback();
+            try {
+                this.rollback();
+            } catch (IOException | InterruptedException | ExecutionException ex) {
+                throw new InternalOperationException(ex);
+            }
         }
 
     }

@@ -1,5 +1,7 @@
 package com.github.sepgh.internal.index.tree.removing;
 
+import com.github.sepgh.internal.exception.IndexExistsException;
+import com.github.sepgh.internal.exception.InternalOperationException;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.TableLevelAsyncIndexManagerDecorator;
@@ -29,14 +31,14 @@ public class BPlusTreeIndexManagerRemovalTestCase extends BaseBPlusTreeIndexMana
     }
 
     @Test
-    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
         super.testRemovingLeftToRight(indexManager, indexStorageManager);
     }
 
     @Test
-    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
         super.testRemovingRightToLeft(indexManager, indexStorageManager);
@@ -44,7 +46,7 @@ public class BPlusTreeIndexManagerRemovalTestCase extends BaseBPlusTreeIndexMana
 
 
     @Test
-    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
         super.testRemovingRoot(indexManager, indexStorageManager);
@@ -52,7 +54,7 @@ public class BPlusTreeIndexManagerRemovalTestCase extends BaseBPlusTreeIndexMana
 
     @Test
     @Timeout(2)
-    public void testRemovingLeftToRightAsync() throws IOException, ExecutionException, InterruptedException {
+    public void testRemovingLeftToRightAsync() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
         IndexManager<Long, Pointer> asycnIndexManager = new TableLevelAsyncIndexManagerDecorator<>(indexManager);

@@ -1,6 +1,8 @@
 package com.github.sepgh.internal.storage;
 
 import com.github.sepgh.internal.EngineConfig;
+import com.github.sepgh.internal.exception.IndexExistsException;
+import com.github.sepgh.internal.exception.InternalOperationException;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
@@ -84,7 +86,7 @@ public class MemorySnapshotIndexIOSessionTestCase {
 
     @Timeout(2)
     @Test
-    public void testCreateRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void testCreateRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
@@ -118,7 +120,7 @@ public class MemorySnapshotIndexIOSessionTestCase {
 
     @Timeout(2)
     @Test
-    public void testDeleteRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void testDeleteRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
 
         IndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));

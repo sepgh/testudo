@@ -1,6 +1,8 @@
 package com.github.sepgh.internal.index.tree.storing;
 
 import com.github.sepgh.internal.EngineConfig;
+import com.github.sepgh.internal.exception.IndexExistsException;
+import com.github.sepgh.internal.exception.InternalOperationException;
 import com.github.sepgh.internal.index.IndexManager;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.TableLevelAsyncIndexManagerDecorator;
@@ -96,7 +98,7 @@ public class BPlusTreeIndexManagerTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void addIndex() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void addIndex() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 
@@ -119,7 +121,7 @@ public class BPlusTreeIndexManagerTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void testSingleSplitAddIndex() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void testSingleSplitAddIndex() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
         Random random = new Random();
 
         List<Long> testIdentifiers = new ArrayList<>(degree);
@@ -214,7 +216,7 @@ public class BPlusTreeIndexManagerTestCase {
      */
     @Test
     @Timeout(value = 2)
-    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
@@ -240,7 +242,7 @@ public class BPlusTreeIndexManagerTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void testMultiSplitAddIndexAsync() throws IOException, ExecutionException, InterruptedException {
+    public void testMultiSplitAddIndexAsync() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
@@ -257,8 +259,8 @@ public class BPlusTreeIndexManagerTestCase {
                 try {
                     indexManager.addIndex(1, testIdentifier, samplePointer);
                     countDownLatch.countDown();
-                } catch (ExecutionException | InterruptedException | IOException |
-                         ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
+                } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue | IndexExistsException |
+                         InternalOperationException e) {
                     throw new RuntimeException(e);
                 }
             });

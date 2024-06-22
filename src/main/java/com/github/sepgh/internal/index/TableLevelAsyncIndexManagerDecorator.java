@@ -1,13 +1,13 @@
 package com.github.sepgh.internal.index;
 
+import com.github.sepgh.internal.exception.IndexExistsException;
+import com.github.sepgh.internal.exception.InternalOperationException;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.data.ImmutableBinaryObjectWrapper;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class TableLevelAsyncIndexManagerDecorator<K extends Comparable<K>, V extends Comparable<V>> extends IndexManagerDecorator<K, V> {
@@ -21,7 +21,7 @@ public class TableLevelAsyncIndexManagerDecorator<K extends Comparable<K>, V ext
     }
 
     @Override
-    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws ExecutionException, InterruptedException, IOException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
         LockManager lockManager = getLockManager(table);
         lockManager.writeLock.lock();
         try {
@@ -32,7 +32,7 @@ public class TableLevelAsyncIndexManagerDecorator<K extends Comparable<K>, V ext
     }
 
     @Override
-    public Optional<V> getIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
+    public Optional<V> getIndex(int table, K identifier) throws InternalOperationException {
         LockManager lockManager = getLockManager(table);
         lockManager.readLock.lock();
         try {
@@ -43,7 +43,7 @@ public class TableLevelAsyncIndexManagerDecorator<K extends Comparable<K>, V ext
     }
 
     @Override
-    public boolean removeIndex(int table, K identifier) throws ExecutionException, InterruptedException, IOException {
+    public boolean removeIndex(int table, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         LockManager lockManager = getLockManager(table);
         lockManager.writeLock.lock();
         try {

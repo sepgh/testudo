@@ -167,7 +167,6 @@ public class TreeNodeUtils {
      * Todo: performance improvements may be possible
      *       linear search is used to sort the keys
      *       binary search could be used
-     *       alternatively, we can hold a space for metadata which keeps track of the number of keys or values stored
      */
     public static <K extends Comparable<K>, V extends Comparable<V>> int addKeyValueAndGetIndex(
             AbstractTreeNode<?> treeNode,
@@ -181,6 +180,8 @@ public class TreeNodeUtils {
     ) throws ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         int indexToFill = -1;
         ImmutableBinaryObjectWrapper<K> keyAtIndex;
+
+        // Linearly looking for key position
         for (int i = 0; i < degree - 1; i++){
             keyAtIndex = getKeyAtIndex(treeNode, i, immutableBinaryObjectWrapper, valueSize);
             K data = keyAtIndex.asObject();
@@ -191,7 +192,7 @@ public class TreeNodeUtils {
         }
 
         if (indexToFill == -1){
-            throw new RuntimeException("F..ed up"); // Todo
+            throw new RuntimeException("Logical chaos! Couldn't find the index to fill ...");
         }
 
 
@@ -226,11 +227,10 @@ public class TreeNodeUtils {
 
     }
 
-    // Todo: this function will shift the remaining space after next KV to current KV (which we wanted to remove) despite other KV existing.
-    //       The performance could improve (reduce copy call) by checking if next KV exists at all first.
     public static void removeKeyValueAtIndex(AbstractTreeNode<?> treeNode, int index, int keySize, int valueSize) {
         int nextIndexOffset = getKeyStartOffset(treeNode, index + 1, keySize, valueSize);
         if (nextIndexOffset < treeNode.getData().length - SIZE_LEAF_NODE_SIBLING_POINTERS){
+            // Last key value (in terms of position in node, not number of filled kv) is being removed. No shifting required
             System.arraycopy(
                     new byte[keySize + valueSize],
                     0,

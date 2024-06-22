@@ -1,5 +1,6 @@
 package com.github.sepgh.internal.storage.session;
 
+import com.github.sepgh.internal.exception.InternalOperationException;
 import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.NodeFactory;
@@ -24,29 +25,49 @@ public class ImmediateCommitIndexIOSession<K extends Comparable<K>> implements I
     }
 
     @Override
-    public Optional<AbstractTreeNode<K>> getRoot() throws ExecutionException, InterruptedException {
-        Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table).get();
-        return optional.map(nodeFactory::fromNodeData);
+    public Optional<AbstractTreeNode<K>> getRoot() throws InternalOperationException {
+        try {
+            Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table).get();
+            return optional.map(nodeFactory::fromNodeData);
+        } catch (ExecutionException | InterruptedException e) {
+            throw new InternalOperationException(e);
+        }
     }
 
     @Override
-    public IndexStorageManager.NodeData write(AbstractTreeNode<K> node) throws IOException, ExecutionException, InterruptedException {
-        return IndexTreeNodeIO.write(indexStorageManager, table, node).get();
+    public IndexStorageManager.NodeData write(AbstractTreeNode<K> node) throws InternalOperationException {
+        try {
+            return IndexTreeNodeIO.write(indexStorageManager, table, node).get();
+        } catch (IOException | ExecutionException | InterruptedException e) {
+            throw new InternalOperationException(e);
+        }
     }
 
     @Override
-    public AbstractTreeNode<K> read(Pointer pointer) throws ExecutionException, InterruptedException, IOException {
-        return IndexTreeNodeIO.read(indexStorageManager, table, pointer, nodeFactory);
+    public AbstractTreeNode<K> read(Pointer pointer) throws InternalOperationException {
+        try {
+            return IndexTreeNodeIO.read(indexStorageManager, table, pointer, nodeFactory);
+        } catch (ExecutionException | InterruptedException | IOException e) {
+            throw new InternalOperationException(e);
+        }
     }
 
     @Override
-    public final void update(AbstractTreeNode<K> node) throws IOException, InterruptedException, ExecutionException {
-        IndexTreeNodeIO.update(indexStorageManager, table, node);
+    public final void update(AbstractTreeNode<K> node) throws InternalOperationException {
+        try {
+            IndexTreeNodeIO.update(indexStorageManager, table, node);
+        } catch (InterruptedException | IOException | ExecutionException e) {
+            throw new InternalOperationException(e);
+        }
     }
 
     @Override
-    public void remove(AbstractTreeNode<K> node) throws ExecutionException, InterruptedException {
-        IndexTreeNodeIO.remove(indexStorageManager, table, node);
+    public void remove(AbstractTreeNode<K> node) throws InternalOperationException {
+        try {
+            IndexTreeNodeIO.remove(indexStorageManager, table, node);
+        } catch (ExecutionException | InterruptedException e) {
+            throw new InternalOperationException(e);
+        }
     }
 
     @Override

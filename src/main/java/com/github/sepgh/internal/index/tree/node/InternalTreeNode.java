@@ -27,18 +27,15 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
         return ImmutableList.copyOf(getChildPointers(degree));
     }
 
-    public void setChildPointers(List<ChildPointers<K>> childPointers, int degree, boolean cleanRest){
+    public void setChildPointers(List<ChildPointers<K>> childPointers, int degree, boolean cleanRest) throws ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         modified();
         if (cleanRest)
             TreeNodeUtils.cleanChildrenPointers(this, degree, keyImmutableBinaryObjectWrapper.size(), PointerImmutableBinaryObjectWrapper.BYTES);
         int i = 0;
         for (ChildPointers<K> keyPointer : childPointers) {
             keyPointer.setIndex(i);
-            try {
-                TreeNodeUtils.setKeyAtIndex(this, keyPointer.index, keyImmutableBinaryObjectWrapper.load(keyPointer.key), PointerImmutableBinaryObjectWrapper.BYTES);
-            } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue e) {
-                throw new RuntimeException(e);
-            }
+            TreeNodeUtils.setKeyAtIndex(this, keyPointer.index, keyImmutableBinaryObjectWrapper.load(keyPointer.key), PointerImmutableBinaryObjectWrapper.BYTES);
+
             if (i == 0){
                 TreeNodeUtils.setPointerToChild(this, 0, keyPointer.left, keyImmutableBinaryObjectWrapper.size());
                 TreeNodeUtils.setPointerToChild(this, 1, keyPointer.right, keyImmutableBinaryObjectWrapper.size());
@@ -144,7 +141,7 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
      *
      *   The returned list first node should be passed to parent and the remaining should be stored in a new node
      */
-    public List<ChildPointers<K>> addAndSplit(K identifier, Pointer pointer, int degree){
+    public List<ChildPointers<K>> addAndSplit(K identifier, Pointer pointer, int degree) throws ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         modified();
         int mid = (degree - 1) / 2;
 
