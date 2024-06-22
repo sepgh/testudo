@@ -76,7 +76,7 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         TreeNodeUtils.setKeyValueAtIndex(this, index, keyImmutableBinaryObjectWrapper.load(keyValue.key()), valueImmutableBinaryObjectWrapper.load(keyValue.value()));
     }
 
-    public List<KeyValue<K, V>> split(K identifier, V v, int degree) throws ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public List<KeyValue<K, V>> addAndSplit(K identifier, V v, int degree) throws ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         int mid = (degree - 1) / 2;
 
         List<KeyValue<K, V>> allKeyValues = new ArrayList<>(getKeyValueList(degree));

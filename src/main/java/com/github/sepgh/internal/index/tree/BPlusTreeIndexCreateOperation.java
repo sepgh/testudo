@@ -4,7 +4,6 @@ import com.github.sepgh.internal.index.Pointer;
 import com.github.sepgh.internal.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.internal.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.internal.index.tree.node.InternalTreeNode;
-import com.github.sepgh.internal.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.internal.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.github.sepgh.internal.storage.session.IndexIOSession;
 
@@ -53,7 +52,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
 
                 /* Current node didn't have any space, so let's create a sibling and split */
                 AbstractLeafTreeNode<K, V> newSiblingLeafNode = new AbstractLeafTreeNode<>(indexIOSession.getIndexStorageManager().getEmptyNode(), keyImmutableBinaryObjectWrapper, valueImmutableBinaryObjectWrapper);
-                List<LeafClusterTreeNode.KeyValue<K, V>> passingKeyValues = ((AbstractLeafTreeNode<K, V>) currentNode).split(identifier, value, degree);
+                List<AbstractLeafTreeNode.KeyValue<K, V>> passingKeyValues = ((AbstractLeafTreeNode<K, V>) currentNode).addAndSplit(identifier, value, degree);
                 newSiblingLeafNode.setKeyValues(passingKeyValues, degree);
                 indexIOSession.write(newSiblingLeafNode); // we want the node to have a value so that we can fix siblings
                 /* Fix sibling pointers */
@@ -131,7 +130,6 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
                     return answer;
                 } else {
                     indexIOSession.write(currentInternalTreeNode);
-                    indexIOSession.commit();
                 }
 
             }
