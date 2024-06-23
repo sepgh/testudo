@@ -10,6 +10,7 @@ import com.github.sepgh.internal.storage.pool.ManagedFileHandler;
 import com.github.sepgh.internal.storage.pool.UnlimitedFileHandlerPool;
 import com.github.sepgh.internal.utils.FileUtils;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Path;
@@ -28,6 +29,23 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
     protected final FileHandlerPool fileHandlerPool;
     protected final int binarySpace;
     public static final String INDEX_FILE_NAME = "index";
+    protected final String customName;
+    public BaseFileIndexStorageManager(
+            Path path,
+            @Nullable String customName,
+            HeaderManager headerManager,
+            EngineConfig engineConfig,
+            FileHandlerPool fileHandlerPool,
+            int binarySpace
+    ) {
+        this.path = path;
+        this.customName = customName;
+        this.headerManager = headerManager;
+        this.engineConfig = engineConfig;
+        this.fileHandlerPool = fileHandlerPool;
+        this.binarySpace = binarySpace;
+    }
+
     public BaseFileIndexStorageManager(
             Path path,
             HeaderManager headerManager,
@@ -35,15 +53,11 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
             FileHandlerPool fileHandlerPool,
             int binarySpace
     ) {
-        this.path = path;
-        this.headerManager = headerManager;
-        this.engineConfig = engineConfig;
-        this.fileHandlerPool = fileHandlerPool;
-        this.binarySpace = binarySpace;
+        this(path, null, headerManager, engineConfig, fileHandlerPool, binarySpace);
     }
 
     public BaseFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig, int binarySpace) {
-        this(path, headerManager, engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()), binarySpace);
+        this(path, null, headerManager, engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()), binarySpace);
     }
 
     protected int getIndexGrowthAllocationSize(){

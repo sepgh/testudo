@@ -27,7 +27,9 @@ public class ExtendedFileIndexStorageManager extends CompactFileIndexStorageMana
     }
 
     protected Path getIndexFilePath(int table, int chunk) {
-        return Path.of(path.toString(), String.format("%s-%d.%d", INDEX_FILE_NAME, table, chunk));
+        if (customName == null)
+            return Path.of(path.toString(), String.format("%s-%d.%d", INDEX_FILE_NAME, table, chunk));
+        return Path.of(path.toString(), String.format("%s-%d.%s.%d", INDEX_FILE_NAME, table, customName, chunk));
     }
 
     protected Pointer getAllocatedSpaceForNewNode(int tableId, int chunk) throws IOException, ExecutionException, InterruptedException {
