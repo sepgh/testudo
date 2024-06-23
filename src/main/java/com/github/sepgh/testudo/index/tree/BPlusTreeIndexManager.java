@@ -14,7 +14,10 @@ import com.github.sepgh.testudo.storage.IndexStorageManager;
 import com.github.sepgh.testudo.storage.session.ImmediateCommitIndexIOSession;
 import com.github.sepgh.testudo.storage.session.IndexIOSession;
 import com.github.sepgh.testudo.storage.session.IndexIOSessionFactory;
+import com.github.sepgh.testudo.utils.LockableIterator;
+import lombok.SneakyThrows;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
@@ -124,6 +127,63 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
         }
 
         return size;
+    }
+
+    @Override
+    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator(int table) throws InternalOperationException {
+        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table, nodeFactory);
+
+        return new LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>>() {
+            @Override
+            public void lock() {
+            }
+
+            @Override
+            public void unlock() {
+            }
+
+            private int keyIndex = 0;
+            AbstractLeafTreeNode<K, V> currentLeaf = getFarLeftLeaf(table);
+
+            @Override
+            public boolean hasNext() {
+                int size = currentLeaf.getKeyList(degree).size();
+                if (keyIndex == size)
+                    return currentLeaf.getNextSiblingPointer(degree).isPresent();
+                return true;
+            }
+
+            @SneakyThrows
+            @Override
+            public AbstractLeafTreeNode.KeyValue<K, V> next() {
+                List<AbstractLeafTreeNode.KeyValue<K, V>> keyValueList = currentLeaf.getKeyValueList(degree);
+
+                if (keyIndex == keyValueList.size()){
+                    currentLeaf = (AbstractLeafTreeNode<K, V>) indexIOSession.read(currentLeaf.getNextSiblingPointer(degree).get());
+                    keyIndex = 0;
+                    keyValueList = currentLeaf.getKeyValueList(degree);
+                }
+
+                AbstractLeafTreeNode.KeyValue<K, V> output = keyValueList.get(keyIndex);
+                keyIndex += 1;
+                return output;
+            }
+        };
+    }
+
+    protected AbstractLeafTreeNode<K, V> getFarLeftLeaf(int table) throws InternalOperationException {
+        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table, nodeFactory);
+        AbstractTreeNode<K> root = getRoot(indexIOSession);
+        if (root.isLeaf())
+            return (AbstractLeafTreeNode<K, V>) root;
+
+        AbstractTreeNode<K> farLeftChild = root;
+
+        while (!farLeftChild.isLeaf()){
+            farLeftChild = indexIOSession.read(((InternalTreeNode<K>) farLeftChild).getChildAtIndex(0));
+        }
+
+        return (AbstractLeafTreeNode<K, V>) farLeftChild;
     }
 
     private AbstractTreeNode<K> getRoot(IndexIOSession<K> indexIOSession) throws InternalOperationException {

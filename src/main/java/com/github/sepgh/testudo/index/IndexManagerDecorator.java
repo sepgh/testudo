@@ -2,8 +2,10 @@ package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
+import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.util.Optional;
 
@@ -28,5 +30,10 @@ public class IndexManagerDecorator<K extends Comparable<K>, V extends Comparable
     @Override
     public int size(int table) throws InternalOperationException {
         return this.indexManager.size(table);
+    }
+
+    @Override
+    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator(int table) throws InternalOperationException {
+        return this.indexManager.getSortedIterator(table);
     }
 }

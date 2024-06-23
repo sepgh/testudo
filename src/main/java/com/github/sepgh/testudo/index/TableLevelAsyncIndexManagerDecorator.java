@@ -2,8 +2,10 @@ package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
+import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.util.Map;
 import java.util.Optional;
@@ -51,6 +53,33 @@ public class TableLevelAsyncIndexManagerDecorator<K extends Comparable<K>, V ext
         } finally {
             lockManager.writeLock.unlock();
         }
+    }
+
+    @Override
+    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator(int table) throws InternalOperationException {
+        LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> iterator = super.getSortedIterator(table);
+        LockManager lockManager = getLockManager(table);
+        return new LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>>() {
+            @Override
+            public void lock() {
+                lockManager.readLock.lock();
+            }
+
+            @Override
+            public void unlock() {
+                lockManager.readLock.unlock();
+            }
+
+            @Override
+            public boolean hasNext() {
+                return iterator.hasNext();
+            }
+
+            @Override
+            public AbstractLeafTreeNode.KeyValue<K, V> next() {
+                return iterator.next();
+            }
+        };
     }
 
     public static class LockManager {
