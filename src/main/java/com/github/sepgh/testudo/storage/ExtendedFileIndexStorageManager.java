@@ -8,6 +8,7 @@ import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
 import com.github.sepgh.testudo.storage.pool.ManagedFileHandler;
 import com.github.sepgh.testudo.utils.FileUtils;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Path;
@@ -17,6 +18,14 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 public class ExtendedFileIndexStorageManager extends CompactFileIndexStorageManager {
+
+    public ExtendedFileIndexStorageManager(Path path, @Nullable String customName, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) throws IOException, ExecutionException, InterruptedException {
+        super(path, customName, headerManager, engineConfig, fileHandlerPool);
+    }
+
+    public ExtendedFileIndexStorageManager(Path path, @Nullable String customName, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpace) throws IOException, ExecutionException, InterruptedException {
+        super(path, customName, headerManager, engineConfig, fileHandlerPool, binarySpace);
+    }
 
     public ExtendedFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpaceMax) throws IOException, ExecutionException, InterruptedException {
         super(path, headerManager, engineConfig, fileHandlerPool, binarySpaceMax);

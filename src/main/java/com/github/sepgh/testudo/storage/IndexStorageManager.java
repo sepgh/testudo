@@ -29,5 +29,7 @@ public interface IndexStorageManager {
 
     CompletableFuture<Integer> removeNode(int table, Pointer pointer) throws InterruptedException;
 
+    boolean exists(int table);
+
     record NodeData(Pointer pointer, byte[] bytes){}
 }

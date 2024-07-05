@@ -11,8 +11,10 @@ import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 import com.github.sepgh.testudo.utils.FileUtils;
 
 import javax.annotation.Nullable;
+import java.io.File;
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +32,17 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
     protected final int binarySpace;
     public static final String INDEX_FILE_NAME = "index";
     protected final String customName;
+
+    public BaseFileIndexStorageManager(
+            Path path,
+            @Nullable String customName,
+            HeaderManager headerManager,
+            EngineConfig engineConfig,
+            FileHandlerPool fileHandlerPool
+    ) {
+        this(path, customName, headerManager, engineConfig, fileHandlerPool, engineConfig.getClusterIndexKeyStrategy().getSize());
+    }
+
     public BaseFileIndexStorageManager(
             Path path,
             @Nullable String customName,
@@ -257,4 +270,16 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
         return FileUtils.write(acquireFileChannel(table, pointer.getChunk()), offset, new byte[this.binarySpace]).whenComplete((integer, throwable) -> releaseFileChannel(table, pointer.getChunk()));
     }
 
+    @Override
+    public boolean exists(int table) {
+        Optional<Header.Table> optionalTable = headerManager.getHeader().getTableOfId(table);
+        if (optionalTable.isEmpty())
+            return false;
+
+        for (Header.IndexChunk indexChunk : optionalTable.get().getChunks()) {
+            if (Files.exists(getIndexFilePath(table, indexChunk.getChunk())))
+                return true;
+        }
+        return false;
+    }
 }

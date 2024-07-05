@@ -50,4 +50,9 @@ public class IndexStorageManagerDecorator implements IndexStorageManager {
     public CompletableFuture<Integer> removeNode(int table, Pointer pointer) throws InterruptedException {
         return this.decorated.removeNode(table, pointer);
     }
+
+    @Override
+    public boolean exists(int table) {
+        return this.decorated.exists(table);
+    }
 }
