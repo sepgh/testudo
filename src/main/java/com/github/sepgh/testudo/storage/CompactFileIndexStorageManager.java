@@ -22,50 +22,20 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
 
     public CompactFileIndexStorageManager(Path path, @Nullable String customName, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) throws IOException, ExecutionException, InterruptedException {
         super(path, customName, headerManager, engineConfig, fileHandlerPool);
-        this.initialize();
     }
 
     public CompactFileIndexStorageManager(Path path, @Nullable String customName, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpace) throws IOException, ExecutionException, InterruptedException {
         super(path, customName, headerManager, engineConfig, fileHandlerPool, binarySpace);
-        this.initialize();
     }
 
     public CompactFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpaceMax) throws IOException, ExecutionException, InterruptedException {
         super(path, headerManager, engineConfig, fileHandlerPool, binarySpaceMax);
-        this.initialize();
     }
 
     public CompactFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig, int binarySpaceMax) throws IOException, ExecutionException, InterruptedException {
         super(path, headerManager, engineConfig, binarySpaceMax);
-        this.initialize();
     }
 
-
-    // Todo: temporarily this is the solution for allocating space for new tables
-    //       alternatively, previous state of the database and new state should be compared, some data may need removal
-    private void initialize() throws IOException, ExecutionException, InterruptedException {
-        Header header = this.headerManager.getHeader();
-        int chunkId = 0;
-        for (Header.Table table : header.getTables()) {
-            if (!table.isInitialized()) {
-                boolean stored = false;
-                while (!stored){
-                    try (ManagedFileHandler managedFileHandler = this.getManagedFileHandler(table.getId(), chunkId)){
-                        AsynchronousFileChannel asynchronousFileChannel = managedFileHandler.getAsynchronousFileChannel();
-                        if (asynchronousFileChannel.size() != engineConfig.getBTreeMaxFileSize()){
-                            long position = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize()).get();
-                            table.setChunks(Collections.singletonList(new Header.IndexChunk(chunkId, position)));
-                            table.setInitialized(true);
-                            stored = true;
-                        } else {
-                            chunkId++;
-                        }
-                    }
-                }
-            }
-        }
-        this.headerManager.update(header);
-    }
 
     protected Path getIndexFilePath(int table, int chunk) {
         if (customName == null)
