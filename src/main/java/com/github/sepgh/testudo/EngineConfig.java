@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 @Data
 @AllArgsConstructor
 public class EngineConfig {
-
+    public static int BTREE_UNLIMITED_FILE_SIZE = -1;
     private final int bTreeDegree;
     private final int bTreeGrowthNodeAllocationCount;
     @Builder.Default
