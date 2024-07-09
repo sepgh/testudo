@@ -10,12 +10,13 @@ import java.nio.file.StandardOpenOption;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.TimeUnit;
 
 @Getter
 public class FileHandler {
     private final AsynchronousFileChannel fileChannel;
-    private final AtomicInteger usageCount = new AtomicInteger(0);
+    private int usageCount = 0;
+    private volatile boolean closed = Boolean.FALSE;
 
     public FileHandler(String filePath, ExecutorService executorService) throws IOException {
         this.fileChannel = AsynchronousFileChannel.open(Path.of(filePath),
@@ -36,17 +37,36 @@ public class FileHandler {
         );
     }
 
-    public void incrementUsage() {
-        usageCount.incrementAndGet();
+    public synchronized void incrementUsage() {
+        if (this.closed){
+            throw new IllegalStateException("FileHandler has been closed or is closing.");
+        }
+        usageCount++;
     }
 
-    public void decrementUsage() {
-        usageCount.decrementAndGet();
+    public synchronized void decrementUsage() {
+        if (--this.usageCount == 0){
+            notifyAll();
+        }
     }
 
-    public void close() throws IOException {
-        fileChannel.close();
-        usageCount.set(0);
+    public void close(long timeout, TimeUnit timeUnit) throws IOException {
+        this.closed = Boolean.TRUE;
+        synchronized (this){
+            try {
+                while (usageCount > 0){
+                    try {
+                        wait(timeUnit.toMillis(timeout));
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(e);
+                    }
+                }
+            } finally {
+                usageCount = 0;
+                fileChannel.close();
+            }
+        }
     }
 
     public static class SingletonFileHandlerFactory implements FileHandlerFactory {

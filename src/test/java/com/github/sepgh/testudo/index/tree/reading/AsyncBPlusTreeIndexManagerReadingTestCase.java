@@ -94,9 +94,9 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
     @Timeout(value = 2)
     public void findIndexSuccessfully() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        CompactFileIndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 
-        IndexManager<Long, Pointer> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper()));
+        IndexManager<Long, Pointer> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongImmutableBinaryObjectWrapper()));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(1, 10L, dataPointer);
@@ -104,15 +104,17 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
 
         Assertions.assertTrue(optionalPointer.isPresent());
         Assertions.assertEquals(dataPointer, optionalPointer.get());
+
+        indexStorageManager.close();
     }
 
     @Test
     @Timeout(value = 2)
     public void getTableSize() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        CompactFileIndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 
-        IndexManager<Long, Pointer> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper()));
+        IndexManager<Long, Pointer> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongImmutableBinaryObjectWrapper()));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
@@ -133,20 +135,24 @@ public class AsyncBPlusTreeIndexManagerReadingTestCase {
 
         countDownLatch.await();
         Assertions.assertEquals(100, indexManager.size(1));
+
+        indexStorageManager.close();
     }
 
     @Test
     @Timeout(value = 2)
     public void findIndexFailure() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
         HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        CompactFileIndexStorageManager indexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 
-        IndexManager<Long, Pointer> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper()));
+        IndexManager<Long, Pointer> indexManager = new TableLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongImmutableBinaryObjectWrapper()));
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(1, 10L, dataPointer);
         Optional<Pointer> optionalPointer = indexManager.getIndex(1, 100L);
 
         Assertions.assertFalse(optionalPointer.isPresent());
+
+        indexStorageManager.close();
     }
 }

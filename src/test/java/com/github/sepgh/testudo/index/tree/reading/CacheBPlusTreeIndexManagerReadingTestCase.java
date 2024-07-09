@@ -116,6 +116,8 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
         Assertions.assertThrows(InternalOperationException.class, () -> {
             finalIndexManager.getIndex(1, 10L);
         }, "Nothing available to read.");
+
+        indexStorageManager.close();
     }
 
     @Test
@@ -139,6 +141,8 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
         Assertions.assertTrue(destroy());
         optionalPointer = indexManager.getIndex(1, 100L);
         Assertions.assertFalse(optionalPointer.isPresent());
+
+        indexStorageManager.close();
     }
 
     @Test
@@ -165,6 +169,8 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
         optionalPointer = indexManager.getIndex(1, 10L);
         Assertions.assertTrue(optionalPointer.isPresent());
         Assertions.assertEquals(dataPointer, optionalPointer.get());
+
+        indexStorageManager.close();
     }
 
     @Test
@@ -188,5 +194,7 @@ public class CacheBPlusTreeIndexManagerReadingTestCase {
         Assertions.assertTrue(destroy());
         optionalPointer = indexManager.getIndex(1, 100L);
         Assertions.assertFalse(optionalPointer.isPresent());
+
+        indexStorageManager.close();
     }
 }

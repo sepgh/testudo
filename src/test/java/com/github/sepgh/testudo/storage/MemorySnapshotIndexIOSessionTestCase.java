@@ -116,6 +116,7 @@ public class MemorySnapshotIndexIOSessionTestCase {
         indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
         Assertions.assertFalse(indexManager.getIndex(1, 12L).isPresent());
 
+        indexStorageManager.close();
     }
 
     @Timeout(2)
@@ -148,6 +149,8 @@ public class MemorySnapshotIndexIOSessionTestCase {
         method.invoke(indexIOSession);
 
         Assertions.assertTrue(indexManager2.getIndex(1, 12L).isPresent());
+
+        indexStorageManager.close();
     }
 
 

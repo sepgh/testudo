@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-public class ExtendedFileIndexStorageManager extends CompactFileIndexStorageManager {
+public class ExtendedFileIndexStorageManager extends BaseFileIndexStorageManager {
 
     public ExtendedFileIndexStorageManager(Path path, @Nullable String customName, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) throws IOException, ExecutionException, InterruptedException {
         super(path, customName, headerManager, engineConfig, fileHandlerPool);

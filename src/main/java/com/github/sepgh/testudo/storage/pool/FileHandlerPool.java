@@ -10,10 +10,10 @@ public interface FileHandlerPool {
         return this.getFileChannel(filePath.toString(), timeout, timeUnit);
     }
     AsynchronousFileChannel getFileChannel(String filePath, long timeout, TimeUnit timeUnit) throws InterruptedException, IOException;
-    default void releaseFileChannel(Path path){
-        this.releaseFileChannel(path.toString());
+    default void releaseFileChannel(Path path, long timeout, TimeUnit timeUnit){
+        this.releaseFileChannel(path.toString(), timeout, timeUnit);
     }
-    void releaseFileChannel(String path);
+    void releaseFileChannel(String path, long timeout, TimeUnit timeUnit);
 
-    void closeAll();
+    void closeAll(long timeout, TimeUnit timeUnit);
 }

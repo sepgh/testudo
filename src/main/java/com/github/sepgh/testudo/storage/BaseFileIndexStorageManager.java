@@ -11,7 +11,6 @@ import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 import com.github.sepgh.testudo.utils.FileUtils;
 
 import javax.annotation.Nullable;
-import java.io.File;
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Files;
@@ -89,12 +88,12 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
 
     protected void releaseFileChannel(int table, int chunk) {
         Path indexFilePath = getIndexFilePath(table, chunk);
-        this.fileHandlerPool.releaseFileChannel(indexFilePath);
+        this.fileHandlerPool.releaseFileChannel(indexFilePath, engineConfig.getFileCloseTimeout(), engineConfig.getFileCloseUnit());
     }
 
     protected ManagedFileHandler getManagedFileHandler(int table, int chunk){
         Path indexFilePath = getIndexFilePath(table, chunk);
-        return new ManagedFileHandler(this.fileHandlerPool, indexFilePath,  engineConfig.getFileAcquireTimeout(), engineConfig.getFileAcquireUnit());
+        return new ManagedFileHandler(this.fileHandlerPool, indexFilePath,  engineConfig);
     }
 
     @Override
@@ -146,8 +145,10 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
         long filePosition = headerManager.getHeader().getTableOfId(table).get().getIndexChunk(chunk).get().getOffset() + position;
 
         AsynchronousFileChannel asynchronousFileChannel = acquireFileChannel(table, chunk);
-        if (asynchronousFileChannel.size() == 0)
+        if (asynchronousFileChannel.size() == 0){
+            releaseFileChannel(table, chunk);
             throw new IOException("Nothing available to read.");
+        }
         FileUtils.readBytes(asynchronousFileChannel, filePosition, this.binarySpace).whenComplete((bytes, throwable) -> {
             releaseFileChannel(table, chunk);
             if (throwable != null){
@@ -261,7 +262,7 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
 
     @Override
     public void close() throws IOException {
-        this.fileHandlerPool.closeAll();
+        this.fileHandlerPool.closeAll(engineConfig.getFileCloseTimeout(), engineConfig.getFileCloseUnit());
     }
 
     @Override

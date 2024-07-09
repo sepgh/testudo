@@ -41,15 +41,16 @@ public class LimitedFileHandlerPool implements FileHandlerPool {
         return fileHandler.getFileChannel();
     }
 
-    public void releaseFileChannel(String filePath) {
+    @Override
+    public synchronized void releaseFileChannel(String filePath, long timeout, TimeUnit timeUnit) {
         FileHandler fileHandler = fileHandlers.get(filePath);
         if (fileHandler != null) {
             fileHandler.decrementUsage();
-            if (fileHandler.getUsageCount().get() <= 0) {
+            if (fileHandler.getUsageCount() <= 0) {
                 try {
                     semaphore.release(); // Release the permit
                     fileHandlers.remove(filePath);
-                    fileHandler.close();
+                    fileHandler.close(timeout, timeUnit);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -58,10 +59,10 @@ public class LimitedFileHandlerPool implements FileHandlerPool {
     }
 
     @Override
-    public void closeAll() {
+    public void closeAll(long timeout, TimeUnit timeUnit) {
         fileHandlers.forEach((s, fileHandler) -> {
             try {
-                fileHandler.getFileChannel().close();
+                fileHandler.close(timeout, timeUnit);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

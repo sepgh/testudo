@@ -21,7 +21,11 @@ public class EngineConfig {
     @Builder.Default
     private int fileAcquireTimeout = 10;
     @Builder.Default
+    private int fileCloseTimeout = 5;
+    @Builder.Default
     private TimeUnit fileAcquireUnit = TimeUnit.SECONDS;
+    @Builder.Default
+    private TimeUnit fileCloseUnit = TimeUnit.SECONDS;
     @Builder.Default
     private long bTreeMaxFileSize = -1L;
     @Builder.Default
@@ -71,7 +75,7 @@ public class EngineConfig {
     }
 
     public enum IndexStorageManagerStrategy {
-        EXTENDED, COMPACT
+        EXTENDED, COMPACT, SINGLE
     }
 
     public static class Default {
