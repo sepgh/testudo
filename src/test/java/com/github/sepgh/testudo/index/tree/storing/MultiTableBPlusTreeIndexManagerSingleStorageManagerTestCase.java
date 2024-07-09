@@ -4,6 +4,7 @@ import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.helper.IndexFileDescriptor;
+import com.github.sepgh.testudo.index.DBLevelAsyncIndexManagerDecorator;
 import com.github.sepgh.testudo.index.IndexManager;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
@@ -13,14 +14,12 @@ import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrappe
 import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.index.tree.node.data.PointerImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.storage.BTreeSizeCalculator;
+import com.github.sepgh.testudo.storage.ExtendedFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.InMemoryHeaderManager;
 import com.github.sepgh.testudo.storage.SingleFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.header.Header;
 import com.github.sepgh.testudo.storage.header.HeaderManager;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
@@ -30,7 +29,11 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.sepgh.testudo.storage.SingleFileIndexStorageManager.INDEX_FILE_NAME;
 
@@ -223,6 +226,62 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
 
             StoredTreeStructureVerifier.testUnOrderedTreeStructure1(singleFileIndexStorageManager, tableId, 1, degree);
 
+        }
+
+    }
+
+    @Timeout(10)
+    @Test
+    public void testAddIndexDifferentAddOrdersOnDBLevelAsyncIndexManager_usingSingleFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
+        List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
+        Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
+
+        HeaderManager headerManager = new InMemoryHeaderManager(header);
+        SingleFileIndexStorageManager singleFileIndexStorageManager = new SingleFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        IndexManager<Long, Pointer> indexManager = new DBLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, singleFileIndexStorageManager, new LongImmutableBinaryObjectWrapper()));
+
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
+        CountDownLatch countDownLatch = new CountDownLatch((2 * testIdentifiers.size()) - 2);
+
+
+        AtomicInteger index1 = new AtomicInteger(0);
+        AtomicInteger index2 = new AtomicInteger(0);
+
+        int runs = 0;
+        while (runs < testIdentifiers.size()){
+            executorService.submit(() -> {
+                try {
+                    indexManager.addIndex(1, testIdentifiers.get(index1.getAndIncrement()), samplePointer);
+                    countDownLatch.countDown();
+                } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue | IndexExistsException |
+                         InternalOperationException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            executorService.submit(() -> {
+                try {
+                    indexManager.addIndex(2, testIdentifiers.get(index2.getAndIncrement()) * 10, samplePointer);
+                    countDownLatch.countDown();
+                } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue | IndexExistsException |
+                         InternalOperationException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            runs++;
+        }
+
+        countDownLatch.await();
+
+        for (int tableId = 1; tableId <= 2; tableId++) {
+
+            int multi = 1;
+            if (tableId == 2){
+                multi = 10;
+            }
+            // Cant verify structure but can check if all index are added
+            for (Long testIdentifier : testIdentifiers) {
+                Assertions.assertTrue(indexManager.getIndex(tableId, testIdentifier * multi).isPresent());
+            }
         }
 
     }
