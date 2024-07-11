@@ -1,19 +1,25 @@
-package com.github.sepgh.testudo.index.tree;
+package com.github.sepgh.test.index.tree;
 
+import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.IndexManager;
 import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.index.tree.BPlusTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.*;
-import com.github.sepgh.testudo.storage.*;
-import com.github.sepgh.testudo.storage.header.Header;
-import com.github.sepgh.testudo.storage.header.HeaderManager;
+import com.github.sepgh.testudo.storage.BTreeSizeCalculator;
+import com.github.sepgh.testudo.storage.CompactFileIndexStorageManager;
+import com.github.sepgh.testudo.storage.IndexStorageManager;
+import com.github.sepgh.testudo.storage.IndexTreeNodeIO;
+import com.github.sepgh.testudo.storage.header.JsonIndexHeaderManager;
+import com.github.sepgh.testudo.storage.pool.FileHandler;
+import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +30,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 
 import static com.github.sepgh.testudo.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
@@ -33,63 +38,42 @@ import static com.github.sepgh.testudo.storage.BaseFileIndexStorageManager.INDEX
 public class ImmutableBinaryObjectWrapperTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
-    private Header header;
     private int degree = 4;
 
     @BeforeEach
     public void setUp() throws IOException {
         dbPath = Files.createTempDirectory("TEST_BinaryObjectWrapperTestCase");
+
         engineConfig = EngineConfig.builder()
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
+                .baseDBPath(dbPath.toString())
                 .build();
         engineConfig.setBTreeMaxFileSize(4L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 
         byte[] writingBytes = new byte[]{};
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-
-        header = Header.builder()
-                .database("sample")
-                .tables(
-                        Collections.singletonList(
-                                Header.Table.builder()
-                                        .id(1)
-                                        .name("test")
-                                        .chunks(
-                                                Collections.singletonList(
-                                                        Header.IndexChunk.builder()
-                                                                .chunk(0)
-                                                                .offset(0)
-                                                                .build()
-                                                )
-                                        )
-                                        .root(
-                                                Header.IndexChunk.builder()
-                                                        .chunk(0)
-                                                        .offset(0)
-                                                        .build()
-                                        )
-                                        .initialized(true)
-                                        .build()
-                        )
-                )
-                .build();
-
-        Assertions.assertTrue(header.getTableOfId(1).isPresent());
-        Assertions.assertTrue(header.getTableOfId(1).get().getIndexChunk(0).isPresent());
     }
 
     @AfterEach
     public void destroy() throws IOException {
-        Path indexPath0 = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
-        Files.delete(indexPath0);
+        FileUtils.deleteDirectory(dbPath.toString());
+    }
+
+    private CompactFileIndexStorageManager getStorageManager() throws IOException, ExecutionException, InterruptedException {
+        return new CompactFileIndexStorageManager(
+                dbPath,
+                "test",
+                new JsonIndexHeaderManager.Factory(),
+                engineConfig,
+                new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
+        );
     }
 
     @Test
     public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
-        HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        CompactFileIndexStorageManager compactFileIndexStorageManager = getStorageManager();
 
         IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new IntegerImmutableBinaryObjectWrapper());
 
@@ -112,8 +96,7 @@ public class ImmutableBinaryObjectWrapperTestCase {
     }
     @Test
     public void test_NoZeroIntegerIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
-        HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        CompactFileIndexStorageManager compactFileIndexStorageManager = getStorageManager();
 
         IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new NoZeroIntegerImmutableBinaryObjectWrapper());
 
@@ -141,8 +124,7 @@ public class ImmutableBinaryObjectWrapperTestCase {
 
     @Test
     public void test_NoZeroLongIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
-        HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        CompactFileIndexStorageManager compactFileIndexStorageManager = getStorageManager();
 
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new NoZeroLongImmutableBinaryObjectWrapper());
 
@@ -170,8 +152,14 @@ public class ImmutableBinaryObjectWrapperTestCase {
 
     @Test
     public void test_CustomBinaryObjectWrapper() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
-        HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, new BTreeSizeCalculator(degree, 20, Pointer.BYTES).calculate());
+        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(
+                dbPath,
+                "Test",
+                new JsonIndexHeaderManager.Factory(),
+                engineConfig,
+                new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()),
+                new BTreeSizeCalculator(degree, 20, Pointer.BYTES).calculate()
+        );
 
         ImmutableBinaryObjectWrapper<String> keyImmutableBinaryObjectWrapper = new StringImmutableBinaryObjectWrapper();
 

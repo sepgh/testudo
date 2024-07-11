@@ -14,15 +14,15 @@ import java.util.*;
 
 public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Comparable<V>> {
     private final int degree;
-    private final int table;
+    private final int indexId;
     private final IndexIOSession<K> indexIOSession;
     private final int minKeys;
     private final ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper;
     private final NodeFactory<K> nodeFactory;
 
-    public BPlusTreeIndexDeleteOperation(int degree, int table, IndexIOSession<K> indexIOSession, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper, NodeFactory<K> nodeFactory) {
+    public BPlusTreeIndexDeleteOperation(int degree, int indexId, IndexIOSession<K> indexIOSession, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper, NodeFactory<K> nodeFactory) {
         this.degree = degree;
-        this.table = table;
+        this.indexId = indexId;
         this.indexIOSession = indexIOSession;
         this.minKeys = (degree - 1) / 2;
         this.valueImmutableBinaryObjectWrapper = valueImmutableBinaryObjectWrapper;
@@ -121,7 +121,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Co
                 indexIOSession.getIndexStorageManager(),
                 indexIOSession.read(internalTreeNode.getChildAtIndex(indexOfKey + 1)),
                 identifier,
-                table,
+                indexId,
                 degree,
                 nodeFactory,
                 valueImmutableBinaryObjectWrapper

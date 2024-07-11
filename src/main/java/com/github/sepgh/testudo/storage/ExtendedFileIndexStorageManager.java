@@ -2,84 +2,82 @@ package com.github.sepgh.testudo.storage;
 
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.storage.header.Header;
-import com.github.sepgh.testudo.storage.header.HeaderManager;
+import com.github.sepgh.testudo.storage.header.IndexHeaderManager;
+import com.github.sepgh.testudo.storage.header.IndexHeaderManagerFactory;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
-import com.github.sepgh.testudo.storage.pool.ManagedFileHandler;
 import com.github.sepgh.testudo.utils.FileUtils;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 public class ExtendedFileIndexStorageManager extends BaseFileIndexStorageManager {
 
-    public ExtendedFileIndexStorageManager(Path path, @Nullable String customName, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) throws IOException, ExecutionException, InterruptedException {
-        super(path, customName, headerManager, engineConfig, fileHandlerPool);
+    public ExtendedFileIndexStorageManager(Path path, String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) throws IOException, ExecutionException, InterruptedException {
+        super(path, customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
     }
 
-    public ExtendedFileIndexStorageManager(Path path, @Nullable String customName, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpace) throws IOException, ExecutionException, InterruptedException {
-        super(path, customName, headerManager, engineConfig, fileHandlerPool, binarySpace);
+    public ExtendedFileIndexStorageManager(Path path, String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpace) throws IOException, ExecutionException, InterruptedException {
+        super(path, customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool, binarySpace);
     }
 
-    public ExtendedFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpaceMax) throws IOException, ExecutionException, InterruptedException {
-        super(path, headerManager, engineConfig, fileHandlerPool, binarySpaceMax);
+    protected Path getIndexFilePath(int indexId, int chunk) {
+        return Path.of(path.toString(), String.format("%s-%d.%d", INDEX_FILE_NAME, indexId, chunk));
     }
 
-    public ExtendedFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig, int binarySpaceMax) throws IOException, ExecutionException, InterruptedException {
-        super(path, headerManager, engineConfig, binarySpaceMax);
+    @Override
+    protected IndexHeaderManager.Location getIndexBeginningInChunk(int indexId, int chunk) throws InterruptedException {
+        Optional<IndexHeaderManager.Location> indexBeginningInChunk = this.indexHeaderManager.getIndexBeginningInChunk(indexId, chunk);
+        return indexBeginningInChunk.orElseGet(() -> new IndexHeaderManager.Location(chunk, 0));
     }
 
-    protected Path getIndexFilePath(int table, int chunk) {
-        if (customName == null)
-            return Path.of(path.toString(), String.format("%s-%d.%d", INDEX_FILE_NAME, table, chunk));
-        return Path.of(path.toString(), String.format("%s-%d.%s.%d", INDEX_FILE_NAME, table, customName, chunk));
-    }
+    protected Pointer getAllocatedSpaceForNewNode(int indexId, int chunk) throws IOException, ExecutionException, InterruptedException {
+        Optional<IndexHeaderManager.Location> optionalIndexBeginningLocation = this.indexHeaderManager.getIndexBeginningInChunk(indexId, chunk);
+        boolean createNewChunk = optionalIndexBeginningLocation.isPresent();
 
-    protected Pointer getAllocatedSpaceForNewNode(int tableId, int chunk) throws IOException, ExecutionException, InterruptedException {
-        Header.Table table = headerManager.getHeader().getTableOfId(tableId).get();
-        Optional<Header.IndexChunk> optional = table.getIndexChunk(chunk);
-        boolean newChunkCreatedForTable = optional.isEmpty();
-
-        ManagedFileHandler managedFileHandler = this.getManagedFileHandler(tableId, chunk);
-        AsynchronousFileChannel asynchronousFileChannel = managedFileHandler.getAsynchronousFileChannel();
-        long fileSize = asynchronousFileChannel.size();
-
-        if (newChunkCreatedForTable){
-            FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize()).get();
-            managedFileHandler.close();
-            List<Header.IndexChunk> newChunks = new ArrayList<>(table.getChunks());
-            newChunks.add(new Header.IndexChunk(chunk, 0));
-            table.setChunks(newChunks);
-            headerManager.update();
-            return new Pointer(Pointer.TYPE_NODE, 0, chunk);
-
+        // Despite if it's a new chunk for this index or not, go to next chunk if file is already full
+        AsynchronousFileChannel asynchronousFileChannel = this.acquireFileChannel(indexId, chunk);
+        if (
+                this.engineConfig.getBTreeMaxFileSize() != EngineConfig.BTREE_UNLIMITED_FILE_SIZE &&
+                        asynchronousFileChannel.size() >= this.engineConfig.getBTreeMaxFileSize()
+        ) {
+            this.releaseFileChannel(indexId, chunk);
+            return this.getAllocatedSpaceForNewNode(indexId, chunk + 1);
         }
 
-        if (fileSize > 0){
-            long positionToCheck = fileSize - this.getIndexGrowthAllocationSize();
+        // If it's a new chunk for this index, allocate at the end of the file!
+        if (createNewChunk){
+            this.indexHeaderManager.setIndexBeginningInChunk(indexId, new IndexHeaderManager.Location(chunk, asynchronousFileChannel.size()));
+            Long position = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize()).get();
+            this.releaseFileChannel(indexId, chunk);
+            return new Pointer(Pointer.TYPE_NODE, position, chunk);
+        }
+
+
+        // If it's not a new chunk for this index, see if other indexes exist or not
+
+        long positionToCheck = asynchronousFileChannel.size() - this.getIndexGrowthAllocationSize();
+
+        if (positionToCheck > 0){
+            // Check if we have an empty space
             byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, this.getIndexGrowthAllocationSize()).get();
             Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
             if (optionalAdditionalPosition.isPresent()){
                 long finalPosition = positionToCheck + optionalAdditionalPosition.get();
-                managedFileHandler.close();
+                this.releaseFileChannel(indexId, chunk);
                 return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
             }
         }
 
-        if (fileSize >= engineConfig.getBTreeMaxFileSize()){
-            managedFileHandler.close();
-            return this.getAllocatedSpaceForNewNode(tableId, chunk + 1);
-        }
+        // Empty space not found, allocate in the end or before next index
+        long allocatedOffset = FileUtils.allocate(
+                asynchronousFileChannel,
+                this.getIndexGrowthAllocationSize()
+        ).get();
 
-        long allocatedOffset = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize()).get();
-
-        managedFileHandler.close();
+        this.releaseFileChannel(indexId, chunk);
 
         return new Pointer(Pointer.TYPE_NODE, allocatedOffset, chunk);
     }

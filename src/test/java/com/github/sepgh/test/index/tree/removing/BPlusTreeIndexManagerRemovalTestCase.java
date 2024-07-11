@@ -1,4 +1,4 @@
-package com.github.sepgh.testudo.index.tree.removing;
+package com.github.sepgh.test.index.tree.removing;
 
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
@@ -8,11 +8,11 @@ import com.github.sepgh.testudo.index.TableLevelAsyncIndexManagerDecorator;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.storage.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.CompactFileIndexStorageManager;
-import com.github.sepgh.testudo.storage.InMemoryHeaderManager;
 import com.github.sepgh.testudo.storage.IndexStorageManager;
-import com.github.sepgh.testudo.storage.header.HeaderManager;
+import com.github.sepgh.testudo.storage.header.JsonIndexHeaderManager;
+import com.github.sepgh.testudo.storage.pool.FileHandler;
+import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -22,8 +22,13 @@ import java.util.concurrent.ExecutionException;
 public class BPlusTreeIndexManagerRemovalTestCase extends BaseBPlusTreeIndexManagerRemovalTestCase {
 
     protected IndexStorageManager getIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
-        HeaderManager headerManager = new InMemoryHeaderManager(header);
-        return new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        return new CompactFileIndexStorageManager(
+                dbPath,
+                "test",
+                new JsonIndexHeaderManager.Factory(),
+                engineConfig,
+                new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
+        );
     }
 
     protected IndexManager<Long, Pointer> getIndexManager(IndexStorageManager indexStorageManager) {

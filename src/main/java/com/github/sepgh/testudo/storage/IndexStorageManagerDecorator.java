@@ -14,45 +14,45 @@ public class IndexStorageManagerDecorator implements IndexStorageManager {
         this.decorated = decorated;
     }
 
-    public CompletableFuture<Optional<NodeData>> getRoot(int table) throws InterruptedException {
-        return this.decorated.getRoot(table);
+    public CompletableFuture<Optional<NodeData>> getRoot(int indexId) throws InterruptedException {
+        return this.decorated.getRoot(indexId);
     }
 
     public byte[] getEmptyNode() {
         return this.decorated.getEmptyNode();
     }
 
-    public CompletableFuture<NodeData> readNode(int table, Pointer pointer) throws InterruptedException, IOException {
-        return this.readNode(table, pointer.getPosition(), pointer.getChunk());
+    public CompletableFuture<NodeData> readNode(int indexId, Pointer pointer) throws InterruptedException, IOException {
+        return this.readNode(indexId, pointer.getPosition(), pointer.getChunk());
     }
-    public CompletableFuture<NodeData> readNode(int table, long position, int chunk) throws InterruptedException, IOException {
-        return this.decorated.readNode(table, position, chunk);
-    }
-
-    public CompletableFuture<NodeData> writeNewNode(int table, byte[] data, boolean isRoot) throws IOException, ExecutionException, InterruptedException {
-        return this.decorated.writeNewNode(table, data, isRoot);
+    public CompletableFuture<NodeData> readNode(int indexId, long position, int chunk) throws InterruptedException, IOException {
+        return this.decorated.readNode(indexId, position, chunk);
     }
 
-    public  CompletableFuture<NodeData> writeNewNode(int table, byte[] data) throws IOException, ExecutionException, InterruptedException {
-        return this.writeNewNode(table, data, false);
+    public CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data, boolean isRoot) throws IOException, ExecutionException, InterruptedException {
+        return this.decorated.writeNewNode(indexId, data, isRoot);
     }
-    public  CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer) throws IOException, InterruptedException {
-        return this.decorated.updateNode(table, data, pointer, false);
+
+    public  CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data) throws IOException, ExecutionException, InterruptedException {
+        return this.writeNewNode(indexId, data, false);
     }
-    public CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer, boolean root) throws IOException, InterruptedException {
-        return this.decorated.updateNode(table, data, pointer, root);
+    public  CompletableFuture<Integer> updateNode(int indexId, byte[] data, Pointer pointer) throws IOException, InterruptedException {
+        return this.decorated.updateNode(indexId, data, pointer, false);
+    }
+    public CompletableFuture<Integer> updateNode(int indexId, byte[] data, Pointer pointer, boolean root) throws IOException, InterruptedException {
+        return this.decorated.updateNode(indexId, data, pointer, root);
     }
 
     public void close() throws IOException {
         this.decorated.close();
     }
 
-    public CompletableFuture<Integer> removeNode(int table, Pointer pointer) throws InterruptedException {
-        return this.decorated.removeNode(table, pointer);
+    public CompletableFuture<Integer> removeNode(int indexId, Pointer pointer) throws InterruptedException {
+        return this.decorated.removeNode(indexId, pointer);
     }
 
     @Override
-    public boolean exists(int table) {
-        return this.decorated.exists(table);
+    public boolean exists(int indexId) {
+        return this.decorated.exists(indexId);
     }
 }

@@ -13,67 +13,67 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class CachedIndexStorageManagerDecorator extends IndexStorageManagerDecorator {
-    private final Cache<TablePointer, NodeData> cache;
+    private final Cache<IndexPointer, NodeData> cache;
     private final Map<Integer, NodeData> rootCache = new HashMap<>();
 
     public CachedIndexStorageManagerDecorator(IndexStorageManager decorated, int maxSize) {
         this(decorated, CacheBuilder.newBuilder().maximumSize(maxSize).initialCapacity(10).build());
     }
 
-    public CachedIndexStorageManagerDecorator(IndexStorageManager decorated, Cache<TablePointer, NodeData> cache) {
+    public CachedIndexStorageManagerDecorator(IndexStorageManager decorated, Cache<IndexPointer, NodeData> cache) {
         super(decorated);
         this.cache = cache;
     }
 
-    public CompletableFuture<Optional<NodeData>> getRoot(int table) throws InterruptedException {
+    public CompletableFuture<Optional<NodeData>> getRoot(int indexId) throws InterruptedException {
 
         synchronized (rootCache){
-            NodeData nodeData = rootCache.get(table);
+            NodeData nodeData = rootCache.get(indexId);
             if (nodeData != null){
                 return CompletableFuture.completedFuture(Optional.of(nodeData));
             }
         }
 
-        return super.getRoot(table).whenComplete((optionalNodeData, throwable) -> {
+        return super.getRoot(indexId).whenComplete((optionalNodeData, throwable) -> {
             synchronized (rootCache) {
                 if (throwable != null && optionalNodeData.isPresent())
-                    rootCache.put(table, optionalNodeData.get());
+                    rootCache.put(indexId, optionalNodeData.get());
             }
         });
     }
 
-    public CompletableFuture<NodeData> readNode(int table, long position, int chunk) throws InterruptedException, IOException {
-        NodeData optionalNodeData = cache.getIfPresent(new TablePointer(table, new Pointer(Pointer.TYPE_NODE, position, chunk)));
+    public CompletableFuture<NodeData> readNode(int indexId, long position, int chunk) throws InterruptedException, IOException {
+        NodeData optionalNodeData = cache.getIfPresent(new IndexPointer(indexId, new Pointer(Pointer.TYPE_NODE, position, chunk)));
         if (optionalNodeData != null){
             return CompletableFuture.completedFuture(optionalNodeData);
         }
-        return super.readNode(table, position, chunk).whenComplete((nodeData, throwable) -> {
+        return super.readNode(indexId, position, chunk).whenComplete((nodeData, throwable) -> {
             if (throwable == null){
-                cache.put(new TablePointer(table, nodeData.pointer()), nodeData);
+                cache.put(new IndexPointer(indexId, nodeData.pointer()), nodeData);
             }
         });
     }
 
-    public CompletableFuture<NodeData> writeNewNode(int table, byte[] data, boolean isRoot) throws IOException, ExecutionException, InterruptedException {
-        return super.writeNewNode(table, data, isRoot).whenComplete((nodeData, throwable) -> {
+    public CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data, boolean isRoot) throws IOException, ExecutionException, InterruptedException {
+        return super.writeNewNode(indexId, data, isRoot).whenComplete((nodeData, throwable) -> {
             if (throwable == null){
-                cache.put(new TablePointer(table, nodeData.pointer()), nodeData);
+                cache.put(new IndexPointer(indexId, nodeData.pointer()), nodeData);
                 synchronized (rootCache) {
                     if (isRoot)
-                        rootCache.put(table, nodeData);
+                        rootCache.put(indexId, nodeData);
                 }
             }
         });
     }
 
-    public CompletableFuture<Integer> updateNode(int table, byte[] data, Pointer pointer, boolean root) throws IOException, InterruptedException {
-        return super.updateNode(table, data, pointer, root).whenComplete((integer, throwable) -> {
+    public CompletableFuture<Integer> updateNode(int indexId, byte[] data, Pointer pointer, boolean root) throws IOException, InterruptedException {
+        return super.updateNode(indexId, data, pointer, root).whenComplete((integer, throwable) -> {
             if (throwable == null) {
                 NodeData nodeData = new NodeData(pointer, data);
-                cache.put(new TablePointer(table, pointer), nodeData);
+                cache.put(new IndexPointer(indexId, pointer), nodeData);
                 synchronized (rootCache) {
                     if (root)
-                        rootCache.put(table, nodeData);
+                        rootCache.put(indexId, nodeData);
                 }
             }
         });
@@ -84,29 +84,29 @@ public class CachedIndexStorageManagerDecorator extends IndexStorageManagerDecor
         super.close();
     }
 
-    public CompletableFuture<Integer> removeNode(int table, Pointer pointer) throws InterruptedException {
-        return super.removeNode(table, pointer).whenComplete((integer, throwable) -> {
-            cache.invalidate(new TablePointer(table, pointer));
+    public CompletableFuture<Integer> removeNode(int indexId, Pointer pointer) throws InterruptedException {
+        return super.removeNode(indexId, pointer).whenComplete((integer, throwable) -> {
+            cache.invalidate(new IndexPointer(indexId, pointer));
             synchronized (rootCache){
-                if (rootCache.get(table).pointer().equals(pointer)){
-                    rootCache.remove(table);
+                if (rootCache.get(indexId).pointer().equals(pointer)){
+                    rootCache.remove(indexId);
                 }
             }
         });
     }
 
-    public record TablePointer(int table, Pointer pointer) {
+    public record IndexPointer(int indexId, Pointer pointer) {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            TablePointer that = (TablePointer) o;
-            return table == that.table && Objects.equals(pointer, that.pointer);
+            IndexPointer that = (IndexPointer) o;
+            return indexId == that.indexId && Objects.equals(pointer, that.pointer);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(table, pointer);
+            return Objects.hash(indexId, pointer);
         }
     }
 }

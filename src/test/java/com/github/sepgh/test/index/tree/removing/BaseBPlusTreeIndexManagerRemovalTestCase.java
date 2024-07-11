@@ -1,5 +1,6 @@
-package com.github.sepgh.testudo.index.tree.removing;
+package com.github.sepgh.test.index.tree.removing;
 
+import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
@@ -15,18 +16,15 @@ import com.github.sepgh.testudo.index.tree.node.data.PointerImmutableBinaryObjec
 import com.github.sepgh.testudo.storage.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.IndexStorageManager;
 import com.github.sepgh.testudo.storage.IndexTreeNodeIO;
-import com.github.sepgh.testudo.storage.header.Header;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -38,7 +36,6 @@ import static com.github.sepgh.testudo.storage.BaseFileIndexStorageManager.INDEX
 public class BaseBPlusTreeIndexManagerRemovalTestCase {
     protected Path dbPath;
     protected EngineConfig engineConfig;
-    protected Header header;
     protected int degree = 4;
 
     @BeforeEach
@@ -47,46 +44,18 @@ public class BaseBPlusTreeIndexManagerRemovalTestCase {
         engineConfig = EngineConfig.builder()
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
+                .baseDBPath(dbPath.toString())
                 .build();
         engineConfig.setBTreeMaxFileSize(15L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
 
         byte[] writingBytes = new byte[]{};
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-
-        header = Header.builder()
-                .database("sample")
-                .tables(
-                        Collections.singletonList(
-                                Header.Table.builder()
-                                        .id(1)
-                                        .name("test")
-                                        .chunks(
-                                                Collections.singletonList(
-                                                        Header.IndexChunk.builder()
-                                                                .chunk(0)
-                                                                .offset(0)
-                                                                .build()
-                                                )
-                                        )
-                                        .initialized(true)
-                                        .build()
-                        )
-                )
-                .build();
-
-        Assertions.assertTrue(header.getTableOfId(1).isPresent());
-        Assertions.assertTrue(header.getTableOfId(1).get().getIndexChunk(0).isPresent());
     }
 
     @AfterEach
     public void destroy() throws IOException {
-        Path indexPath0 = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
-        Files.delete(indexPath0);
-        try {
-            Path indexPath1 = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 1));
-            Files.delete(indexPath1);
-        } catch (NoSuchFileException ignored){}
+        FileUtils.deleteDirectory(dbPath.toString());
     }
 
     /* 007

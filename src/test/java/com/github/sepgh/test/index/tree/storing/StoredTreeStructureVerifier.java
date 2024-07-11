@@ -1,4 +1,4 @@
-package com.github.sepgh.testudo.index.tree.storing;
+package com.github.sepgh.test.index.tree.storing;
 
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;

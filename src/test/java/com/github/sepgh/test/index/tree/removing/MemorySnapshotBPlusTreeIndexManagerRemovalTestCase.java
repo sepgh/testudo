@@ -1,4 +1,4 @@
-package com.github.sepgh.testudo.index.tree.removing;
+package com.github.sepgh.test.index.tree.removing;
 
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;

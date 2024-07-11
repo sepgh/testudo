@@ -2,117 +2,131 @@ package com.github.sepgh.testudo.storage;
 
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.storage.header.Header;
-import com.github.sepgh.testudo.storage.header.HeaderManager;
+import com.github.sepgh.testudo.storage.header.IndexHeaderManager;
+import com.github.sepgh.testudo.storage.header.IndexHeaderManagerFactory;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
-import com.github.sepgh.testudo.storage.pool.ManagedFileHandler;
 import com.github.sepgh.testudo.utils.FileUtils;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+
+/*
+Todo: when a node is removed, depending on it's index and chunk we can keep a reference to it's location to reuse it in next allocation calls
+*/
+
 public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager {
 
-    public CompactFileIndexStorageManager(Path path, @Nullable String customName, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) throws IOException, ExecutionException, InterruptedException {
-        super(path, customName, headerManager, engineConfig, fileHandlerPool);
+    public CompactFileIndexStorageManager(Path path, String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) throws IOException, ExecutionException, InterruptedException {
+        super(path, customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
     }
 
-    public CompactFileIndexStorageManager(Path path, @Nullable String customName, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpace) throws IOException, ExecutionException, InterruptedException {
-        super(path, customName, headerManager, engineConfig, fileHandlerPool, binarySpace);
+    public CompactFileIndexStorageManager(Path path, String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpace) throws IOException, ExecutionException, InterruptedException {
+        super(path, customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool, binarySpace);
     }
 
-    public CompactFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpaceMax) throws IOException, ExecutionException, InterruptedException {
-        super(path, headerManager, engineConfig, fileHandlerPool, binarySpaceMax);
-    }
-
-    public CompactFileIndexStorageManager(Path path, HeaderManager headerManager, EngineConfig engineConfig, int binarySpaceMax) throws IOException, ExecutionException, InterruptedException {
-        super(path, headerManager, engineConfig, binarySpaceMax);
-    }
-
-
-    protected Path getIndexFilePath(int table, int chunk) {
-        if (customName == null)
-            return Path.of(path.toString(), String.format("%s.%d", INDEX_FILE_NAME, chunk));
+    protected Path getIndexFilePath(int indexId, int chunk) {
         return Path.of(path.toString(), String.format("%s.%s.%d", INDEX_FILE_NAME, customName, chunk));
     }
 
-    protected Pointer getAllocatedSpaceForNewNode(int tableId, int chunk) throws IOException, ExecutionException, InterruptedException {
-        Header.Table table = headerManager.getHeader().getTableOfId(tableId).get();
-        Optional<Header.IndexChunk> optional = table.getIndexChunk(chunk);
-        boolean newChunkCreatedForTable = optional.isEmpty();
+    @Override
+    protected IndexHeaderManager.Location getIndexBeginningInChunk(int indexId, int chunk) throws InterruptedException {
+        Optional<IndexHeaderManager.Location> optional = this.indexHeaderManager.getIndexBeginningInChunk(indexId, chunk);
+        if (optional.isPresent()) {
+            return optional.get();
+        }
 
-        ManagedFileHandler managedFileHandler = this.getManagedFileHandler(tableId, chunk);
-        AsynchronousFileChannel asynchronousFileChannel = managedFileHandler.getAsynchronousFileChannel();
-        long fileSize = asynchronousFileChannel.size();
+        List<Integer> indexesInChunk = this.indexHeaderManager.getIndexesInChunk(chunk);
+        IndexHeaderManager.Location location;
+        if (indexesInChunk.isEmpty()) {
+            location = new IndexHeaderManager.Location(chunk, 0);
+        } else {
+            AsynchronousFileChannel asynchronousFileChannel = this.acquireFileChannel(indexId, chunk);
+            try {
+                location = new IndexHeaderManager.Location(chunk, asynchronousFileChannel.size());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            this.releaseFileChannel(indexId, chunk);
+        }
 
-        if (newChunkCreatedForTable){
-            if (engineConfig.getBTreeMaxFileSize() != EngineConfig.BTREE_UNLIMITED_FILE_SIZE && fileSize >= engineConfig.getBTreeMaxFileSize()){
-                managedFileHandler.close();
-                return getAllocatedSpaceForNewNode(tableId, chunk + 1);
-            } else {
-                Long position = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize()).get();
-                managedFileHandler.close();
-                List<Header.IndexChunk> newChunks = new ArrayList<>(table.getChunks());
-                newChunks.add(new Header.IndexChunk(chunk, position));
-                table.setChunks(newChunks);
-                headerManager.update();
-                return new Pointer(Pointer.TYPE_NODE, position, chunk);
+        try {
+            this.indexHeaderManager.setIndexBeginningInChunk(indexId, location);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return location;
+    }
+
+    protected synchronized Pointer getAllocatedSpaceForNewNode(int indexId, int chunk) throws IOException, ExecutionException, InterruptedException {
+        Optional<IndexHeaderManager.Location> optionalIndexBeginningLocation = this.indexHeaderManager.getIndexBeginningInChunk(indexId, chunk);
+        boolean createNewChunk = optionalIndexBeginningLocation.isEmpty();
+
+        // Despite if it's a new chunk for this index or not, go to next chunk if file is already full
+        AsynchronousFileChannel asynchronousFileChannel = this.acquireFileChannel(indexId, chunk);
+        if (
+                this.engineConfig.getBTreeMaxFileSize() != EngineConfig.BTREE_UNLIMITED_FILE_SIZE &&
+                        asynchronousFileChannel.size() >= this.engineConfig.getBTreeMaxFileSize()
+        ) {
+            this.releaseFileChannel(indexId, chunk);
+            return this.getAllocatedSpaceForNewNode(indexId, chunk + 1);
+        }
+
+        // If it's a new chunk for this index, allocate at the end of the file!
+        if (createNewChunk){
+            this.indexHeaderManager.setIndexBeginningInChunk(indexId, new IndexHeaderManager.Location(chunk, asynchronousFileChannel.size()));
+            Long position = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize()).get();
+            this.releaseFileChannel(indexId, chunk);
+            return new Pointer(Pointer.TYPE_NODE, position, chunk);
+        }
+
+
+        // If it's not a new chunk for this index, see if other indexes exist or not
+
+        Optional<IndexHeaderManager.Location> nextIndexBeginningInChunk = this.indexHeaderManager.getNextIndexBeginningInChunk(indexId, chunk);
+        long positionToCheck;
+        if (nextIndexBeginningInChunk.isPresent()){
+            // Another index exists, so lets check if we have a space left before the next index
+            positionToCheck = nextIndexBeginningInChunk.get().getOffset() - this.getIndexGrowthAllocationSize();
+        } else {
+            // Another index doesn't exist, so lets check if we have a space left in the end of the file
+            positionToCheck = asynchronousFileChannel.size() - this.getIndexGrowthAllocationSize();
+        }
+
+        if (positionToCheck > 0){
+            // Check if we have an empty space
+            byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, this.getIndexGrowthAllocationSize()).get();
+            Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
+            if (optionalAdditionalPosition.isPresent()){
+                long finalPosition = positionToCheck + optionalAdditionalPosition.get();
+                this.releaseFileChannel(indexId, chunk);
+                return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
             }
         }
 
-        List<Header.Table> tablesIncludingChunk = getTablesIncludingChunk(chunk);
-        int indexOfTable = getIndexOfTable(tablesIncludingChunk, tableId);
-        boolean isLastTable = indexOfTable == tablesIncludingChunk.size() - 1;
 
-
-        if (fileSize > 0){
-            long positionToCheck =
-                    isLastTable ?
-                            fileSize - this.getIndexGrowthAllocationSize()
-                            :
-                            tablesIncludingChunk.get(indexOfTable + 1).getIndexChunk(chunk).get().getOffset() - this.getIndexGrowthAllocationSize();
-
-            if (positionToCheck > 0 && positionToCheck > tablesIncludingChunk.get(indexOfTable).getIndexChunk(chunk).get().getOffset()) {
-                byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, this.getIndexGrowthAllocationSize()).get();
-                Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
-                if (optionalAdditionalPosition.isPresent()){
-                    long finalPosition = positionToCheck + optionalAdditionalPosition.get();
-                    managedFileHandler.close();
-                    return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
-                }
-            }
-        }
-
-        if (fileSize >= engineConfig.getBTreeMaxFileSize()){
-            managedFileHandler.close();
-            return this.getAllocatedSpaceForNewNode(tableId, chunk + 1);
-        }
-
-
+        // Empty space not found, allocate in the end or before next index
         long allocatedOffset;
-        if (isLastTable){
-            allocatedOffset = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize()).get();
+        if (nextIndexBeginningInChunk.isPresent()){
+            allocatedOffset = FileUtils.allocate(
+                    asynchronousFileChannel,
+                    nextIndexBeginningInChunk.get().getOffset(),
+                    this.getIndexGrowthAllocationSize()
+            ).get();
+            Integer nextIndex = this.indexHeaderManager.getNextIndexIdInChunk(indexId, chunk).get();
+            this.indexHeaderManager.setIndexBeginningInChunk(nextIndex, new IndexHeaderManager.Location(chunk, nextIndexBeginningInChunk.get().getOffset() + this.getIndexGrowthAllocationSize()));
         } else {
             allocatedOffset = FileUtils.allocate(
                     asynchronousFileChannel,
-                    tablesIncludingChunk.get(indexOfTable + 1).getIndexChunk(chunk).get().getOffset(),
                     this.getIndexGrowthAllocationSize()
             ).get();
-
-            for (int i = indexOfTable + 1; i < tablesIncludingChunk.size(); i++){
-                Header.Table nextTable = tablesIncludingChunk.get(i);
-                Header.IndexChunk indexChunk = nextTable.getIndexChunk(chunk).get();
-                indexChunk.setOffset(indexChunk.getOffset() + this.getIndexGrowthAllocationSize());
-            }
-            headerManager.update();
         }
-        managedFileHandler.close();
+
+        this.releaseFileChannel(indexId, chunk);
 
         return new Pointer(Pointer.TYPE_NODE, allocatedOffset, chunk);
     }

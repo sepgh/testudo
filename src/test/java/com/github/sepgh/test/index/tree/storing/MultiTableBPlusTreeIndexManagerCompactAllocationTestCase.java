@@ -1,9 +1,8 @@
-package com.github.sepgh.testudo.index.tree.storing;
+package com.github.sepgh.test.index.tree.storing;
 
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.helper.IndexFileDescriptor;
 import com.github.sepgh.testudo.index.IndexManager;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
@@ -11,23 +10,21 @@ import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrappe
 import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.storage.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.CompactFileIndexStorageManager;
-import com.github.sepgh.testudo.storage.InMemoryHeaderManager;
 import com.github.sepgh.testudo.storage.IndexStorageManager;
-import com.github.sepgh.testudo.storage.header.Header;
-import com.github.sepgh.testudo.storage.header.HeaderManager;
+import com.github.sepgh.testudo.storage.header.JsonIndexHeaderManager;
+import com.github.sepgh.testudo.storage.pool.FileHandler;
+import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -40,7 +37,6 @@ import static com.github.sepgh.testudo.storage.CompactFileIndexStorageManager.IN
 public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
-    private Header header;
     private int degree = 4;
 
     @BeforeEach
@@ -55,57 +51,6 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
         byte[] writingBytes = new byte[6 * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES)];
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-
-        header = Header.builder()
-                .database("sample")
-                .tables(
-                        Arrays.asList(
-                                Header.Table.builder()
-                                        .id(1)
-                                        .name("test")
-                                        .chunks(
-                                                Collections.singletonList(
-                                                        Header.IndexChunk.builder()
-                                                                .chunk(0)
-                                                                .offset(0)
-                                                                .build()
-                                                )
-                                        )
-                                        .root(
-                                                Header.IndexChunk.builder()
-                                                        .chunk(0)
-                                                        .offset(0)
-                                                        .build()
-                                        )
-                                        .initialized(true)
-                                        .build(),
-                                Header.Table.builder()
-                                        .id(2)
-                                        .name("test2")
-                                        .chunks(
-                                                Collections.singletonList(
-                                                        Header.IndexChunk.builder()
-                                                                .chunk(0)
-                                                                .offset(3L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES))
-                                                                .build()
-                                                )
-                                        )
-                                        .root(
-                                                Header.IndexChunk.builder()
-                                                        .chunk(0)
-                                                        .offset(0)
-                                                        .build()
-                                        )
-                                        .initialized(true)
-                                        .build()
-                        )
-                )
-                .build();
-
-        Assertions.assertTrue(header.getTableOfId(1).isPresent());
-        Assertions.assertTrue(header.getTableOfId(1).get().getIndexChunk(0).isPresent());
-        Assertions.assertTrue(header.getTableOfId(2).isPresent());
-        Assertions.assertTrue(header.getTableOfId(2).get().getIndexChunk(0).isPresent());
     }
 
     @AfterEach
@@ -116,6 +61,16 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
             Path indexPath1 = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
             Files.delete(indexPath1);
         } catch (NoSuchFileException ignored){}
+    }
+
+    private CompactFileIndexStorageManager getCompactFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
+        return new CompactFileIndexStorageManager(
+                dbPath,
+                "test",
+                new JsonIndexHeaderManager.Factory(),
+                engineConfig,
+                new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
+        );
     }
 
 
@@ -150,8 +105,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        CompactFileIndexStorageManager compactFileIndexStorageManager = getCompactFileIndexStorageManager();
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
 
 
@@ -176,20 +130,8 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        CompactFileIndexStorageManager compactFileIndexStorageManager = getCompactFileIndexStorageManager();
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
-
-        IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
-                AsynchronousFileChannel.open(
-                        Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0)),
-                        StandardOpenOption.READ,
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.CREATE
-                ),
-                headerManager,
-                engineConfig
-        );
 
         int index = 0;
         int runs = 0;
@@ -198,7 +140,6 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
             indexManager.addIndex(2, testIdentifiers.get(index) * 10, samplePointer);
             index++;
             runs++;
-            indexFileDescriptor.describe(new LongImmutableBinaryObjectWrapper());
         }
 
 
@@ -249,27 +190,13 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
 
-        HeaderManager headerManager = new InMemoryHeaderManager(header);
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(dbPath, headerManager, engineConfig, BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        CompactFileIndexStorageManager compactFileIndexStorageManager = getCompactFileIndexStorageManager();
         IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
-
-
-        IndexFileDescriptor indexFileDescriptor = new IndexFileDescriptor(
-                AsynchronousFileChannel.open(
-                        Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0)),
-                        StandardOpenOption.READ,
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.CREATE
-                ),
-                headerManager,
-                engineConfig
-        );
 
         for (int tableId = 1; tableId <= 2; tableId++){
 
             for (long testIdentifier : testIdentifiers) {
                 indexManager.addIndex(tableId, testIdentifier, samplePointer);
-                indexFileDescriptor.describe(new LongImmutableBinaryObjectWrapper());
             }
 
             Optional<IndexStorageManager.NodeData> optional = compactFileIndexStorageManager.getRoot(tableId).get();

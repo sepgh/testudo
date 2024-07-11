@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutionException;
 public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements IndexIOSession<K> {
     @Getter
     protected final IndexStorageManager indexStorageManager;
-    protected final int table;
+    protected final int indexId;
     protected final Set<Pointer> updated = new HashSet<>();
     protected final Map<Pointer, AbstractTreeNode<K>> pool = new HashMap<>();
     protected final Map<Pointer, AbstractTreeNode<K>> original = new HashMap<>();
@@ -24,9 +24,9 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
     protected AbstractTreeNode<K> root;
     private final NodeFactory<K> nodeFactory;
 
-    public MemorySnapshotIndexIOSession(IndexStorageManager indexStorageManager, int table, NodeFactory<K> nodeFactory) {
+    public MemorySnapshotIndexIOSession(IndexStorageManager indexStorageManager, int indexId, NodeFactory<K> nodeFactory) {
         this.indexStorageManager = indexStorageManager;
-        this.table = table;
+        this.indexId = indexId;
         this.nodeFactory = nodeFactory;
     }
 
@@ -35,7 +35,7 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
         if (root == null){
             Optional<IndexStorageManager.NodeData> optional = null;
             try {
-                optional = indexStorageManager.getRoot(table).get();
+                optional = indexStorageManager.getRoot(indexId).get();
             } catch (InterruptedException | ExecutionException e) {
                 throw new InternalOperationException(e);
             }
@@ -55,7 +55,7 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
     public IndexStorageManager.NodeData write(AbstractTreeNode<K> node) throws InternalOperationException {
         IndexStorageManager.NodeData nodeData = null;
         try {
-            nodeData = IndexTreeNodeIO.write(indexStorageManager, table, node).get();
+            nodeData = IndexTreeNodeIO.write(indexStorageManager, indexId, node).get();
         } catch (InterruptedException | ExecutionException | IOException e) {
             throw new InternalOperationException(e);
         }
@@ -79,7 +79,7 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
 
         AbstractTreeNode<K> baseClusterTreeNode = null;
         try {
-            baseClusterTreeNode = IndexTreeNodeIO.read(indexStorageManager, table, pointer, nodeFactory);
+            baseClusterTreeNode = IndexTreeNodeIO.read(indexStorageManager, indexId, pointer, nodeFactory);
         } catch (ExecutionException | InterruptedException | IOException e) {
             throw new InternalOperationException(e);
         }
@@ -113,7 +113,7 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
     public void commit() throws InternalOperationException {
         for (Pointer pointer : deleted) {
             try {
-                IndexTreeNodeIO.remove(indexStorageManager, table, pointer);
+                IndexTreeNodeIO.remove(indexStorageManager, indexId, pointer);
             } catch (ExecutionException | InterruptedException e) {
                 try {
                     this.rollback();
@@ -126,7 +126,7 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
         try {
             for (Pointer pointer : updated) {
                 try {
-                    IndexTreeNodeIO.update(indexStorageManager, table, pool.get(pointer));
+                    IndexTreeNodeIO.update(indexStorageManager, indexId, pool.get(pointer));
                 } catch (ExecutionException e) {
                     throw new InternalOperationException(e);
                 }
@@ -143,16 +143,16 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
 
     protected void rollback() throws IOException, InterruptedException, ExecutionException {
         for (Pointer pointer : deleted) {
-            IndexTreeNodeIO.update(indexStorageManager, table, original.get(pointer));
+            IndexTreeNodeIO.update(indexStorageManager, indexId, original.get(pointer));
         }
 
         for (Pointer pointer : updated) {
             AbstractTreeNode<K> baseClusterTreeNode = original.get(pointer);
-            IndexTreeNodeIO.update(indexStorageManager, table, baseClusterTreeNode);
+            IndexTreeNodeIO.update(indexStorageManager, indexId, baseClusterTreeNode);
         }
 
         for (Pointer pointer : created) {
-            IndexTreeNodeIO.remove(indexStorageManager, table, pointer);
+            IndexTreeNodeIO.remove(indexStorageManager, indexId, pointer);
         }
     }
 
@@ -169,8 +169,8 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
         }
 
         @Override
-        public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, NodeFactory<K> nodeFactory) {
-            return new MemorySnapshotIndexIOSession<>(indexStorageManager, table, nodeFactory);
+        public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int indexId, NodeFactory<K> nodeFactory) {
+            return new MemorySnapshotIndexIOSession<>(indexStorageManager, indexId, nodeFactory);
         }
     }
 
