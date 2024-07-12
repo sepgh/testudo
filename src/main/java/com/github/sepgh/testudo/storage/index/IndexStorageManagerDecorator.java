@@ -1,4 +1,4 @@
-package com.github.sepgh.testudo.storage;
+package com.github.sepgh.testudo.storage.index;
 
 import com.github.sepgh.testudo.index.Pointer;
 

@@ -13,11 +13,11 @@ import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.*;
-import com.github.sepgh.testudo.storage.BTreeSizeCalculator;
-import com.github.sepgh.testudo.storage.CompactFileIndexStorageManager;
-import com.github.sepgh.testudo.storage.IndexStorageManager;
-import com.github.sepgh.testudo.storage.IndexTreeNodeIO;
-import com.github.sepgh.testudo.storage.header.JsonIndexHeaderManager;
+import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
+import com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager;
+import com.github.sepgh.testudo.storage.index.IndexStorageManager;
+import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
+import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 import org.junit.jupiter.api.AfterEach;
@@ -33,7 +33,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.concurrent.ExecutionException;
 
 import static com.github.sepgh.testudo.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
-import static com.github.sepgh.testudo.storage.BaseFileIndexStorageManager.INDEX_FILE_NAME;
+import static com.github.sepgh.testudo.storage.index.BaseFileIndexStorageManager.INDEX_FILE_NAME;
 
 public class ImmutableBinaryObjectWrapperTestCase {
     private Path dbPath;

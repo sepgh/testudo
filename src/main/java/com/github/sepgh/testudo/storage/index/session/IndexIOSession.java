@@ -1,9 +1,9 @@
-package com.github.sepgh.testudo.storage.session;
+package com.github.sepgh.testudo.storage.index.session;
 
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
-import com.github.sepgh.testudo.storage.IndexStorageManager;
+import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 
 import java.util.Optional;
 

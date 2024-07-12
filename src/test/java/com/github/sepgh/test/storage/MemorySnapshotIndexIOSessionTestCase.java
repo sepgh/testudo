@@ -9,15 +9,15 @@ import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.storage.BTreeSizeCalculator;
-import com.github.sepgh.testudo.storage.CompactFileIndexStorageManager;
-import com.github.sepgh.testudo.storage.IndexStorageManager;
-import com.github.sepgh.testudo.storage.header.JsonIndexHeaderManager;
+import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
+import com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager;
+import com.github.sepgh.testudo.storage.index.IndexStorageManager;
+import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
-import com.github.sepgh.testudo.storage.session.IndexIOSession;
-import com.github.sepgh.testudo.storage.session.IndexIOSessionFactory;
-import com.github.sepgh.testudo.storage.session.MemorySnapshotIndexIOSession;
+import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
+import com.github.sepgh.testudo.storage.index.session.IndexIOSessionFactory;
+import com.github.sepgh.testudo.storage.index.session.MemorySnapshotIndexIOSession;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;
@@ -29,7 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.ExecutionException;
 
-import static com.github.sepgh.testudo.storage.BaseFileIndexStorageManager.INDEX_FILE_NAME;
+import static com.github.sepgh.testudo.storage.index.BaseFileIndexStorageManager.INDEX_FILE_NAME;
 
 public class MemorySnapshotIndexIOSessionTestCase {
 

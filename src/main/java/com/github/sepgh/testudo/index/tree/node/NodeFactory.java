@@ -3,7 +3,7 @@ package com.github.sepgh.testudo.index.tree.node;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.storage.IndexStorageManager;
+import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 
 import static com.github.sepgh.testudo.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
 

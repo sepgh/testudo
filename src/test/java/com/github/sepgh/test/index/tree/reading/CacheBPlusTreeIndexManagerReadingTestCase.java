@@ -11,11 +11,11 @@ import com.github.sepgh.testudo.index.TableLevelAsyncIndexManagerDecorator;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.storage.BTreeSizeCalculator;
-import com.github.sepgh.testudo.storage.CachedIndexStorageManagerDecorator;
-import com.github.sepgh.testudo.storage.CompactFileIndexStorageManager;
-import com.github.sepgh.testudo.storage.IndexStorageManager;
-import com.github.sepgh.testudo.storage.header.JsonIndexHeaderManager;
+import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
+import com.github.sepgh.testudo.storage.index.CachedIndexStorageManagerDecorator;
+import com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager;
+import com.github.sepgh.testudo.storage.index.IndexStorageManager;
+import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 import org.junit.jupiter.api.Assertions;
@@ -30,7 +30,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-import static com.github.sepgh.testudo.storage.CompactFileIndexStorageManager.INDEX_FILE_NAME;
+import static com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager.INDEX_FILE_NAME;
 
 public class CacheBPlusTreeIndexManagerReadingTestCase {
     private Path dbPath;

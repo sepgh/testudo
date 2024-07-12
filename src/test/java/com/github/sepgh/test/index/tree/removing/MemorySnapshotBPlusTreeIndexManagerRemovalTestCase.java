@@ -7,8 +7,8 @@ import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.storage.IndexStorageManager;
-import com.github.sepgh.testudo.storage.session.MemorySnapshotIndexIOSession;
+import com.github.sepgh.testudo.storage.index.IndexStorageManager;
+import com.github.sepgh.testudo.storage.index.session.MemorySnapshotIndexIOSession;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 

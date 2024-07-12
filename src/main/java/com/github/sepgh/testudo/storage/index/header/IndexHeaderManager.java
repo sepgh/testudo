@@ -1,4 +1,4 @@
-package com.github.sepgh.testudo.storage.header;
+package com.github.sepgh.testudo.storage.index.header;
 
 import com.github.sepgh.testudo.index.Pointer;
 import lombok.AllArgsConstructor;

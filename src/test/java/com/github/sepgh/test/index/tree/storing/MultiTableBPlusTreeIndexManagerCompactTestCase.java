@@ -12,9 +12,9 @@ import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexMan
 import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.index.tree.node.data.PointerImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.storage.BTreeSizeCalculator;
-import com.github.sepgh.testudo.storage.CompactFileIndexStorageManager;
-import com.github.sepgh.testudo.storage.header.JsonIndexHeaderManager;
+import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
+import com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager;
+import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 import org.junit.jupiter.api.AfterEach;
@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import static com.github.sepgh.testudo.storage.CompactFileIndexStorageManager.INDEX_FILE_NAME;
+import static com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager.INDEX_FILE_NAME;
 
 public class MultiTableBPlusTreeIndexManagerCompactTestCase {
     private Path dbPath;

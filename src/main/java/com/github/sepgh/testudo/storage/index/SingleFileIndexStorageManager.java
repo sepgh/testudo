@@ -1,9 +1,9 @@
-package com.github.sepgh.testudo.storage;
+package com.github.sepgh.testudo.storage.index;
 
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.storage.header.IndexHeaderManager;
-import com.github.sepgh.testudo.storage.header.IndexHeaderManagerFactory;
+import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
+import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
 import com.github.sepgh.testudo.storage.pool.ManagedFileHandler;
 import com.github.sepgh.testudo.utils.FileUtils;

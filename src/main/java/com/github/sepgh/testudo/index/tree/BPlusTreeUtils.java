@@ -7,9 +7,9 @@ import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.storage.IndexStorageManager;
-import com.github.sepgh.testudo.storage.IndexTreeNodeIO;
-import com.github.sepgh.testudo.storage.session.IndexIOSession;
+import com.github.sepgh.testudo.storage.index.IndexStorageManager;
+import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
+import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
 
 import java.io.IOException;
 import java.util.List;

@@ -7,8 +7,8 @@ import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.index.tree.node.data.PointerImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.storage.IndexStorageManager;
-import com.github.sepgh.testudo.storage.IndexTreeNodeIO;
+import com.github.sepgh.testudo.storage.index.IndexStorageManager;
+import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
 import org.junit.jupiter.api.Assertions;
 
 import java.io.IOException;

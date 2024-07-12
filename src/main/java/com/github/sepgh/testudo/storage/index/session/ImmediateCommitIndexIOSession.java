@@ -1,11 +1,11 @@
-package com.github.sepgh.testudo.storage.session;
+package com.github.sepgh.testudo.storage.index.session;
 
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
-import com.github.sepgh.testudo.storage.IndexStorageManager;
-import com.github.sepgh.testudo.storage.IndexTreeNodeIO;
+import com.github.sepgh.testudo.storage.index.IndexStorageManager;
+import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
 import lombok.Getter;
 
 import java.io.IOException;

@@ -10,10 +10,10 @@ import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.index.tree.node.cluster.LeafClusterTreeNode;
 import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.storage.IndexStorageManager;
-import com.github.sepgh.testudo.storage.session.ImmediateCommitIndexIOSession;
-import com.github.sepgh.testudo.storage.session.IndexIOSession;
-import com.github.sepgh.testudo.storage.session.IndexIOSessionFactory;
+import com.github.sepgh.testudo.storage.index.IndexStorageManager;
+import com.github.sepgh.testudo.storage.index.session.ImmediateCommitIndexIOSession;
+import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
+import com.github.sepgh.testudo.storage.index.session.IndexIOSessionFactory;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import lombok.SneakyThrows;
 

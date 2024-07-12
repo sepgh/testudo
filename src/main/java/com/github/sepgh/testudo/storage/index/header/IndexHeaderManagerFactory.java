@@ -1,4 +1,4 @@
-package com.github.sepgh.testudo.storage.header;
+package com.github.sepgh.testudo.storage.index.header;
 
 import java.nio.file.Path;
 
