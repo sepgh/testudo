@@ -72,7 +72,7 @@ public class TreeNodeUtils {
     /**
      * @param treeNode to read/write from/to
      * @param index of the key we are looking for
-     * @return the offset where the key is found at
+     * @return the fileOffset where the key is found at
      */
     private static int getKeyStartOffset(AbstractTreeNode<?> treeNode, int index, int keySize, int valueSize) {
         if (!treeNode.isLeaf()){

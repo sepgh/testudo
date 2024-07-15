@@ -40,7 +40,7 @@ public class ExtendedFileIndexStorageManager extends BaseFileIndexStorageManager
         // Despite if it's a new chunk for this index or not, go to next chunk if file is already full
         AsynchronousFileChannel asynchronousFileChannel = this.acquireFileChannel(indexId, chunk);
         if (
-                this.engineConfig.getBTreeMaxFileSize() != EngineConfig.BTREE_UNLIMITED_FILE_SIZE &&
+                this.engineConfig.getBTreeMaxFileSize() != EngineConfig.UNLIMITED_FILE_SIZE &&
                         asynchronousFileChannel.size() >= this.engineConfig.getBTreeMaxFileSize()
         ) {
             this.releaseFileChannel(indexId, chunk);

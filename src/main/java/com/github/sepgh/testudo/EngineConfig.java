@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 @Data
 @AllArgsConstructor
 public class EngineConfig {
-    public static int BTREE_UNLIMITED_FILE_SIZE = -1;
+    public static int UNLIMITED_FILE_SIZE = -1;
     private final int bTreeDegree;
     private final int bTreeGrowthNodeAllocationCount;
     @Builder.Default
@@ -48,6 +48,13 @@ public class EngineConfig {
     private ClusterIndexKeyStrategy clusterIndexKeyStrategy = ClusterIndexKeyStrategy.LONG;
     @Builder.Default
     private OperationMode operationMode = OperationMode.ASYNC;
+    @Builder.Default
+    private int dbPageSize = 64000;  // Page size in bytes
+    @Builder.Default
+    private int dbPageBufferSize = 100;
+    @Builder.Default
+    private long dbPageMaxFileSize = UNLIMITED_FILE_SIZE;
+
 
     public enum OperationMode {
         ASYNC, SYNC

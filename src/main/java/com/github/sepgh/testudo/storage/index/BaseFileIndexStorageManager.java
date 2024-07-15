@@ -192,7 +192,7 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
 
         IndexHeaderManager.Location indexBeginningInChunk = this.getIndexBeginningInChunk(indexId, pointer.getChunk());
 
-        // setting pointer position according to the index offset. Reading table again since a new chunk may have been created
+        // setting pointer position according to the index fileOffset. Reading table again since a new chunk may have been created
         pointer.setPosition(offset - indexBeginningInChunk.getOffset());
 
         FileUtils.write(acquireFileChannel(indexId, pointer.getChunk()), offset, data).whenComplete((size, throwable) -> {
@@ -232,7 +232,7 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
      *      if file size is equal or greater than maximum file size try next chunk
      *      allocate space at end of the file and return pointer if the index is at end of the file
      *      otherwise, allocate space right before the next index in this chunk begins and push next tables to the end
-     *          also make sure to update possible roots and chunk indexes offset for next indexes
+     *          also make sure to update possible roots and chunk indexes fileOffset for next indexes
      * @param indexId index to allocate space in
      * @return Pointer to the beginning of allocated location
      */

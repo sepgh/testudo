@@ -51,7 +51,7 @@ public interface IndexHeaderManager {
         public String toString() {
             return "Location{" +
                     "chunk=" + chunk +
-                    ", offset=" + offset +
+                    ", fileOffset=" + offset +
                     '}';
         }
     }
