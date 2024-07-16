@@ -54,15 +54,14 @@ public class DBObjectWrapper {
     }
 
     public boolean isAlive() {
+
+        byte[] b = new byte[this.length];
+        System.arraycopy(wrappedData, this.begin, b, 0, this.length);
         return DBObjectWrapper.isAlive(this.wrappedData, this.begin);
     }
 
     public int getDataSize() {
         return DBObjectWrapper.getDataSize(this.wrappedData, this.begin);
-    }
-
-    public int getWrappedSize() {
-        return DBObjectWrapper.getWrappedSize(this.length);
     }
 
     public byte[] readData(int offset, int size) {

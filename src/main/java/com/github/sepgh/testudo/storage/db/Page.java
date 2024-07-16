@@ -4,6 +4,7 @@ package com.github.sepgh.testudo.storage.db;
 import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.utils.BinaryUtils;
 import com.google.common.collect.ImmutableList;
+import com.google.common.hash.HashCode;
 import com.google.common.primitives.Ints;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -114,5 +115,15 @@ public class Page {
     @Override
     public int hashCode() {
         return Objects.hash(getPageNumber(), getPageSize(), getChunk());
+    }
+
+    @Override
+    public String toString() {
+        return "Page{" +
+                "pageNumber=" + pageNumber +
+                ", pageSize=" + pageSize +
+                ", chunk=" + chunk +
+                ", cursorPosition=" + cursorPosition +
+                '}';
     }
 }

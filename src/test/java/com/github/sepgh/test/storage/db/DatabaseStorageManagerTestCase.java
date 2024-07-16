@@ -4,6 +4,7 @@ import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.storage.db.DBObjectWrapper;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.storage.db.Page;
@@ -20,9 +21,8 @@ import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class DatabaseStorageManagerTestCase {
 
@@ -109,7 +109,7 @@ public class DatabaseStorageManagerTestCase {
     }
 
     @Test
-    public void test_canStoreDeleteAndReuseObject() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
+    public void test_canStoreDeleteAndReuseObject() throws IOException, ExecutionException, InterruptedException {
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
         Pointer pointer = this.databaseStorageManager.store(17, data);
         Assertions.assertNotNull(pointer);
@@ -121,6 +121,84 @@ public class DatabaseStorageManagerTestCase {
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
+    }
+
+    @Test
+    public void test_canStoreDeleteAndReuseMultipleObjects() throws IOException, ExecutionException, InterruptedException {
+        List<String> inputs = Arrays.asList("10", "100", "1000", "10000");
+        List<Pointer> pointers = new ArrayList<>();
+
+        for (int i = 0; i < inputs.size(); i++) {
+            byte[] data = inputs.get(i).getBytes(StandardCharsets.UTF_8);
+            Pointer pointer = this.databaseStorageManager.store(17, data);
+            Assertions.assertNotNull(pointer);
+            pointers.add(i, pointer);
+        }
+
+        for (int i = 0; i < inputs.size(); i++){
+            Pointer pointer = pointers.get(i);
+            Optional<DBObjectWrapper> optionalDBObjectWrapper = this.databaseStorageManager.select(pointer);
+            Assertions.assertTrue(optionalDBObjectWrapper.isPresent());
+            Assertions.assertTrue(optionalDBObjectWrapper.get().isAlive());
+            Assertions.assertEquals(inputs.get(i), new String(optionalDBObjectWrapper.get().getData(), StandardCharsets.UTF_8));
+        }
+
+        for (Pointer pointer : pointers) {
+            this.databaseStorageManager.remove(pointer);
+            Optional<DBObjectWrapper> optionalDBObjectWrapper = this.databaseStorageManager.select(pointer);
+            Assertions.assertTrue(optionalDBObjectWrapper.isPresent());
+            Assertions.assertFalse(optionalDBObjectWrapper.get().isAlive());
+        }
+
+
+        for (int i = 0; i < inputs.size(); i++) {
+            byte[] data = inputs.get(i).getBytes(StandardCharsets.UTF_8);
+            Pointer pointer = this.databaseStorageManager.store(17, data);
+            Assertions.assertEquals(pointers.get(i), pointer);
+        }
+
+    }
+
+
+    @Test
+    public void test_multiThreadedInsertAndSelect() throws IOException, ExecutionException, InterruptedException {
+        int cases = 20;
+
+        ExecutorService executorService = Executors.newFixedThreadPool(cases);
+        List<AbstractLeafTreeNode.KeyValue<String, Pointer>> keyValues = new CopyOnWriteArrayList<>();
+
+        CountDownLatch countDownLatch = new CountDownLatch(cases);
+
+        for (int i = 0; i < cases; i++) {
+            executorService.submit(() -> {
+                Random random = new Random();
+                byte[] array = new byte[random.nextInt(100) + 1]; // length is bounded by 7
+                random.nextBytes(array);
+                String generatedString = new String(array, StandardCharsets.UTF_8);
+                try {
+                    byte[] generatedStringBytes = generatedString.getBytes(StandardCharsets.UTF_8);
+                    Pointer pointer = databaseStorageManager.store(1, generatedStringBytes);
+                    keyValues.add(new AbstractLeafTreeNode.KeyValue<>(generatedString, pointer));
+                } catch (IOException | InterruptedException | ExecutionException e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    countDownLatch.countDown();
+                }
+            });
+        }
+
+        countDownLatch.await();
+
+        for (AbstractLeafTreeNode.KeyValue<String, Pointer> keyValue : keyValues) {
+            Optional<DBObjectWrapper> dbObjectWrapper = this.databaseStorageManager.select(keyValue.value());
+            Assertions.assertTrue(dbObjectWrapper.isPresent());
+            Assertions.assertTrue(dbObjectWrapper.get().isAlive());
+            String value = new String(dbObjectWrapper.get().getData(), StandardCharsets.UTF_8);
+            Assertions.assertEquals(keyValue.key(), value);
+        }
+
+
+        executorService.shutdownNow();
     }
 
 }

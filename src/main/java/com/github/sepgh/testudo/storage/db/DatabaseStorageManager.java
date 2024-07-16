@@ -220,14 +220,14 @@ public class DatabaseStorageManager {
                     100,        // Todo
                     TimeUnit.SECONDS
             );
-            int size = this.engineConfig.getDbPageBufferSize();
+            int size = this.engineConfig.getDbPageSize();
             int offset = pageTitle.pageNumber() * size;
 
             byte[] data = FileUtils.readBytes(fileChannel, offset, size).get();
             fileHandlerPool.releaseFileChannel(path, 100, TimeUnit.SECONDS);
             return new Page(
                     pageTitle.pageNumber(),
-                    size - 1,
+                    size,
                     pageTitle.chunk(),
                     data
             );
