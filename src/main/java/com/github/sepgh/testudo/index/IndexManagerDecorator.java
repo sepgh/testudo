@@ -16,24 +16,24 @@ public class IndexManagerDecorator<K extends Comparable<K>, V extends Comparable
         this.indexManager = indexManager;
     }
 
-    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
-        return this.indexManager.addIndex(table, identifier, value);
+    public AbstractTreeNode<K> addIndex(int index, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
+        return this.indexManager.addIndex(index, identifier, value);
     }
-    public Optional<V> getIndex(int table, K identifier) throws InternalOperationException {
-        return this.indexManager.getIndex(table, identifier);
-    }
-
-    public boolean removeIndex(int table, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
-        return this.indexManager.removeIndex(table, identifier);
+    public Optional<V> getIndex(int index, K identifier) throws InternalOperationException {
+        return this.indexManager.getIndex(index, identifier);
     }
 
-    @Override
-    public int size(int table) throws InternalOperationException {
-        return this.indexManager.size(table);
+    public boolean removeIndex(int index, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+        return this.indexManager.removeIndex(index, identifier);
     }
 
     @Override
-    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator(int table) throws InternalOperationException {
-        return this.indexManager.getSortedIterator(table);
+    public int size(int index) throws InternalOperationException {
+        return this.indexManager.size(index);
+    }
+
+    @Override
+    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator(int index) throws InternalOperationException {
+        return this.indexManager.getSortedIterator(index);
     }
 }

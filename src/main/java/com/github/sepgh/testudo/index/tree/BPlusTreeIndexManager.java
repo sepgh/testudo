@@ -68,17 +68,17 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
     }
 
     @Override
-    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
-        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table, nodeFactory);
+    public AbstractTreeNode<K> addIndex(int index, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
+        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, index, nodeFactory);
         AbstractTreeNode<K> root = getRoot(indexIOSession);
         return new BPlusTreeIndexCreateOperation<>(degree, indexIOSession, keyImmutableBinaryObjectWrapper, valueImmutableBinaryObjectWrapper).addIndex(root, identifier, value);
     }
 
     @Override
-    public Optional<V> getIndex(int table, K identifier) throws InternalOperationException {
-        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table, nodeFactory);
+    public Optional<V> getIndex(int index, K identifier) throws InternalOperationException {
+        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, index, nodeFactory);
 
-        AbstractLeafTreeNode<K, V> baseTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, table, degree, nodeFactory, valueImmutableBinaryObjectWrapper);
+        AbstractLeafTreeNode<K, V> baseTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, index, degree, nodeFactory, valueImmutableBinaryObjectWrapper);
         for (AbstractLeafTreeNode.KeyValue<K, V> entry : baseTreeNode.getKeyValueList(degree)) {
             if (entry.key() == identifier)
                 return Optional.of(entry.value());
@@ -88,19 +88,19 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
     }
 
     @Override
-    public boolean removeIndex(int table, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
-        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table, nodeFactory);
+    public boolean removeIndex(int index, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, index, nodeFactory);
         AbstractTreeNode<K> root = getRoot(indexIOSession);
-        return new BPlusTreeIndexDeleteOperation<>(degree, table, indexIOSession, valueImmutableBinaryObjectWrapper, nodeFactory).removeIndex(root, identifier);
+        return new BPlusTreeIndexDeleteOperation<>(degree, index, indexIOSession, valueImmutableBinaryObjectWrapper, nodeFactory).removeIndex(root, identifier);
     }
 
     @Override
-    public int size(int table) throws InternalOperationException {
-        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table, nodeFactory);
+    public int size(int index) throws InternalOperationException {
+        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, index, nodeFactory);
 
         Optional<IndexStorageManager.NodeData> optionalNodeData = null;
         try {
-            optionalNodeData = this.indexStorageManager.getRoot(table).get();
+            optionalNodeData = this.indexStorageManager.getRoot(index).get();
         } catch (InterruptedException | ExecutionException e) {
             throw new InternalOperationException(e);
         }
@@ -130,8 +130,8 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
     }
 
     @Override
-    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator(int table) throws InternalOperationException {
-        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table, nodeFactory);
+    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator(int index) throws InternalOperationException {
+        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, index, nodeFactory);
 
         return new LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>>() {
             @Override
@@ -143,7 +143,7 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
             }
 
             private int keyIndex = 0;
-            AbstractLeafTreeNode<K, V> currentLeaf = getFarLeftLeaf(table);
+            AbstractLeafTreeNode<K, V> currentLeaf = getFarLeftLeaf(index);
 
             @Override
             public boolean hasNext() {
@@ -171,8 +171,8 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
         };
     }
 
-    protected AbstractLeafTreeNode<K, V> getFarLeftLeaf(int table) throws InternalOperationException {
-        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, table, nodeFactory);
+    protected AbstractLeafTreeNode<K, V> getFarLeftLeaf(int index) throws InternalOperationException {
+        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, index, nodeFactory);
         AbstractTreeNode<K> root = getRoot(indexIOSession);
         if (root.isLeaf())
             return (AbstractLeafTreeNode<K, V>) root;

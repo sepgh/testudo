@@ -51,7 +51,7 @@ public class BPlusTreeUtils {
         }
     }
 
-    public static <K extends Comparable<K>, V extends Comparable<V>> AbstractLeafTreeNode<K, V> getResponsibleNode(IndexStorageManager indexStorageManager, AbstractTreeNode<K> node, K identifier, int table, int degree, NodeFactory<K> nodeFactory, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper) throws InternalOperationException {
+    public static <K extends Comparable<K>, V extends Comparable<V>> AbstractLeafTreeNode<K, V> getResponsibleNode(IndexStorageManager indexStorageManager, AbstractTreeNode<K> node, K identifier, int index, int degree, NodeFactory<K> nodeFactory, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper) throws InternalOperationException {
         if (node.isLeaf()){
             return (AbstractLeafTreeNode<K, V>) node;
         }
@@ -74,9 +74,9 @@ public class BPlusTreeUtils {
             if (flag) {
                 return getResponsibleNode(
                         indexStorageManager,
-                        IndexTreeNodeIO.read(indexStorageManager, table, childrenList.get(i), nodeFactory),
+                        IndexTreeNodeIO.read(indexStorageManager, index, childrenList.get(i), nodeFactory),
                         identifier,
-                        table,
+                        index,
                         degree,
                         nodeFactory,
                         valueImmutableBinaryObjectWrapper
@@ -84,9 +84,9 @@ public class BPlusTreeUtils {
             } else {
                 return getResponsibleNode(
                         indexStorageManager,
-                        IndexTreeNodeIO.read(indexStorageManager, table, childrenList.getLast(), nodeFactory),
+                        IndexTreeNodeIO.read(indexStorageManager, index, childrenList.getLast(), nodeFactory),
                         identifier,
-                        table,
+                        index,
                         degree,
                         nodeFactory,
                         valueImmutableBinaryObjectWrapper

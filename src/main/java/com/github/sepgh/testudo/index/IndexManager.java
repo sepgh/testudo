@@ -10,9 +10,9 @@ import com.github.sepgh.testudo.utils.LockableIterator;
 import java.util.Optional;
 
 public interface IndexManager<K extends Comparable<K>, V extends Comparable<V>> {
-    AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws IndexExistsException, InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue;
-    Optional<V> getIndex(int table, K identifier) throws InternalOperationException;
-    boolean removeIndex(int table, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue;
-    int size(int table) throws InternalOperationException;
-    LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator(int table) throws InternalOperationException;
+    AbstractTreeNode<K> addIndex(int index, K identifier, V value) throws IndexExistsException, InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue;
+    Optional<V> getIndex(int index, K identifier) throws InternalOperationException;
+    boolean removeIndex(int index, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue;
+    int size(int index) throws InternalOperationException;
+    LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator(int index) throws InternalOperationException;
 }

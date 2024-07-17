@@ -19,38 +19,38 @@ public class DBLevelAsyncIndexManagerDecorator<K extends Comparable<K>, V extend
     }
     
     @Override
-    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
+    public AbstractTreeNode<K> addIndex(int index, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
         writeLock.lock();
         try {
-            return super.addIndex(table, identifier, value);
+            return super.addIndex(index, identifier, value);
         } finally {
             writeLock.unlock();
         }
     }
 
     @Override
-    public Optional<V> getIndex(int table, K identifier) throws InternalOperationException {
+    public Optional<V> getIndex(int index, K identifier) throws InternalOperationException {
         readLock.lock();
         try {
-            return super.getIndex(table, identifier);
+            return super.getIndex(index, identifier);
         } finally {
             readLock.unlock();
         }
     }
 
     @Override
-    public boolean removeIndex(int table, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public boolean removeIndex(int index, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         writeLock.lock();
         try {
-            return super.removeIndex(table, identifier);
+            return super.removeIndex(index, identifier);
         } finally {
             writeLock.unlock();
         }
     }
 
     @Override
-    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator(int table) throws InternalOperationException {
-        LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> iterator = super.getSortedIterator(table);
+    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator(int index) throws InternalOperationException {
+        LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> iterator = super.getSortedIterator(index);
         return new LockableIterator<>() {
             @Override
             public void lock() {

@@ -18,47 +18,47 @@ public class TableLevelAsyncIndexManagerDecorator<K extends Comparable<K>, V ext
         super(indexManager);
     }
 
-    protected LockManager getLockManager(int table){
-        return lockManagerPool.computeIfAbsent(table, integer -> new LockManager());
+    protected LockManager getLockManager(int index){
+        return lockManagerPool.computeIfAbsent(index, integer -> new LockManager());
     }
 
     @Override
-    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
-        LockManager lockManager = getLockManager(table);
+    public AbstractTreeNode<K> addIndex(int index, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
+        LockManager lockManager = getLockManager(index);
         lockManager.writeLock.lock();
         try {
-            return super.addIndex(table, identifier, value);
+            return super.addIndex(index, identifier, value);
         } finally {
             lockManager.writeLock.unlock();
         }
     }
 
     @Override
-    public Optional<V> getIndex(int table, K identifier) throws InternalOperationException {
-        LockManager lockManager = getLockManager(table);
+    public Optional<V> getIndex(int index, K identifier) throws InternalOperationException {
+        LockManager lockManager = getLockManager(index);
         lockManager.readLock.lock();
         try {
-            return super.getIndex(table, identifier);
+            return super.getIndex(index, identifier);
         } finally {
             lockManager.readLock.unlock();
         }
     }
 
     @Override
-    public boolean removeIndex(int table, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
-        LockManager lockManager = getLockManager(table);
+    public boolean removeIndex(int index, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+        LockManager lockManager = getLockManager(index);
         lockManager.writeLock.lock();
         try {
-            return super.removeIndex(table, identifier);
+            return super.removeIndex(index, identifier);
         } finally {
             lockManager.writeLock.unlock();
         }
     }
 
     @Override
-    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator(int table) throws InternalOperationException {
-        LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> iterator = super.getSortedIterator(table);
-        LockManager lockManager = getLockManager(table);
+    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator(int index) throws InternalOperationException {
+        LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> iterator = super.getSortedIterator(index);
+        LockManager lockManager = getLockManager(index);
         return new LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>>() {
             @Override
             public void lock() {

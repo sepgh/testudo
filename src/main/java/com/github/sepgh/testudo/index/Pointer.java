@@ -8,7 +8,7 @@ import lombok.Data;
 import java.util.Objects;
 
 /*
-   A pointer may point to where data begins (on table) or to another node
+   A pointer may point to where data begins (on index) or to another node
    Binary size of pointer:  1byte type  +  8bytes position   +  4bytes chunk  = 13bytes
 */
 
@@ -95,7 +95,7 @@ public class Pointer implements Comparable<Pointer> {
     }
 
 
-    // This doesn't make much sense if single file for multiple table indexes is used
+    // This doesn't make much sense if single file for multiple index indexes is used
     @Override
     public int compareTo(Pointer other) {
         if (this.chunk < other.chunk)

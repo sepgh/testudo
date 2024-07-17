@@ -27,40 +27,40 @@ public class CachedIndexManagerDecorator<K extends Comparable<K>, V extends Comp
     }
 
     @Override
-    public AbstractTreeNode<K> addIndex(int table, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
-        AbstractTreeNode<K> baseClusterTreeNode = super.addIndex(table, identifier, value);
-        cache.put(new TableIdentifier<>(table, identifier), value);
-        sizeCache.computeIfPresent(table, (k, v) -> v + 1);
+    public AbstractTreeNode<K> addIndex(int index, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
+        AbstractTreeNode<K> baseClusterTreeNode = super.addIndex(index, identifier, value);
+        cache.put(new TableIdentifier<>(index, identifier), value);
+        sizeCache.computeIfPresent(index, (k, v) -> v + 1);
         return baseClusterTreeNode;
     }
 
     @Override
-    public Optional<V> getIndex(int table, K identifier) throws InternalOperationException {
-        TableIdentifier<K> lookup = new TableIdentifier<>(table, identifier);
+    public Optional<V> getIndex(int index, K identifier) throws InternalOperationException {
+        TableIdentifier<K> lookup = new TableIdentifier<>(index, identifier);
         V optionalPointer = cache.getIfPresent(lookup);
         if (optionalPointer != null)
             return Optional.of(optionalPointer);
-        Optional<V> output = super.getIndex(table, identifier);
+        Optional<V> output = super.getIndex(index, identifier);
         output.ifPresent(value -> cache.put(lookup, value));
         return output;
     }
 
     @Override
-    public boolean removeIndex(int table, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
-        if (super.removeIndex(table, identifier)) {
-            cache.invalidate(new TableIdentifier<>(table, identifier));
-            sizeCache.computeIfPresent(table, (k, v) -> v - 1);
+    public boolean removeIndex(int index, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+        if (super.removeIndex(index, identifier)) {
+            cache.invalidate(new TableIdentifier<>(index, identifier));
+            sizeCache.computeIfPresent(index, (k, v) -> v - 1);
             return true;
         }
         return false;
     }
 
     @Override
-    public int size(int table) throws InternalOperationException {
+    public int size(int index) throws InternalOperationException {
         AtomicReference<InternalOperationException> atomicExceptionReference = new AtomicReference<>();
-        int size = sizeCache.computeIfAbsent(table, key -> {
+        int size = sizeCache.computeIfAbsent(index, key -> {
             try {
-                return super.size(table);
+                return super.size(index);
             } catch (InternalOperationException e) {
                 atomicExceptionReference.set(e);
                 return -1;
@@ -74,18 +74,18 @@ public class CachedIndexManagerDecorator<K extends Comparable<K>, V extends Comp
         return size;
     }
 
-    public record TableIdentifier<K extends Comparable<K>>(int table, K identifier){
+    public record TableIdentifier<K extends Comparable<K>>(int index, K identifier){
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             TableIdentifier<K> that = (TableIdentifier<K>) o;
-            return table == that.table && identifier == that.identifier;
+            return index == that.index && identifier == that.identifier;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(table, identifier);
+            return Objects.hash(index, identifier);
         }
     }
 
