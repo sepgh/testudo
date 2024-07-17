@@ -43,6 +43,7 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
     public void setUp() throws IOException {
         dbPath = Files.createTempDirectory("TEST_MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase");
         engineConfig = EngineConfig.builder()
+                .baseDBPath(dbPath.toString())
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(10)
                 .build();
@@ -60,7 +61,6 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
 
     private SingleFileIndexStorageManager getSingleFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
         return new SingleFileIndexStorageManager(
-                dbPath,
                 new JsonIndexHeaderManager.Factory(),
                 engineConfig,
                 new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())

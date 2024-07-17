@@ -15,12 +15,12 @@ import java.util.concurrent.ExecutionException;
 
 public class ExtendedFileIndexStorageManager extends BaseFileIndexStorageManager {
 
-    public ExtendedFileIndexStorageManager(Path path, String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) throws IOException, ExecutionException, InterruptedException {
-        super(path, customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
+    public ExtendedFileIndexStorageManager(String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) throws IOException, ExecutionException, InterruptedException {
+        super(customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
     }
 
-    public ExtendedFileIndexStorageManager(Path path, String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpace) throws IOException, ExecutionException, InterruptedException {
-        super(path, customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool, binarySpace);
+    public ExtendedFileIndexStorageManager(String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpace) throws IOException, ExecutionException, InterruptedException {
+        super(customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool, binarySpace);
     }
 
     protected Path getIndexFilePath(int indexId, int chunk) {

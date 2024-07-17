@@ -41,6 +41,7 @@ public class MemorySnapshotIndexIOSessionTestCase {
     public void setUp() throws IOException {
         dbPath = Files.createTempDirectory("TEST_MemorySnapshotIndexIOSessionTestCase");
         engineConfig = EngineConfig.builder()
+                .baseDBPath(dbPath.toString())
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(5)
                 .build();
@@ -63,7 +64,6 @@ public class MemorySnapshotIndexIOSessionTestCase {
 
     private CompactFileIndexStorageManager getCompactFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
         return new CompactFileIndexStorageManager(
-                dbPath,
                 "test",
                 new JsonIndexHeaderManager.Factory(),
                 engineConfig,

@@ -44,6 +44,7 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
     public void setUp() throws IOException {
         dbPath = Files.createTempDirectory("TEST_MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase");
         engineConfig = EngineConfig.builder()
+                .baseDBPath(dbPath.toString())
                 .bTreeDegree(degree)
                 .fileAcquireTimeout(1)
                 .fileAcquireUnit(TimeUnit.SECONDS)
@@ -66,7 +67,6 @@ public class MultiTableBPlusTreeIndexManagerExtendedAllocationAndChunkTestCase {
 
     private ExtendedFileIndexStorageManager getExtendedFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
         return new ExtendedFileIndexStorageManager(
-                dbPath,
                 "test",
                 new JsonIndexHeaderManager.Factory(),
                 engineConfig,

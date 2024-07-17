@@ -33,25 +33,23 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
     private final String ROOT_UPDATE_RUNTIME_ERR_STR = "Failed to update root after writing a node. Your header at %s may be broken for: %s";
 
     public BaseFileIndexStorageManager(
-            Path path,
             @Nullable String customName,
             IndexHeaderManagerFactory indexHeaderManagerFactory,
             EngineConfig engineConfig,
             FileHandlerPool fileHandlerPool
     ) {
-        this(path, customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool,
+        this(customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool,
                 BTreeSizeCalculator.getClusteredBPlusTreeSize(engineConfig.getBTreeDegree(), engineConfig.getClusterIndexKeyStrategy().getSize()));
     }
 
     public BaseFileIndexStorageManager(
-            Path path,
             @Nullable String customName,
             IndexHeaderManagerFactory indexHeaderManagerFactory,
             EngineConfig engineConfig,
             FileHandlerPool fileHandlerPool,
             int binarySpace
     ) {
-        this.path = path;
+        this.path = Path.of(engineConfig.getBaseDBPath());
         this.customName = customName;
         this.indexHeaderManager = indexHeaderManagerFactory.getInstance(this.getHeaderPath());
         this.engineConfig = engineConfig;
@@ -60,17 +58,16 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
     }
 
     public BaseFileIndexStorageManager(
-            Path path,
             IndexHeaderManagerFactory indexHeaderManagerFactory,
             EngineConfig engineConfig,
             FileHandlerPool fileHandlerPool,
             int binarySpace
     ) {
-        this(path, null, indexHeaderManagerFactory, engineConfig, fileHandlerPool, binarySpace);
+        this(null, indexHeaderManagerFactory, engineConfig, fileHandlerPool, binarySpace);
     }
 
-    public BaseFileIndexStorageManager(Path path, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, int binarySpace) {
-        this(path, null, indexHeaderManagerFactory, engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()), binarySpace);
+    public BaseFileIndexStorageManager(IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, int binarySpace) {
+        this(null, indexHeaderManagerFactory, engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()), binarySpace);
     }
 
     protected int getIndexGrowthAllocationSize(){

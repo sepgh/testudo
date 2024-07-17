@@ -43,6 +43,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
     public void setUp() throws IOException {
         dbPath = Files.createTempDirectory("TEST_MultiTableBTreeIndexManagerAllocationTestCase");
         engineConfig = EngineConfig.builder()
+                .baseDBPath(dbPath.toString())
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
                 .build();
@@ -65,7 +66,6 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationTestCase {
 
     private CompactFileIndexStorageManager getCompactFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
         return new CompactFileIndexStorageManager(
-                dbPath,
                 "test",
                 new JsonIndexHeaderManager.Factory(),
                 engineConfig,

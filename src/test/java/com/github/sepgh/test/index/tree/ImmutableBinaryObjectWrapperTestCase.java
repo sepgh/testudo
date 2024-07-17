@@ -45,6 +45,7 @@ public class ImmutableBinaryObjectWrapperTestCase {
         dbPath = Files.createTempDirectory("TEST_BinaryObjectWrapperTestCase");
 
         engineConfig = EngineConfig.builder()
+                .baseDBPath(dbPath.toString())
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
                 .baseDBPath(dbPath.toString())
@@ -63,7 +64,6 @@ public class ImmutableBinaryObjectWrapperTestCase {
 
     private CompactFileIndexStorageManager getStorageManager() throws IOException, ExecutionException, InterruptedException {
         return new CompactFileIndexStorageManager(
-                dbPath,
                 "test",
                 new JsonIndexHeaderManager.Factory(),
                 engineConfig,
@@ -153,7 +153,6 @@ public class ImmutableBinaryObjectWrapperTestCase {
     @Test
     public void test_CustomBinaryObjectWrapper() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
         CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(
-                dbPath,
                 "Test",
                 new JsonIndexHeaderManager.Factory(),
                 engineConfig,

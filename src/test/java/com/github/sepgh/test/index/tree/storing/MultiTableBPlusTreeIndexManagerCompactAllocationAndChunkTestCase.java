@@ -46,6 +46,7 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
     public void setUp() throws IOException {
         dbPath = Files.createTempDirectory("TEST_MultiTableBTreeIndexManagerAllocationAndChunkTestCase");
         engineConfig = EngineConfig.builder()
+                .baseDBPath(dbPath.toString())
                 .bTreeDegree(degree)
                 .fileAcquireTimeout(1)
                 .fileAcquireUnit(TimeUnit.SECONDS)
@@ -69,7 +70,6 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
 
     private CompactFileIndexStorageManager getCompactFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
         return new CompactFileIndexStorageManager(
-                dbPath,
                 "test",
                 new JsonIndexHeaderManager.Factory(),
                 engineConfig,

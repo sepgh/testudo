@@ -45,6 +45,7 @@ public class BPlusTreeIndexManagerTestCase {
     public void setUp() throws IOException {
         dbPath = Files.createTempDirectory("TEST_BTreeIndexManagerTestCase");
         engineConfig = EngineConfig.builder()
+                .baseDBPath(dbPath.toString())
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
                 .build();
@@ -67,7 +68,6 @@ public class BPlusTreeIndexManagerTestCase {
 
     private CompactFileIndexStorageManager getCompactFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
         return new CompactFileIndexStorageManager(
-                dbPath,
                 "test",
                 new JsonIndexHeaderManager.Factory(),
                 engineConfig,

@@ -16,16 +16,16 @@ import java.util.concurrent.ExecutionException;
 
 public class SingleFileIndexStorageManager extends BaseFileIndexStorageManager {
 
-    public SingleFileIndexStorageManager(Path path, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) {
-        super(path, null, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
+    public SingleFileIndexStorageManager(IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) {
+        super(null, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
     }
 
-    public SingleFileIndexStorageManager(Path path, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpaceMax) throws IOException, ExecutionException, InterruptedException {
-        super(path, indexHeaderManagerFactory, engineConfig, fileHandlerPool, binarySpaceMax);
+    public SingleFileIndexStorageManager(IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpaceMax) throws IOException, ExecutionException, InterruptedException {
+        super(indexHeaderManagerFactory, engineConfig, fileHandlerPool, binarySpaceMax);
     }
 
-    public SingleFileIndexStorageManager(Path path, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, int binarySpaceMax) throws IOException, ExecutionException, InterruptedException {
-        super(path, indexHeaderManagerFactory, engineConfig, binarySpaceMax);
+    public SingleFileIndexStorageManager(IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, int binarySpaceMax) throws IOException, ExecutionException, InterruptedException {
+        super(indexHeaderManagerFactory, engineConfig, binarySpaceMax);
     }
 
     protected Path getIndexFilePath(int indexId, int chunk) {

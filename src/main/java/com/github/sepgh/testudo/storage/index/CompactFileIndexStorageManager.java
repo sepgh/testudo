@@ -21,12 +21,12 @@ Todo: when a node is removed, depending on it's index and chunk we can keep a re
 
 public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager {
 
-    public CompactFileIndexStorageManager(Path path, String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) throws IOException, ExecutionException, InterruptedException {
-        super(path, customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
+    public CompactFileIndexStorageManager(String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) throws IOException, ExecutionException, InterruptedException {
+        super(customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
     }
 
-    public CompactFileIndexStorageManager(Path path, String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpace) throws IOException, ExecutionException, InterruptedException {
-        super(path, customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool, binarySpace);
+    public CompactFileIndexStorageManager(String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpace) throws IOException, ExecutionException, InterruptedException {
+        super(customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool, binarySpace);
     }
 
     protected Path getIndexFilePath(int indexId, int chunk) {
