@@ -60,7 +60,7 @@ public class ExtendedFileIndexStorageManager extends BaseFileIndexStorageManager
 
         long positionToCheck = asynchronousFileChannel.size() - this.getIndexGrowthAllocationSize();
 
-        if (positionToCheck > 0){
+        if (positionToCheck >= 0){
             // Check if we have an empty space
             byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, this.getIndexGrowthAllocationSize()).get();
             Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);

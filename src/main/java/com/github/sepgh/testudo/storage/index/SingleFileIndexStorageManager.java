@@ -44,7 +44,7 @@ public class SingleFileIndexStorageManager extends BaseFileIndexStorageManager {
         synchronized (this){
             // Check if we have an empty space
             long fileSize = asynchronousFileChannel.size();
-            if (fileSize > this.getIndexGrowthAllocationSize()){
+            if (fileSize >= this.getIndexGrowthAllocationSize()){
                 long positionToCheck = fileSize - this.getIndexGrowthAllocationSize();
 
                 byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, this.getIndexGrowthAllocationSize()).get();
