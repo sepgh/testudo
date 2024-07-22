@@ -31,5 +31,8 @@ public interface IndexStorageManager {
 
     boolean exists(int indexId);
 
+    default boolean supportsPurge(){return false;}
+    default void purgeIndex(int indexId){}
+
     record NodeData(Pointer pointer, byte[] bytes){}
 }

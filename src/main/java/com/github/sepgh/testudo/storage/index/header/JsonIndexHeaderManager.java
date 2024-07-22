@@ -117,6 +117,16 @@ public class JsonIndexHeaderManager implements IndexHeaderManager {
         return Optional.of(indexOffsets.get(currIndex + 1).getIndexId());
     }
 
+    @Override
+    public List<Integer> getChunksOfIndex(int indexId) {
+        List<Integer> chunks = new ArrayList<>();
+        Map<Integer, List<JHeader.IndexOffset>> chunkIndexOffset = this.jHeader.getChunkIndexOffset();
+        chunkIndexOffset.forEach((chunk, indexOffsets) -> {
+            indexOffsets.stream().filter(indexOffset -> indexOffset.indexId == indexId).findAny().ifPresent(indexOffset -> chunks.add(chunk));
+        });
+        return chunks;
+    }
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

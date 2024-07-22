@@ -15,4 +15,5 @@ public interface IndexManager<K extends Comparable<K>, V extends Comparable<V>> 
     boolean removeIndex(int index, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue;
     int size(int index) throws InternalOperationException;
     LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator(int index) throws InternalOperationException;
+    void purgeIndex(int index);
 }

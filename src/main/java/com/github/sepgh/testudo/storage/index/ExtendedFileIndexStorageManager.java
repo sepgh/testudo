@@ -9,6 +9,7 @@ import com.github.sepgh.testudo.utils.FileUtils;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -82,4 +83,24 @@ public class ExtendedFileIndexStorageManager extends BaseFileIndexStorageManager
         return new Pointer(Pointer.TYPE_NODE, allocatedOffset, chunk);
     }
 
+    @Override
+    public boolean supportsPurge() {
+        return true;
+    }
+
+    @Override
+    public void purgeIndex(int indexId) {
+        boolean run = true;
+        int chunk = 0;
+
+        while (run){
+            Path indexFilePath = getIndexFilePath(indexId, chunk);
+            try {
+                run = Files.deleteIfExists(indexFilePath);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            chunk++;
+        }
+    }
 }

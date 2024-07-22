@@ -171,6 +171,15 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
         };
     }
 
+    @Override
+    public void purgeIndex(int index) {
+        if (this.indexStorageManager.supportsPurge()) {
+            this.indexStorageManager.purgeIndex(index);
+        }
+
+        // Todo: traverse tree and remove nodes if storage manager doesnt support purge
+    }
+
     protected AbstractLeafTreeNode<K, V> getFarLeftLeaf(int index) throws InternalOperationException {
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, index, nodeFactory);
         AbstractTreeNode<K> root = getRoot(indexIOSession);

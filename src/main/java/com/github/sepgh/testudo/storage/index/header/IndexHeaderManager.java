@@ -24,6 +24,8 @@ public interface IndexHeaderManager {
 
     Optional<Integer> getNextIndexIdInChunk(int indexId, int chunk);
 
+    List<Integer> getChunksOfIndex(int indexId);
+
     @Data
     @AllArgsConstructor
     class Location {

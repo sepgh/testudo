@@ -5,7 +5,9 @@ import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
+import com.github.sepgh.testudo.storage.pool.ManagedFileHandler;
 import com.github.sepgh.testudo.utils.FileUtils;
+import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
@@ -130,4 +132,34 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
         return new Pointer(Pointer.TYPE_NODE, allocatedOffset, chunk);
     }
 
+    @Override
+    public boolean supportsPurge() {
+        return true;
+    }
+
+    @SneakyThrows
+    @Override
+    public void purgeIndex(int indexId) {
+        List<Integer> chunksOfIndex = this.indexHeaderManager.getChunksOfIndex(indexId);
+        for (Integer chunk : chunksOfIndex) {
+            Optional<IndexHeaderManager.Location> optionalLocation = this.indexHeaderManager.getIndexBeginningInChunk(indexId, chunk);
+            if (optionalLocation.isEmpty()) {continue;}
+
+            ManagedFileHandler managedFileHandler = this.getManagedFileHandler(indexId, chunk);
+
+            IndexHeaderManager.Location location = optionalLocation.get();
+            Optional<IndexHeaderManager.Location> nextIndexBeginningInChunk = this.indexHeaderManager.getNextIndexBeginningInChunk(indexId, chunk);
+            long size;
+            if (nextIndexBeginningInChunk.isPresent()) {
+                size = nextIndexBeginningInChunk.get().getOffset() - location.getOffset();
+
+            } else {
+                size = managedFileHandler.getAsynchronousFileChannel().size() - location.getOffset();
+            }
+            byte[] bytes = new byte[Math.toIntExact(size)];
+            FileUtils.write(managedFileHandler.getAsynchronousFileChannel(), location.getOffset(), bytes).get();
+
+            managedFileHandler.close();
+        }
+    }
 }

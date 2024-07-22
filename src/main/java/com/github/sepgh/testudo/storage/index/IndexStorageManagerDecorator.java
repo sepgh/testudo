@@ -55,4 +55,14 @@ public class IndexStorageManagerDecorator implements IndexStorageManager {
     public boolean exists(int indexId) {
         return this.decorated.exists(indexId);
     }
+
+    @Override
+    public void purgeIndex(int indexId) {
+        this.decorated.purgeIndex(indexId);
+    }
+
+    @Override
+    public boolean supportsPurge() {
+        return this.decorated.supportsPurge();
+    }
 }
