@@ -13,7 +13,7 @@ public class SchemeComparator {
     private final Scheme newScheme;
 
     // Todo: compare db name
-    public boolean Compare(SchemeComparisonListener comparisonListener) {
+    public boolean compare(SchemeComparisonListener comparisonListener) {
 
         // Cases where there are no changes
         if (oldScheme == newScheme || oldScheme.getVersion() == newScheme.getVersion()) {
