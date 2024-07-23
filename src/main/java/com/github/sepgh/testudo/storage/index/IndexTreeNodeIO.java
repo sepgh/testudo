@@ -3,6 +3,7 @@ package com.github.sepgh.testudo.storage.index;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
+import com.github.sepgh.testudo.utils.KVSize;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -17,7 +18,7 @@ public class IndexTreeNodeIO {
         CompletableFuture<IndexStorageManager.NodeData> output = new CompletableFuture<>();
 
         if (node.getPointer() == null){
-            indexStorageManager.writeNewNode(indexId, node.getData(), node.isRoot()).whenComplete((nodeData1, throwable) -> {
+            indexStorageManager.writeNewNode(indexId, node.getData(), node.isRoot(), node.getKVSize()).whenComplete((nodeData1, throwable) -> {
                 if (throwable != null){
                     output.completeExceptionally(throwable);
                     return;
@@ -39,19 +40,19 @@ public class IndexTreeNodeIO {
 
     // Todo: apparently `indexStorageManager.readNode(indexId, pointer).get()` can return empty byte[] in case file doesnt exist,
     //       in that case fromBytes() method of the node factory throw "ArrayIndexOutOfBoundsException: Index 0 out of bounds for length 0" during construction
-    public static <K extends Comparable<K>> AbstractTreeNode<K> read(IndexStorageManager indexStorageManager, int indexId, Pointer pointer, NodeFactory<K> nodeFactory) throws ExecutionException, InterruptedException, IOException {
-        return nodeFactory.fromNodeData(indexStorageManager.readNode(indexId, pointer).get());
+    public static <K extends Comparable<K>> AbstractTreeNode<K> read(IndexStorageManager indexStorageManager, int indexId, Pointer pointer, NodeFactory<K> nodeFactory, KVSize kvSize) throws ExecutionException, InterruptedException, IOException {
+        return nodeFactory.fromNodeData(indexStorageManager.readNode(indexId, pointer, kvSize).get());
     }
 
     public static <K extends Comparable<K>> void update(IndexStorageManager indexStorageManager, int indexId, AbstractTreeNode<K> node) throws InterruptedException, IOException, ExecutionException {
         indexStorageManager.updateNode(indexId, node.getData(), node.getPointer(), node.isRoot()).get();
     }
 
-    public static <E extends Comparable<E>> void remove(IndexStorageManager indexStorageManager, int indexId, AbstractTreeNode<E> node) throws ExecutionException, InterruptedException {
-        remove(indexStorageManager, indexId, node.getPointer());
+    public static <E extends Comparable<E>> void remove(IndexStorageManager indexStorageManager, int indexId, AbstractTreeNode<E> node, KVSize kvSize) throws ExecutionException, InterruptedException {
+        remove(indexStorageManager, indexId, node.getPointer(), kvSize);
     }
 
-    public static void remove(IndexStorageManager indexStorageManager, int indexId, Pointer pointer) throws ExecutionException, InterruptedException {
-        indexStorageManager.removeNode(indexId, pointer).get();
+    public static void remove(IndexStorageManager indexStorageManager, int indexId, Pointer pointer, KVSize kvSize) throws ExecutionException, InterruptedException {
+        indexStorageManager.removeNode(indexId, pointer, kvSize).get();
     }
 }

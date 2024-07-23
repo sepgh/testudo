@@ -4,7 +4,7 @@ import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.DBLevelAsyncIndexManagerDecorator;
+import com.github.sepgh.testudo.index.AsyncIndexManagerDecorator;
 import com.github.sepgh.testudo.index.IndexManager;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
@@ -101,13 +101,13 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
 
         for (int tableId = 1; tableId <= 2; tableId++){
             SingleFileIndexStorageManager singleFileIndexStorageManager = getSingleFileIndexStorageManager();
-            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, singleFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, singleFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
 
 
 
             AbstractTreeNode<Long> lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
-                lastTreeNode = indexManager.addIndex(tableId, testIdentifier, samplePointer);
+                lastTreeNode = indexManager.addIndex(testIdentifier, samplePointer);
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());
@@ -150,13 +150,13 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
         List<Long> testIdentifiers = Arrays.asList(1L, 4L, 9L, 6L, 10L, 8L, 3L, 2L, 11L, 5L, 7L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
         SingleFileIndexStorageManager singleFileIndexStorageManager = getSingleFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, singleFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
 
         for (int tableId = 1; tableId <= 2; tableId++){
+            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, singleFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
 
             AbstractTreeNode<Long> lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
-                lastTreeNode = indexManager.addIndex(tableId, testIdentifier, samplePointer);
+                lastTreeNode = indexManager.addIndex(testIdentifier, samplePointer);
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());
@@ -169,6 +169,8 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
 
     }
 
+
+    // Todo: this test failure proves that we need a mechanism for just a single lock around multiple index managers
     @Timeout(2)
     @Test
     public void testAddIndexDifferentAddOrdersOnDBLevelAsyncIndexManager_usingSingleFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
@@ -176,7 +178,8 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         SingleFileIndexStorageManager singleFileIndexStorageManager = getSingleFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager = new DBLevelAsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(degree, singleFileIndexStorageManager, new LongImmutableBinaryObjectWrapper()));
+        IndexManager<Long, Pointer> indexManager1 = new AsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(1, degree, singleFileIndexStorageManager, new LongImmutableBinaryObjectWrapper()));
+        IndexManager<Long, Pointer> indexManager2 = new AsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(2, degree, singleFileIndexStorageManager, new LongImmutableBinaryObjectWrapper()));
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         CountDownLatch countDownLatch = new CountDownLatch((2 * testIdentifiers.size()) - 2);
@@ -189,7 +192,7 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
         while (runs < testIdentifiers.size()){
             executorService.submit(() -> {
                 try {
-                    indexManager.addIndex(1, testIdentifiers.get(index1.getAndIncrement()), samplePointer);
+                    indexManager1.addIndex(testIdentifiers.get(index1.getAndIncrement()), samplePointer);
                     countDownLatch.countDown();
                 } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue | IndexExistsException |
                          InternalOperationException e) {
@@ -198,7 +201,7 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
             });
             executorService.submit(() -> {
                 try {
-                    indexManager.addIndex(2, testIdentifiers.get(index2.getAndIncrement()) * 10, samplePointer);
+                    indexManager2.addIndex(testIdentifiers.get(index2.getAndIncrement()) * 10, samplePointer);
                     countDownLatch.countDown();
                 } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue | IndexExistsException |
                          InternalOperationException e) {
@@ -211,6 +214,11 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
         countDownLatch.await();
 
         for (int tableId = 1; tableId <= 2; tableId++) {
+            IndexManager<Long, Pointer> currentIndexManager = null;
+            if (tableId == 1)
+                currentIndexManager = indexManager1;
+            else
+                currentIndexManager = indexManager2;
 
             int multi = 1;
             if (tableId == 2){
@@ -218,7 +226,7 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
             }
             // Cant verify structure but can check if all index are added
             for (Long testIdentifier : testIdentifiers) {
-                Assertions.assertTrue(indexManager.getIndex(tableId, testIdentifier * multi).isPresent());
+                Assertions.assertTrue(currentIndexManager.getIndex(testIdentifier * multi).isPresent(), "Index %d not present in manager %d".formatted(testIdentifier * multi, tableId));
             }
         }
 

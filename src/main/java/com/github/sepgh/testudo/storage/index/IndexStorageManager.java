@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.storage.index;
 
 import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.utils.KVSize;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -8,17 +9,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public interface IndexStorageManager {
-    CompletableFuture<Optional<NodeData>> getRoot(int indexId) throws InterruptedException;
+    CompletableFuture<Optional<NodeData>> getRoot(int indexId, KVSize kvSize) throws InterruptedException;
 
-    byte[] getEmptyNode();
-    default CompletableFuture<NodeData> readNode(int indexId, Pointer pointer) throws InterruptedException, IOException {
-        return this.readNode(indexId, pointer.getPosition(), pointer.getChunk());
+    byte[] getEmptyNode(KVSize kvSize);
+    default CompletableFuture<NodeData> readNode(int indexId, Pointer pointer, KVSize kvSize) throws InterruptedException, IOException {
+        return this.readNode(indexId, pointer.getPosition(), pointer.getChunk(), kvSize);
     }
-    CompletableFuture<NodeData> readNode(int indexId, long position, int chunk) throws InterruptedException, IOException;
+    CompletableFuture<NodeData> readNode(int indexId, long position, int chunk, KVSize kvSize) throws InterruptedException, IOException;
 
-    CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data, boolean isRoot) throws IOException, ExecutionException, InterruptedException;
-    default CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data) throws IOException, ExecutionException, InterruptedException {
-        return this.writeNewNode(indexId, data, false);
+    CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data, boolean isRoot, KVSize size) throws IOException, ExecutionException, InterruptedException;
+    default CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data, KVSize size) throws IOException, ExecutionException, InterruptedException {
+        return this.writeNewNode(indexId, data, false, size);
     }
     default CompletableFuture<Integer> updateNode(int indexId, byte[] data, Pointer pointer) throws IOException, InterruptedException {
         return this.updateNode(indexId, data, pointer, false);
@@ -27,7 +28,7 @@ public interface IndexStorageManager {
 
     void close() throws IOException;
 
-    CompletableFuture<Integer> removeNode(int indexId, Pointer pointer) throws InterruptedException;
+    CompletableFuture<Integer> removeNode(int indexId, Pointer pointer, KVSize size) throws InterruptedException;
 
     boolean exists(int indexId);
 

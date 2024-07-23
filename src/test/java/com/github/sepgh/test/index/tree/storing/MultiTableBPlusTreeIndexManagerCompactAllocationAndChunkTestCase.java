@@ -8,6 +8,7 @@ import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.PointerImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
@@ -15,6 +16,7 @@ import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.LimitedFileHandlerPool;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
+import com.github.sepgh.testudo.utils.KVSize;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -110,15 +112,21 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         CompactFileIndexStorageManager compactFileIndexStorageManager = getCompactFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(2, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
 
         for (int tableId = 1; tableId <= 2; tableId++){
+            IndexManager<Long, Pointer> currentIndexManager = null;
+            if (tableId == 1)
+                currentIndexManager = indexManager;
+            else
+                currentIndexManager = indexManager2;
 
             for (long testIdentifier : testIdentifiers) {
-                indexManager.addIndex(tableId, testIdentifier, samplePointer);
+                currentIndexManager.addIndex(testIdentifier, samplePointer);
             }
 
-            Optional<IndexStorageManager.NodeData> optional = compactFileIndexStorageManager.getRoot(tableId).get();
+            Optional<IndexStorageManager.NodeData> optional = compactFileIndexStorageManager.getRoot(tableId, new KVSize(LongImmutableBinaryObjectWrapper.BYTES, PointerImmutableBinaryObjectWrapper.BYTES)).get();
             Assertions.assertTrue(optional.isPresent());
             Assertions.assertTrue(optional.get().pointer().getChunk() != 0);
 
@@ -138,12 +146,18 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
 
         LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(), 1);
         CompactFileIndexStorageManager compactFileIndexStorageManager = getCompactFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager1 = new ClusterBPlusTreeIndexManager<>(1, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(2, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
 
         for (int tableId = 1; tableId <= 2; tableId++) {
-            int finalTableId = tableId;
+            IndexManager<Long, Pointer> currentIndexManager = null;
+            if (tableId == 1)
+                currentIndexManager = indexManager1;
+            else
+                currentIndexManager = indexManager2;
+
             for (long testIdentifier : testIdentifiers) {
-                indexManager.addIndex(finalTableId, testIdentifier, samplePointer);
+                currentIndexManager.addIndex(testIdentifier, samplePointer);
             }
         }
 
@@ -162,16 +176,21 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        
 
         LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(), 2);
         CompactFileIndexStorageManager compactFileIndexStorageManager = getCompactFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager(degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager1 = new ClusterBPlusTreeIndexManager(1, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager(2, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
 
         for (int tableId = 1; tableId <= 2; tableId++) {
-            int finalTableId = tableId;
+            IndexManager<Long, Pointer> currentIndexManager = null;
+            if (tableId == 1)
+                currentIndexManager = indexManager1;
+            else
+                currentIndexManager = indexManager2;
+
             for (long testIdentifier : testIdentifiers) {
-                indexManager.addIndex(finalTableId, testIdentifier, samplePointer);
+                currentIndexManager.addIndex(testIdentifier, samplePointer);
             }
         }
 
@@ -194,13 +213,14 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         CompactFileIndexStorageManager compactFileIndexStorageManager = getCompactFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager1 = new ClusterBPlusTreeIndexManager<>(1, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(2, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
 
         int index = 0;
         int runs = 0;
         while (runs < testIdentifiers.size()){
-            indexManager.addIndex(1, testIdentifiers.get(index), samplePointer);
-            indexManager.addIndex(2, testIdentifiers.get(index) * 10, samplePointer);
+            indexManager1.addIndex(testIdentifiers.get(index), samplePointer);
+            indexManager2.addIndex(testIdentifiers.get(index) * 10, samplePointer);
             index++;
             runs++;
         }
@@ -251,12 +271,18 @@ public class MultiTableBPlusTreeIndexManagerCompactAllocationAndChunkTestCase {
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         CompactFileIndexStorageManager compactFileIndexStorageManager = getCompactFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager(degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager1 = new ClusterBPlusTreeIndexManager(1, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager(2, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
 
         for (int tableId = 1; tableId <= 2; tableId++){
+            IndexManager<Long, Pointer> currentIndexManager = null;
+            if (tableId == 1)
+                currentIndexManager = indexManager1;
+            else
+                currentIndexManager = indexManager2;
 
             for (long testIdentifier : testIdentifiers) {
-                indexManager.addIndex(tableId, testIdentifier, samplePointer);
+                currentIndexManager.addIndex(testIdentifier, samplePointer);
             }
 
             StoredTreeStructureVerifier.testUnOrderedTreeStructure1(compactFileIndexStorageManager, tableId, 1, degree);

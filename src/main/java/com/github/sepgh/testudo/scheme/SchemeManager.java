@@ -97,11 +97,13 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
 
     /*  TODO  */
 
-    private void removeDBObject(AbstractLeafTreeNode.KeyValue<?, ?> keyValue) throws IOException, ExecutionException, InterruptedException {
+    @SneakyThrows
+    private void removeDBObject(AbstractLeafTreeNode.KeyValue<?, ?> keyValue) {
         Pointer pointer = (Pointer) keyValue.value();
         databaseStorageManager.remove(pointer);
     }
 
+    // Todo
     @SneakyThrows
     private LockableIterator<? extends AbstractLeafTreeNode.KeyValue<?, ?>> getPKIterator(Scheme.Collection collection) {
         Optional<Scheme.Field> optionalField = collection.getFields().stream().filter(Scheme.Field::isPrimary).findFirst();
@@ -109,7 +111,7 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
         int primaryFieldId = primaryField.getId();
 
         IndexManager<?, ?> indexManager = this.collectionIndexManagerProvider.getIndexManager(collection.getId());
-        return indexManager.getSortedIterator(primaryFieldId);
+        return indexManager.getSortedIterator();
     }
 
     @SneakyThrows
@@ -124,7 +126,7 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
         IndexManager<?, ?> indexManager = this.collectionIndexManagerProvider.getIndexManager(collection.getId());
         collection.getFields().forEach(field -> {
             if (field.isIndex())
-                indexManager.purgeIndex(field.getId());
+                indexManager.purgeIndex();
         });
     }
 

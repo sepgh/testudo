@@ -64,11 +64,11 @@ public class BPlusTreeIndexManagerReadingTestCase {
     public void findIndexSuccessfully() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
         CompactFileIndexStorageManager indexStorageManager = getStorageManager();
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        indexManager.addIndex(1, 10L, dataPointer);
-        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 10L);
+        indexManager.addIndex(10L, dataPointer);
+        Optional<Pointer> optionalPointer = indexManager.getIndex(10L);
 
         Assertions.assertTrue(optionalPointer.isPresent());
         Assertions.assertEquals(dataPointer, optionalPointer.get());
@@ -79,43 +79,43 @@ public class BPlusTreeIndexManagerReadingTestCase {
     public void getTableSize() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
         CompactFileIndexStorageManager indexStorageManager = getStorageManager();
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         for(long i = 1; i <= 100; i++)
-            indexManager.addIndex(1, i, dataPointer);
+            indexManager.addIndex(i, dataPointer);
 
-        Assertions.assertEquals(100, indexManager.size(1));
+        Assertions.assertEquals(100, indexManager.size());
 
         indexStorageManager.close();
     }
-
 
     @Test
     @Timeout(value = 2)
     public void findIndexFailure() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
         CompactFileIndexStorageManager indexStorageManager = getStorageManager();
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        indexManager.addIndex(1, 10L, dataPointer);
-        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 100L);
+        indexManager.addIndex(10L, dataPointer);
+        Optional<Pointer> optionalPointer = indexManager.getIndex( 100L);
 
         Assertions.assertFalse(optionalPointer.isPresent());
 
         indexStorageManager.close();
     }
+
     @Test
     @Timeout(value = 2)
     public void readAndWriteZero() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
         CompactFileIndexStorageManager indexStorageManager = getStorageManager();
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        indexManager.addIndex(1, 0L, dataPointer);
-        Optional<Pointer> optionalPointer = indexManager.getIndex(1, 0L);
+        indexManager.addIndex(0L, dataPointer);
+        Optional<Pointer> optionalPointer = indexManager.getIndex(0L);
         Assertions.assertTrue(optionalPointer.isPresent());
         Assertions.assertEquals(dataPointer, optionalPointer.get());
 

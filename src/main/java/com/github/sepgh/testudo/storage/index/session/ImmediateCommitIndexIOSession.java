@@ -6,6 +6,7 @@ import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
+import com.github.sepgh.testudo.utils.KVSize;
 import lombok.Getter;
 
 import java.io.IOException;
@@ -17,17 +18,19 @@ public class ImmediateCommitIndexIOSession<K extends Comparable<K>> implements I
     private final IndexStorageManager indexStorageManager;
     private final int indexId;
     private final NodeFactory<K> nodeFactory;
+    private final KVSize kvSize;
 
-    public ImmediateCommitIndexIOSession(IndexStorageManager indexStorageManager, int indexId, NodeFactory<K> nodeFactory) {
+    public ImmediateCommitIndexIOSession(IndexStorageManager indexStorageManager, int indexId, NodeFactory<K> nodeFactory, KVSize kvSize) {
         this.indexStorageManager = indexStorageManager;
         this.indexId = indexId;
         this.nodeFactory = nodeFactory;
+        this.kvSize = kvSize;
     }
 
     @Override
     public Optional<AbstractTreeNode<K>> getRoot() throws InternalOperationException {
         try {
-            Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(indexId).get();
+            Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(indexId, kvSize).get();
             return optional.map(nodeFactory::fromNodeData);
         } catch (ExecutionException | InterruptedException e) {
             throw new InternalOperationException(e);
@@ -46,7 +49,7 @@ public class ImmediateCommitIndexIOSession<K extends Comparable<K>> implements I
     @Override
     public AbstractTreeNode<K> read(Pointer pointer) throws InternalOperationException {
         try {
-            return IndexTreeNodeIO.read(indexStorageManager, indexId, pointer, nodeFactory);
+            return IndexTreeNodeIO.read(indexStorageManager, indexId, pointer, nodeFactory, kvSize);
         } catch (ExecutionException | InterruptedException | IOException e) {
             throw new InternalOperationException(e);
         }
@@ -64,7 +67,7 @@ public class ImmediateCommitIndexIOSession<K extends Comparable<K>> implements I
     @Override
     public void remove(AbstractTreeNode<K> node) throws InternalOperationException {
         try {
-            IndexTreeNodeIO.remove(indexStorageManager, indexId, node);
+            IndexTreeNodeIO.remove(indexStorageManager, indexId, node, kvSize);
         } catch (ExecutionException | InterruptedException e) {
             throw new InternalOperationException(e);
         }
@@ -88,8 +91,8 @@ public class ImmediateCommitIndexIOSession<K extends Comparable<K>> implements I
         }
 
         @Override
-        public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int indexId, NodeFactory<K> nodeFactory) {
-            return new ImmediateCommitIndexIOSession<>(indexStorageManager, indexId, nodeFactory);
+        public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int indexId, NodeFactory<K> nodeFactory, KVSize kvSize) {
+            return new ImmediateCommitIndexIOSession<>(indexStorageManager, indexId, nodeFactory, kvSize);
         }
     }
 }

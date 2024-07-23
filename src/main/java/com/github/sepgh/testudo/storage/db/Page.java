@@ -4,7 +4,6 @@ package com.github.sepgh.testudo.storage.db;
 import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.utils.BinaryUtils;
 import com.google.common.collect.ImmutableList;
-import com.google.common.hash.HashCode;
 import com.google.common.primitives.Ints;
 import lombok.AllArgsConstructor;
 import lombok.Data;

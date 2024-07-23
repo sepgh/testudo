@@ -10,12 +10,12 @@ import com.github.sepgh.testudo.storage.index.session.ImmediateCommitIndexIOSess
 import com.github.sepgh.testudo.storage.index.session.IndexIOSessionFactory;
 
 public class ClusterBPlusTreeIndexManager<K extends Comparable<K>> extends BPlusTreeIndexManager<K, Pointer> {
-    public ClusterBPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, IndexIOSessionFactory indexIOSessionFactory, ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper){
-        super(degree, indexStorageManager, indexIOSessionFactory, keyImmutableBinaryObjectWrapper, new PointerImmutableBinaryObjectWrapper(), new NodeFactory.ClusterNodeFactory<>(keyImmutableBinaryObjectWrapper));
+    public ClusterBPlusTreeIndexManager(int index, int degree, IndexStorageManager indexStorageManager, IndexIOSessionFactory indexIOSessionFactory, ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper){
+        super(index, degree, indexStorageManager, indexIOSessionFactory, keyImmutableBinaryObjectWrapper, new PointerImmutableBinaryObjectWrapper(), new NodeFactory.ClusterNodeFactory<>(keyImmutableBinaryObjectWrapper));
     }
 
-    public ClusterBPlusTreeIndexManager(int degree, IndexStorageManager indexStorageManager, ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper){
-        this(degree, indexStorageManager, ImmediateCommitIndexIOSession.Factory.getInstance(), keyImmutableBinaryObjectWrapper);
+    public ClusterBPlusTreeIndexManager(int index, int degree, IndexStorageManager indexStorageManager, ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper){
+        this(index, degree, indexStorageManager, ImmediateCommitIndexIOSession.Factory.getInstance(), keyImmutableBinaryObjectWrapper);
     }
 
 }

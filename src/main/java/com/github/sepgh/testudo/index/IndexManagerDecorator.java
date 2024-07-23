@@ -10,30 +10,40 @@ import com.github.sepgh.testudo.utils.LockableIterator;
 import java.util.Optional;
 
 public class IndexManagerDecorator<K extends Comparable<K>, V extends Comparable<V>> implements IndexManager<K, V> {
-    private final IndexManager<K, V> indexManager;
+    protected final IndexManager<K, V> indexManager;
 
     public IndexManagerDecorator(IndexManager<K, V> indexManager) {
         this.indexManager = indexManager;
     }
 
-    public AbstractTreeNode<K> addIndex(int index, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
-        return this.indexManager.addIndex(index, identifier, value);
+    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
+        return this.indexManager.addIndex(identifier, value);
     }
-    public Optional<V> getIndex(int index, K identifier) throws InternalOperationException {
-        return this.indexManager.getIndex(index, identifier);
-    }
-
-    public boolean removeIndex(int index, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
-        return this.indexManager.removeIndex(index, identifier);
+    public Optional<V> getIndex(K identifier) throws InternalOperationException {
+        return this.indexManager.getIndex(identifier);
     }
 
-    @Override
-    public int size(int index) throws InternalOperationException {
-        return this.indexManager.size(index);
+    public boolean removeIndex(K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+        return this.indexManager.removeIndex(identifier);
     }
 
     @Override
-    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator(int index) throws InternalOperationException {
-        return this.indexManager.getSortedIterator(index);
+    public int size() throws InternalOperationException {
+        return this.indexManager.size();
+    }
+
+    @Override
+    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator() throws InternalOperationException {
+        return this.indexManager.getSortedIterator();
+    }
+
+    @Override
+    public void purgeIndex() {
+        this.indexManager.purgeIndex();
+    }
+
+    @Override
+    public int getIndexId() {
+        return this.indexManager.getIndexId();
     }
 }

@@ -100,13 +100,12 @@ public class MultiTableBPlusTreeIndexManagerCompactTestCase {
 
         for (int tableId = 1; tableId <= 2; tableId++){
             CompactFileIndexStorageManager compactFileIndexStorageManager = getCompactFileIndexStorageManager();
-            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
-
+            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
 
 
             AbstractTreeNode<Long> lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
-                lastTreeNode = indexManager.addIndex(tableId, testIdentifier, samplePointer);
+                lastTreeNode = indexManager.addIndex(testIdentifier, samplePointer);
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());
@@ -149,13 +148,13 @@ public class MultiTableBPlusTreeIndexManagerCompactTestCase {
         List<Long> testIdentifiers = Arrays.asList(1L, 4L, 9L, 6L, 10L, 8L, 3L, 2L, 11L, 5L, 7L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
         CompactFileIndexStorageManager compactFileIndexStorageManager = getCompactFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
 
         for (int tableId = 1; tableId <= 2; tableId++){
+            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
 
             AbstractTreeNode<Long> lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
-                lastTreeNode = indexManager.addIndex(tableId, testIdentifier, samplePointer);
+                lastTreeNode = indexManager.addIndex(testIdentifier, samplePointer);
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());

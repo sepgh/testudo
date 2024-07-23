@@ -6,6 +6,7 @@ import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
+import com.github.sepgh.testudo.utils.KVSize;
 import lombok.Getter;
 
 import java.io.IOException;
@@ -23,11 +24,13 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
     protected final List<Pointer> deleted = new LinkedList<>();
     protected AbstractTreeNode<K> root;
     private final NodeFactory<K> nodeFactory;
+    private final KVSize kvSize;
 
-    public MemorySnapshotIndexIOSession(IndexStorageManager indexStorageManager, int indexId, NodeFactory<K> nodeFactory) {
+    public MemorySnapshotIndexIOSession(IndexStorageManager indexStorageManager, int indexId, NodeFactory<K> nodeFactory, KVSize kvSize) {
         this.indexStorageManager = indexStorageManager;
         this.indexId = indexId;
         this.nodeFactory = nodeFactory;
+        this.kvSize = kvSize;
     }
 
     @Override
@@ -35,7 +38,7 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
         if (root == null){
             Optional<IndexStorageManager.NodeData> optional = null;
             try {
-                optional = indexStorageManager.getRoot(indexId).get();
+                optional = indexStorageManager.getRoot(indexId, kvSize).get();
             } catch (InterruptedException | ExecutionException e) {
                 throw new InternalOperationException(e);
             }
@@ -79,7 +82,7 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
 
         AbstractTreeNode<K> baseClusterTreeNode = null;
         try {
-            baseClusterTreeNode = IndexTreeNodeIO.read(indexStorageManager, indexId, pointer, nodeFactory);
+            baseClusterTreeNode = IndexTreeNodeIO.read(indexStorageManager, indexId, pointer, nodeFactory, kvSize);
         } catch (ExecutionException | InterruptedException | IOException e) {
             throw new InternalOperationException(e);
         }
@@ -113,7 +116,7 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
     public void commit() throws InternalOperationException {
         for (Pointer pointer : deleted) {
             try {
-                IndexTreeNodeIO.remove(indexStorageManager, indexId, pointer);
+                IndexTreeNodeIO.remove(indexStorageManager, indexId, pointer, kvSize);
             } catch (ExecutionException | InterruptedException e) {
                 try {
                     this.rollback();
@@ -152,7 +155,7 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
         }
 
         for (Pointer pointer : created) {
-            IndexTreeNodeIO.remove(indexStorageManager, indexId, pointer);
+            IndexTreeNodeIO.remove(indexStorageManager, indexId, pointer, kvSize);
         }
     }
 
@@ -169,8 +172,8 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
         }
 
         @Override
-        public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int indexId, NodeFactory<K> nodeFactory) {
-            return new MemorySnapshotIndexIOSession<>(indexStorageManager, indexId, nodeFactory);
+        public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int indexId, NodeFactory<K> nodeFactory, KVSize kvSize) {
+            return new MemorySnapshotIndexIOSession<>(indexStorageManager, indexId, nodeFactory, kvSize);
         }
     }
 

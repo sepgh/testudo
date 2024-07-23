@@ -8,6 +8,7 @@ import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
+import com.github.sepgh.testudo.utils.KVSize;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -18,12 +19,14 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
     private final IndexIOSession<K> indexIOSession;
     private final ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper;
     private final ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper;
+    private final KVSize kvSize;
 
-    public BPlusTreeIndexCreateOperation(int degree, IndexIOSession<K> indexIOSession, ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper) {
+    public BPlusTreeIndexCreateOperation(int degree, IndexIOSession<K> indexIOSession, ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper, KVSize kvSize) {
         this.degree = degree;
         this.indexIOSession = indexIOSession;
         this.keyImmutableBinaryObjectWrapper = keyImmutableBinaryObjectWrapper;
         this.valueImmutableBinaryObjectWrapper = valueImmutableBinaryObjectWrapper;
+        this.kvSize = kvSize;
     }
 
     public AbstractTreeNode<K> addIndex(AbstractTreeNode<K> root, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
@@ -56,7 +59,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
                 }
 
                 /* Current node didn't have any space, so let's create a sibling and split */
-                AbstractLeafTreeNode<K, V> newSiblingLeafNode = new AbstractLeafTreeNode<>(indexIOSession.getIndexStorageManager().getEmptyNode(), keyImmutableBinaryObjectWrapper, valueImmutableBinaryObjectWrapper);
+                AbstractLeafTreeNode<K, V> newSiblingLeafNode = new AbstractLeafTreeNode<>(indexIOSession.getIndexStorageManager().getEmptyNode(this.kvSize), keyImmutableBinaryObjectWrapper, valueImmutableBinaryObjectWrapper);
                 List<AbstractLeafTreeNode.KeyValue<K, V>> passingKeyValues = ((AbstractLeafTreeNode<K, V>) currentNode).addAndSplit(identifier, value, degree);
                 newSiblingLeafNode.setKeyValues(passingKeyValues, degree);
                 indexIOSession.write(newSiblingLeafNode); // we want the node to have a value so that we can fix siblings
@@ -70,7 +73,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
                 /* this leaf doesn't have a parent! create one and deal with it right here! */
                 if (path.size() == 1) {
                     currentNode.unsetAsRoot();
-                    InternalTreeNode<K> newRoot = new InternalTreeNode<>(indexIOSession.getIndexStorageManager().getEmptyNode(), keyImmutableBinaryObjectWrapper);
+                    InternalTreeNode<K> newRoot = new InternalTreeNode<>(indexIOSession.getIndexStorageManager().getEmptyNode(this.kvSize), keyImmutableBinaryObjectWrapper);
                     newRoot.setAsRoot();
                     newRoot.addChildPointers(
                             passingKeyValues.getFirst().key(),
@@ -112,14 +115,14 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Co
                 idForParentToStore = firstPassingChildPointers.getKey();
                 passingChildPointers.removeFirst();
 
-                InternalTreeNode<K> newInternalSibling = new InternalTreeNode<K>(indexIOSession.getIndexStorageManager().getEmptyNode(), keyImmutableBinaryObjectWrapper);
+                InternalTreeNode<K> newInternalSibling = new InternalTreeNode<K>(indexIOSession.getIndexStorageManager().getEmptyNode(this.kvSize), keyImmutableBinaryObjectWrapper);
                 newInternalSibling.setChildPointers(passingChildPointers, degree, true);
                 indexIOSession.write(newInternalSibling);
 
                 // Current node was root and needs a new parent
                 if (currentInternalTreeNode.isRoot()){
                     currentInternalTreeNode.unsetAsRoot();
-                    InternalTreeNode<K> newRoot = new InternalTreeNode<K>(indexIOSession.getIndexStorageManager().getEmptyNode(), keyImmutableBinaryObjectWrapper);
+                    InternalTreeNode<K> newRoot = new InternalTreeNode<K>(indexIOSession.getIndexStorageManager().getEmptyNode(this.kvSize), keyImmutableBinaryObjectWrapper);
                     newRoot.setAsRoot();
 
                     newRoot.addChildPointers(

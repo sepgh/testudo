@@ -3,6 +3,8 @@ package com.github.sepgh.testudo.index.tree.node;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.TreeNodeUtils;
 import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.PointerImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.utils.KVSize;
 import com.google.common.collect.ImmutableList;
 import lombok.Getter;
 import lombok.Setter;
@@ -86,6 +88,10 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
 
     public void setKey(int index, K key, int valueSize) throws ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
         TreeNodeUtils.setKeyAtIndex(this, index, keyImmutableBinaryObjectWrapper.load(key), valueSize);
+    }
+
+    public KVSize getKVSize(){
+        return new KVSize(keyImmutableBinaryObjectWrapper.size(), PointerImmutableBinaryObjectWrapper.BYTES);
     }
 
     @SneakyThrows

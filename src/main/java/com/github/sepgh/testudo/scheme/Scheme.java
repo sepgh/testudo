@@ -18,6 +18,7 @@ public class Scheme {
     public static class Collection {
         private int id;
         private String name;
+        @Builder.Default
         private List<Field> fields = new ArrayList<>();
 
         @Override

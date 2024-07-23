@@ -7,6 +7,7 @@ import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
 import com.github.sepgh.testudo.storage.pool.ManagedFileHandler;
 import com.github.sepgh.testudo.utils.FileUtils;
+import com.github.sepgh.testudo.utils.KVSize;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
@@ -20,12 +21,16 @@ public class SingleFileIndexStorageManager extends BaseFileIndexStorageManager {
         super(null, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
     }
 
-    public SingleFileIndexStorageManager(IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpaceMax) throws IOException, ExecutionException, InterruptedException {
-        super(indexHeaderManagerFactory, engineConfig, fileHandlerPool, binarySpaceMax);
+    public SingleFileIndexStorageManager(String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) {
+        super(customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
     }
 
-    public SingleFileIndexStorageManager(IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, int binarySpaceMax) throws IOException, ExecutionException, InterruptedException {
-        super(indexHeaderManagerFactory, engineConfig, binarySpaceMax);
+    public SingleFileIndexStorageManager(IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig) {
+        super(indexHeaderManagerFactory, engineConfig);
+    }
+
+    public SingleFileIndexStorageManager(String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig) {
+        super(customName, indexHeaderManagerFactory, engineConfig);
     }
 
     protected Path getIndexFilePath(int indexId, int chunk) {
@@ -37,18 +42,18 @@ public class SingleFileIndexStorageManager extends BaseFileIndexStorageManager {
         return new IndexHeaderManager.Location(0,0);
     }
 
-    protected Pointer getAllocatedSpaceForNewNode(int indexId, int chunk) throws IOException, ExecutionException, InterruptedException {
+    protected Pointer getAllocatedSpaceForNewNode(int indexId, int chunk, KVSize kvSize) throws IOException, ExecutionException, InterruptedException {
         ManagedFileHandler managedFileHandler = this.getManagedFileHandler(indexId, 0);
         AsynchronousFileChannel asynchronousFileChannel = managedFileHandler.getAsynchronousFileChannel();
 
         synchronized (this){
             // Check if we have an empty space
             long fileSize = asynchronousFileChannel.size();
-            if (fileSize >= this.getIndexGrowthAllocationSize()){
-                long positionToCheck = fileSize - this.getIndexGrowthAllocationSize();
+            if (fileSize >= this.getIndexGrowthAllocationSize(kvSize)){
+                long positionToCheck = fileSize - this.getIndexGrowthAllocationSize(kvSize);
 
-                byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, this.getIndexGrowthAllocationSize()).get();
-                Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
+                byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, this.getIndexGrowthAllocationSize(kvSize)).get();
+                Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes, kvSize);
                 if (optionalAdditionalPosition.isPresent()){
                     long finalPosition = positionToCheck + optionalAdditionalPosition.get();
                     managedFileHandler.close();
@@ -57,7 +62,7 @@ public class SingleFileIndexStorageManager extends BaseFileIndexStorageManager {
 
             }
 
-            Long position = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize()).get();
+            Long position = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize(kvSize)).get();
             managedFileHandler.close();
             return new Pointer(Pointer.TYPE_NODE, position, chunk);
         }

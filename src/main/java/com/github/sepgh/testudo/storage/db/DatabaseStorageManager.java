@@ -5,7 +5,6 @@ import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
 import com.github.sepgh.testudo.utils.FileUtils;
-import com.google.common.hash.HashCode;
 import lombok.Getter;
 
 import java.io.IOException;

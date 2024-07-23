@@ -9,15 +9,17 @@ import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.PointerImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
-import com.github.sepgh.testudo.storage.pool.FileHandler;
-import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSessionFactory;
 import com.github.sepgh.testudo.storage.index.session.MemorySnapshotIndexIOSession;
+import com.github.sepgh.testudo.storage.pool.FileHandler;
+import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
+import com.github.sepgh.testudo.utils.KVSize;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;
@@ -32,7 +34,7 @@ import java.util.concurrent.ExecutionException;
 import static com.github.sepgh.testudo.storage.index.BaseFileIndexStorageManager.INDEX_FILE_NAME;
 
 public class MemorySnapshotIndexIOSessionTestCase {
-
+    private final static KVSize KV_SIZE =  new KVSize(LongImmutableBinaryObjectWrapper.BYTES, PointerImmutableBinaryObjectWrapper.BYTES);
     private Path dbPath;
     private EngineConfig engineConfig;
     private int degree = 4;
@@ -76,22 +78,22 @@ public class MemorySnapshotIndexIOSessionTestCase {
     public void testCreateRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
         
         IndexStorageManager indexStorageManager = getCompactFileIndexStorageManager();
-        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(new LongImmutableBinaryObjectWrapper()));
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new IndexIOSessionFactory() {
+        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(new LongImmutableBinaryObjectWrapper()), KV_SIZE);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new IndexIOSessionFactory() {
             @Override
-            public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, NodeFactory<K> nodeFactory) {
+            public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, NodeFactory<K> nodeFactory, KVSize kvSize) {
                 return (IndexIOSession<K>) indexIOSession;
             }
         }, new LongImmutableBinaryObjectWrapper());
 
         for (long i = 1; i < 12; i++){
-            indexManager.addIndex(1, i, Pointer.empty());
+            indexManager.addIndex(i, Pointer.empty());
         }
 
-        Assertions.assertTrue(indexManager.getIndex(1, 11L).isPresent());
+        Assertions.assertTrue(indexManager.getIndex(11L).isPresent());
 
-        indexManager.addIndex(1, 12L, Pointer.empty());
-        Assertions.assertTrue(indexManager.getIndex(1, 12L).isPresent());
+        indexManager.addIndex(12L, Pointer.empty());
+        Assertions.assertTrue(indexManager.getIndex(12L).isPresent());
 
         Class<MemorySnapshotIndexIOSession> aClass = MemorySnapshotIndexIOSession.class;
         Method method = aClass.getDeclaredMethod("rollback");
@@ -99,8 +101,8 @@ public class MemorySnapshotIndexIOSessionTestCase {
         method.invoke(indexIOSession);
 
         // Since the same indexIOSession instance shouldn't be used to re-read after rollback we create a new instance
-        indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
-        Assertions.assertFalse(indexManager.getIndex(1, 12L).isPresent());
+        indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
+        Assertions.assertFalse(indexManager.getIndex(12L).isPresent());
 
         indexStorageManager.close();
     }
@@ -108,32 +110,32 @@ public class MemorySnapshotIndexIOSessionTestCase {
     @Timeout(2)
     @Test
     public void testDeleteRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
-        
+
         IndexStorageManager indexStorageManager = getCompactFileIndexStorageManager();
-        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(new LongImmutableBinaryObjectWrapper()));
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new IndexIOSessionFactory() {
+        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(new LongImmutableBinaryObjectWrapper()), KV_SIZE);
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new IndexIOSessionFactory() {
             @Override
-            public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, NodeFactory<K> nodeFactory) {
+            public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, NodeFactory<K> nodeFactory, KVSize kvSize) {
                 return (IndexIOSession<K>) indexIOSession;
             }
         }, new LongImmutableBinaryObjectWrapper());
-        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
 
         for (long i = 1; i < 13; i++){
-            indexManager2.addIndex(1, i, Pointer.empty());
+            indexManager2.addIndex(i, Pointer.empty());
         }
 
-        Assertions.assertTrue(indexManager2.getIndex(1, 12L).isPresent());
+        Assertions.assertTrue(indexManager2.getIndex(12L).isPresent());
 
-        Assertions.assertTrue(indexManager.removeIndex(1, 12L));
-        Assertions.assertTrue(indexManager2.getIndex(1, 12L).isEmpty());
+        Assertions.assertTrue(indexManager.removeIndex( 12L));
+        Assertions.assertTrue(indexManager2.getIndex( 12L).isEmpty());
 
         Class<MemorySnapshotIndexIOSession> aClass = MemorySnapshotIndexIOSession.class;
         Method method = aClass.getDeclaredMethod("rollback");
         method.setAccessible(true);
         method.invoke(indexIOSession);
 
-        Assertions.assertTrue(indexManager2.getIndex(1, 12L).isPresent());
+        Assertions.assertTrue(indexManager2.getIndex(12L).isPresent());
 
         indexStorageManager.close();
     }

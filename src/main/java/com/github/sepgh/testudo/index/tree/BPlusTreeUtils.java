@@ -74,7 +74,7 @@ public class BPlusTreeUtils {
             if (flag) {
                 return getResponsibleNode(
                         indexStorageManager,
-                        IndexTreeNodeIO.read(indexStorageManager, index, childrenList.get(i), nodeFactory),
+                        IndexTreeNodeIO.read(indexStorageManager, index, childrenList.get(i), nodeFactory, node.getKVSize()),
                         identifier,
                         index,
                         degree,
@@ -84,7 +84,7 @@ public class BPlusTreeUtils {
             } else {
                 return getResponsibleNode(
                         indexStorageManager,
-                        IndexTreeNodeIO.read(indexStorageManager, index, childrenList.getLast(), nodeFactory),
+                        IndexTreeNodeIO.read(indexStorageManager, index, childrenList.getLast(), nodeFactory, node.getKVSize()),
                         identifier,
                         index,
                         degree,

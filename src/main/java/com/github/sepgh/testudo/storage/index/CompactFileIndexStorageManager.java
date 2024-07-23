@@ -7,6 +7,7 @@ import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
 import com.github.sepgh.testudo.storage.pool.ManagedFileHandler;
 import com.github.sepgh.testudo.utils.FileUtils;
+import com.github.sepgh.testudo.utils.KVSize;
 import lombok.SneakyThrows;
 
 import java.io.IOException;
@@ -25,10 +26,6 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
 
     public CompactFileIndexStorageManager(String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) throws IOException, ExecutionException, InterruptedException {
         super(customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
-    }
-
-    public CompactFileIndexStorageManager(String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool, int binarySpace) throws IOException, ExecutionException, InterruptedException {
-        super(customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool, binarySpace);
     }
 
     protected Path getIndexFilePath(int indexId, int chunk) {
@@ -64,7 +61,7 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
         return location;
     }
 
-    protected synchronized Pointer getAllocatedSpaceForNewNode(int indexId, int chunk) throws IOException, ExecutionException, InterruptedException {
+    protected synchronized Pointer getAllocatedSpaceForNewNode(int indexId, int chunk, KVSize size) throws IOException, ExecutionException, InterruptedException {
         Optional<IndexHeaderManager.Location> optionalIndexBeginningLocation = this.indexHeaderManager.getIndexBeginningInChunk(indexId, chunk);
         boolean createNewChunk = optionalIndexBeginningLocation.isEmpty();
 
@@ -75,13 +72,13 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
                         asynchronousFileChannel.size() >= this.engineConfig.getBTreeMaxFileSize()
         ) {
             this.releaseFileChannel(indexId, chunk);
-            return this.getAllocatedSpaceForNewNode(indexId, chunk + 1);
+            return this.getAllocatedSpaceForNewNode(indexId, chunk + 1, size);
         }
 
         // If it's a new chunk for this index, allocate at the end of the file!
         if (createNewChunk){
             this.indexHeaderManager.setIndexBeginningInChunk(indexId, new IndexHeaderManager.Location(chunk, asynchronousFileChannel.size()));
-            Long position = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize()).get();
+            Long position = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize(size)).get();
             this.releaseFileChannel(indexId, chunk);
             return new Pointer(Pointer.TYPE_NODE, position, chunk);
         }
@@ -93,16 +90,16 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
         long positionToCheck;
         if (nextIndexBeginningInChunk.isPresent()){
             // Another index exists, so lets check if we have a space left before the next index
-            positionToCheck = nextIndexBeginningInChunk.get().getOffset() - this.getIndexGrowthAllocationSize();
+            positionToCheck = nextIndexBeginningInChunk.get().getOffset() - this.getIndexGrowthAllocationSize(size);
         } else {
             // Another index doesn't exist, so lets check if we have a space left in the end of the file
-            positionToCheck = asynchronousFileChannel.size() - this.getIndexGrowthAllocationSize();
+            positionToCheck = asynchronousFileChannel.size() - this.getIndexGrowthAllocationSize(size);
         }
 
         if (positionToCheck >= 0){
             // Check if we have an empty space
-            byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, this.getIndexGrowthAllocationSize()).get();
-            Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes);
+            byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, this.getIndexGrowthAllocationSize(size)).get();
+            Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes, size);
             if (optionalAdditionalPosition.isPresent()){
                 long finalPosition = positionToCheck + optionalAdditionalPosition.get();
                 this.releaseFileChannel(indexId, chunk);
@@ -116,14 +113,14 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
             allocatedOffset = FileUtils.allocate(
                     asynchronousFileChannel,
                     nextIndexBeginningInChunk.get().getOffset(),
-                    this.getIndexGrowthAllocationSize()
+                    this.getIndexGrowthAllocationSize(size)
             ).get();
             Integer nextIndex = this.indexHeaderManager.getNextIndexIdInChunk(indexId, chunk).get();
-            this.indexHeaderManager.setIndexBeginningInChunk(nextIndex, new IndexHeaderManager.Location(chunk, nextIndexBeginningInChunk.get().getOffset() + this.getIndexGrowthAllocationSize()));
+            this.indexHeaderManager.setIndexBeginningInChunk(nextIndex, new IndexHeaderManager.Location(chunk, nextIndexBeginningInChunk.get().getOffset() + this.getIndexGrowthAllocationSize(size)));
         } else {
             allocatedOffset = FileUtils.allocate(
                     asynchronousFileChannel,
-                    this.getIndexGrowthAllocationSize()
+                    this.getIndexGrowthAllocationSize(size)
             ).get();
         }
 

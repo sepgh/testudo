@@ -4,6 +4,7 @@ import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.TreeNodeUtils;
 import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.utils.CollectionUtils;
+import com.github.sepgh.testudo.utils.KVSize;
 import com.google.common.collect.ImmutableList;
 import lombok.SneakyThrows;
 
@@ -108,6 +109,10 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         return removed;
     }
 
+    @Override
+    public KVSize getKVSize() {
+        return new KVSize(keyImmutableBinaryObjectWrapper.size(), valueImmutableBinaryObjectWrapper.size());
+    }
 
     public record KeyValue<K extends Comparable<K>, V extends Comparable<V>>(K key,
                                                                              V value) implements Comparable<KeyValue<K, V>> {

@@ -7,86 +7,57 @@ import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrappe
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class CachedIndexManagerDecorator<K extends Comparable<K>, V extends Comparable<V>> extends IndexManagerDecorator<K, V> {
-    private final Cache<TableIdentifier<K>, V> cache;
-    private final Map<Integer, Integer> sizeCache;
+    private final Cache<K, V> cache;
+    private final AtomicInteger sizeCache = new AtomicInteger(0);
 
     public CachedIndexManagerDecorator(IndexManager<K, V> indexManager, int maxSize) {
         this(indexManager, CacheBuilder.newBuilder().maximumSize(maxSize).initialCapacity(10).build());
     }
-    public CachedIndexManagerDecorator(IndexManager<K, V> indexManager, Cache<TableIdentifier<K>, V> cache) {
+    public CachedIndexManagerDecorator(IndexManager<K, V> indexManager, Cache<K, V> cache) {
         super(indexManager);
         this.cache = cache;
-        this.sizeCache = new ConcurrentHashMap<>();
     }
 
     @Override
-    public AbstractTreeNode<K> addIndex(int index, K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
-        AbstractTreeNode<K> baseClusterTreeNode = super.addIndex(index, identifier, value);
-        cache.put(new TableIdentifier<>(index, identifier), value);
-        sizeCache.computeIfPresent(index, (k, v) -> v + 1);
+    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
+        AbstractTreeNode<K> baseClusterTreeNode = super.addIndex(identifier, value);
+        cache.put(identifier, value);
+        sizeCache.incrementAndGet();
         return baseClusterTreeNode;
     }
 
     @Override
-    public Optional<V> getIndex(int index, K identifier) throws InternalOperationException {
-        TableIdentifier<K> lookup = new TableIdentifier<>(index, identifier);
-        V optionalPointer = cache.getIfPresent(lookup);
+    public Optional<V> getIndex(K identifier) throws InternalOperationException {
+        V optionalPointer = cache.getIfPresent(identifier);
         if (optionalPointer != null)
             return Optional.of(optionalPointer);
-        Optional<V> output = super.getIndex(index, identifier);
-        output.ifPresent(value -> cache.put(lookup, value));
+        Optional<V> output = super.getIndex(identifier);
+        output.ifPresent(value -> cache.put(identifier, value));
         return output;
     }
 
     @Override
-    public boolean removeIndex(int index, K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
-        if (super.removeIndex(index, identifier)) {
-            cache.invalidate(new TableIdentifier<>(index, identifier));
-            sizeCache.computeIfPresent(index, (k, v) -> v - 1);
+    public boolean removeIndex(K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+        if (super.removeIndex(identifier)) {
+            cache.invalidate(identifier);
+            sizeCache.decrementAndGet();
             return true;
         }
         return false;
     }
 
     @Override
-    public int size(int index) throws InternalOperationException {
-        AtomicReference<InternalOperationException> atomicExceptionReference = new AtomicReference<>();
-        int size = sizeCache.computeIfAbsent(index, key -> {
-            try {
-                return super.size(index);
-            } catch (InternalOperationException e) {
-                atomicExceptionReference.set(e);
-                return -1;
-            }
-        });
+    public synchronized int size() throws InternalOperationException {
+        int cachedSize = sizeCache.get();
+        if (cachedSize > 0)
+            return cachedSize;
 
-        InternalOperationException exception = atomicExceptionReference.get();
-        if (exception != null)
-            throw exception;
-
-        return size;
-    }
-
-    public record TableIdentifier<K extends Comparable<K>>(int index, K identifier){
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            TableIdentifier<K> that = (TableIdentifier<K>) o;
-            return index == that.index && identifier == that.identifier;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(index, identifier);
-        }
+        cachedSize = super.size();
+        return cachedSize;
     }
 
 }

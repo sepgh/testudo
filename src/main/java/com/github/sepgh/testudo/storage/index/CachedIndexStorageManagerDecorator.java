@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.storage.index;
 
 import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.utils.KVSize;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
@@ -25,7 +26,8 @@ public class CachedIndexStorageManagerDecorator extends IndexStorageManagerDecor
         this.cache = cache;
     }
 
-    public CompletableFuture<Optional<NodeData>> getRoot(int indexId) throws InterruptedException {
+    @Override
+    public CompletableFuture<Optional<NodeData>> getRoot(int indexId, KVSize size) throws InterruptedException {
 
         synchronized (rootCache){
             NodeData nodeData = rootCache.get(indexId);
@@ -34,7 +36,7 @@ public class CachedIndexStorageManagerDecorator extends IndexStorageManagerDecor
             }
         }
 
-        return super.getRoot(indexId).whenComplete((optionalNodeData, throwable) -> {
+        return super.getRoot(indexId, size).whenComplete((optionalNodeData, throwable) -> {
             synchronized (rootCache) {
                 if (throwable != null && optionalNodeData.isPresent())
                     rootCache.put(indexId, optionalNodeData.get());
@@ -42,20 +44,21 @@ public class CachedIndexStorageManagerDecorator extends IndexStorageManagerDecor
         });
     }
 
-    public CompletableFuture<NodeData> readNode(int indexId, long position, int chunk) throws InterruptedException, IOException {
+    @Override
+    public CompletableFuture<NodeData> readNode(int indexId, long position, int chunk, KVSize size) throws InterruptedException, IOException {
         NodeData optionalNodeData = cache.getIfPresent(new IndexPointer(indexId, new Pointer(Pointer.TYPE_NODE, position, chunk)));
         if (optionalNodeData != null){
             return CompletableFuture.completedFuture(optionalNodeData);
         }
-        return super.readNode(indexId, position, chunk).whenComplete((nodeData, throwable) -> {
+        return super.readNode(indexId, position, chunk, size).whenComplete((nodeData, throwable) -> {
             if (throwable == null){
                 cache.put(new IndexPointer(indexId, nodeData.pointer()), nodeData);
             }
         });
     }
 
-    public CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data, boolean isRoot) throws IOException, ExecutionException, InterruptedException {
-        return super.writeNewNode(indexId, data, isRoot).whenComplete((nodeData, throwable) -> {
+    public CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data, boolean isRoot, KVSize size) throws IOException, ExecutionException, InterruptedException {
+        return super.writeNewNode(indexId, data, isRoot, size).whenComplete((nodeData, throwable) -> {
             if (throwable == null){
                 cache.put(new IndexPointer(indexId, nodeData.pointer()), nodeData);
                 synchronized (rootCache) {
@@ -84,8 +87,8 @@ public class CachedIndexStorageManagerDecorator extends IndexStorageManagerDecor
         super.close();
     }
 
-    public CompletableFuture<Integer> removeNode(int indexId, Pointer pointer) throws InterruptedException {
-        return super.removeNode(indexId, pointer).whenComplete((integer, throwable) -> {
+    public CompletableFuture<Integer> removeNode(int indexId, Pointer pointer, KVSize size) throws InterruptedException {
+        return super.removeNode(indexId, pointer, size).whenComplete((integer, throwable) -> {
             cache.invalidate(new IndexPointer(indexId, pointer));
             synchronized (rootCache){
                 if (rootCache.get(indexId).pointer().equals(pointer)){

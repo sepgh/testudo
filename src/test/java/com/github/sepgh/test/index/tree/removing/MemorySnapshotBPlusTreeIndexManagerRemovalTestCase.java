@@ -21,7 +21,7 @@ public class MemorySnapshotBPlusTreeIndexManagerRemovalTestCase extends BPlusTre
 
     @Override
     protected IndexManager<Long, Pointer> getIndexManager(IndexStorageManager indexStorageManager) {
-        return new ClusterBPlusTreeIndexManager<>(degree, indexStorageManager, MemorySnapshotIndexIOSession.Factory.getInstance(), new LongImmutableBinaryObjectWrapper());
+        return new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, MemorySnapshotIndexIOSession.Factory.getInstance(), new LongImmutableBinaryObjectWrapper());
     }
 
     @Test
