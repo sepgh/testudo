@@ -5,7 +5,7 @@ import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
-import com.github.sepgh.testudo.storage.db.DBObjectWrapper;
+import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.storage.db.Page;
 import com.github.sepgh.testudo.storage.db.PageBuffer;
@@ -72,13 +72,13 @@ public class DatabaseStorageManagerTestCase {
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
 
-        Optional<DBObjectWrapper> optionalDBObjectWrapper = this.databaseStorageManager.select(pointer);
+        Optional<DBObject> optionalDBObjectWrapper = this.databaseStorageManager.select(pointer);
         Assertions.assertTrue(optionalDBObjectWrapper.isPresent());
 
-        DBObjectWrapper dbObjectWrapper = optionalDBObjectWrapper.get();
-        Assertions.assertTrue(dbObjectWrapper.isAlive());
-        Assertions.assertEquals(17, dbObjectWrapper.getCollectionId());
-        String string = new String(dbObjectWrapper.getData(), StandardCharsets.UTF_8);
+        DBObject dbObject = optionalDBObjectWrapper.get();
+        Assertions.assertTrue(dbObject.isAlive());
+        Assertions.assertEquals(17, dbObject.getCollectionId());
+        String string = new String(dbObject.getData(), StandardCharsets.UTF_8);
         Assertions.assertEquals("Test", string);
     }
 
@@ -90,21 +90,21 @@ public class DatabaseStorageManagerTestCase {
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
 
-        this.databaseStorageManager.update(pointer, dbObjectWrapper -> {
+        this.databaseStorageManager.update(pointer, dbObject -> {
             try {
-                dbObjectWrapper.modifyData("Nest".getBytes(StandardCharsets.UTF_8));
+                dbObject.modifyData("Nest".getBytes(StandardCharsets.UTF_8));
             } catch (VerificationException.InvalidDBObjectWrapper e) {
                 throw new RuntimeException(e);
             }
         });
 
-        Optional<DBObjectWrapper> optionalDBObjectWrapper = this.databaseStorageManager.select(pointer);
+        Optional<DBObject> optionalDBObjectWrapper = this.databaseStorageManager.select(pointer);
         Assertions.assertTrue(optionalDBObjectWrapper.isPresent());
 
-        DBObjectWrapper dbObjectWrapper = optionalDBObjectWrapper.get();
-        Assertions.assertTrue(dbObjectWrapper.isAlive());
-        Assertions.assertEquals(17, dbObjectWrapper.getCollectionId());
-        String string = new String(dbObjectWrapper.getData(), StandardCharsets.UTF_8);
+        DBObject dbObject = optionalDBObjectWrapper.get();
+        Assertions.assertTrue(dbObject.isAlive());
+        Assertions.assertEquals(17, dbObject.getCollectionId());
+        String string = new String(dbObject.getData(), StandardCharsets.UTF_8);
         Assertions.assertEquals("Nest", string);
     }
 
@@ -137,7 +137,7 @@ public class DatabaseStorageManagerTestCase {
 
         for (int i = 0; i < inputs.size(); i++){
             Pointer pointer = pointers.get(i);
-            Optional<DBObjectWrapper> optionalDBObjectWrapper = this.databaseStorageManager.select(pointer);
+            Optional<DBObject> optionalDBObjectWrapper = this.databaseStorageManager.select(pointer);
             Assertions.assertTrue(optionalDBObjectWrapper.isPresent());
             Assertions.assertTrue(optionalDBObjectWrapper.get().isAlive());
             Assertions.assertEquals(inputs.get(i), new String(optionalDBObjectWrapper.get().getData(), StandardCharsets.UTF_8));
@@ -145,7 +145,7 @@ public class DatabaseStorageManagerTestCase {
 
         for (Pointer pointer : pointers) {
             this.databaseStorageManager.remove(pointer);
-            Optional<DBObjectWrapper> optionalDBObjectWrapper = this.databaseStorageManager.select(pointer);
+            Optional<DBObject> optionalDBObjectWrapper = this.databaseStorageManager.select(pointer);
             Assertions.assertTrue(optionalDBObjectWrapper.isPresent());
             Assertions.assertFalse(optionalDBObjectWrapper.get().isAlive());
         }
@@ -190,10 +190,10 @@ public class DatabaseStorageManagerTestCase {
         countDownLatch.await();
 
         for (AbstractLeafTreeNode.KeyValue<String, Pointer> keyValue : keyValues) {
-            Optional<DBObjectWrapper> dbObjectWrapper = this.databaseStorageManager.select(keyValue.value());
-            Assertions.assertTrue(dbObjectWrapper.isPresent());
-            Assertions.assertTrue(dbObjectWrapper.get().isAlive());
-            String value = new String(dbObjectWrapper.get().getData(), StandardCharsets.UTF_8);
+            Optional<DBObject> dbObject = this.databaseStorageManager.select(keyValue.value());
+            Assertions.assertTrue(dbObject.isPresent());
+            Assertions.assertTrue(dbObject.get().isAlive());
+            String value = new String(dbObject.get().getData(), StandardCharsets.UTF_8);
             Assertions.assertEquals(keyValue.key(), value);
         }
 

@@ -62,7 +62,7 @@ public class DatabaseStorageManager {
             int offset = (int) (removedObjectLocation.pointer().getPosition() % this.engineConfig.getDbPageSize());
 
             try {
-                Optional<DBObjectWrapper> optionalDBObjectWrapper = page.getDBObjectWrapper(offset);
+                Optional<DBObject> optionalDBObjectWrapper = page.getDBObjectWrapper(offset);
                 if (optionalDBObjectWrapper.isPresent()) {
                     try {
                         this.store(optionalDBObjectWrapper.get(), collectionId, data);
@@ -76,16 +76,16 @@ public class DatabaseStorageManager {
             }
         }
 
-        DBObjectWrapper dbObjectWrapper = null;
+        DBObject dbObject = null;
         Page page = null;
 
         Optional<Page> optionalLastPage = this.getBufferedLastPage();
         if (optionalLastPage.isPresent()) {
             page = optionalLastPage.get();
             try {
-                Optional<DBObjectWrapper> optionalDBObjectWrapper = page.getEmptyDBObjectWrapper(data.length);
+                Optional<DBObject> optionalDBObjectWrapper = page.getEmptyDBObjectWrapper(data.length);
                 if (optionalDBObjectWrapper.isPresent()) {
-                    dbObjectWrapper = optionalDBObjectWrapper.get();
+                    dbObject = optionalDBObjectWrapper.get();
                 }
             } catch (VerificationException.InvalidDBObjectWrapper e) {
                 this.pageBuffer.release(page);
@@ -93,10 +93,10 @@ public class DatabaseStorageManager {
             }
         }
 
-        if (dbObjectWrapper == null){
+        if (dbObject == null){
             page = this.getBufferedNewPage();
             try {
-                dbObjectWrapper = page.getEmptyDBObjectWrapper(data.length).get();
+                dbObject = page.getEmptyDBObjectWrapper(data.length).get();
             } catch (VerificationException.InvalidDBObjectWrapper e) {
                 this.pageBuffer.release(page);
                 throw new RuntimeException(e);
@@ -104,10 +104,10 @@ public class DatabaseStorageManager {
         }
 
         try {
-            this.store(dbObjectWrapper, collectionId, data);
+            this.store(dbObject, collectionId, data);
             return new Pointer(
                     Pointer.TYPE_DATA,
-                    ((long) page.getPageNumber() * this.engineConfig.getDbPageSize()) + dbObjectWrapper.getBegin(),
+                    ((long) page.getPageNumber() * this.engineConfig.getDbPageSize()) + dbObject.getBegin(),
                     page.getChunk()
             );
         } catch (VerificationException.InvalidDBObjectWrapper e) {
@@ -118,19 +118,19 @@ public class DatabaseStorageManager {
 
     }
 
-    private void store(DBObjectWrapper dbObjectWrapper, int collectionId, byte[] data) throws IOException, ExecutionException, InterruptedException, VerificationException.InvalidDBObjectWrapper {
-        dbObjectWrapper.activate();
-        dbObjectWrapper.modifyData(data);
-        dbObjectWrapper.setCollectionId(collectionId);
-        dbObjectWrapper.setSize(data.length);
-        this.commitPage(dbObjectWrapper.getPage());
+    private void store(DBObject dbObject, int collectionId, byte[] data) throws IOException, ExecutionException, InterruptedException, VerificationException.InvalidDBObjectWrapper {
+        dbObject.activate();
+        dbObject.modifyData(data);
+        dbObject.setCollectionId(collectionId);
+        dbObject.setSize(data.length);
+        this.commitPage(dbObject.getPage());
     }
 
-    public void update(Pointer pointer, Consumer<DBObjectWrapper> dbObjectWrapperConsumer) throws IOException, ExecutionException, InterruptedException {
+    public void update(Pointer pointer, Consumer<DBObject> dbObjectConsumer) throws IOException, ExecutionException, InterruptedException {
         PageBuffer.PageTitle pageTitle = new PageBuffer.PageTitle(pointer.getChunk(), (int) (pointer.getPosition() / this.engineConfig.getDbPageSize()));
         Page page = this.pageBuffer.aquire(pageTitle);
 
-        Optional<DBObjectWrapper> optionalDBObjectWrapper = null;
+        Optional<DBObject> optionalDBObjectWrapper = null;
         try {
             optionalDBObjectWrapper = page.getDBObjectWrapper(
                     (int) (pointer.getPosition() % this.engineConfig.getDbPageSize())
@@ -141,23 +141,23 @@ public class DatabaseStorageManager {
 
         if (optionalDBObjectWrapper.isEmpty()) {}  // Todo
 
-        DBObjectWrapper dbObjectWrapper = optionalDBObjectWrapper.get();
-        dbObjectWrapperConsumer.accept(dbObjectWrapper);
+        DBObject dbObject = optionalDBObjectWrapper.get();
+        dbObjectConsumer.accept(dbObject);
 
-        this.commitPage(dbObjectWrapper.getPage());
-        this.pageBuffer.release(dbObjectWrapper.getPage());
+        this.commitPage(dbObject.getPage());
+        this.pageBuffer.release(dbObject.getPage());
     }
 
-    public Optional<DBObjectWrapper> select(Pointer pointer){
+    public Optional<DBObject> select(Pointer pointer){
         PageBuffer.PageTitle pageTitle = new PageBuffer.PageTitle(pointer.getChunk(), (int) (pointer.getPosition() / this.engineConfig.getDbPageSize()));
         Page page = this.pageBuffer.aquire(pageTitle);
 
         try {
-            Optional<DBObjectWrapper> optional = page.getDBObjectWrapper(
+            Optional<DBObject> optional = page.getDBObjectWrapper(
                     (int) (pointer.getPosition() % this.engineConfig.getDbPageSize())
             );
             if (optional.isPresent()) {
-                return Optional.of(new MutableDBObjectWrapperDecorator(optional.get()));
+                return Optional.of(new MutableDBObjectDecorator(optional.get()));
             }
             return Optional.empty();
         } catch (VerificationException.InvalidDBObjectWrapper e) {
@@ -172,7 +172,7 @@ public class DatabaseStorageManager {
         Page page = this.pageBuffer.aquire(pageTitle);
 
         try {
-            Optional<DBObjectWrapper> optional = page.getDBObjectWrapper(
+            Optional<DBObject> optional = page.getDBObjectWrapper(
                     (int) (pointer.getPosition() % this.engineConfig.getDbPageSize())
             );
             if (optional.isPresent()) {
@@ -275,7 +275,7 @@ public class DatabaseStorageManager {
         AsynchronousFileChannel fileChannel = this.fileHandlerPool.getFileChannel(path, 100, TimeUnit.SECONDS);// Todo
         try {
             FileUtils.allocate(fileChannel, size).get();
-        }finally {
+        } finally {
             this.fileHandlerPool.releaseFileChannel(path, 100, TimeUnit.SECONDS); // Todo
         }
     }

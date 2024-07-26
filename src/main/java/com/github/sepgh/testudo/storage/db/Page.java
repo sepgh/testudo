@@ -21,7 +21,7 @@ public class Page {
     private final int chunk;
     private int cursorPosition;
     private final byte[] data;
-    private final Map<Integer, DBObjectWrapper> wrapperPool;
+    private final Map<Integer, DBObject> wrapperPool;
 
     public Page(int pageNumber, int pageSize, int chunk, byte[] data) {
         this.pageNumber = pageNumber;
@@ -36,28 +36,28 @@ public class Page {
         this(pageNumber, pageSize, chunk, new byte[0]);
     }
 
-    public synchronized Optional<DBObjectWrapper> getDBObjectWrapper(int offset) throws VerificationException.InvalidDBObjectWrapper {
+    public synchronized Optional<DBObject> getDBObjectWrapper(int offset) throws VerificationException.InvalidDBObjectWrapper {
         if (wrapperPool.containsKey(offset)) {
             return Optional.of(wrapperPool.get(offset));
         }
 
-        int dataSize = DBObjectWrapper.getDataSize(getData(), offset);
+        int dataSize = DBObject.getDataSize(getData(), offset);
         if (dataSize == 0) {
             return null;
         }
 
-        int wrappedSize = DBObjectWrapper.getWrappedSize(dataSize);
-        DBObjectWrapper dbObjectWrapper = new DBObjectWrapper(this, offset, offset + wrappedSize);
+        int wrappedSize = DBObject.getWrappedSize(dataSize);
+        DBObject dbObject = new DBObject(this, offset, offset + wrappedSize);
 
-        wrapperPool.put(offset, dbObjectWrapper);
-        return Optional.of(dbObjectWrapper);
+        wrapperPool.put(offset, dbObject);
+        return Optional.of(dbObject);
     }
 
-    public Iterator<DBObjectWrapper> getIterator() {
+    public Iterator<DBObject> getIterator() {
         return new PageDBObjectsIterator(this);
     }
 
-    public List<DBObjectWrapper> getObjectList() {
+    public List<DBObject> getObjectList() {
         return ImmutableList.copyOf(getIterator());
     }
 
@@ -66,18 +66,18 @@ public class Page {
         System.arraycopy(Ints.toByteArray(cursorPosition), 0, this.data, 0, Integer.BYTES);
     }
 
-    public synchronized Optional<DBObjectWrapper> getEmptyDBObjectWrapper(int length) throws VerificationException.InvalidDBObjectWrapper {
-        if (getData().length - cursorPosition > length + DBObjectWrapper.META_BYTES){
-            DBObjectWrapper dbObjectWrapper = new DBObjectWrapper(this, cursorPosition, cursorPosition + length + DBObjectWrapper.META_BYTES);
-            Optional<DBObjectWrapper> output = Optional.of(dbObjectWrapper);
-            this.wrapperPool.putIfAbsent(cursorPosition, dbObjectWrapper);
-            this.setCursorPosition(this.cursorPosition + length + DBObjectWrapper.META_BYTES);
+    public synchronized Optional<DBObject> getEmptyDBObjectWrapper(int length) throws VerificationException.InvalidDBObjectWrapper {
+        if (getData().length - cursorPosition > length + DBObject.META_BYTES){
+            DBObject dbObject = new DBObject(this, cursorPosition, cursorPosition + length + DBObject.META_BYTES);
+            Optional<DBObject> output = Optional.of(dbObject);
+            this.wrapperPool.putIfAbsent(cursorPosition, dbObject);
+            this.setCursorPosition(this.cursorPosition + length + DBObject.META_BYTES);
             return output;
         }
         return Optional.empty();
     }
 
-    private static class PageDBObjectsIterator implements Iterator<DBObjectWrapper> {
+    private static class PageDBObjectsIterator implements Iterator<DBObject> {
         private int cursor = 0;
         private final Page page;
 
@@ -87,19 +87,19 @@ public class Page {
 
         @Override
         public boolean hasNext() {
-            return DBObjectWrapper.getDataSize(this.page.getData(), this.cursor) != 0;
+            return DBObject.getDataSize(this.page.getData(), this.cursor) != 0;
         }
 
         @SneakyThrows
         @Override
-        public DBObjectWrapper next() {
-            int dataSize = DBObjectWrapper.getDataSize(this.page.getData(), this.cursor);
-            int wrappedSize = DBObjectWrapper.getWrappedSize(dataSize);
+        public DBObject next() {
+            int dataSize = DBObject.getDataSize(this.page.getData(), this.cursor);
+            int wrappedSize = DBObject.getWrappedSize(dataSize);
 
-            DBObjectWrapper dbObjectWrapper = new DBObjectWrapper(this.page, cursor, cursor + wrappedSize);
+            DBObject dbObject = new DBObject(this.page, cursor, cursor + wrappedSize);
 
             cursor += wrappedSize;
-            return dbObjectWrapper;
+            return dbObject;
         }
     }
 

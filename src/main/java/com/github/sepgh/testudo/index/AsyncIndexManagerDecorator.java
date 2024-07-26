@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.exception.IndexExistsException;
+import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
@@ -9,6 +10,7 @@ import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.util.Optional;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 
 public class AsyncIndexManagerDecorator<K extends Comparable<K>, V extends Comparable<V>> extends IndexManagerDecorator<K, V> {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -43,6 +45,26 @@ public class AsyncIndexManagerDecorator<K extends Comparable<K>, V extends Compa
         writeLock.lock();
         try {
             return super.removeIndex(identifier);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Override
+    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexMissingException {
+        writeLock.lock();
+        try {
+            return super.updateIndex(identifier, value);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Override
+    public void purgeIndex() {
+        writeLock.lock();
+        try {
+            super.purgeIndex();
         } finally {
             writeLock.unlock();
         }

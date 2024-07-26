@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.index.tree;
 
 import com.github.sepgh.testudo.exception.IndexExistsException;
+import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.AbstractIndexManager;
 import com.github.sepgh.testudo.index.Pointer;
@@ -79,6 +80,22 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
         AbstractTreeNode<K> root = getRoot(indexIOSession);
         return new BPlusTreeIndexCreateOperation<>(degree, indexIOSession, keyImmutableBinaryObjectWrapper, valueImmutableBinaryObjectWrapper, this.kvSize).addIndex(root, identifier, value);
+    }
+
+    @Override
+    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexMissingException {
+        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
+
+        AbstractLeafTreeNode<K, V> node = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory, valueImmutableBinaryObjectWrapper);
+        List<K> keyList = node.getKeyList(degree);
+        if (!keyList.contains(identifier)) {
+            throw new IndexMissingException();
+        }
+
+        node.setKeyValue(keyList.indexOf(identifier), new AbstractLeafTreeNode.KeyValue<>(identifier, value));
+        indexIOSession.update(node);
+        indexIOSession.commit();
+        return node;
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.github.sepgh.testudo.scheme;
 import lombok.Builder;
 import lombok.Data;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -40,8 +41,10 @@ public class Scheme {
     public static class Meta {
         private String comment;
         private String maxSize;
-        private int max;
-        private int min;
+        private Integer max;
+        private Integer min;
+        @Builder.Default
+        private String charset = StandardCharsets.UTF_8.name();
 
         @Override
         public boolean equals(Object o) {

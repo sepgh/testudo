@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.exception.IndexExistsException;
+import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
@@ -19,6 +20,12 @@ public class IndexManagerDecorator<K extends Comparable<K>, V extends Comparable
     public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
         return this.indexManager.addIndex(identifier, value);
     }
+
+    @Override
+    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexMissingException {
+        return this.indexManager.updateIndex(identifier, value);
+    }
+
     public Optional<V> getIndex(K identifier) throws InternalOperationException {
         return this.indexManager.getIndex(identifier);
     }

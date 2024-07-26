@@ -7,17 +7,22 @@ import lombok.Getter;
 
 
 /*
- * - Flags (1 byte):
- *     - 0x01  alive
- *     - 0x00  dead
- * - CollectionId (int, 4 bytes)
- * - Size  (int, 4 bytes)
+ * - META
+ *      - Flags (1 byte):
+ *          - 0x01  alive
+ *          - 0x00  dead
+ *      - CollectionId (int, 4 bytes)
+ *      - Version (int, 4 bytes)
+ *      - Size  (int, 4 bytes)
  * - Data  (byte[])
  */
-public class DBObjectWrapper {
+public class DBObject {
     public static byte ALIVE_OBJ = 0x01;
     public static int FLAG_BYTES = 1;
-    public static int META_BYTES = FLAG_BYTES + (2 * Integer.BYTES);
+    public static int META_BYTES = FLAG_BYTES + (3 * Integer.BYTES);
+    public static int META_VERSION_OFFSET = FLAG_BYTES + Integer.BYTES;
+    public static int META_COLLECTION_ID_OFFSET = FLAG_BYTES;
+    public static int META_SIZE_OFFSET = FLAG_BYTES + (2 * Integer.BYTES);
     private final byte[] wrappedData;
     @Getter
     private final int begin;
@@ -28,7 +33,7 @@ public class DBObjectWrapper {
     @Getter
     private final Page page;
 
-    public DBObjectWrapper(Page page, int begin, int end) throws VerificationException.InvalidDBObjectWrapper {
+    public DBObject(Page page, int begin, int end) throws VerificationException.InvalidDBObjectWrapper {
         this.wrappedData = page.getData();
         this.begin = begin;
         this.end = end;
@@ -49,18 +54,17 @@ public class DBObjectWrapper {
     }
 
     public int getCollectionId() {
-        return DBObjectWrapper.getCollectionId(this.wrappedData, this.begin);
+        return DBObject.getCollectionId(this.wrappedData, this.begin);
     }
 
     public boolean isAlive() {
-
         byte[] b = new byte[this.length];
         System.arraycopy(wrappedData, this.begin, b, 0, this.length);
-        return DBObjectWrapper.isAlive(this.wrappedData, this.begin);
+        return DBObject.isAlive(this.wrappedData, this.begin);
     }
 
     public int getDataSize() {
-        return DBObjectWrapper.getDataSize(this.wrappedData, this.begin);
+        return DBObject.getDataSize(this.wrappedData, this.begin);
     }
 
     public byte[] readData(int offset, int size) {
@@ -100,12 +104,26 @@ public class DBObjectWrapper {
         );
     }
 
+    public int getVersion() {
+        return DBObject.getVersion(this.wrappedData, this.begin);
+    }
+
+    public void setVersion(int version) {
+        System.arraycopy(
+                Ints.toByteArray(version),
+                0,
+                this.wrappedData,
+                META_VERSION_OFFSET,
+                Integer.BYTES
+        );
+    }
+
     public void setCollectionId(int collectionId) {
         System.arraycopy(
                 Ints.toByteArray(collectionId),
                 0,
                 this.wrappedData,
-                begin + FLAG_BYTES,
+                begin + META_COLLECTION_ID_OFFSET,
                 Integer.BYTES
         );
     }
@@ -115,7 +133,7 @@ public class DBObjectWrapper {
                 Ints.toByteArray(size),
                 0,
                 this.wrappedData,
-                begin + FLAG_BYTES + Integer.BYTES,
+                begin + META_SIZE_OFFSET,
                 Integer.BYTES
         );
     }
@@ -141,7 +159,11 @@ public class DBObjectWrapper {
     }
 
     public static int getCollectionId(byte[] wrappedData, int begin) {
-        return BinaryUtils.bytesToInteger(wrappedData, begin + FLAG_BYTES);
+        return BinaryUtils.bytesToInteger(wrappedData, begin + META_COLLECTION_ID_OFFSET);
+    }
+
+    public static int getVersion(byte[] wrappedData, int begin) {
+        return BinaryUtils.bytesToInteger(wrappedData, begin + META_VERSION_OFFSET);
     }
 
     public static boolean isAlive(byte[] wrappedData, int begin){
@@ -149,10 +171,10 @@ public class DBObjectWrapper {
     }
 
     public static int getDataSize(byte[] wrappedData, int begin){
-        return BinaryUtils.bytesToInteger(wrappedData, begin + FLAG_BYTES + Integer.BYTES);
+        return BinaryUtils.bytesToInteger(wrappedData, begin + META_SIZE_OFFSET);
     }
 
     public static int getWrappedSize(int length) {
-        return FLAG_BYTES + (2 * Integer.BYTES) + length;
+        return META_SIZE_OFFSET + length;
     }
 }

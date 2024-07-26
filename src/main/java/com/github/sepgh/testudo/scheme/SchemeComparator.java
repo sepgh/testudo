@@ -44,6 +44,7 @@ public class SchemeComparator {
                             DifferenceReason.COLLECTION_REMOVED,
                             oldSchemeCollection,
                             null,
+                            null,
                             null
                     );
                     continue;
@@ -63,6 +64,7 @@ public class SchemeComparator {
                         comparisonListener.onChange(
                                 DifferenceReason.FIELD_REMOVED,
                                 oldSchemeCollection,
+                                newCollection,
                                 field,
                                 null
                         );
@@ -74,6 +76,7 @@ public class SchemeComparator {
                         comparisonListener.onChange(
                                 DifferenceReason.FIELD_INDEX_CHANGED,
                                 oldSchemeCollection,
+                                newCollection,
                                 field,
                                 newCollectionField
                         );
@@ -83,6 +86,7 @@ public class SchemeComparator {
                         comparisonListener.onChange(
                                 DifferenceReason.FIELD_META_CHANGED,
                                 oldSchemeCollection,
+                                newCollection,
                                 field,
                                 newCollectionField
                         );
@@ -92,7 +96,7 @@ public class SchemeComparator {
 
                 newCollectionUnComparedFields.forEach(field -> {
                     comparisonListener.onChange(
-                            DifferenceReason.NEW_FIELD, newCollection, null, field
+                            DifferenceReason.NEW_FIELD, oldSchemeCollection, newCollection, null, field
                     );
                 });
             }
@@ -102,7 +106,7 @@ public class SchemeComparator {
     }
 
     public interface SchemeComparisonListener {
-        void onChange(DifferenceReason differenceReason, Scheme.Collection collection, @Nullable Scheme.Field oldField, @Nullable Scheme.Field newField);
+        void onChange(DifferenceReason differenceReason, @Nullable Scheme.Collection oldCollection, @Nullable Scheme.Collection newCollection, @Nullable Scheme.Field oldField, @Nullable Scheme.Field newField);
     }
 
     public enum DifferenceReason {
