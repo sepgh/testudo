@@ -16,7 +16,7 @@ public class SchemeComparator {
     public boolean compare(SchemeComparisonListener comparisonListener) {
 
         // Cases where there are no changes
-        if (oldScheme == newScheme || oldScheme.getVersion() == newScheme.getVersion()) {
+        if (oldScheme == newScheme || oldScheme.getVersion().equals(newScheme.getVersion())) {
             return false;
         }
 

@@ -12,7 +12,7 @@ import java.util.Objects;
 @Builder
 public class Scheme {
     private String dbName;
-    private int version;
+    private Integer version;
     private List<Collection> collections;
 
     @Builder

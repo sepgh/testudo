@@ -1,5 +1,6 @@
 package com.github.sepgh.test.storage.db;
 
+import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.operation.DefaultFieldIndexManagerProvider;
 import com.github.sepgh.testudo.scheme.Scheme;
@@ -13,6 +14,7 @@ import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,10 +47,10 @@ public class SchemeManagerTestCase {
         System.out.println(this.dbPath);
     }
 
-//    @AfterEach
-//    public void destroy() throws IOException {
-//        FileUtils.deleteDirectory(dbPath.toString());
-//    }
+    @AfterEach
+    public void destroy() throws IOException {
+        FileUtils.deleteDirectory(dbPath.toString());
+    }
 
 
     @Test
@@ -108,5 +110,18 @@ public class SchemeManagerTestCase {
         Scheme newScheme = gson.fromJson(jsonReader, Scheme.class);
 
         Assertions.assertEquals(scheme, newScheme);
+
+        schemeManager.update();
+        Assertions.assertEquals(scheme, newScheme);
+        scheme.setVersion(2);
+        schemeManager.update();
+        Assertions.assertNotEquals(scheme, newScheme);
+
+        fileReader = new FileReader(path.toString());
+        jsonReader = new JsonReader(fileReader);
+        Scheme newScheme2 = gson.fromJson(jsonReader, Scheme.class);
+
+        Assertions.assertEquals(scheme, newScheme2);
+
     }
 }

@@ -69,6 +69,12 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
         if (this.oldScheme != null) {
             this.compareSchemes();
         }
+        if (this.scheme.getVersion() == null)
+            if (this.oldScheme != null) {
+                this.scheme.setVersion(this.oldScheme.getVersion() + 1);
+            } else {
+                this.scheme.setVersion(1);
+            }
     }
 
     public void update() throws IOException {
@@ -90,7 +96,6 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
         FileWriter fileWriter = new FileWriter(this.getSchemePath());
         gson.toJson(this.scheme, fileWriter);
         fileWriter.close();
-
     }
 
     private void compareSchemes() {
