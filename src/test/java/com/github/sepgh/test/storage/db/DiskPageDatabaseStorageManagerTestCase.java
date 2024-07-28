@@ -6,7 +6,7 @@ import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.storage.db.DBObject;
-import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
+import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
 import com.github.sepgh.testudo.storage.db.Page;
 import com.github.sepgh.testudo.storage.db.PageBuffer;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
@@ -24,9 +24,9 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
 
-public class DatabaseStorageManagerTestCase {
+public class DiskPageDatabaseStorageManagerTestCase {
 
-    private DatabaseStorageManager databaseStorageManager;
+    private DiskPageDatabaseStorageManager diskPageDatabaseStorageManager;
     private Path dbPath;
 
     @BeforeEach
@@ -35,7 +35,7 @@ public class DatabaseStorageManagerTestCase {
         EngineConfig engineConfig = EngineConfig.builder()
                 .baseDBPath(this.dbPath.toString())
                 .build();
-        this.databaseStorageManager = new DatabaseStorageManager(
+        this.diskPageDatabaseStorageManager = new DiskPageDatabaseStorageManager(
                 engineConfig,
                 new UnlimitedFileHandlerPool(
                         FileHandler.SingletonFileHandlerFactory.getInstance()
@@ -51,13 +51,13 @@ public class DatabaseStorageManagerTestCase {
     @Test
     public void test_canStoreObject() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
-        Pointer pointer = this.databaseStorageManager.store(17, data);
+        Pointer pointer = this.diskPageDatabaseStorageManager.store(17, data);
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
 
         // Making sure page wrapper is no longer held in referenced pages
-        PageBuffer pageBuffer = this.databaseStorageManager.getPageBuffer();
+        PageBuffer pageBuffer = this.diskPageDatabaseStorageManager.getPageBuffer();
         Field referencedWrappers = PageBuffer.class.getDeclaredField("referencedWrappers");
         referencedWrappers.setAccessible(true);
         Map<PageBuffer.PageTitle, PageBuffer.PageWrapper> referencedPageWrappers = (Map<PageBuffer.PageTitle, PageBuffer.PageWrapper>) referencedWrappers.get(pageBuffer);
@@ -67,12 +67,12 @@ public class DatabaseStorageManagerTestCase {
     @Test
     public void test_canStoreAndReadObject() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
-        Pointer pointer = this.databaseStorageManager.store(17, data);
+        Pointer pointer = this.diskPageDatabaseStorageManager.store(17, data);
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
 
-        Optional<DBObject> optionalDBObjectWrapper = this.databaseStorageManager.select(pointer);
+        Optional<DBObject> optionalDBObjectWrapper = this.diskPageDatabaseStorageManager.select(pointer);
         Assertions.assertTrue(optionalDBObjectWrapper.isPresent());
 
         DBObject dbObject = optionalDBObjectWrapper.get();
@@ -85,12 +85,12 @@ public class DatabaseStorageManagerTestCase {
     @Test
     public void test_canStoreUpdateAndReadObject() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
-        Pointer pointer = this.databaseStorageManager.store(17, data);
+        Pointer pointer = this.diskPageDatabaseStorageManager.store(17, data);
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
 
-        this.databaseStorageManager.update(pointer, dbObject -> {
+        this.diskPageDatabaseStorageManager.update(pointer, dbObject -> {
             try {
                 dbObject.modifyData("Nest".getBytes(StandardCharsets.UTF_8));
             } catch (VerificationException.InvalidDBObjectWrapper e) {
@@ -98,7 +98,7 @@ public class DatabaseStorageManagerTestCase {
             }
         });
 
-        Optional<DBObject> optionalDBObjectWrapper = this.databaseStorageManager.select(pointer);
+        Optional<DBObject> optionalDBObjectWrapper = this.diskPageDatabaseStorageManager.select(pointer);
         Assertions.assertTrue(optionalDBObjectWrapper.isPresent());
 
         DBObject dbObject = optionalDBObjectWrapper.get();
@@ -111,13 +111,13 @@ public class DatabaseStorageManagerTestCase {
     @Test
     public void test_canStoreDeleteAndReuseObject() throws IOException, ExecutionException, InterruptedException {
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
-        Pointer pointer = this.databaseStorageManager.store(17, data);
+        Pointer pointer = this.diskPageDatabaseStorageManager.store(17, data);
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
 
-        this.databaseStorageManager.remove(pointer);
-        pointer = this.databaseStorageManager.store(17, data);
+        this.diskPageDatabaseStorageManager.remove(pointer);
+        pointer = this.diskPageDatabaseStorageManager.store(17, data);
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
@@ -130,22 +130,22 @@ public class DatabaseStorageManagerTestCase {
 
         for (int i = 0; i < inputs.size(); i++) {
             byte[] data = inputs.get(i).getBytes(StandardCharsets.UTF_8);
-            Pointer pointer = this.databaseStorageManager.store(17, data);
+            Pointer pointer = this.diskPageDatabaseStorageManager.store(17, data);
             Assertions.assertNotNull(pointer);
             pointers.add(i, pointer);
         }
 
         for (int i = 0; i < inputs.size(); i++){
             Pointer pointer = pointers.get(i);
-            Optional<DBObject> optionalDBObjectWrapper = this.databaseStorageManager.select(pointer);
+            Optional<DBObject> optionalDBObjectWrapper = this.diskPageDatabaseStorageManager.select(pointer);
             Assertions.assertTrue(optionalDBObjectWrapper.isPresent());
             Assertions.assertTrue(optionalDBObjectWrapper.get().isAlive());
             Assertions.assertEquals(inputs.get(i), new String(optionalDBObjectWrapper.get().getData(), StandardCharsets.UTF_8));
         }
 
         for (Pointer pointer : pointers) {
-            this.databaseStorageManager.remove(pointer);
-            Optional<DBObject> optionalDBObjectWrapper = this.databaseStorageManager.select(pointer);
+            this.diskPageDatabaseStorageManager.remove(pointer);
+            Optional<DBObject> optionalDBObjectWrapper = this.diskPageDatabaseStorageManager.select(pointer);
             Assertions.assertTrue(optionalDBObjectWrapper.isPresent());
             Assertions.assertFalse(optionalDBObjectWrapper.get().isAlive());
         }
@@ -153,7 +153,7 @@ public class DatabaseStorageManagerTestCase {
 
         for (int i = 0; i < inputs.size(); i++) {
             byte[] data = inputs.get(i).getBytes(StandardCharsets.UTF_8);
-            Pointer pointer = this.databaseStorageManager.store(17, data);
+            Pointer pointer = this.diskPageDatabaseStorageManager.store(17, data);
             Assertions.assertEquals(pointers.get(i), pointer);
         }
 
@@ -177,7 +177,7 @@ public class DatabaseStorageManagerTestCase {
                 String generatedString = new String(array, StandardCharsets.UTF_8);
                 try {
                     byte[] generatedStringBytes = generatedString.getBytes(StandardCharsets.UTF_8);
-                    Pointer pointer = databaseStorageManager.store(1, generatedStringBytes);
+                    Pointer pointer = diskPageDatabaseStorageManager.store(1, generatedStringBytes);
                     keyValues.add(new AbstractLeafTreeNode.KeyValue<>(generatedString, pointer));
                 } catch (IOException | InterruptedException | ExecutionException e) {
                     throw new RuntimeException(e);
@@ -190,7 +190,7 @@ public class DatabaseStorageManagerTestCase {
         countDownLatch.await();
 
         for (AbstractLeafTreeNode.KeyValue<String, Pointer> keyValue : keyValues) {
-            Optional<DBObject> dbObject = this.databaseStorageManager.select(keyValue.value());
+            Optional<DBObject> dbObject = this.diskPageDatabaseStorageManager.select(keyValue.value());
             Assertions.assertTrue(dbObject.isPresent());
             Assertions.assertTrue(dbObject.get().isAlive());
             String value = new String(dbObject.get().getData(), StandardCharsets.UTF_8);

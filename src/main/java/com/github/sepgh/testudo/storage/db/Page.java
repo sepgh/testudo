@@ -43,7 +43,7 @@ public class Page {
 
         int dataSize = DBObject.getDataSize(getData(), offset);
         if (dataSize == 0) {
-            return null;
+            return Optional.empty();
         }
 
         int wrappedSize = DBObject.getWrappedSize(dataSize);

@@ -12,7 +12,7 @@ import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.scheme.SchemeManager;
 import com.github.sepgh.testudo.serialization.CollectionSerializationUtil;
 import com.github.sepgh.testudo.storage.db.DBObject;
-import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
+import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import lombok.SneakyThrows;
 
@@ -24,14 +24,14 @@ import java.util.concurrent.ExecutionException;
 
 public class CollectionSchemeUpdater {
     private SchemeManager.CollectionFieldsUpdate collectionFieldsUpdate;
-    private DatabaseStorageManager databaseStorageManager;
+    private DiskPageDatabaseStorageManager diskPageDatabaseStorageManager;
     private SchemeManager schemeManager;
 
     public CollectionSchemeUpdater(
-            DatabaseStorageManager databaseStorageManager,
+            DiskPageDatabaseStorageManager diskPageDatabaseStorageManager,
             SchemeManager schemeManager
     ) {
-        this.databaseStorageManager = databaseStorageManager;
+        this.diskPageDatabaseStorageManager = diskPageDatabaseStorageManager;
         this.schemeManager = schemeManager;
     }
 
@@ -54,7 +54,7 @@ public class CollectionSchemeUpdater {
         lockableIterator.forEachRemaining(keyValue -> {
             Pointer pointer = keyValue.value();
             try {
-                databaseStorageManager.update(
+                diskPageDatabaseStorageManager.update(
                         pointer,
                         dbObject -> {
                             if (collectionFieldsUpdate.getVersion() <= dbObject.getVersion())
@@ -113,7 +113,7 @@ public class CollectionSchemeUpdater {
             );
         }
 
-        Pointer pointer = databaseStorageManager.store(
+        Pointer pointer = diskPageDatabaseStorageManager.store(
                 collectionFieldsUpdate.getAfter().getId(),
                 newObj
         );

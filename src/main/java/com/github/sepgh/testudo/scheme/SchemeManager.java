@@ -6,7 +6,7 @@ import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.operation.FieldIndexManagerProvider;
 import com.github.sepgh.testudo.operation.CollectionSchemeUpdater;
-import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
+import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -23,8 +23,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
-
 
 
 // Todo: index updating
@@ -36,16 +34,16 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
     private final Gson gson = new GsonBuilder().serializeNulls().create();
     private final SchemeUpdateConfig schemeUpdateConfig;
     private final FieldIndexManagerProvider fieldIndexManagerProvider;
-    private final DatabaseStorageManager databaseStorageManager;
+    private final DiskPageDatabaseStorageManager diskPageDatabaseStorageManager;
     private final List<CollectionFieldsUpdate> collectionFieldsUpdateQueue = new LinkedList<>();
     private final Map<Integer, CollectionFieldsUpdate> collectionFieldTypeUpdateMap = new HashMap<>();
 
-    public SchemeManager(EngineConfig engineConfig, Scheme scheme, SchemeUpdateConfig schemeUpdateConfig, FieldIndexManagerProvider fieldIndexManagerProvider, DatabaseStorageManager databaseStorageManager) {
+    public SchemeManager(EngineConfig engineConfig, Scheme scheme, SchemeUpdateConfig schemeUpdateConfig, FieldIndexManagerProvider fieldIndexManagerProvider, DiskPageDatabaseStorageManager diskPageDatabaseStorageManager) {
         this.scheme = scheme;
         this.engineConfig = engineConfig;
         this.schemeUpdateConfig = schemeUpdateConfig;
         this.fieldIndexManagerProvider = fieldIndexManagerProvider;
-        this.databaseStorageManager = databaseStorageManager;
+        this.diskPageDatabaseStorageManager = diskPageDatabaseStorageManager;
         init();
     }
 
@@ -79,7 +77,7 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
 
     public void update() throws IOException {
         if (!collectionFieldsUpdateQueue.isEmpty()) {
-            CollectionSchemeUpdater collectionSchemeUpdater = new CollectionSchemeUpdater(databaseStorageManager, this);
+            CollectionSchemeUpdater collectionSchemeUpdater = new CollectionSchemeUpdater(diskPageDatabaseStorageManager, this);
 
             CollectionFieldsUpdate collectionFieldsUpdate = collectionFieldsUpdateQueue.removeLast();
             while (collectionFieldsUpdate != null) {
@@ -121,7 +119,7 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
     @SneakyThrows
     private void removeDBObject(AbstractLeafTreeNode.KeyValue<?, ?> keyValue) {
         Pointer pointer = (Pointer) keyValue.value();
-        databaseStorageManager.remove(pointer);
+        diskPageDatabaseStorageManager.remove(pointer);
     }
 
     public IndexManager<?, ?> getPKIndexManager(Scheme.Collection collection) {
