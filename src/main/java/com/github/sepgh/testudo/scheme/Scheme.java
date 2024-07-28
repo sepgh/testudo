@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Data
+@Builder
 public class Scheme {
     private String dbName;
     private int version;

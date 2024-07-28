@@ -14,7 +14,7 @@ import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.*;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
-import com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager;
+import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
@@ -63,8 +63,8 @@ public class ImmutableBinaryObjectWrapperTestCase {
         FileUtils.deleteDirectory(dbPath.toString());
     }
 
-    private CompactFileIndexStorageManager getStorageManager() throws IOException, ExecutionException, InterruptedException {
-        return new CompactFileIndexStorageManager(
+    private OrganizedFileIndexStorageManager getStorageManager() throws IOException, ExecutionException, InterruptedException {
+        return new OrganizedFileIndexStorageManager(
                 "test",
                 new JsonIndexHeaderManager.Factory(),
                 engineConfig,
@@ -74,9 +74,9 @@ public class ImmutableBinaryObjectWrapperTestCase {
 
     @Test
     public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
-        CompactFileIndexStorageManager compactFileIndexStorageManager = getStorageManager();
+        OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getStorageManager();
 
-        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, compactFileIndexStorageManager, new IntegerImmutableBinaryObjectWrapper());
+        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new IntegerImmutableBinaryObjectWrapper());
 
         for (int i = 0; i < 13; i ++){
             indexManager.addIndex(i, Pointer.empty());
@@ -97,9 +97,9 @@ public class ImmutableBinaryObjectWrapperTestCase {
     }
     @Test
     public void test_NoZeroIntegerIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
-        CompactFileIndexStorageManager compactFileIndexStorageManager = getStorageManager();
+        OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getStorageManager();
 
-        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, compactFileIndexStorageManager, new NoZeroIntegerImmutableBinaryObjectWrapper());
+        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new NoZeroIntegerImmutableBinaryObjectWrapper());
 
         Assertions.assertThrows(ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue.class, () -> {
             indexManager.addIndex(0, Pointer.empty());
@@ -125,9 +125,9 @@ public class ImmutableBinaryObjectWrapperTestCase {
 
     @Test
     public void test_NoZeroLongIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
-        CompactFileIndexStorageManager compactFileIndexStorageManager = getStorageManager();
+        OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getStorageManager();
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, compactFileIndexStorageManager, new NoZeroLongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new NoZeroLongImmutableBinaryObjectWrapper());
 
         Assertions.assertThrows(ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue.class, () -> {
             indexManager.addIndex(0L, Pointer.empty());
@@ -153,7 +153,7 @@ public class ImmutableBinaryObjectWrapperTestCase {
 
     @Test
     public void test_CustomBinaryObjectWrapper() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
-        CompactFileIndexStorageManager compactFileIndexStorageManager = new CompactFileIndexStorageManager(
+        OrganizedFileIndexStorageManager organizedFileIndexStorageManager = new OrganizedFileIndexStorageManager(
                 "Test",
                 new JsonIndexHeaderManager.Factory(),
                 engineConfig,
@@ -179,7 +179,7 @@ public class ImmutableBinaryObjectWrapperTestCase {
         };
 
 
-        IndexManager<String, Pointer> indexManager = new BPlusTreeIndexManager<>(1, degree, compactFileIndexStorageManager, keyImmutableBinaryObjectWrapper, new PointerImmutableBinaryObjectWrapper(), nodeFactory);
+        IndexManager<String, Pointer> indexManager = new BPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, keyImmutableBinaryObjectWrapper, new PointerImmutableBinaryObjectWrapper(), nodeFactory);
 
 
         indexManager.addIndex("AAA", Pointer.empty());
@@ -207,36 +207,36 @@ public class ImmutableBinaryObjectWrapperTestCase {
 
 
         KVSize kvSize = new KVSize(StringImmutableBinaryObjectWrapper.BYTES, PointerImmutableBinaryObjectWrapper.BYTES);
-        IndexStorageManager.NodeData rootNodeData = compactFileIndexStorageManager.getRoot(1, kvSize).get().get();
+        IndexStorageManager.NodeData rootNodeData = organizedFileIndexStorageManager.getRoot(1, kvSize).get().get();
         InternalTreeNode<String> rootInternalTreeNode = new InternalTreeNode<>(rootNodeData.bytes(), keyImmutableBinaryObjectWrapper);
         rootInternalTreeNode.setPointer(rootNodeData.pointer());
 
 
-        InternalTreeNode<String> internalNode1 = (InternalTreeNode<String>) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, rootInternalTreeNode.getChildrenList().getFirst(), nodeFactory, kvSize);
+        InternalTreeNode<String> internalNode1 = (InternalTreeNode<String>) IndexTreeNodeIO.read(organizedFileIndexStorageManager, 1, rootInternalTreeNode.getChildrenList().getFirst(), nodeFactory, kvSize);
 
-        AbstractLeafTreeNode<String, Pointer> leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, internalNode1.getChildrenList().getFirst(), nodeFactory, kvSize);
+        AbstractLeafTreeNode<String, Pointer> leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(organizedFileIndexStorageManager, 1, internalNode1.getChildrenList().getFirst(), nodeFactory, kvSize);
         Assertions.assertEquals("AAA", leaf.getKeyList(degree).getFirst());
         Assertions.assertEquals("AAB", leaf.getKeyList(degree).getLast());
-        leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, leaf.getNextSiblingPointer(degree).get(), nodeFactory, kvSize);
+        leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(organizedFileIndexStorageManager, 1, leaf.getNextSiblingPointer(degree).get(), nodeFactory, kvSize);
         Assertions.assertEquals("AAC", leaf.getKeyList(degree).getFirst());
         Assertions.assertEquals("AAD", leaf.getKeyList(degree).getLast());
-        leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, leaf.getNextSiblingPointer(degree).get(), nodeFactory, kvSize);
+        leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(organizedFileIndexStorageManager, 1, leaf.getNextSiblingPointer(degree).get(), nodeFactory, kvSize);
         Assertions.assertEquals("ABA", leaf.getKeyList(degree).getFirst());
         Assertions.assertEquals("ABB", leaf.getKeyList(degree).getLast());
-        leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, leaf.getNextSiblingPointer(degree).get(), nodeFactory, kvSize);
+        leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(organizedFileIndexStorageManager, 1, leaf.getNextSiblingPointer(degree).get(), nodeFactory, kvSize);
         Assertions.assertEquals("ABC", leaf.getKeyList(degree).getFirst());
         Assertions.assertEquals("ACA", leaf.getKeyList(degree).getLast());
-        leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, leaf.getNextSiblingPointer(degree).get(), nodeFactory, kvSize);
+        leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(organizedFileIndexStorageManager, 1, leaf.getNextSiblingPointer(degree).get(), nodeFactory, kvSize);
         Assertions.assertEquals("ACB", leaf.getKeyList(degree).getFirst());
         Assertions.assertEquals("ACC", leaf.getKeyList(degree).getLast());
-        leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, leaf.getNextSiblingPointer(degree).get(), nodeFactory, kvSize);
+        leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(organizedFileIndexStorageManager, 1, leaf.getNextSiblingPointer(degree).get(), nodeFactory, kvSize);
         Assertions.assertEquals("BAA", leaf.getKeyList(degree).getFirst());
         Assertions.assertEquals("BAB", leaf.getKeyList(degree).getLast());
-        leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, leaf.getNextSiblingPointer(degree).get(), nodeFactory, kvSize);
+        leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(organizedFileIndexStorageManager, 1, leaf.getNextSiblingPointer(degree).get(), nodeFactory, kvSize);
         Assertions.assertEquals("BAC", leaf.getKeyList(degree).getFirst());
         Assertions.assertEquals("BBA", leaf.getKeyList(degree).get(1));
         Assertions.assertEquals("BBC", leaf.getKeyList(degree).getLast());
-        leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(compactFileIndexStorageManager, 1, leaf.getNextSiblingPointer(degree).get(), nodeFactory, kvSize);
+        leaf = (AbstractLeafTreeNode<String, Pointer>) IndexTreeNodeIO.read(organizedFileIndexStorageManager, 1, leaf.getNextSiblingPointer(degree).get(), nodeFactory, kvSize);
         Assertions.assertEquals("BBB", leaf.getKeyList(degree).getFirst());
         Assertions.assertEquals("CAA", leaf.getKeyList(degree).get(1));
         Assertions.assertEquals("CAB", leaf.getKeyList(degree).getLast());

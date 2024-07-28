@@ -8,7 +8,7 @@ import com.google.common.primitives.Longs;
 import java.util.List;
 
 public class LongSerializer implements Serializer<Long> {
-    public static final String TYPE_NAME = DefaultType.LONG.getName();
+    public static final String TYPE_NAME = FieldType.LONG.getName();
 
     @Override
     public Class<Long> getType() {
@@ -22,7 +22,7 @@ public class LongSerializer implements Serializer<Long> {
 
     @Override
     public List<String> compatibleTypes() {
-        return List.of(DefaultType.INT.getName());
+        return List.of(FieldType.INT.getName());
     }
 
     @Override

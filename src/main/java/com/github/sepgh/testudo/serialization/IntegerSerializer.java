@@ -8,7 +8,7 @@ import com.google.common.primitives.Ints;
 import java.util.List;
 
 public class IntegerSerializer implements Serializer<Integer> {
-    public static final String TYPE_NAME = DefaultType.INT.getName();
+    public static final String TYPE_NAME = FieldType.INT.getName();
 
     @Override
     public Class<Integer> getType() {
@@ -22,7 +22,7 @@ public class IntegerSerializer implements Serializer<Integer> {
 
     @Override
     public List<String> compatibleTypes() {
-        return List.of(DefaultType.LONG.getName());
+        return List.of(FieldType.LONG.getName());
     }
 
     @Override

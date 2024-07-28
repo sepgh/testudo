@@ -3,13 +3,12 @@ package com.github.sepgh.testudo.serialization;
 import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.scheme.Scheme;
-import lombok.SneakyThrows;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 public class CharArrSerializer implements Serializer<String> {
-    public static final String TYPE_NAME = DefaultType.CHAR.getName();
+    public static final String TYPE_NAME = FieldType.CHAR.getName();
     public static int MAX_LENGTH = 512;
 
     @Override

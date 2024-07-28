@@ -37,11 +37,13 @@ public class EngineConfig {
     @Builder.Default
     private IndexStorageManagerStrategy indexStorageManagerStrategy = IndexStorageManagerStrategy.COMPACT;
     @Builder.Default
+    private boolean splitIndexPerCollection = false;
+    @Builder.Default
     private FileHandlerStrategy fileHandlerStrategy = FileHandlerStrategy.UNLIMITED;
     @Builder.Default
-    private int fileHandlerPoolMax = -1;
+    private int fileHandlerPoolMaxFiles = 20;
     @Builder.Default
-    private int fileHandlerPoolThreads = -1;
+    private int fileHandlerPoolThreads = 10;
     @Builder.Default
     private String baseDBPath = "/temp";
     @Builder.Default
@@ -54,6 +56,8 @@ public class EngineConfig {
     private int dbPageBufferSize = 100;
     @Builder.Default
     private long dbPageMaxFileSize = UNLIMITED_FILE_SIZE;
+    @Builder.Default
+    private boolean supportZeroInClusterKeys = false;
 
 
     public enum OperationMode {
@@ -77,12 +81,13 @@ public class EngineConfig {
     public enum FileHandlerStrategy {
         LIMITED, UNLIMITED
     }
+
     public enum IndexIOSessionStrategy {
         IMMEDIATE, MEMORY_SNAPSHOT, RECOVERABLE_DISK_SNAPSHOT
     }
 
     public enum IndexStorageManagerStrategy {
-        EXTENDED, COMPACT, SINGLE
+        ORGANIZED, COMPACT
     }
 
     public static class Default {

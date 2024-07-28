@@ -4,11 +4,10 @@ import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.scheme.Scheme;
 
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 public class BooleanSerializer implements Serializer<Boolean> {
-    public static final String TYPE_NAME = DefaultType.BOOLEAN.getName();
+    public static final String TYPE_NAME = FieldType.BOOLEAN.getName();
 
     @Override
     public Class<Boolean> getType() {

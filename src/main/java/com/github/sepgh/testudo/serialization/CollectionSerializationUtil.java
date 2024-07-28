@@ -50,35 +50,6 @@ public class CollectionSerializationUtil {
         return size;
     }
 
-    public static void removeField(Scheme.Collection collection, Scheme.Field fieldToRemove, DBObject dbObject) {
-        List<Scheme.Field> fields = collection.getFields();
-        int i = fields.indexOf(fieldToRemove);
-
-        int offset = getByteArrOffsetTillFieldIndex(fields, i);
-        int size = getByteArrSizeOfField(fieldToRemove);
-        dbObject.modifyData(offset, new byte[size]);
-
-        if (i != fields.size() - 1) {
-            int newOffset = offset + size;
-            byte[] bytes = dbObject.readData(newOffset, dbObject.getDataSize() - newOffset);
-            dbObject.modifyData(newOffset, bytes);
-        }
-    }
-
-    public static boolean hasSpaceToChangeType(Scheme.Collection collection, Scheme.Field oldField, Scheme.Field newField, DBObject dbObject) {
-        Serializer<?> oldTypeSerializer = SerializerRegistry.getInstance().getSerializer(oldField.getType());
-        Serializer<?> newTypeSerializer = SerializerRegistry.getInstance().getSerializer(newField.getType());
-
-        int requiredAdditionalSpace = newTypeSerializer.getSize(newField.getMeta()) - oldTypeSerializer.getSize(oldField.getMeta());
-
-        if (requiredAdditionalSpace > 0) {
-            // Check space
-            return getSizeOfCollection(collection) <= dbObject.getDataSize() + requiredAdditionalSpace;
-        }
-
-        return true;
-    }
-
     public static void setValueOfField(Scheme.Collection after, Scheme.Field field, byte[] obj, @Nullable byte[] bytes) throws SerializationException {
         int offset = getByteArrOffsetTillFieldIndex(after.getFields(), after.getFields().indexOf(field));
         int size = getByteArrSizeOfField(field);

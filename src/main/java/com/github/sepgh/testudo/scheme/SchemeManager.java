@@ -4,7 +4,7 @@ import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.index.IndexManager;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
-import com.github.sepgh.testudo.operation.CollectionIndexManagerProvider;
+import com.github.sepgh.testudo.operation.FieldIndexManagerProvider;
 import com.github.sepgh.testudo.operation.CollectionSchemeUpdater;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.utils.LockableIterator;
@@ -19,11 +19,15 @@ import lombok.SneakyThrows;
 import javax.annotation.Nullable;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
+
+
+// Todo: index updating
 public class SchemeManager implements SchemeComparator.SchemeComparisonListener {
 
     private final Scheme scheme;
@@ -31,16 +35,16 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
     private final EngineConfig engineConfig;
     private final Gson gson = new GsonBuilder().serializeNulls().create();
     private final SchemeUpdateConfig schemeUpdateConfig;
-    private final CollectionIndexManagerProvider collectionIndexManagerProvider;
+    private final FieldIndexManagerProvider fieldIndexManagerProvider;
     private final DatabaseStorageManager databaseStorageManager;
-    private final Queue<CollectionFieldsUpdate> collectionFieldsUpdateQueue = new LinkedBlockingQueue<>();
+    private final List<CollectionFieldsUpdate> collectionFieldsUpdateQueue = new LinkedList<>();
     private final Map<Integer, CollectionFieldsUpdate> collectionFieldTypeUpdateMap = new HashMap<>();
 
-    public SchemeManager(EngineConfig engineConfig, Scheme scheme, SchemeUpdateConfig schemeUpdateConfig, CollectionIndexManagerProvider collectionIndexManagerProvider, DatabaseStorageManager databaseStorageManager) {
+    public SchemeManager(EngineConfig engineConfig, Scheme scheme, SchemeUpdateConfig schemeUpdateConfig, FieldIndexManagerProvider fieldIndexManagerProvider, DatabaseStorageManager databaseStorageManager) {
         this.scheme = scheme;
         this.engineConfig = engineConfig;
         this.schemeUpdateConfig = schemeUpdateConfig;
-        this.collectionIndexManagerProvider = collectionIndexManagerProvider;
+        this.fieldIndexManagerProvider = fieldIndexManagerProvider;
         this.databaseStorageManager = databaseStorageManager;
         init();
     }
@@ -67,15 +71,26 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
         }
     }
 
-    public void update() {
-        CollectionSchemeUpdater collectionSchemeUpdater = new CollectionSchemeUpdater(databaseStorageManager, this);
+    public void update() throws IOException {
+        if (!collectionFieldsUpdateQueue.isEmpty()) {
+            CollectionSchemeUpdater collectionSchemeUpdater = new CollectionSchemeUpdater(databaseStorageManager, this);
 
-        CollectionFieldsUpdate collectionFieldsUpdate = collectionFieldsUpdateQueue.remove();
-        while (collectionFieldsUpdate != null) {
-            collectionSchemeUpdater.reset(collectionFieldsUpdate);
-            collectionSchemeUpdater.update();
-            collectionFieldsUpdate = collectionFieldsUpdateQueue.remove();
+            CollectionFieldsUpdate collectionFieldsUpdate = collectionFieldsUpdateQueue.removeLast();
+            while (collectionFieldsUpdate != null) {
+                collectionSchemeUpdater.reset(collectionFieldsUpdate);
+                collectionSchemeUpdater.update();
+                collectionFieldsUpdate = collectionFieldsUpdateQueue.removeLast();
+            }
         }
+
+        this.store();
+    }
+
+    private void store() throws IOException {
+        FileWriter fileWriter = new FileWriter(this.getSchemePath());
+        gson.toJson(this.scheme, fileWriter);
+        fileWriter.close();
+
     }
 
     private void compareSchemes() {
@@ -107,18 +122,14 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
     public IndexManager<?, ?> getPKIndexManager(Scheme.Collection collection) {
         Optional<Scheme.Field> optionalField = collection.getFields().stream().filter(Scheme.Field::isPrimary).findFirst();
         Scheme.Field primaryField = optionalField.get();
-        int primaryFieldId = primaryField.getId();
-
-        return this.collectionIndexManagerProvider.getIndexManager(primaryFieldId);
+        return this.fieldIndexManagerProvider.getIndexManager(collection, primaryField);
     }
 
     @SneakyThrows
     public LockableIterator<? extends AbstractLeafTreeNode.KeyValue<?, ?>> getPKIterator(Scheme.Collection collection) {
         Optional<Scheme.Field> optionalField = collection.getFields().stream().filter(Scheme.Field::isPrimary).findFirst();
         Scheme.Field primaryField = optionalField.get();
-        int primaryFieldId = primaryField.getId();
-
-        IndexManager<?, ?> indexManager = this.collectionIndexManagerProvider.getIndexManager(primaryFieldId);
+        IndexManager<?, ?> indexManager = this.fieldIndexManagerProvider.getIndexManager(collection, primaryField);
         return indexManager.getSortedIterator();
     }
 
@@ -134,7 +145,7 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
 
         collection.getFields().forEach(field -> {
             if (field.isIndex()) {
-                IndexManager<?, ?> indexManager = this.collectionIndexManagerProvider.getIndexManager(field.getId());
+                IndexManager<?, ?> indexManager = this.fieldIndexManagerProvider.getIndexManager(collection, field);
                 indexManager.purgeIndex();
             }
         });

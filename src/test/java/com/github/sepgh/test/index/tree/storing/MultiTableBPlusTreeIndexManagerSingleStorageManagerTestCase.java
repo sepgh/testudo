@@ -14,7 +14,7 @@ import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrappe
 import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.index.tree.node.data.PointerImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
-import com.github.sepgh.testudo.storage.index.SingleFileIndexStorageManager;
+import com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
@@ -32,7 +32,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.sepgh.testudo.storage.index.SingleFileIndexStorageManager.INDEX_FILE_NAME;
+import static com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager.INDEX_FILE_NAME;
 
 public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
     private Path dbPath;
@@ -59,8 +59,8 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
         FileUtils.deleteDirectory(dbPath.toString());
     }
 
-    private SingleFileIndexStorageManager getSingleFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
-        return new SingleFileIndexStorageManager(
+    private CompactFileIndexStorageManager getSingleFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
+        return new CompactFileIndexStorageManager(
                 new JsonIndexHeaderManager.Factory(),
                 engineConfig,
                 new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
@@ -100,8 +100,8 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         for (int tableId = 1; tableId <= 2; tableId++){
-            SingleFileIndexStorageManager singleFileIndexStorageManager = getSingleFileIndexStorageManager();
-            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, singleFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+            CompactFileIndexStorageManager compactFileIndexStorageManager = getSingleFileIndexStorageManager();
+            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
 
 
 
@@ -114,7 +114,7 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
             Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerImmutableBinaryObjectWrapper.BYTES).size());
             Assertions.assertEquals(samplePointer.getPosition(), ((AbstractLeafTreeNode<Long, Pointer>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
-            StoredTreeStructureVerifier.testOrderedTreeStructure(singleFileIndexStorageManager, tableId, 1, degree);
+            StoredTreeStructureVerifier.testOrderedTreeStructure(compactFileIndexStorageManager, tableId, 1, degree);
         }
 
     }
@@ -149,10 +149,10 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 4L, 9L, 6L, 10L, 8L, 3L, 2L, 11L, 5L, 7L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
-        SingleFileIndexStorageManager singleFileIndexStorageManager = getSingleFileIndexStorageManager();
+        CompactFileIndexStorageManager compactFileIndexStorageManager = getSingleFileIndexStorageManager();
 
         for (int tableId = 1; tableId <= 2; tableId++){
-            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, singleFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
 
             AbstractTreeNode<Long> lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
@@ -163,7 +163,7 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
             Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerImmutableBinaryObjectWrapper.BYTES).size());
             Assertions.assertEquals(samplePointer.getPosition(), ((AbstractLeafTreeNode<Long, Pointer>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
-            StoredTreeStructureVerifier.testUnOrderedTreeStructure1(singleFileIndexStorageManager, tableId, 1, degree);
+            StoredTreeStructureVerifier.testUnOrderedTreeStructure1(compactFileIndexStorageManager, tableId, 1, degree);
 
         }
 
@@ -177,9 +177,9 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
-        SingleFileIndexStorageManager singleFileIndexStorageManager = getSingleFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager1 = new AsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(1, degree, singleFileIndexStorageManager, new LongImmutableBinaryObjectWrapper()));
-        IndexManager<Long, Pointer> indexManager2 = new AsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(2, degree, singleFileIndexStorageManager, new LongImmutableBinaryObjectWrapper()));
+        CompactFileIndexStorageManager compactFileIndexStorageManager = getSingleFileIndexStorageManager();
+        IndexManager<Long, Pointer> indexManager1 = new AsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(1, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper()));
+        IndexManager<Long, Pointer> indexManager2 = new AsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(2, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper()));
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         CountDownLatch countDownLatch = new CountDownLatch((2 * testIdentifiers.size()) - 2);

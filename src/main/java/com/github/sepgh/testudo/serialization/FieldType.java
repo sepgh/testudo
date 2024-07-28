@@ -3,11 +3,11 @@ package com.github.sepgh.testudo.serialization;
 import lombok.Getter;
 
 @Getter
-public enum DefaultType {
+public enum FieldType {
     LONG("long"), INT("int"), CHAR("char"), BOOLEAN("boolean"), FLOAT("float"), DOUBLE("double");
     private final String name;
 
-    DefaultType(String name) {
+    FieldType(String name) {
         this.name = name;
     }
 }
