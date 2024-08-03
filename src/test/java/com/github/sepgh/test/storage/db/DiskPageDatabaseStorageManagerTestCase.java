@@ -51,7 +51,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
     @Test
     public void test_canStoreObject() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
-        Pointer pointer = this.diskPageDatabaseStorageManager.store(17, data);
+        Pointer pointer = this.diskPageDatabaseStorageManager.store(17, 1, data);
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
@@ -67,7 +67,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
     @Test
     public void test_canStoreAndReadObject() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
-        Pointer pointer = this.diskPageDatabaseStorageManager.store(17, data);
+        Pointer pointer = this.diskPageDatabaseStorageManager.store(17,1, data);
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
@@ -85,7 +85,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
     @Test
     public void test_canStoreUpdateAndReadObject() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
-        Pointer pointer = this.diskPageDatabaseStorageManager.store(17, data);
+        Pointer pointer = this.diskPageDatabaseStorageManager.store(17,1, data);
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
@@ -111,13 +111,13 @@ public class DiskPageDatabaseStorageManagerTestCase {
     @Test
     public void test_canStoreDeleteAndReuseObject() throws IOException, ExecutionException, InterruptedException {
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
-        Pointer pointer = this.diskPageDatabaseStorageManager.store(17, data);
+        Pointer pointer = this.diskPageDatabaseStorageManager.store(17, 1, data);
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
 
         this.diskPageDatabaseStorageManager.remove(pointer);
-        pointer = this.diskPageDatabaseStorageManager.store(17, data);
+        pointer = this.diskPageDatabaseStorageManager.store(17, 1, data);
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
@@ -130,7 +130,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
 
         for (int i = 0; i < inputs.size(); i++) {
             byte[] data = inputs.get(i).getBytes(StandardCharsets.UTF_8);
-            Pointer pointer = this.diskPageDatabaseStorageManager.store(17, data);
+            Pointer pointer = this.diskPageDatabaseStorageManager.store(17, 1, data);
             Assertions.assertNotNull(pointer);
             pointers.add(i, pointer);
         }
@@ -153,7 +153,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
 
         for (int i = 0; i < inputs.size(); i++) {
             byte[] data = inputs.get(i).getBytes(StandardCharsets.UTF_8);
-            Pointer pointer = this.diskPageDatabaseStorageManager.store(17, data);
+            Pointer pointer = this.diskPageDatabaseStorageManager.store(17, 1, data);
             Assertions.assertEquals(pointers.get(i), pointer);
         }
 
@@ -177,7 +177,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
                 String generatedString = new String(array, StandardCharsets.UTF_8);
                 try {
                     byte[] generatedStringBytes = generatedString.getBytes(StandardCharsets.UTF_8);
-                    Pointer pointer = diskPageDatabaseStorageManager.store(1, generatedStringBytes);
+                    Pointer pointer = diskPageDatabaseStorageManager.store(1, 1, generatedStringBytes);
                     keyValues.add(new AbstractLeafTreeNode.KeyValue<>(generatedString, pointer));
                 } catch (IOException | InterruptedException | ExecutionException e) {
                     throw new RuntimeException(e);

@@ -67,7 +67,8 @@ public class Scheme {
         private int id;
         private String name;
         private String type;
-        private Meta meta;
+        @Builder.Default
+        private Meta meta = Meta.builder().build();
         private boolean primary;
         private boolean index;
         private boolean indexUnique;

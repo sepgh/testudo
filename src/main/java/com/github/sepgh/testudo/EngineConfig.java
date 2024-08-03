@@ -16,8 +16,10 @@ import java.util.concurrent.TimeUnit;
 @AllArgsConstructor
 public class EngineConfig {
     public static int UNLIMITED_FILE_SIZE = -1;
-    private final int bTreeDegree;
-    private final int bTreeGrowthNodeAllocationCount;
+    @Builder.Default
+    private final int bTreeDegree = 10;
+    @Builder.Default
+    private final int bTreeGrowthNodeAllocationCount = 20;
     @Builder.Default
     private int fileAcquireTimeout = 10;
     @Builder.Default

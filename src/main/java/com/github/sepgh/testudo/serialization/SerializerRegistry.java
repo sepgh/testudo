@@ -8,7 +8,12 @@ public class SerializerRegistry {
 
     private List<Serializer<?>> serializers = new ArrayList<>();
 
-    private SerializerRegistry(){}
+    private SerializerRegistry(){
+        this.register(new IntegerSerializer());
+        this.register(new LongSerializer());
+        this.register(new BooleanSerializer());
+        this.register(new CharArrSerializer());
+    }
 
     public static SerializerRegistry getInstance(){
         return INSTANCE;

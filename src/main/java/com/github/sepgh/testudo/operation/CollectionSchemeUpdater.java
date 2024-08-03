@@ -12,7 +12,7 @@ import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.scheme.SchemeManager;
 import com.github.sepgh.testudo.serialization.CollectionSerializationUtil;
 import com.github.sepgh.testudo.storage.db.DBObject;
-import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import lombok.SneakyThrows;
 
@@ -24,14 +24,14 @@ import java.util.concurrent.ExecutionException;
 
 public class CollectionSchemeUpdater {
     private SchemeManager.CollectionFieldsUpdate collectionFieldsUpdate;
-    private DiskPageDatabaseStorageManager diskPageDatabaseStorageManager;
+    private DatabaseStorageManager databaseStorageManager;
     private SchemeManager schemeManager;
 
     public CollectionSchemeUpdater(
-            DiskPageDatabaseStorageManager diskPageDatabaseStorageManager,
+            DatabaseStorageManager databaseStorageManager,
             SchemeManager schemeManager
     ) {
-        this.diskPageDatabaseStorageManager = diskPageDatabaseStorageManager;
+        this.databaseStorageManager = databaseStorageManager;
         this.schemeManager = schemeManager;
     }
 
@@ -54,12 +54,11 @@ public class CollectionSchemeUpdater {
         lockableIterator.forEachRemaining(keyValue -> {
             Pointer pointer = keyValue.value();
             try {
-                diskPageDatabaseStorageManager.update(
+                databaseStorageManager.update(
                         pointer,
                         dbObject -> {
                             if (collectionFieldsUpdate.getVersion() <= dbObject.getVersion())
                                 return;
-
                             if (hasSpace(dbObject, this.collectionFieldsUpdate.getAfter())){
                                 try {
                                     update(dbObject, this.collectionFieldsUpdate);
@@ -100,10 +99,7 @@ public class CollectionSchemeUpdater {
             );
         });
 
-        // Clearing the DBObject
-        dbObject.modifyData(0, new byte[dbObject.getDataSize()]);
-
-        byte[] newObj = new byte[dbObject.getDataSize()];
+        byte[] newObj = new byte[CollectionSerializationUtil.getSizeOfCollection(collectionFieldsUpdate.getAfter())];
         for (Scheme.Field field : collectionFieldsUpdate.getAfter().getFields()) {
             CollectionSerializationUtil.setValueOfField(
                     collectionFieldsUpdate.getAfter(),
@@ -113,8 +109,9 @@ public class CollectionSchemeUpdater {
             );
         }
 
-        Pointer pointer = diskPageDatabaseStorageManager.store(
+        Pointer pointer = databaseStorageManager.store(
                 collectionFieldsUpdate.getAfter().getId(),
+                schemeManager.getScheme().getVersion(),
                 newObj
         );
 

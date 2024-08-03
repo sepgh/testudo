@@ -20,8 +20,8 @@ public class DBObject {
     public static byte ALIVE_OBJ = 0x01;
     public static int FLAG_BYTES = 1;
     public static int META_BYTES = FLAG_BYTES + (3 * Integer.BYTES);
-    public static int META_VERSION_OFFSET = FLAG_BYTES + Integer.BYTES;
     public static int META_COLLECTION_ID_OFFSET = FLAG_BYTES;
+    public static int META_VERSION_OFFSET = FLAG_BYTES + Integer.BYTES;
     public static int META_SIZE_OFFSET = FLAG_BYTES + (2 * Integer.BYTES);
     private final byte[] wrappedData;
     @Getter
@@ -113,7 +113,7 @@ public class DBObject {
                 Ints.toByteArray(version),
                 0,
                 this.wrappedData,
-                META_VERSION_OFFSET,
+                begin + META_VERSION_OFFSET,
                 Integer.BYTES
         );
     }
