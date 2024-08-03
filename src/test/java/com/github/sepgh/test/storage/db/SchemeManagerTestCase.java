@@ -17,12 +17,10 @@ import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
 import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerFactory;
-import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
-import com.google.common.hash.HashCode;
 import com.google.common.primitives.Ints;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -279,6 +277,27 @@ public class SchemeManagerTestCase {
         );
         i = Ints.fromByteArray(valueOfField);
         Assertions.assertEquals(15, i);
+
+
+        // --- REMOVING THE FIELD SHOULD RESULT IN FIELD GETTING EMPTY IN DB OBJECT --- //
+        fields.remove(newField);
+        scheme.setVersion(3);
+        schemeManager = new SchemeManager(
+                engineConfig,
+                scheme,
+                SchemeManager.SchemeUpdateConfig.builder().build(),
+                fieldIndexManagerProvider,
+                this.databaseStorageManager
+        );
+        schemeManager.update();
+
+        optionalPointer = indexManager.getIndex(1);
+        Assertions.assertEquals(pointer, optionalPointer.get());
+        dbObject = this.databaseStorageManager.select(pointer).get();
+        Assertions.assertTrue(dbObject.isAlive());
+
+        byte[] bytes = dbObject.readData(2 * Integer.BYTES, Integer.BYTES);
+        Assertions.assertEquals(0, Ints.fromByteArray(bytes));
 
     }
 }

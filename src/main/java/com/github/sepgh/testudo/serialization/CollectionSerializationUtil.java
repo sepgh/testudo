@@ -24,6 +24,9 @@ public class CollectionSerializationUtil {
     }
 
     public static int getByteArrOffsetTillFieldIndex(List<Scheme.Field> fields, int index) {
+        // Todo: if field would not be in collection and this method is called (probably with index: -1) then offset would be 0
+        //       That should either be fixed here or at caller side
+
         if (index == 0)
             return 0;
 
