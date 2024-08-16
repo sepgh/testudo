@@ -108,7 +108,6 @@ public class SchemeManagerTestCase {
         SchemeManager schemeManager = new SchemeManager(
                 engineConfig,
                 scheme,
-                SchemeManager.SchemeUpdateConfig.builder().build(),
                 fieldIndexManagerProvider,
                 this.databaseStorageManager
         );
@@ -205,7 +204,6 @@ public class SchemeManagerTestCase {
         SchemeManager schemeManager = new SchemeManager(
                 engineConfig,
                 scheme,
-                SchemeManager.SchemeUpdateConfig.builder().build(),
                 fieldIndexManagerProvider,
                 this.databaseStorageManager
         );
@@ -254,7 +252,6 @@ public class SchemeManagerTestCase {
         schemeManager = new SchemeManager(
                 engineConfig,
                 scheme,
-                SchemeManager.SchemeUpdateConfig.builder().build(),
                 fieldIndexManagerProvider,
                 this.databaseStorageManager
         );
@@ -285,7 +282,6 @@ public class SchemeManagerTestCase {
         schemeManager = new SchemeManager(
                 engineConfig,
                 scheme,
-                SchemeManager.SchemeUpdateConfig.builder().build(),
                 fieldIndexManagerProvider,
                 this.databaseStorageManager
         );

@@ -160,7 +160,7 @@ public class ImmutableBinaryObjectWrapperTestCase {
                 new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
         );
 
-        ImmutableBinaryObjectWrapper<String> keyImmutableBinaryObjectWrapper = new StringImmutableBinaryObjectWrapper();
+        ImmutableBinaryObjectWrapper<String> keyImmutableBinaryObjectWrapper = new StringImmutableBinaryObjectWrapper(20);
 
         NodeFactory<String> nodeFactory = new NodeFactory<>() {
             @Override
@@ -206,7 +206,7 @@ public class ImmutableBinaryObjectWrapperTestCase {
         indexManager.addIndex("BBC", Pointer.empty());
 
 
-        KVSize kvSize = new KVSize(StringImmutableBinaryObjectWrapper.BYTES, PointerImmutableBinaryObjectWrapper.BYTES);
+        KVSize kvSize = new KVSize(20, PointerImmutableBinaryObjectWrapper.BYTES);
         IndexStorageManager.NodeData rootNodeData = organizedFileIndexStorageManager.getRoot(1, kvSize).get().get();
         InternalTreeNode<String> rootInternalTreeNode = new InternalTreeNode<>(rootNodeData.bytes(), keyImmutableBinaryObjectWrapper);
         rootInternalTreeNode.setPointer(rootNodeData.pointer());
@@ -242,77 +242,6 @@ public class ImmutableBinaryObjectWrapperTestCase {
         Assertions.assertEquals("CAB", leaf.getKeyList(degree).getLast());
 
 
-    }
-
-    private static class StringImmutableBinaryObjectWrapper implements ImmutableBinaryObjectWrapper<String> {
-        public static final int BYTES = 20;
-        private byte[] bytes;
-
-        public StringImmutableBinaryObjectWrapper() {
-        }
-
-        public StringImmutableBinaryObjectWrapper(byte[] bytes) {
-            this.bytes = bytes;
-        }
-
-        @Override
-        public ImmutableBinaryObjectWrapper<String> load(String s) throws InvalidBinaryObjectWrapperValue {
-            byte[] temp = s.getBytes(StandardCharsets.UTF_8);
-            if (temp.length > BYTES) {
-                throw new InvalidBinaryObjectWrapperValue(s, this.getClass());
-            }
-
-            byte[] result = new byte[BYTES];
-
-            System.arraycopy(temp, 0, result, 0, temp.length);
-
-            for (int i = temp.length; i < BYTES; i++) {
-                result[i] = 0;
-            }
-
-            return new StringImmutableBinaryObjectWrapper(result);
-        }
-
-        @Override
-        public ImmutableBinaryObjectWrapper<String> load(byte[] bytes, int beginning) {
-            this.bytes = new byte[BYTES];
-            System.arraycopy(
-                    bytes,
-                    beginning,
-                    this.bytes,
-                    0,
-                    this.size()
-            );
-            return this;
-        }
-
-        @Override
-        public String asObject() {
-            int len = 0;
-            while (len < bytes.length && bytes[len] != 0) {
-                len++;
-            }
-            return new String(bytes, 0, len, StandardCharsets.UTF_8);
-        }
-
-        @Override
-        public boolean hasValue() {
-            for (byte aByte : this.bytes) {
-                if (aByte != 0x00)
-                    return true;
-            }
-            return false;
-        }
-
-        @Override
-        public int size() {
-            return BYTES;
-        }
-
-        @Override
-        public byte[] getBytes() {
-            return bytes;
-        }
     }
 
 

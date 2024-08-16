@@ -35,16 +35,16 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
     private Scheme oldScheme = null;
     private final EngineConfig engineConfig;
     private final Gson gson = new GsonBuilder().serializeNulls().create();
-    private final SchemeUpdateConfig schemeUpdateConfig;
+    @Getter
     private final FieldIndexManagerProvider fieldIndexManagerProvider;
+    @Getter
     private final DatabaseStorageManager databaseStorageManager;
     private final List<CollectionFieldsUpdate> collectionFieldsUpdateQueue = new LinkedList<>();
     private final Map<Integer, CollectionFieldsUpdate> collectionFieldTypeUpdateMap = new HashMap<>();
 
-    public SchemeManager(EngineConfig engineConfig, Scheme scheme, SchemeUpdateConfig schemeUpdateConfig, FieldIndexManagerProvider fieldIndexManagerProvider, DatabaseStorageManager databaseStorageManager) {
+    public SchemeManager(EngineConfig engineConfig, Scheme scheme, FieldIndexManagerProvider fieldIndexManagerProvider, DatabaseStorageManager databaseStorageManager) {
         this.scheme = scheme;
         this.engineConfig = engineConfig;
-        this.schemeUpdateConfig = schemeUpdateConfig;
         this.fieldIndexManagerProvider = fieldIndexManagerProvider;
         this.databaseStorageManager = databaseStorageManager;
         loadOldScheme();

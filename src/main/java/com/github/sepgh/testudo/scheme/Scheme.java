@@ -73,6 +73,8 @@ public class Scheme {
         private boolean index;
         private boolean indexUnique;
         private String defaultValue;
+        @Builder.Default
+        private boolean supportZero = true;
 
         @Override
         public boolean equals(Object o) {

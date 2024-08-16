@@ -1,6 +1,9 @@
 package com.github.sepgh.testudo.serialization;
 
 import com.github.sepgh.testudo.exception.SerializationException;
+import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.NoZeroLongImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.utils.BinaryUtils;
 import com.google.common.primitives.Longs;
@@ -44,6 +47,14 @@ public class LongSerializer implements Serializer<Long> {
             throw new SerializationException("value is smaller than min value");
         }
         return Longs.toByteArray(aLong);
+    }
+
+    @Override
+    public ImmutableBinaryObjectWrapper<Long> getImmutableBinaryObjectWrapper(Scheme.Field field) {
+        if (field.isSupportZero())
+            return new LongImmutableBinaryObjectWrapper();
+
+        return new NoZeroLongImmutableBinaryObjectWrapper();
     }
 
     @Override

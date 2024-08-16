@@ -22,6 +22,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+
+// Todo:
+// Index updating: Removed fields needs to drop indexes
+//                 An index itself may have been removed as well
+//                 Newly added indexes should also be handled
 public class CollectionSchemeUpdater {
     private SchemeManager.CollectionFieldsUpdate collectionFieldsUpdate;
     private DatabaseStorageManager databaseStorageManager;
@@ -76,6 +81,7 @@ public class CollectionSchemeUpdater {
                                     throw new RuntimeException(e);
                                 }
                             }
+                            updateIndexes(collectionFieldsUpdate);
                         }
                 );
             } catch (IOException | ExecutionException | InterruptedException e) {
@@ -83,6 +89,15 @@ public class CollectionSchemeUpdater {
             }
         });
 
+    }
+
+    private void updateIndexes(SchemeManager.CollectionFieldsUpdate collectionFieldsUpdate) {
+        collectionFieldsUpdate.getRemovedFields().forEach(field -> {
+            if (field.isIndex()){
+                IndexManager<?, ?> indexManager = this.schemeManager.getFieldIndexManagerProvider().getIndexManager(collectionFieldsUpdate.getBefore(), field);
+                indexManager.purgeIndex();
+            }
+        });
     }
 
     private <K extends Comparable<K>> void createNew(DBObject dbObject, IndexManager<K, Pointer> pkIndexManager, AbstractLeafTreeNode.KeyValue<K, Pointer> keyValue, SchemeManager.CollectionFieldsUpdate collectionFieldsUpdate) throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexMissingException, SerializationException {

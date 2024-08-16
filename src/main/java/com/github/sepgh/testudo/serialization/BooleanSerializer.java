@@ -2,6 +2,8 @@ package com.github.sepgh.testudo.serialization;
 
 import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.SerializationException;
+import com.github.sepgh.testudo.index.tree.node.data.BooleanImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.scheme.Scheme;
 
 import java.util.List;
@@ -42,6 +44,11 @@ public class BooleanSerializer implements Serializer<Boolean> {
     @Override
     public int getSize(Scheme.Meta meta) {
         return 1;
+    }
+
+    @Override
+    public ImmutableBinaryObjectWrapper<Boolean> getImmutableBinaryObjectWrapper(Scheme.Field field) {
+        return new BooleanImmutableBinaryObjectWrapper();
     }
 
     @Override

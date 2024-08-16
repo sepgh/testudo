@@ -2,6 +2,8 @@ package com.github.sepgh.testudo.serialization;
 
 import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.SerializationException;
+import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.StringImmutableBinaryObjectWrapper;
 import com.github.sepgh.testudo.scheme.Scheme;
 
 import java.io.UnsupportedEncodingException;
@@ -69,6 +71,11 @@ public class CharArrSerializer implements Serializer<String> {
     @Override
     public int getSize(Scheme.Meta meta) {
         return Integer.parseInt(meta.getMaxSize());
+    }
+
+    @Override
+    public ImmutableBinaryObjectWrapper<String> getImmutableBinaryObjectWrapper(Scheme.Field field) {
+        return new StringImmutableBinaryObjectWrapper(field.getMeta().getMax());
     }
 
     @Override
