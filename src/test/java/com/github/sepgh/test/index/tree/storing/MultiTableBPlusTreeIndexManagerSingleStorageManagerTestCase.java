@@ -10,9 +10,9 @@ import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.index.tree.node.data.PointerImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
@@ -47,9 +47,9 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(10)
                 .build();
-        engineConfig.setBTreeMaxFileSize(2 * 15L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        engineConfig.setBTreeMaxFileSize(2 * 15L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES));
 
-        byte[] writingBytes = new byte[2 * 13 * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES)];
+        byte[] writingBytes = new byte[2 * 13 * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES)];
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.bin", INDEX_FILE_NAME));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
     }
@@ -94,14 +94,14 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
      *     └── 012
      */
     @Test
-    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         for (int tableId = 1; tableId <= 2; tableId++){
             CompactFileIndexStorageManager compactFileIndexStorageManager = getSingleFileIndexStorageManager();
-            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, compactFileIndexStorageManager, new LongIndexBinaryObject.Factory());
 
 
 
@@ -111,7 +111,7 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());
-            Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerImmutableBinaryObjectWrapper.BYTES).size());
+            Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerIndexBinaryObject.BYTES).size());
             Assertions.assertEquals(samplePointer.getPosition(), ((AbstractLeafTreeNode<Long, Pointer>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
             StoredTreeStructureVerifier.testOrderedTreeStructure(compactFileIndexStorageManager, tableId, 1, degree);
@@ -145,14 +145,14 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
      *     └── 012
      */
     @Test
-    public void testMultiSplitAddIndex2() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void testMultiSplitAddIndex2() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 4L, 9L, 6L, 10L, 8L, 3L, 2L, 11L, 5L, 7L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
         CompactFileIndexStorageManager compactFileIndexStorageManager = getSingleFileIndexStorageManager();
 
         for (int tableId = 1; tableId <= 2; tableId++){
-            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, compactFileIndexStorageManager, new LongIndexBinaryObject.Factory());
 
             AbstractTreeNode<Long> lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
@@ -160,7 +160,7 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());
-            Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerImmutableBinaryObjectWrapper.BYTES).size());
+            Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerIndexBinaryObject.BYTES).size());
             Assertions.assertEquals(samplePointer.getPosition(), ((AbstractLeafTreeNode<Long, Pointer>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
             StoredTreeStructureVerifier.testUnOrderedTreeStructure1(compactFileIndexStorageManager, tableId, 1, degree);
@@ -178,8 +178,8 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         CompactFileIndexStorageManager compactFileIndexStorageManager = getSingleFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager1 = new AsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(1, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper()));
-        IndexManager<Long, Pointer> indexManager2 = new AsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(2, degree, compactFileIndexStorageManager, new LongImmutableBinaryObjectWrapper()));
+        IndexManager<Long, Pointer> indexManager1 = new AsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(1, degree, compactFileIndexStorageManager, new LongIndexBinaryObject.Factory()));
+        IndexManager<Long, Pointer> indexManager2 = new AsyncIndexManagerDecorator<>(new ClusterBPlusTreeIndexManager<>(2, degree, compactFileIndexStorageManager, new LongIndexBinaryObject.Factory()));
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         CountDownLatch countDownLatch = new CountDownLatch((2 * testIdentifiers.size()) - 2);
@@ -194,7 +194,7 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
                 try {
                     indexManager1.addIndex(testIdentifiers.get(index1.getAndIncrement()), samplePointer);
                     countDownLatch.countDown();
-                } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue | IndexExistsException |
+                } catch (IndexBinaryObject.InvalidIndexBinaryObject | IndexExistsException |
                          InternalOperationException e) {
                     throw new RuntimeException(e);
                 }
@@ -203,7 +203,7 @@ public class MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase {
                 try {
                     indexManager2.addIndex(testIdentifiers.get(index2.getAndIncrement()) * 10, samplePointer);
                     countDownLatch.countDown();
-                } catch (ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue | IndexExistsException |
+                } catch (IndexBinaryObject.InvalidIndexBinaryObject | IndexExistsException |
                          InternalOperationException e) {
                     throw new RuntimeException(e);
                 }

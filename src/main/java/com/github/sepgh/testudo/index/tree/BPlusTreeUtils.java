@@ -6,7 +6,7 @@ import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
@@ -51,13 +51,13 @@ public class BPlusTreeUtils {
         }
     }
 
-    public static <K extends Comparable<K>, V extends Comparable<V>> AbstractLeafTreeNode<K, V> getResponsibleNode(IndexStorageManager indexStorageManager, AbstractTreeNode<K> node, K identifier, int index, int degree, NodeFactory<K> nodeFactory, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper) throws InternalOperationException {
+    public static <K extends Comparable<K>, V extends Comparable<V>> AbstractLeafTreeNode<K, V> getResponsibleNode(IndexStorageManager indexStorageManager, AbstractTreeNode<K> node, K identifier, int index, int degree, NodeFactory<K> nodeFactory, IndexBinaryObjectFactory<V> valueIndexBinaryObject) throws InternalOperationException {
         if (node.isLeaf()){
             return (AbstractLeafTreeNode<K, V>) node;
         }
 
         List<Pointer> childrenList = ((InternalTreeNode<K>) node).getChildrenList();
-        List<K> keys = node.getKeyList(degree, valueImmutableBinaryObjectWrapper.size());
+        List<K> keys = node.getKeyList(degree, valueIndexBinaryObject.size());
         int i;
         K keyAtIndex;
         boolean flag = false;
@@ -79,7 +79,7 @@ public class BPlusTreeUtils {
                         index,
                         degree,
                         nodeFactory,
-                        valueImmutableBinaryObjectWrapper
+                        valueIndexBinaryObject
                 );
             } else {
                 return getResponsibleNode(
@@ -89,7 +89,7 @@ public class BPlusTreeUtils {
                         index,
                         degree,
                         nodeFactory,
-                        valueImmutableBinaryObjectWrapper
+                        valueIndexBinaryObject
                 );
             }
         } catch (ExecutionException | InterruptedException | IOException e) {

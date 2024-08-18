@@ -5,8 +5,8 @@ import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.IndexManager;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.session.MemorySnapshotIndexIOSession;
 import org.junit.jupiter.api.Test;
@@ -21,13 +21,13 @@ public class MemorySnapshotBPlusTreeIndexManagerRemovalTestCase extends BPlusTre
 
     @Override
     protected IndexManager<Long, Pointer> getIndexManager(IndexStorageManager indexStorageManager) {
-        return new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, MemorySnapshotIndexIOSession.Factory.getInstance(), new LongImmutableBinaryObjectWrapper());
+        return new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, MemorySnapshotIndexIOSession.Factory.getInstance(), new LongIndexBinaryObject.Factory());
     }
 
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
         super.testRemovingLeftToRight();
     }
 
@@ -35,14 +35,14 @@ public class MemorySnapshotBPlusTreeIndexManagerRemovalTestCase extends BPlusTre
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
         super.testRemovingRightToLeft();
     }
 
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
         super.testRemovingRoot();
     }
 

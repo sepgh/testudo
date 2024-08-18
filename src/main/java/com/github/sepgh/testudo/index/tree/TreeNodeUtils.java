@@ -3,7 +3,8 @@ package com.github.sepgh.testudo.index.tree;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObjectFactory;
 
 import java.util.AbstractMap;
 import java.util.Map;
@@ -87,25 +88,25 @@ public class TreeNodeUtils {
      * @param index of the key to check existence
      * @return boolean state of existence of a key in index
      */
-    public static <K extends Comparable<K>> boolean hasKeyAtIndex(AbstractTreeNode<?> treeNode, int index, int degree, ImmutableBinaryObjectWrapper<K> kImmutableBinaryObjectWrapper, int valueSize) {
+    public static <K extends Comparable<K>> boolean hasKeyAtIndex(AbstractTreeNode<?> treeNode, int index, int degree, IndexBinaryObjectFactory<K> kIndexBinaryObjectFactory, int valueSize) {
         if (index >= degree - 1)
             return false;
 
-        int keyStartIndex = getKeyStartOffset(treeNode, index, kImmutableBinaryObjectWrapper.size(), valueSize);
-        if (keyStartIndex + kImmutableBinaryObjectWrapper.size() > treeNode.getData().length)
+        int keyStartIndex = getKeyStartOffset(treeNode, index, kIndexBinaryObjectFactory.size(), valueSize);
+        if (keyStartIndex + kIndexBinaryObjectFactory.size() > treeNode.getData().length)
             return false;
-        return kImmutableBinaryObjectWrapper.load(treeNode.getData(), keyStartIndex).hasValue();
+        return kIndexBinaryObjectFactory.create(treeNode.getData(), keyStartIndex).hasValue();
     }
 
 
-    public static <E extends Comparable<E>> void setKeyAtIndex(AbstractTreeNode<?> treeNode, int index, ImmutableBinaryObjectWrapper<E> immutableBinaryObjectWrapper, int valueSize) {
-        int keyStartIndex = getKeyStartOffset(treeNode, index, immutableBinaryObjectWrapper.size(), valueSize);
+    public static <E extends Comparable<E>> void setKeyAtIndex(AbstractTreeNode<?> treeNode, int index, IndexBinaryObject<E> indexBinaryObject, int valueSize) {
+        int keyStartIndex = getKeyStartOffset(treeNode, index, indexBinaryObject.size(), valueSize);
         System.arraycopy(
-                immutableBinaryObjectWrapper.getBytes(),
+                indexBinaryObject.getBytes(),
                 0,
                 treeNode.getData(),
                 keyStartIndex,
-                immutableBinaryObjectWrapper.size()
+                indexBinaryObject.size()
         );
     }
 
@@ -114,9 +115,9 @@ public class TreeNodeUtils {
      * @param index to read they key at
      * @return key value at index
      */
-    public static <K extends Comparable<K>> ImmutableBinaryObjectWrapper<K> getKeyAtIndex(AbstractTreeNode<?> treeNode, int index, ImmutableBinaryObjectWrapper<K> kImmutableBinaryObjectWrapper, int valueSize) {
-        int keyStartIndex = getKeyStartOffset(treeNode, index, kImmutableBinaryObjectWrapper.size(), valueSize);
-        return kImmutableBinaryObjectWrapper.load(treeNode.getData(), keyStartIndex);
+    public static <K extends Comparable<K>> IndexBinaryObject<K> getKeyAtIndex(AbstractTreeNode<?> treeNode, int index, IndexBinaryObjectFactory<K> kIndexBinaryObjectFactory, int valueSize) {
+        int keyStartIndex = getKeyStartOffset(treeNode, index, kIndexBinaryObjectFactory.size(), valueSize);
+        return kIndexBinaryObjectFactory.create(treeNode.getData(), keyStartIndex);
     }
 
     public static void removeKeyAtIndex(AbstractTreeNode<?> treeNode, int index, int keySize, int valueSize) {
@@ -132,17 +133,17 @@ public class TreeNodeUtils {
     public static <K extends Comparable<K>, V extends Comparable<V>> Map.Entry<K, V> getKeyValueAtIndex(
             AbstractTreeNode<K> treeNode,
             int index,
-            ImmutableBinaryObjectWrapper<K> kImmutableBinaryObjectWrapper,
-            ImmutableBinaryObjectWrapper<V> vImmutableBinaryObjectWrapper
+            IndexBinaryObjectFactory<K> kIndexBinaryObjectFactory,
+            IndexBinaryObjectFactory<V> vIndexBinaryObjectFactory
     ){
-        int keyStartIndex = getKeyStartOffset(treeNode, index, kImmutableBinaryObjectWrapper.size(), vImmutableBinaryObjectWrapper.size());
+        int keyStartIndex = getKeyStartOffset(treeNode, index, kIndexBinaryObjectFactory.size(), vIndexBinaryObjectFactory.size());
         return new AbstractMap.SimpleImmutableEntry<K, V>(
-                kImmutableBinaryObjectWrapper.load(treeNode.getData(), keyStartIndex).asObject(),
-                vImmutableBinaryObjectWrapper.load(treeNode.getData(), keyStartIndex + kImmutableBinaryObjectWrapper.size()).asObject()
+                kIndexBinaryObjectFactory.create(treeNode.getData(), keyStartIndex).asObject(),
+                vIndexBinaryObjectFactory.create(treeNode.getData(), keyStartIndex + kIndexBinaryObjectFactory.size()).asObject()
         );
     }
 
-    public static <K extends Comparable<K>, V extends Comparable<V>> void setKeyValueAtIndex(AbstractTreeNode<?> treeNode, int index, ImmutableBinaryObjectWrapper<K> keyInnerObj, ImmutableBinaryObjectWrapper<V> valueInnerObj) {
+    public static <K extends Comparable<K>, V extends Comparable<V>> void setKeyValueAtIndex(AbstractTreeNode<?> treeNode, int index, IndexBinaryObject<K> keyInnerObj, IndexBinaryObject<V> valueInnerObj) {
         System.arraycopy(
                 keyInnerObj.getBytes(),
                 0,
@@ -171,19 +172,19 @@ public class TreeNodeUtils {
     public static <K extends Comparable<K>, V extends Comparable<V>> int addKeyValueAndGetIndex(
             AbstractTreeNode<?> treeNode,
             int degree,
-            ImmutableBinaryObjectWrapper<K> immutableBinaryObjectWrapper,
+            IndexBinaryObjectFactory<K> indexBinaryObjectFactory,
             K key,
-            int keySize,
-            ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper,
-            V value,
-            int valueSize
-    ) throws ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+            IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory,
+            V value
+    ) throws IndexBinaryObject.InvalidIndexBinaryObject {
         int indexToFill = -1;
-        ImmutableBinaryObjectWrapper<K> keyAtIndex;
+        IndexBinaryObject<K> keyAtIndex;
+        int keySize = indexBinaryObjectFactory.size();
+        int valueSize = valueIndexBinaryObjectFactory.size();
 
         // Linearly looking for key position
         for (int i = 0; i < degree - 1; i++){
-            keyAtIndex = getKeyAtIndex(treeNode, i, immutableBinaryObjectWrapper, valueSize);
+            keyAtIndex = getKeyAtIndex(treeNode, i, indexBinaryObjectFactory, valueSize);
             K data = keyAtIndex.asObject();
             if (!keyAtIndex.hasValue() || data.compareTo(key) > 0){
                 indexToFill = i;
@@ -211,8 +212,8 @@ public class TreeNodeUtils {
         setKeyValueAtIndex(
                 treeNode,
                 indexToFill,
-                immutableBinaryObjectWrapper.load(key),
-                valueImmutableBinaryObjectWrapper.load(value)
+                indexBinaryObjectFactory.create(key),
+                valueIndexBinaryObjectFactory.create(value)
         );
 
         System.arraycopy(

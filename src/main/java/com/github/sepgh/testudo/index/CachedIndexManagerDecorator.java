@@ -4,7 +4,7 @@ import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
@@ -27,7 +27,7 @@ public class CachedIndexManagerDecorator<K extends Comparable<K>, V extends Comp
     }
 
     @Override
-    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
+    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException {
         AbstractTreeNode<K> baseClusterTreeNode = super.addIndex(identifier, value);
         cache.put(new CacheID<>(getIndexId(), identifier), value);
         if (sizeCache.get() > 0)
@@ -36,7 +36,7 @@ public class CachedIndexManagerDecorator<K extends Comparable<K>, V extends Comp
     }
 
     @Override
-    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexMissingException {
+    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException {
         AbstractTreeNode<K> baseClusterTreeNode = super.addIndex(identifier, value);
         cache.put(new CacheID<>(getIndexId(), identifier), value);
         return baseClusterTreeNode;
@@ -53,7 +53,7 @@ public class CachedIndexManagerDecorator<K extends Comparable<K>, V extends Comp
     }
 
     @Override
-    public boolean removeIndex(K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public boolean removeIndex(K identifier) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
         if (super.removeIndex(identifier)) {
             cache.invalidate(new CacheID<>(getIndexId(), identifier));
             if (sizeCache.get() > 0) {

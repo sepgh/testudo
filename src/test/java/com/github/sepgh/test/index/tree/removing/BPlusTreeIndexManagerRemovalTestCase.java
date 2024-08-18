@@ -6,10 +6,10 @@ import com.github.sepgh.testudo.index.AsyncIndexManagerDecorator;
 import com.github.sepgh.testudo.index.IndexManager;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
+import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
@@ -31,18 +31,18 @@ public class BPlusTreeIndexManagerRemovalTestCase extends BaseBPlusTreeIndexMana
     }
 
     protected IndexManager<Long, Pointer> getIndexManager(IndexStorageManager indexStorageManager) {
-        return new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
+        return new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongIndexBinaryObject.Factory());
     }
 
     @Test
-    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
         super.testRemovingLeftToRight(indexManager, indexStorageManager);
     }
 
     @Test
-    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
         super.testRemovingRightToLeft(indexManager, indexStorageManager);
@@ -50,7 +50,7 @@ public class BPlusTreeIndexManagerRemovalTestCase extends BaseBPlusTreeIndexMana
 
 
     @Test
-    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
         super.testRemovingRoot(indexManager, indexStorageManager);

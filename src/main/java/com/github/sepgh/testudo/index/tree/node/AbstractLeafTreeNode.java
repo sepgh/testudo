@@ -2,7 +2,8 @@ package com.github.sepgh.testudo.index.tree.node;
 
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.TreeNodeUtils;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.utils.CollectionUtils;
 import com.github.sepgh.testudo.utils.KVSize;
 import com.google.common.collect.ImmutableList;
@@ -11,47 +12,47 @@ import lombok.SneakyThrows;
 import java.util.*;
 
 public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<V>> extends AbstractTreeNode<K> {
-    protected final ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper;
+    protected final IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory;
 
-    public AbstractLeafTreeNode(byte[] data, ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper, ImmutableBinaryObjectWrapper<V> valueImmutableBinaryObjectWrapper) {
-        super(data, keyImmutableBinaryObjectWrapper);
-        this.valueImmutableBinaryObjectWrapper = valueImmutableBinaryObjectWrapper;
+    public AbstractLeafTreeNode(byte[] data, IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory) {
+        super(data, keyIndexBinaryObjectFactory);
+        this.valueIndexBinaryObjectFactory = valueIndexBinaryObjectFactory;
         setType(Type.LEAF);
     }
 
     public Iterator<K> getKeys(int degree) {
-        return super.getKeys(degree, valueImmutableBinaryObjectWrapper.size());
+        return super.getKeys(degree, valueIndexBinaryObjectFactory.size());
     }
 
     public List<K> getKeyList(int degree) {
-        return super.getKeyList(degree, valueImmutableBinaryObjectWrapper.size());
+        return super.getKeyList(degree, valueIndexBinaryObjectFactory.size());
     }
 
     @SneakyThrows
     public void setKey(int index, K key) {
-        super.setKey(index, key, valueImmutableBinaryObjectWrapper.size());
+        super.setKey(index, key, valueIndexBinaryObjectFactory.size());
     }
 
     public void removeKey(int idx, int degree) {
-        super.removeKey(idx, degree, valueImmutableBinaryObjectWrapper.size());
+        super.removeKey(idx, degree, valueIndexBinaryObjectFactory.size());
     }
 
     public void setNextSiblingPointer(Pointer pointer, int degree){
         modified();
-        TreeNodeUtils.setNextPointer(this, degree, pointer, keyImmutableBinaryObjectWrapper.size(), valueImmutableBinaryObjectWrapper.size());
+        TreeNodeUtils.setNextPointer(this, degree, pointer, kIndexBinaryObjectFactory.size(), valueIndexBinaryObjectFactory.size());
     }
 
     public void setPreviousSiblingPointer(Pointer pointer, int degree){
         modified();
-        TreeNodeUtils.setPreviousPointer(this, degree, pointer, keyImmutableBinaryObjectWrapper.size(), valueImmutableBinaryObjectWrapper.size());
+        TreeNodeUtils.setPreviousPointer(this, degree, pointer, kIndexBinaryObjectFactory.size(), valueIndexBinaryObjectFactory.size());
     }
 
     public Optional<Pointer> getPreviousSiblingPointer(int degree){
-        return TreeNodeUtils.getPreviousPointer(this, degree, keyImmutableBinaryObjectWrapper.size(), valueImmutableBinaryObjectWrapper.size());
+        return TreeNodeUtils.getPreviousPointer(this, degree, kIndexBinaryObjectFactory.size(), valueIndexBinaryObjectFactory.size());
     }
 
     public Optional<Pointer> getNextSiblingPointer(int degree){
-        return TreeNodeUtils.getNextPointer(this, degree, keyImmutableBinaryObjectWrapper.size(), valueImmutableBinaryObjectWrapper.size());
+        return TreeNodeUtils.getNextPointer(this, degree, kIndexBinaryObjectFactory.size(), valueIndexBinaryObjectFactory.size());
     }
 
     public Iterator<KeyValue<K, V>> getKeyValues(int degree){
@@ -62,22 +63,22 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         return ImmutableList.copyOf(getKeyValues(degree));
     }
 
-    public void setKeyValues(List<KeyValue<K, V>> keyValueList, int degree) throws ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void setKeyValues(List<KeyValue<K, V>> keyValueList, int degree) throws IndexBinaryObject.InvalidIndexBinaryObject {
         modified();
         for (int i = 0; i < keyValueList.size(); i++){
             KeyValue<K, V> keyValue = keyValueList.get(i);
             this.setKeyValue(i, keyValue);
         }
         for (int i = keyValueList.size(); i < (degree - 1); i++){
-            TreeNodeUtils.removeKeyValueAtIndex(this, i, keyImmutableBinaryObjectWrapper.size(), valueImmutableBinaryObjectWrapper.size());
+            TreeNodeUtils.removeKeyValueAtIndex(this, i, kIndexBinaryObjectFactory.size(), valueIndexBinaryObjectFactory.size());
         }
     }
 
-    public void setKeyValue(int index, KeyValue<K, V> keyValue) throws ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
-        TreeNodeUtils.setKeyValueAtIndex(this, index, keyImmutableBinaryObjectWrapper.load(keyValue.key()), valueImmutableBinaryObjectWrapper.load(keyValue.value()));
+    public void setKeyValue(int index, KeyValue<K, V> keyValue) throws IndexBinaryObject.InvalidIndexBinaryObject {
+        TreeNodeUtils.setKeyValueAtIndex(this, index, kIndexBinaryObjectFactory.create(keyValue.key()), valueIndexBinaryObjectFactory.create(keyValue.value()));
     }
 
-    public List<KeyValue<K, V>> addAndSplit(K identifier, V v, int degree) throws ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public List<KeyValue<K, V>> addAndSplit(K identifier, V v, int degree) throws IndexBinaryObject.InvalidIndexBinaryObject {
         int mid = (degree - 1) / 2;
 
         List<KeyValue<K, V>> allKeyValues = new ArrayList<>(getKeyValueList(degree));
@@ -90,19 +91,19 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         return allKeyValues.subList(mid + 1, allKeyValues.size());
     }
 
-    public int addKeyValue(K identifier, V v, int degree) throws ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
-        return TreeNodeUtils.addKeyValueAndGetIndex(this, degree, keyImmutableBinaryObjectWrapper, identifier, keyImmutableBinaryObjectWrapper.size(), valueImmutableBinaryObjectWrapper, v, valueImmutableBinaryObjectWrapper.size());
+    public int addKeyValue(K identifier, V v, int degree) throws IndexBinaryObject.InvalidIndexBinaryObject {
+        return TreeNodeUtils.addKeyValueAndGetIndex(this, degree, kIndexBinaryObjectFactory, identifier, valueIndexBinaryObjectFactory, v);
     }
 
-    public int addKeyValue(KeyValue<K, V> keyValue, int degree) throws ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public int addKeyValue(KeyValue<K, V> keyValue, int degree) throws IndexBinaryObject.InvalidIndexBinaryObject {
         return this.addKeyValue(keyValue.key, keyValue.value, degree);
     }
 
     public void removeKeyValue(int index) {
-        TreeNodeUtils.removeKeyValueAtIndex(this, index, keyImmutableBinaryObjectWrapper.size(), valueImmutableBinaryObjectWrapper.size());
+        TreeNodeUtils.removeKeyValueAtIndex(this, index, kIndexBinaryObjectFactory.size(), valueIndexBinaryObjectFactory.size());
     }
 
-    public boolean removeKeyValue(K key, int degree) throws ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public boolean removeKeyValue(K key, int degree) throws IndexBinaryObject.InvalidIndexBinaryObject {
         List<KeyValue<K, V>> keyValueList = new ArrayList<>(this.getKeyValueList(degree));
         boolean removed = keyValueList.removeIf(keyValue -> keyValue.key.compareTo(key) == 0);
         setKeyValues(keyValueList, degree);
@@ -111,7 +112,7 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
 
     @Override
     public KVSize getKVSize() {
-        return new KVSize(keyImmutableBinaryObjectWrapper.size(), valueImmutableBinaryObjectWrapper.size());
+        return new KVSize(kIndexBinaryObjectFactory.size(), valueIndexBinaryObjectFactory.size());
     }
 
     public record KeyValue<K extends Comparable<K>, V extends Comparable<V>>(K key,
@@ -137,7 +138,7 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         @SneakyThrows
         @Override
         public boolean hasNext() {
-            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree, keyImmutableBinaryObjectWrapper, valueImmutableBinaryObjectWrapper.size());
+            return TreeNodeUtils.hasKeyAtIndex(node, cursor, degree, kIndexBinaryObjectFactory, valueIndexBinaryObjectFactory.size());
         }
 
         @SneakyThrows
@@ -146,8 +147,8 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
             Map.Entry<K, V> kvAtIndex = TreeNodeUtils.getKeyValueAtIndex(
                     node,
                     cursor,
-                    keyImmutableBinaryObjectWrapper,
-                    valueImmutableBinaryObjectWrapper
+                    kIndexBinaryObjectFactory,
+                    valueIndexBinaryObjectFactory
             );
             cursor++;
             return new KeyValue<>(kvAtIndex.getKey(), kvAtIndex.getValue());

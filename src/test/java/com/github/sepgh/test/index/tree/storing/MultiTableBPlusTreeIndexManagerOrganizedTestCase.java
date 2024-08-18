@@ -9,9 +9,9 @@ import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.index.tree.node.data.PointerImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
@@ -45,9 +45,9 @@ public class MultiTableBPlusTreeIndexManagerOrganizedTestCase {
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(10)
                 .build();
-        engineConfig.setBTreeMaxFileSize(2 * 15L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        engineConfig.setBTreeMaxFileSize(2 * 15L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES));
 
-        byte[] writingBytes = new byte[2 * 13 * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES)];
+        byte[] writingBytes = new byte[2 * 13 * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES)];
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
     }
@@ -92,14 +92,14 @@ public class MultiTableBPlusTreeIndexManagerOrganizedTestCase {
      *     └── 012
      */
     @Test
-    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         for (int tableId = 1; tableId <= 2; tableId++){
             OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, organizedFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
 
 
             AbstractTreeNode<Long> lastTreeNode = null;
@@ -108,7 +108,7 @@ public class MultiTableBPlusTreeIndexManagerOrganizedTestCase {
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());
-            Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerImmutableBinaryObjectWrapper.BYTES).size());
+            Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerIndexBinaryObject.BYTES).size());
             Assertions.assertEquals(samplePointer.getPosition(), ((AbstractLeafTreeNode<Long, Pointer>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
             StoredTreeStructureVerifier.testOrderedTreeStructure(organizedFileIndexStorageManager, tableId, 1, degree);
@@ -142,14 +142,14 @@ public class MultiTableBPlusTreeIndexManagerOrganizedTestCase {
      *     └── 012
      */
     @Test
-    public void testMultiSplitAddIndex2() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void testMultiSplitAddIndex2() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 4L, 9L, 6L, 10L, 8L, 3L, 2L, 11L, 5L, 7L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
 
         for (int tableId = 1; tableId <= 2; tableId++){
-            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, organizedFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
 
             AbstractTreeNode<Long> lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
@@ -157,7 +157,7 @@ public class MultiTableBPlusTreeIndexManagerOrganizedTestCase {
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());
-            Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerImmutableBinaryObjectWrapper.BYTES).size());
+            Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerIndexBinaryObject.BYTES).size());
             Assertions.assertEquals(samplePointer.getPosition(), ((AbstractLeafTreeNode<Long, Pointer>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
             StoredTreeStructureVerifier.testUnOrderedTreeStructure1(organizedFileIndexStorageManager, tableId, 1, degree);

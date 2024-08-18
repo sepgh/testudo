@@ -7,8 +7,8 @@ import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.IndexManager;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
@@ -38,7 +38,7 @@ public class BPlusTreeIndexManagerReadingTestCase {
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
                 .build();
-        engineConfig.setBTreeMaxFileSize(12L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        engineConfig.setBTreeMaxFileSize(12L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES));
 
         byte[] writingBytes = new byte[]{};
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
@@ -61,10 +61,10 @@ public class BPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexSuccessfully() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
+    public void findIndexSuccessfully() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, InternalOperationException, IndexExistsException {
         OrganizedFileIndexStorageManager indexStorageManager = getStorageManager();
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongIndexBinaryObject.Factory());
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(10L, dataPointer);
@@ -76,10 +76,10 @@ public class BPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void getTableSize() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
+    public void getTableSize() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, InternalOperationException, IndexExistsException {
         OrganizedFileIndexStorageManager indexStorageManager = getStorageManager();
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongIndexBinaryObject.Factory());
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         for(long i = 1; i <= 100; i++)
@@ -92,10 +92,10 @@ public class BPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexFailure() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
+    public void findIndexFailure() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, InternalOperationException, IndexExistsException {
         OrganizedFileIndexStorageManager indexStorageManager = getStorageManager();
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongIndexBinaryObject.Factory());
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(10L, dataPointer);
@@ -108,10 +108,10 @@ public class BPlusTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void readAndWriteZero() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
+    public void readAndWriteZero() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, InternalOperationException, IndexExistsException {
         OrganizedFileIndexStorageManager indexStorageManager = getStorageManager();
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongIndexBinaryObject.Factory());
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         indexManager.addIndex(0L, dataPointer);

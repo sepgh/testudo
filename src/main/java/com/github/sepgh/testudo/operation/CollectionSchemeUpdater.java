@@ -7,7 +7,7 @@ import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.index.IndexManager;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.scheme.SchemeManager;
 import com.github.sepgh.testudo.serialization.CollectionSerializationUtil;
@@ -76,7 +76,7 @@ public class CollectionSchemeUpdater {
                                     createNew(dbObject, pkIndexManager, keyValue, this.collectionFieldsUpdate);
                                 } catch (IOException | ExecutionException | InterruptedException |
                                          IndexExistsException | InternalOperationException |
-                                         ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue |
+                                         IndexBinaryObject.InvalidIndexBinaryObject |
                                          IndexMissingException | SerializationException e) {
                                     throw new RuntimeException(e);
                                 }
@@ -100,7 +100,7 @@ public class CollectionSchemeUpdater {
         });
     }
 
-    private <K extends Comparable<K>> void createNew(DBObject dbObject, IndexManager<K, Pointer> pkIndexManager, AbstractLeafTreeNode.KeyValue<K, Pointer> keyValue, SchemeManager.CollectionFieldsUpdate collectionFieldsUpdate) throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexMissingException, SerializationException {
+    private <K extends Comparable<K>> void createNew(DBObject dbObject, IndexManager<K, Pointer> pkIndexManager, AbstractLeafTreeNode.KeyValue<K, Pointer> keyValue, SchemeManager.CollectionFieldsUpdate collectionFieldsUpdate) throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException, SerializationException {
         Map<Integer, byte[]> valueMap = new HashMap<>();
 
         collectionFieldsUpdate.getBefore().getFields().forEach(field -> {

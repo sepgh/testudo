@@ -13,15 +13,15 @@ import java.util.Map;
 
 public class DefaultFieldIndexManagerProvider extends FieldIndexManagerProvider {
     private final Map<String, IndexManager<?, ?>> indexManagers = new HashMap<>();
-    private final Map<String, ImmutableBinaryObjectWrapper<?>> typeToImmutableBinaryObjectWrappers = new HashMap<>();
+    private final Map<String, IndexBinaryObjectFactory<?>> typeToImmutableBinaryObjectWrappers = new HashMap<>();
 
     public DefaultFieldIndexManagerProvider(EngineConfig engineConfig, IndexStorageManagerFactory indexStorageManagerFactory) {
         super(engineConfig, indexStorageManagerFactory);
         this.registerTypeToImmutableBinaryObjectWrapper(
-                FieldType.INT.getName(), engineConfig.isSupportZeroInClusterKeys() ? new IntegerImmutableBinaryObjectWrapper() : new NoZeroIntegerImmutableBinaryObjectWrapper()
+                FieldType.INT.getName(), engineConfig.isSupportZeroInClusterKeys() ? new IntegerIndexBinaryObject.Factory() : new NoZeroIntegerIndexBinaryObject.Factory()
         );
         this.registerTypeToImmutableBinaryObjectWrapper(
-                FieldType.LONG.getName(), engineConfig.isSupportZeroInClusterKeys() ? new LongImmutableBinaryObjectWrapper() : new NoZeroLongImmutableBinaryObjectWrapper()
+                FieldType.LONG.getName(), engineConfig.isSupportZeroInClusterKeys() ? new LongIndexBinaryObject.Factory() : new NoZeroLongIndexBinaryObject.Factory()
         );
     }
 
@@ -61,7 +61,7 @@ public class DefaultFieldIndexManagerProvider extends FieldIndexManagerProvider 
         indexManagers.remove(getPoolId(collection, field));
     }
 
-    public void registerTypeToImmutableBinaryObjectWrapper(String type, ImmutableBinaryObjectWrapper<?> wrapper) {
+    public void registerTypeToImmutableBinaryObjectWrapper(String type, IndexBinaryObjectFactory<?> wrapper) {
         this.typeToImmutableBinaryObjectWrappers.put(type, wrapper);
     }
 }

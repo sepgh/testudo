@@ -14,9 +14,9 @@ import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.*;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
-import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
+import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
@@ -27,7 +27,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -36,7 +35,7 @@ import java.util.concurrent.ExecutionException;
 import static com.github.sepgh.testudo.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
 import static com.github.sepgh.testudo.storage.index.BaseFileIndexStorageManager.INDEX_FILE_NAME;
 
-public class ImmutableBinaryObjectWrapperTestCase {
+public class IndexBinaryObjectTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private int degree = 4;
@@ -51,7 +50,7 @@ public class ImmutableBinaryObjectWrapperTestCase {
                 .bTreeGrowthNodeAllocationCount(2)
                 .baseDBPath(dbPath.toString())
                 .build();
-        engineConfig.setBTreeMaxFileSize(4L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        engineConfig.setBTreeMaxFileSize(4L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES));
 
         byte[] writingBytes = new byte[]{};
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
@@ -73,10 +72,10 @@ public class ImmutableBinaryObjectWrapperTestCase {
     }
 
     @Test
-    public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getStorageManager();
 
-        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new IntegerImmutableBinaryObjectWrapper());
+        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new IntegerIndexBinaryObject.Factory());
 
         for (int i = 0; i < 13; i ++){
             indexManager.addIndex(i, Pointer.empty());
@@ -96,12 +95,12 @@ public class ImmutableBinaryObjectWrapperTestCase {
 
     }
     @Test
-    public void test_NoZeroIntegerIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
+    public void test_NoZeroIntegerIdentifier() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, InternalOperationException, IndexExistsException {
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getStorageManager();
 
-        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new NoZeroIntegerImmutableBinaryObjectWrapper());
+        IndexManager<Integer, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new NoZeroIntegerIndexBinaryObject.Factory());
 
-        Assertions.assertThrows(ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue.class, () -> {
+        Assertions.assertThrows(IndexBinaryObject.InvalidIndexBinaryObject.class, () -> {
             indexManager.addIndex(0, Pointer.empty());
         });
 
@@ -124,12 +123,12 @@ public class ImmutableBinaryObjectWrapperTestCase {
     }
 
     @Test
-    public void test_NoZeroLongIdentifier() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, InternalOperationException, IndexExistsException {
+    public void test_NoZeroLongIdentifier() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, InternalOperationException, IndexExistsException {
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getStorageManager();
 
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new NoZeroLongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new NoZeroLongIndexBinaryObject.Factory());
 
-        Assertions.assertThrows(ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue.class, () -> {
+        Assertions.assertThrows(IndexBinaryObject.InvalidIndexBinaryObject.class, () -> {
             indexManager.addIndex(0L, Pointer.empty());
         });
 
@@ -152,7 +151,7 @@ public class ImmutableBinaryObjectWrapperTestCase {
     }
 
     @Test
-    public void test_CustomBinaryObjectWrapper() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void test_CustomBinaryObjectWrapper() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = new OrganizedFileIndexStorageManager(
                 "Test",
                 new JsonIndexHeaderManager.Factory(),
@@ -160,26 +159,26 @@ public class ImmutableBinaryObjectWrapperTestCase {
                 new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
         );
 
-        ImmutableBinaryObjectWrapper<String> keyImmutableBinaryObjectWrapper = new StringImmutableBinaryObjectWrapper(20);
+        IndexBinaryObjectFactory<String> keyIndexBinaryObjectFactory = new StringIndexBinaryObject.Factory(20);
 
         NodeFactory<String> nodeFactory = new NodeFactory<>() {
             @Override
             public AbstractTreeNode<String> fromBytes(byte[] bytes) {
                 if ((bytes[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT)
-                    return new AbstractLeafTreeNode<>(bytes, keyImmutableBinaryObjectWrapper, new PointerImmutableBinaryObjectWrapper());
-                return new InternalTreeNode<>(bytes, keyImmutableBinaryObjectWrapper);
+                    return new AbstractLeafTreeNode<>(bytes, keyIndexBinaryObjectFactory, new PointerIndexBinaryObject.Factory());
+                return new InternalTreeNode<>(bytes, keyIndexBinaryObjectFactory);
             }
 
             @Override
             public AbstractTreeNode<String> fromBytes(byte[] bytes, AbstractTreeNode.Type type) {
                 if (type.equals(AbstractTreeNode.Type.LEAF))
-                    return new AbstractLeafTreeNode<>(bytes, keyImmutableBinaryObjectWrapper, new PointerImmutableBinaryObjectWrapper());
-                return new InternalTreeNode<>(bytes, keyImmutableBinaryObjectWrapper);
+                    return new AbstractLeafTreeNode<>(bytes, keyIndexBinaryObjectFactory, new PointerIndexBinaryObject.Factory());
+                return new InternalTreeNode<>(bytes, keyIndexBinaryObjectFactory);
             }
         };
 
 
-        IndexManager<String, Pointer> indexManager = new BPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, keyImmutableBinaryObjectWrapper, new PointerImmutableBinaryObjectWrapper(), nodeFactory);
+        IndexManager<String, Pointer> indexManager = new BPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, keyIndexBinaryObjectFactory, new PointerIndexBinaryObject.Factory(), nodeFactory);
 
 
         indexManager.addIndex("AAA", Pointer.empty());
@@ -206,9 +205,9 @@ public class ImmutableBinaryObjectWrapperTestCase {
         indexManager.addIndex("BBC", Pointer.empty());
 
 
-        KVSize kvSize = new KVSize(20, PointerImmutableBinaryObjectWrapper.BYTES);
+        KVSize kvSize = new KVSize(20, PointerIndexBinaryObject.BYTES);
         IndexStorageManager.NodeData rootNodeData = organizedFileIndexStorageManager.getRoot(1, kvSize).get().get();
-        InternalTreeNode<String> rootInternalTreeNode = new InternalTreeNode<>(rootNodeData.bytes(), keyImmutableBinaryObjectWrapper);
+        InternalTreeNode<String> rootInternalTreeNode = new InternalTreeNode<>(rootNodeData.bytes(), keyIndexBinaryObjectFactory);
         rootInternalTreeNode.setPointer(rootNodeData.pointer());
 
 

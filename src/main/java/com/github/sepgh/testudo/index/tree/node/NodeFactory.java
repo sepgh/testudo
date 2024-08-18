@@ -2,7 +2,7 @@ package com.github.sepgh.testudo.index.tree.node;
 
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 
 import static com.github.sepgh.testudo.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
@@ -22,25 +22,25 @@ public interface NodeFactory<K extends Comparable<K>> {
 
     class ClusterNodeFactory<K extends Comparable<K>> implements NodeFactory<K> {
 
-        private final ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper;
+        private final IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory;
 
-        public ClusterNodeFactory(ImmutableBinaryObjectWrapper<K> keyImmutableBinaryObjectWrapper) {
-            this.keyImmutableBinaryObjectWrapper = keyImmutableBinaryObjectWrapper;
+        public ClusterNodeFactory(IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory) {
+            this.keyIndexBinaryObjectFactory = keyIndexBinaryObjectFactory;
         }
 
         @Override
         public AbstractTreeNode<K> fromBytes(byte[] bytes) {
             if ((bytes[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT)
-                return new LeafClusterTreeNode<>(bytes, keyImmutableBinaryObjectWrapper);
-            return new InternalTreeNode<>(bytes, keyImmutableBinaryObjectWrapper);
+                return new LeafClusterTreeNode<>(bytes, keyIndexBinaryObjectFactory);
+            return new InternalTreeNode<>(bytes, keyIndexBinaryObjectFactory);
         }
 
         @Override
         public AbstractTreeNode<K> fromBytes(byte[] bytes, AbstractTreeNode.Type type) {
             bytes[0] = type.getSign();
             if (type.equals(AbstractTreeNode.Type.LEAF))
-                return new LeafClusterTreeNode<>(bytes, keyImmutableBinaryObjectWrapper);
-            return new InternalTreeNode<>(bytes, keyImmutableBinaryObjectWrapper);
+                return new LeafClusterTreeNode<>(bytes, keyIndexBinaryObjectFactory);
+            return new InternalTreeNode<>(bytes, keyIndexBinaryObjectFactory);
         }
     }
 

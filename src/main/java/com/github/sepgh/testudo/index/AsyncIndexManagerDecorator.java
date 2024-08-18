@@ -5,7 +5,7 @@ import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.util.Optional;
@@ -21,7 +21,7 @@ public class AsyncIndexManagerDecorator<K extends Comparable<K>, V extends Compa
     }
     
     @Override
-    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
+    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException {
         writeLock.lock();
         try {
             return super.addIndex(identifier, value);
@@ -41,7 +41,7 @@ public class AsyncIndexManagerDecorator<K extends Comparable<K>, V extends Compa
     }
 
     @Override
-    public boolean removeIndex(K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public boolean removeIndex(K identifier) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
         writeLock.lock();
         try {
             return super.removeIndex(identifier);
@@ -51,7 +51,7 @@ public class AsyncIndexManagerDecorator<K extends Comparable<K>, V extends Compa
     }
 
     @Override
-    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexMissingException {
+    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException {
         writeLock.lock();
         try {
             return super.updateIndex(identifier, value);

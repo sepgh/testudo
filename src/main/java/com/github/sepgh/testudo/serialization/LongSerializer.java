@@ -1,9 +1,9 @@
 package com.github.sepgh.testudo.serialization;
 
 import com.github.sepgh.testudo.exception.SerializationException;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.index.tree.node.data.NoZeroLongImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObjectFactory;
+import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.NoZeroLongIndexBinaryObject;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.utils.BinaryUtils;
 import com.google.common.primitives.Longs;
@@ -50,11 +50,11 @@ public class LongSerializer implements Serializer<Long> {
     }
 
     @Override
-    public ImmutableBinaryObjectWrapper<Long> getImmutableBinaryObjectWrapper(Scheme.Field field) {
+    public IndexBinaryObjectFactory<Long> getIndexBinaryObjectFactory(Scheme.Field field) {
         if (field.isSupportZero())
-            return new LongImmutableBinaryObjectWrapper();
+            return new LongIndexBinaryObject.Factory();
 
-        return new NoZeroLongImmutableBinaryObjectWrapper();
+        return new NoZeroLongIndexBinaryObject.Factory();
     }
 
     @Override

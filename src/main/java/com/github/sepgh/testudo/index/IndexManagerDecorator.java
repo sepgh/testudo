@@ -5,7 +5,7 @@ import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.util.Optional;
@@ -17,12 +17,12 @@ public class IndexManagerDecorator<K extends Comparable<K>, V extends Comparable
         this.indexManager = indexManager;
     }
 
-    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException {
+    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException {
         return this.indexManager.addIndex(identifier, value);
     }
 
     @Override
-    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexMissingException {
+    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException {
         return this.indexManager.updateIndex(identifier, value);
     }
 
@@ -30,7 +30,7 @@ public class IndexManagerDecorator<K extends Comparable<K>, V extends Comparable
         return this.indexManager.getIndex(identifier);
     }
 
-    public boolean removeIndex(K identifier) throws InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public boolean removeIndex(K identifier) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
         return this.indexManager.removeIndex(identifier);
     }
 

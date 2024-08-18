@@ -5,8 +5,8 @@ import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.index.tree.node.data.PointerImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
 import com.github.sepgh.testudo.utils.KVSize;
@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutionException;
 import static com.github.sepgh.test.TestParams.DEFAULT_KV_SIZE;
 
 public class StoredTreeStructureVerifier {
-    private final static KVSize KV_SIZE = new KVSize(LongImmutableBinaryObjectWrapper.BYTES, PointerImmutableBinaryObjectWrapper.BYTES);
+    private final static KVSize KV_SIZE = new KVSize(LongIndexBinaryObject.BYTES, PointerIndexBinaryObject.BYTES);
 
     /*
      * 009
@@ -45,13 +45,13 @@ public class StoredTreeStructureVerifier {
     public static void testUnOrderedTreeStructure1(IndexStorageManager indexStorageManager, int table, long multi, int degree) throws ExecutionException, InterruptedException, IOException {
         Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table, KV_SIZE).get();
         Assertions.assertTrue(optional.isPresent());
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongImmutableBinaryObjectWrapper());
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongIndexBinaryObject.Factory());
 
         AbstractTreeNode<Long> rootNode = nodeFactory.fromBytes(optional.get().bytes());
         Assertions.assertTrue(rootNode.isRoot());
         Assertions.assertFalse(rootNode.isLeaf());
 
-        Assertions.assertEquals(multi * 9, rootNode.getKeys(degree, PointerImmutableBinaryObjectWrapper.BYTES).next());
+        Assertions.assertEquals(multi * 9, rootNode.getKeys(degree, PointerIndexBinaryObject.BYTES).next());
 
         // Checking root child at left
         InternalTreeNode<Long> leftChildInternalNode = (InternalTreeNode<Long>) IndexTreeNodeIO.read(indexStorageManager, table, ((InternalTreeNode<Long>) rootNode).getChildPointersList(degree).get(0).getLeft(), nodeFactory, DEFAULT_KV_SIZE);
@@ -171,15 +171,15 @@ public class StoredTreeStructureVerifier {
      *     └── 012
      */
     public static void testOrderedTreeStructure(IndexStorageManager indexStorageManager, int table, long multi, int degree) throws ExecutionException, InterruptedException, IOException {
-        Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table, new KVSize(LongImmutableBinaryObjectWrapper.BYTES, PointerImmutableBinaryObjectWrapper.BYTES)).get();
+        Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table, new KVSize(LongIndexBinaryObject.BYTES, PointerIndexBinaryObject.BYTES)).get();
         Assertions.assertTrue(optional.isPresent());
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongImmutableBinaryObjectWrapper());
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongIndexBinaryObject.Factory());
 
         AbstractTreeNode<Long> rootNode = nodeFactory.fromBytes(optional.get().bytes());
         Assertions.assertTrue(rootNode.isRoot());
         Assertions.assertFalse(rootNode.isLeaf());
 
-        Assertions.assertEquals(multi*7, rootNode.getKeys(degree, PointerImmutableBinaryObjectWrapper.BYTES).next());
+        Assertions.assertEquals(multi*7, rootNode.getKeys(degree, PointerIndexBinaryObject.BYTES).next());
 
         // Checking root child at left
         InternalTreeNode<Long> leftChildInternalNode = (InternalTreeNode<Long>) nodeFactory.fromBytes(

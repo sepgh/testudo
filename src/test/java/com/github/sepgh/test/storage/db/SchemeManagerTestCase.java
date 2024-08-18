@@ -6,7 +6,7 @@ import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.IndexManager;
 import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
 import com.github.sepgh.testudo.operation.DefaultFieldIndexManagerProvider;
 import com.github.sepgh.testudo.operation.FieldIndexManagerProvider;
 import com.github.sepgh.testudo.scheme.Scheme;
@@ -160,7 +160,7 @@ public class SchemeManagerTestCase {
     *   Afterward, the new object should be 4 bytes longer and store the data set as `defaultValue` for the new field during scheme update.
     */
     @Test
-    public void test_SchemeManager_WithData() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue {
+    public void test_SchemeManager_WithData() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
         FieldIndexManagerProvider fieldIndexManagerProvider = new DefaultFieldIndexManagerProvider(engineConfig, indexStorageManagerFactory);
 

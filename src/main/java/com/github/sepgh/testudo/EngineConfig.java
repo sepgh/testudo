@@ -1,9 +1,9 @@
 package com.github.sepgh.testudo;
 
-import com.github.sepgh.testudo.index.tree.node.data.IntegerImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.index.tree.node.data.NoZeroIntegerImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.index.tree.node.data.NoZeroLongImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IntegerIndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.NoZeroIntegerIndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.NoZeroLongIndexBinaryObject;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -68,10 +68,10 @@ public class EngineConfig {
 
     @Getter
     public enum ClusterIndexKeyStrategy {
-        LONG(LongImmutableBinaryObjectWrapper.BYTES),
-        LONG_NO_ZERO(NoZeroLongImmutableBinaryObjectWrapper.BYTES),
-        INTEGER(IntegerImmutableBinaryObjectWrapper.BYTES),
-        INTEGER_NO_ZERO(NoZeroIntegerImmutableBinaryObjectWrapper.BYTES);
+        LONG(LongIndexBinaryObject.BYTES),
+        LONG_NO_ZERO(NoZeroLongIndexBinaryObject.BYTES),
+        INTEGER(IntegerIndexBinaryObject.BYTES),
+        INTEGER_NO_ZERO(NoZeroIntegerIndexBinaryObject.BYTES);
 
         private final int size;
 

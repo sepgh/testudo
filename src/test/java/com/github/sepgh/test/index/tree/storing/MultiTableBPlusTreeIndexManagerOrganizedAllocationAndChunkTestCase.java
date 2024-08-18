@@ -6,12 +6,12 @@ import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.IndexManager;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
-import com.github.sepgh.testudo.index.tree.node.data.ImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.index.tree.node.data.LongImmutableBinaryObjectWrapper;
-import com.github.sepgh.testudo.index.tree.node.data.PointerImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
-import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
+import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.LimitedFileHandlerPool;
@@ -54,9 +54,9 @@ public class MultiTableBPlusTreeIndexManagerOrganizedAllocationAndChunkTestCase 
                 .fileAcquireUnit(TimeUnit.SECONDS)
                 .bTreeGrowthNodeAllocationCount(1)
                 .build();
-        engineConfig.setBTreeMaxFileSize(2L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES));
+        engineConfig.setBTreeMaxFileSize(2L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES));
 
-        byte[] writingBytes = new byte[6 * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongImmutableBinaryObjectWrapper.BYTES)];
+        byte[] writingBytes = new byte[6 * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES)];
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
         indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 1));
@@ -106,14 +106,14 @@ public class MultiTableBPlusTreeIndexManagerOrganizedAllocationAndChunkTestCase 
      *     └── 012   [LEAF NODE 6]
      */
     @Test
-    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
-        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
 
         for (int tableId = 1; tableId <= 2; tableId++){
             IndexManager<Long, Pointer> currentIndexManager = null;
@@ -126,7 +126,7 @@ public class MultiTableBPlusTreeIndexManagerOrganizedAllocationAndChunkTestCase 
                 currentIndexManager.addIndex(testIdentifier, samplePointer);
             }
 
-            Optional<IndexStorageManager.NodeData> optional = organizedFileIndexStorageManager.getRoot(tableId, new KVSize(LongImmutableBinaryObjectWrapper.BYTES, PointerImmutableBinaryObjectWrapper.BYTES)).get();
+            Optional<IndexStorageManager.NodeData> optional = organizedFileIndexStorageManager.getRoot(tableId, new KVSize(LongIndexBinaryObject.BYTES, PointerIndexBinaryObject.BYTES)).get();
             Assertions.assertTrue(optional.isPresent());
             Assertions.assertTrue(optional.get().pointer().getChunk() != 0);
 
@@ -137,7 +137,7 @@ public class MultiTableBPlusTreeIndexManagerOrganizedAllocationAndChunkTestCase 
     }
 
     @Test
-    public void testMultiSplitAddIndexLimitedOpenFiles_SuccessLimitTo1() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void testMultiSplitAddIndexLimitedOpenFiles_SuccessLimitTo1() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
@@ -146,8 +146,8 @@ public class MultiTableBPlusTreeIndexManagerOrganizedAllocationAndChunkTestCase 
 
         LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(), 1);
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager1 = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
-        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager1 = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
 
         for (int tableId = 1; tableId <= 2; tableId++) {
             IndexManager<Long, Pointer> currentIndexManager = null;
@@ -171,7 +171,7 @@ public class MultiTableBPlusTreeIndexManagerOrganizedAllocationAndChunkTestCase 
     }
 
     @Test
-    public void testMultiSplitAddIndexLimitedOpenFiles_SuccessLimitTo2() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void testMultiSplitAddIndexLimitedOpenFiles_SuccessLimitTo2() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
@@ -179,8 +179,8 @@ public class MultiTableBPlusTreeIndexManagerOrganizedAllocationAndChunkTestCase 
 
         LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(), 2);
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager1 = new ClusterBPlusTreeIndexManager(1, degree, organizedFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
-        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager(2, degree, organizedFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager1 = new ClusterBPlusTreeIndexManager(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
 
         for (int tableId = 1; tableId <= 2; tableId++) {
             IndexManager<Long, Pointer> currentIndexManager = null;
@@ -207,14 +207,14 @@ public class MultiTableBPlusTreeIndexManagerOrganizedAllocationAndChunkTestCase 
 
 
     @Test
-    public void testMultiSplitAddIndexDifferentAddOrders() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void testMultiSplitAddIndexDifferentAddOrders() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager1 = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
-        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager1 = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
 
         int index = 0;
         int runs = 0;
@@ -265,14 +265,14 @@ public class MultiTableBPlusTreeIndexManagerOrganizedAllocationAndChunkTestCase 
      *     └── 012
      */
     @Test
-    public void testMultiSplitAddIndex2() throws IOException, ExecutionException, InterruptedException, ImmutableBinaryObjectWrapper.InvalidBinaryObjectWrapperValue, IndexExistsException, InternalOperationException {
+    public void testMultiSplitAddIndex2() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 4L, 9L, 6L, 10L, 8L, 3L, 2L, 11L, 5L, 7L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager1 = new ClusterBPlusTreeIndexManager(1, degree, organizedFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
-        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager(2, degree, organizedFileIndexStorageManager, new LongImmutableBinaryObjectWrapper());
+        IndexManager<Long, Pointer> indexManager1 = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
 
         for (int tableId = 1; tableId <= 2; tableId++){
             IndexManager<Long, Pointer> currentIndexManager = null;

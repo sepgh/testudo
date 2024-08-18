@@ -1,7 +1,7 @@
 package com.github.sepgh.testudo.storage.index;
 
 import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.index.tree.node.data.PointerImmutableBinaryObjectWrapper;
+import com.github.sepgh.testudo.index.tree.node.data.PointerIndexBinaryObject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
@@ -35,6 +35,6 @@ public class BTreeSizeCalculator {
     }
 
     public static int getClusteredBPlusTreeSize(int degree, int keySize){
-        return new BTreeSizeCalculator(degree, keySize, PointerImmutableBinaryObjectWrapper.BYTES).calculate();
+        return new BTreeSizeCalculator(degree, keySize, PointerIndexBinaryObject.BYTES).calculate();
     }
 }
