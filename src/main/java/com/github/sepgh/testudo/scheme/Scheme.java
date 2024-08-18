@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Data
 @Builder
@@ -34,6 +35,10 @@ public class Scheme {
         @Override
         public int hashCode() {
             return Objects.hash(getId(), getName(), getFields());
+        }
+
+        public Optional<Field> getPrimaryField(){
+            return fields.stream().filter(Field::isPrimary).findFirst();
         }
     }
 

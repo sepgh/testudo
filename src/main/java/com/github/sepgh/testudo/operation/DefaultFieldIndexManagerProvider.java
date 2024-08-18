@@ -2,27 +2,24 @@ package com.github.sepgh.testudo.operation;
 
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.index.IndexManager;
+import com.github.sepgh.testudo.index.tree.BPlusTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.*;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.serialization.FieldType;
+import com.github.sepgh.testudo.serialization.Serializer;
+import com.github.sepgh.testudo.serialization.SerializerRegistry;
 import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class DefaultFieldIndexManagerProvider extends FieldIndexManagerProvider {
     private final Map<String, IndexManager<?, ?>> indexManagers = new HashMap<>();
-    private final Map<String, IndexBinaryObjectFactory<?>> typeToImmutableBinaryObjectWrappers = new HashMap<>();
 
     public DefaultFieldIndexManagerProvider(EngineConfig engineConfig, IndexStorageManagerFactory indexStorageManagerFactory) {
         super(engineConfig, indexStorageManagerFactory);
-        this.registerTypeToImmutableBinaryObjectWrapper(
-                FieldType.INT.getName(), engineConfig.isSupportZeroInClusterKeys() ? new IntegerIndexBinaryObject.Factory() : new NoZeroIntegerIndexBinaryObject.Factory()
-        );
-        this.registerTypeToImmutableBinaryObjectWrapper(
-                FieldType.LONG.getName(), engineConfig.isSupportZeroInClusterKeys() ? new LongIndexBinaryObject.Factory() : new NoZeroLongIndexBinaryObject.Factory()
-        );
     }
 
     private String getPoolId(Scheme.Collection collection, Scheme.Field field){
@@ -30,21 +27,33 @@ public class DefaultFieldIndexManagerProvider extends FieldIndexManagerProvider 
     }
 
     private IndexManager<?, ?> buildIndexManager(Scheme.Collection collection, Scheme.Field field) {
-        IndexManager<?, ?> indexManager = null;
+        Serializer<?> serializer = SerializerRegistry.getInstance().getSerializer(field.getType());
+
+        IndexManager<?, ?> indexManager;
         if (field.isPrimary()){
             indexManager = new ClusterBPlusTreeIndexManager<>(
                     field.getId(),
                     engineConfig.getBTreeDegree(),
                     indexStorageManagerFactory.create(collection, field),
-                    this.typeToImmutableBinaryObjectWrappers.get(field.getType())
+                    serializer.getIndexBinaryObjectFactory(field)
             );
         } else {
             // Todo: this isn't cluster index
-            indexManager = new ClusterBPlusTreeIndexManager<>(
+            Optional<Scheme.Field> optionalField = collection.getPrimaryField();
+
+            if (optionalField.isEmpty()){
+                // Todo: err
+            }
+
+            Scheme.Field primaryField = optionalField.get();
+            Serializer<?> primarySerializer = SerializerRegistry.getInstance().getSerializer(primaryField.getType());
+
+            indexManager = new BPlusTreeIndexManager<>(
                     field.getId(),
                     engineConfig.getBTreeDegree(),
                     indexStorageManagerFactory.create(collection, field),
-                    this.typeToImmutableBinaryObjectWrappers.get(field.getType())
+                    serializer.getIndexBinaryObjectFactory(field),
+                    primarySerializer.getIndexBinaryObjectFactory(primaryField)
             );
         }
 
@@ -61,7 +70,4 @@ public class DefaultFieldIndexManagerProvider extends FieldIndexManagerProvider 
         indexManagers.remove(getPoolId(collection, field));
     }
 
-    public void registerTypeToImmutableBinaryObjectWrapper(String type, IndexBinaryObjectFactory<?> wrapper) {
-        this.typeToImmutableBinaryObjectWrappers.put(type, wrapper);
-    }
 }
