@@ -1,9 +1,6 @@
 package com.github.sepgh.testudo.operation;
 
-import com.github.sepgh.testudo.exception.IndexExistsException;
-import com.github.sepgh.testudo.exception.IndexMissingException;
-import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.exception.SerializationException;
+import com.github.sepgh.testudo.exception.*;
 import com.github.sepgh.testudo.index.IndexManager;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
@@ -64,16 +61,20 @@ public class CollectionSchemeUpdater {
                         dbObject -> {
                             if (collectionFieldsUpdate.getVersion() <= dbObject.getVersion())
                                 return;
+
+                            byte[] bytes;
+
                             if (hasSpace(dbObject, this.collectionFieldsUpdate.getAfter())){
                                 try {
-                                    update(dbObject, this.collectionFieldsUpdate);
+                                    update(dbObject);
+                                    bytes = dbObject.getData();
                                 } catch (SerializationException e) {
                                     throw new RuntimeException(e);
                                 }
                             } else {
                                 dbObject.deactivate();
                                 try {
-                                    createNew(dbObject, pkIndexManager, keyValue, this.collectionFieldsUpdate);
+                                    bytes = createNew(dbObject, pkIndexManager, keyValue);
                                 } catch (IOException | ExecutionException | InterruptedException |
                                          IndexExistsException | InternalOperationException |
                                          IndexBinaryObject.InvalidIndexBinaryObject |
@@ -81,7 +82,19 @@ public class CollectionSchemeUpdater {
                                     throw new RuntimeException(e);
                                 }
                             }
-                            updateIndexes(collectionFieldsUpdate);
+
+                            try {
+                                Comparable fieldAsObject = CollectionSerializationUtil.getValueOfFieldAsObject(
+                                        collectionFieldsUpdate.getAfter(),
+                                        collectionFieldsUpdate.getAfter().getPrimaryField().get(),
+                                        bytes
+                                );
+                                updateIndexes(bytes, fieldAsObject);
+                            } catch (DeserializationException | IndexExistsException | InternalOperationException |
+                                     IndexBinaryObject.InvalidIndexBinaryObject e) {
+                                throw new RuntimeException(e);
+                            }
+
                         }
                 );
             } catch (IOException | ExecutionException | InterruptedException e) {
@@ -91,16 +104,27 @@ public class CollectionSchemeUpdater {
 
     }
 
-    private void updateIndexes(SchemeManager.CollectionFieldsUpdate collectionFieldsUpdate) {
-        collectionFieldsUpdate.getRemovedFields().forEach(field -> {
+    private <K extends Comparable<K>, V extends Comparable<V>> void updateIndexes(byte[] obj, V pk) throws DeserializationException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+        for (Scheme.Field field : collectionFieldsUpdate.getRemovedFields()) {
             if (field.isIndex()){
                 IndexManager<?, ?> indexManager = this.schemeManager.getFieldIndexManagerProvider().getIndexManager(collectionFieldsUpdate.getBefore(), field);
                 indexManager.purgeIndex();
             }
-        });
+        }
+
+        for (Scheme.Field field : collectionFieldsUpdate.getNewFields()) {
+            if (!field.isIndex()){
+                return;
+            }
+
+            IndexManager<K, V> indexManager = (IndexManager<K, V>) this.schemeManager.getFieldIndexManagerProvider().getIndexManager(collectionFieldsUpdate.getAfter(), field);
+            K value = CollectionSerializationUtil.getValueOfFieldAsObject(collectionFieldsUpdate.getAfter(), field, obj);
+            indexManager.addIndex(value, pk);
+        }
+
     }
 
-    private <K extends Comparable<K>> void createNew(DBObject dbObject, IndexManager<K, Pointer> pkIndexManager, AbstractLeafTreeNode.KeyValue<K, Pointer> keyValue, SchemeManager.CollectionFieldsUpdate collectionFieldsUpdate) throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException, SerializationException {
+    private <K extends Comparable<K>> byte[] createNew(DBObject dbObject, IndexManager<K, Pointer> pkIndexManager, AbstractLeafTreeNode.KeyValue<K, Pointer> keyValue) throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException, SerializationException {
         Map<Integer, byte[]> valueMap = new HashMap<>();
 
         collectionFieldsUpdate.getBefore().getFields().forEach(field -> {
@@ -131,6 +155,7 @@ public class CollectionSchemeUpdater {
         );
 
         pkIndexManager.updateIndex(keyValue.key(), pointer);
+        return newObj;
     }
 
     private boolean hasSpace(DBObject dbObject, Scheme.Collection newCollection) {
@@ -138,8 +163,7 @@ public class CollectionSchemeUpdater {
     }
 
     private void update(
-            DBObject dbObject,
-            SchemeManager.CollectionFieldsUpdate collectionFieldsUpdate
+            DBObject dbObject
     ) throws SerializationException {
         Map<Integer, byte[]> valueMap = new HashMap<>();
 

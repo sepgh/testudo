@@ -72,7 +72,9 @@ public class SchemeComparator {
                     }
 
                     Scheme.Field newCollectionField = optionalCollectionField.get();
-                    if (newCollectionField.isIndex() != field.isIndex() || newCollectionField.isIndexUnique() != field.isIndexUnique()){
+                    // Todo: unique index support
+//                    if (newCollectionField.isIndex() != field.isIndex() || newCollectionField.isIndexUnique() != field.isIndexUnique()){
+                    if (newCollectionField.isIndex() != field.isIndex()){
                         comparisonListener.onChange(
                                 DifferenceReason.FIELD_INDEX_CHANGED,
                                 oldSchemeCollection,

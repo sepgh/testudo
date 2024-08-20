@@ -242,6 +242,7 @@ public class SchemeManagerTestCase {
         scheme.setVersion(2);
         ArrayList<Scheme.Field> fields = new ArrayList<>(scheme.getCollections().getFirst().getFields());
         Scheme.Field newField = Scheme.Field.builder()
+                .id(100)
                 .type(FieldType.INT.getName())
                 .name("balance")
                 .defaultValue("15")
@@ -294,6 +295,36 @@ public class SchemeManagerTestCase {
 
         byte[] bytes = dbObject.readData(2 * Integer.BYTES, Integer.BYTES);
         Assertions.assertEquals(0, Ints.fromByteArray(bytes));
+
+
+        // --- ADDING NEW FIELD WITH INDEX ON --- //
+        scheme.setVersion(4);
+        fields = new ArrayList<>(scheme.getCollections().getFirst().getFields());
+        int defaultValue = 60;
+        newField = Scheme.Field.builder()
+                .id(1000)
+                .type(FieldType.INT.getName())
+                .name("x")
+                .defaultValue(String.valueOf(defaultValue))
+                .index(true)
+                .build();
+        fields.add(newField);
+        scheme.getCollections().getFirst().setFields(fields);
+
+        schemeManager = new SchemeManager(
+                engineConfig,
+                scheme,
+                fieldIndexManagerProvider,
+                this.databaseStorageManager
+        );
+        schemeManager.update();
+
+
+        IndexManager<Integer, Integer> newFieldIndexManager = (IndexManager<Integer, Integer>) fieldIndexManagerProvider.getIndexManager(scheme.getCollections().getFirst(), newField);
+        Assertions.assertEquals(1, newFieldIndexManager.size());
+        Optional<Integer> optionalIndexValue = newFieldIndexManager.getIndex(defaultValue);
+        Assertions.assertTrue(optionalIndexValue.isPresent());
+        Assertions.assertEquals(1, optionalIndexValue.get());
 
     }
 }

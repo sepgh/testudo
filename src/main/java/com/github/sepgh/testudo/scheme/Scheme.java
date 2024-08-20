@@ -76,7 +76,7 @@ public class Scheme {
         private Meta meta = Meta.builder().build();
         private boolean primary;
         private boolean index;
-        private boolean indexUnique;
+//        private boolean indexUnique;
         private String defaultValue;
         @Builder.Default
         private boolean supportZero = true;
@@ -86,12 +86,12 @@ public class Scheme {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Field field = (Field) o;
-            return getId() == field.getId() && isPrimary() == field.isPrimary() && isIndex() == field.isIndex() && isIndexUnique() == field.isIndexUnique() && Objects.equals(getName(), field.getName()) && Objects.equals(getType(), field.getType()) && Objects.equals(getMeta(), field.getMeta());
+            return getId() == field.getId() && isPrimary() == field.isPrimary() && isIndex() == field.isIndex() && Objects.equals(getName(), field.getName()) && Objects.equals(getType(), field.getType()) && Objects.equals(getMeta(), field.getMeta());
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(getId(), getName(), getType(), getMeta(), isPrimary(), isIndex(), isIndexUnique());
+            return Objects.hash(getId(), getName(), getType(), getMeta(), isPrimary(), isIndex());
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.github.sepgh.testudo.serialization;
 
+import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.storage.db.DBObject;
@@ -43,6 +44,20 @@ public class CollectionSerializationUtil {
         int offset = getByteArrOffsetTillFieldIndex(collection.getFields(), collection.getFields().indexOf(field));
         int size = getByteArrSizeOfField(field);
         return dbObject.readData(offset, size);
+    }
+
+    public static byte[] getValueOfField(Scheme.Collection collection, Scheme.Field field, byte[] obj){
+        int offset = getByteArrOffsetTillFieldIndex(collection.getFields(), collection.getFields().indexOf(field));
+        int size = getByteArrSizeOfField(field);
+        byte[] output = new byte[size];
+        System.arraycopy(obj, offset, output, 0, size);
+        return output;
+    }
+
+    public static <V extends Comparable<V>> V getValueOfFieldAsObject(Scheme.Collection collection, Scheme.Field field, byte[] obj) throws DeserializationException {
+        Serializer<V> serializer = (Serializer<V>) SerializerRegistry.getInstance().getSerializer(field.getType());
+        byte[] output = getValueOfField(collection, field, obj);
+        return serializer.deserialize(output, field.getMeta());
     }
 
     public static int getSizeOfCollection(Scheme.Collection collection) {

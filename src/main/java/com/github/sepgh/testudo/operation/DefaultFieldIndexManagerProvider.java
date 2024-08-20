@@ -27,18 +27,22 @@ public class DefaultFieldIndexManagerProvider extends FieldIndexManagerProvider 
     }
 
     private IndexManager<?, ?> buildIndexManager(Scheme.Collection collection, Scheme.Field field) {
+        // Raw use of field.id as indexId would force the scheme designer to use unique field ids per whole DB
+        // However, using hash code of pool id (which is combination of collection.id and field.id) forces the scheme designer
+        //          to only use unique field ids per collection
+        int indexId = getPoolId(collection, field).hashCode();
+
         Serializer<?> serializer = SerializerRegistry.getInstance().getSerializer(field.getType());
 
         IndexManager<?, ?> indexManager;
         if (field.isPrimary()){
             indexManager = new ClusterBPlusTreeIndexManager<>(
-                    field.getId(),
+                    indexId,
                     engineConfig.getBTreeDegree(),
                     indexStorageManagerFactory.create(collection, field),
                     serializer.getIndexBinaryObjectFactory(field)
             );
         } else {
-            // Todo: this isn't cluster index
             Optional<Scheme.Field> optionalField = collection.getPrimaryField();
 
             if (optionalField.isEmpty()){
@@ -49,7 +53,7 @@ public class DefaultFieldIndexManagerProvider extends FieldIndexManagerProvider 
             Serializer<?> primarySerializer = SerializerRegistry.getInstance().getSerializer(primaryField.getType());
 
             indexManager = new BPlusTreeIndexManager<>(
-                    field.getId(),
+                    indexId,
                     engineConfig.getBTreeDegree(),
                     indexStorageManagerFactory.create(collection, field),
                     serializer.getIndexBinaryObjectFactory(field),
