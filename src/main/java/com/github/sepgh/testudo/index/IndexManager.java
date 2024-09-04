@@ -10,7 +10,7 @@ import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.util.Optional;
 
-public interface IndexManager<K extends Comparable<K>, V extends Comparable<V>> {
+public interface IndexManager<K extends Comparable<K>, V> {
     AbstractTreeNode<K> addIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject;
     AbstractTreeNode<K> updateIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException;
     Optional<V> getIndex(K identifier) throws InternalOperationException;

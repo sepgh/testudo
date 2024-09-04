@@ -11,7 +11,7 @@ import lombok.SneakyThrows;
 
 import java.util.*;
 
-public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<V>> extends AbstractTreeNode<K> {
+public class AbstractLeafTreeNode<K extends Comparable<K>, V> extends AbstractTreeNode<K> {
     protected final IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory;
 
     public AbstractLeafTreeNode(byte[] data, IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory) {
@@ -115,7 +115,7 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V extends Comparable<
         return new KVSize(kIndexBinaryObjectFactory.size(), valueIndexBinaryObjectFactory.size());
     }
 
-    public record KeyValue<K extends Comparable<K>, V extends Comparable<V>>(K key,
+    public record KeyValue<K extends Comparable<K>, V>(K key,
                                                                              V value) implements Comparable<KeyValue<K, V>> {
 
         @Override

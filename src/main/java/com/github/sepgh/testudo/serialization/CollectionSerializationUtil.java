@@ -6,6 +6,7 @@ import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.storage.db.DBObject;
 
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.util.List;
 
 

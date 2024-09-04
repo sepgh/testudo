@@ -15,7 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V extends Comparable<V>> {
+public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V> {
     private final int degree;
     private final IndexIOSession<K> indexIOSession;
     private final IndexBinaryObjectFactory<K> kIndexBinaryObjectFactory;

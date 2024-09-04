@@ -104,7 +104,7 @@ public class CollectionSchemeUpdater {
 
     }
 
-    private <K extends Comparable<K>, V extends Comparable<V>> void updateIndexes(byte[] obj, V pk) throws DeserializationException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    private <K extends Comparable<K>, V> void updateIndexes(byte[] obj, V pk) throws DeserializationException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
         for (Scheme.Field field : collectionFieldsUpdate.getRemovedFields()) {
             if (field.isIndex()){
                 IndexManager<?, ?> indexManager = this.schemeManager.getFieldIndexManagerProvider().getIndexManager(collectionFieldsUpdate.getBefore(), field);

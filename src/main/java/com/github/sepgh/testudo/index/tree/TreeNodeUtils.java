@@ -130,7 +130,7 @@ public class TreeNodeUtils {
         );
     }
 
-    public static <K extends Comparable<K>, V extends Comparable<V>> Map.Entry<K, V> getKeyValueAtIndex(
+    public static <K extends Comparable<K>, V> Map.Entry<K, V> getKeyValueAtIndex(
             AbstractTreeNode<K> treeNode,
             int index,
             IndexBinaryObjectFactory<K> kIndexBinaryObjectFactory,
@@ -143,7 +143,7 @@ public class TreeNodeUtils {
         );
     }
 
-    public static <K extends Comparable<K>, V extends Comparable<V>> void setKeyValueAtIndex(AbstractTreeNode<?> treeNode, int index, IndexBinaryObject<K> keyInnerObj, IndexBinaryObject<V> valueInnerObj) {
+    public static <K extends Comparable<K>, V> void setKeyValueAtIndex(AbstractTreeNode<?> treeNode, int index, IndexBinaryObject<K> keyInnerObj, IndexBinaryObject<V> valueInnerObj) {
         System.arraycopy(
                 keyInnerObj.getBytes(),
                 0,
@@ -169,7 +169,7 @@ public class TreeNodeUtils {
      *       linear search is used to sort the keys
      *       binary search could be used
      */
-    public static <K extends Comparable<K>, V extends Comparable<V>> int addKeyValueAndGetIndex(
+    public static <K extends Comparable<K>, V> int addKeyValueAndGetIndex(
             AbstractTreeNode<?> treeNode,
             int degree,
             IndexBinaryObjectFactory<K> indexBinaryObjectFactory,

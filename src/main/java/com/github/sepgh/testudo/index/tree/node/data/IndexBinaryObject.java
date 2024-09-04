@@ -1,6 +1,6 @@
 package com.github.sepgh.testudo.index.tree.node.data;
 
-public interface IndexBinaryObject<E extends Comparable<E>> {
+public interface IndexBinaryObject<E> {
     E asObject();
     boolean hasValue();
     int size();

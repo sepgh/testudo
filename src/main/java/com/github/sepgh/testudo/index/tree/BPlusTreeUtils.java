@@ -51,7 +51,7 @@ public class BPlusTreeUtils {
         }
     }
 
-    public static <K extends Comparable<K>, V extends Comparable<V>> AbstractLeafTreeNode<K, V> getResponsibleNode(IndexStorageManager indexStorageManager, AbstractTreeNode<K> node, K identifier, int index, int degree, NodeFactory<K> nodeFactory, IndexBinaryObjectFactory<V> valueIndexBinaryObject) throws InternalOperationException {
+    public static <K extends Comparable<K>, V> AbstractLeafTreeNode<K, V> getResponsibleNode(IndexStorageManager indexStorageManager, AbstractTreeNode<K> node, K identifier, int index, int degree, NodeFactory<K> nodeFactory, IndexBinaryObjectFactory<V> valueIndexBinaryObject) throws InternalOperationException {
         if (node.isLeaf()){
             return (AbstractLeafTreeNode<K, V>) node;
         }

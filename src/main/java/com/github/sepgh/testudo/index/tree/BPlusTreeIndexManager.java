@@ -26,7 +26,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.github.sepgh.testudo.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
 
-public class BPlusTreeIndexManager<K extends Comparable<K>, V extends Comparable<V>> extends AbstractIndexManager<K, V> {
+public class BPlusTreeIndexManager<K extends Comparable<K>, V> extends AbstractIndexManager<K, V> {
     private final IndexStorageManager indexStorageManager;
     private final IndexIOSessionFactory indexIOSessionFactory;
     private final int degree;

@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class CachedIndexManagerDecorator<K extends Comparable<K>, V extends Comparable<V>> extends IndexManagerDecorator<K, V> {
+public class CachedIndexManagerDecorator<K extends Comparable<K>, V> extends IndexManagerDecorator<K, V> {
     private final Cache<CacheID<K>, V> cache;
     private final AtomicInteger sizeCache = new AtomicInteger(0);
 

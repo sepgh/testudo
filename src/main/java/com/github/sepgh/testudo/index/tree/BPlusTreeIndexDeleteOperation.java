@@ -13,7 +13,7 @@ import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
 import javax.annotation.Nullable;
 import java.util.*;
 
-public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V extends Comparable<V>> {
+public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
     private final int degree;
     private final int indexId;
     private final IndexIOSession<K> indexIOSession;

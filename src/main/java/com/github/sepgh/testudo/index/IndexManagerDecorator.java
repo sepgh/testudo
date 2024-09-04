@@ -10,7 +10,7 @@ import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.util.Optional;
 
-public class IndexManagerDecorator<K extends Comparable<K>, V extends Comparable<V>> implements IndexManager<K, V> {
+public class IndexManagerDecorator<K extends Comparable<K>, V> implements IndexManager<K, V> {
     protected final IndexManager<K, V> indexManager;
 
     public IndexManagerDecorator(IndexManager<K, V> indexManager) {
