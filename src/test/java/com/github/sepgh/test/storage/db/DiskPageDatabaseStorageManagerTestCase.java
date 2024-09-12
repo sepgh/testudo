@@ -3,8 +3,8 @@ package com.github.sepgh.test.storage.db;
 import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.exception.VerificationException;
+import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
 import com.github.sepgh.testudo.storage.db.Page;
@@ -165,7 +165,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
         int cases = 20;
 
         ExecutorService executorService = Executors.newFixedThreadPool(cases);
-        List<AbstractLeafTreeNode.KeyValue<String, Pointer>> keyValues = new CopyOnWriteArrayList<>();
+        List<KeyValue<String, Pointer>> keyValues = new CopyOnWriteArrayList<>();
 
         CountDownLatch countDownLatch = new CountDownLatch(cases);
 
@@ -178,7 +178,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
                 try {
                     byte[] generatedStringBytes = generatedString.getBytes(StandardCharsets.UTF_8);
                     Pointer pointer = diskPageDatabaseStorageManager.store(1, 1, generatedStringBytes);
-                    keyValues.add(new AbstractLeafTreeNode.KeyValue<>(generatedString, pointer));
+                    keyValues.add(new KeyValue<>(generatedString, pointer));
                 } catch (IOException | InterruptedException | ExecutionException e) {
                     throw new RuntimeException(e);
                 } finally {
@@ -189,7 +189,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
 
         countDownLatch.await();
 
-        for (AbstractLeafTreeNode.KeyValue<String, Pointer> keyValue : keyValues) {
+        for (KeyValue<String, Pointer> keyValue : keyValues) {
             Optional<DBObject> dbObject = this.diskPageDatabaseStorageManager.select(keyValue.value());
             Assertions.assertTrue(dbObject.isPresent());
             Assertions.assertTrue(dbObject.get().isAlive());

@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.index.tree;
 
 import com.github.sepgh.testudo.exception.InternalOperationException;
+import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
@@ -213,10 +214,9 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
             AbstractLeafTreeNode<K, V> siblingLeafNode = (AbstractLeafTreeNode<K, V>) sibling;
             AbstractLeafTreeNode<K, V> childLeafNode = (AbstractLeafTreeNode<K, V>) child;
 
-            List<AbstractLeafTreeNode.KeyValue<K, V>> keyValueList = new ArrayList<>(siblingLeafNode.getKeyValueList(degree));
-            AbstractLeafTreeNode.KeyValue<K, V> keyValue = keyValueList.removeLast();
+            List<KeyValue<K, V>> keyValueList = new ArrayList<>(siblingLeafNode.getKeyValueList(degree));
+            KeyValue<K, V> keyValue = keyValueList.removeLast();
             siblingLeafNode.setKeyValues(keyValueList, degree);
-
 
             parent.setKey(idx - 1, keyValue.key());
 
@@ -271,8 +271,8 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
             AbstractLeafTreeNode<K, V> siblingLeafNode = (AbstractLeafTreeNode<K, V>) sibling;
             AbstractLeafTreeNode<K, V> childLeafNode = (AbstractLeafTreeNode<K, V>) child;
 
-            List<AbstractLeafTreeNode.KeyValue<K, V>> keyValueList = new ArrayList<>(siblingLeafNode.getKeyValueList(degree));
-            AbstractLeafTreeNode.KeyValue<K, V> keyValue = keyValueList.removeFirst();
+            List<KeyValue<K, V>> keyValueList = new ArrayList<>(siblingLeafNode.getKeyValueList(degree));
+            KeyValue<K, V> keyValue = keyValueList.removeFirst();
             siblingLeafNode.setKeyValues(keyValueList, degree);
 
             parent.setKey(idx, keyValueList.getFirst().key());
@@ -335,7 +335,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
 
         } else {
             AbstractLeafTreeNode<K, V> childLeafTreeNode = (AbstractLeafTreeNode<K, V>) child;
-            ArrayList<AbstractLeafTreeNode.KeyValue<K, V>> keyValueList = new ArrayList<>(childLeafTreeNode.getKeyValueList(degree));
+            ArrayList<KeyValue<K, V>> keyValueList = new ArrayList<>(childLeafTreeNode.getKeyValueList(degree));
             keyValueList.addAll(((AbstractLeafTreeNode<K, V>) sibling).getKeyValueList(degree));
             Collections.sort(keyValueList);
             ((AbstractLeafTreeNode<K, V>) child).setKeyValues(keyValueList, degree);
@@ -398,6 +398,5 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
         }
 
     }
-
 
 }

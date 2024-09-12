@@ -13,16 +13,16 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class CachedIndexManagerDecorator<K extends Comparable<K>, V> extends IndexManagerDecorator<K, V> {
+public class CachedUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> extends UniqueTreeIndexManagerDecorator<K, V> {
     private final Cache<CacheID<K>, V> cache;
     private final AtomicInteger sizeCache = new AtomicInteger(0);
 
-    public CachedIndexManagerDecorator(IndexManager<K, V> indexManager, int maxSize) {
-        this(indexManager, CacheBuilder.newBuilder().maximumSize(maxSize).initialCapacity(10).build());
+    public CachedUniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager, int maxSize) {
+        this(uniqueTreeIndexManager, CacheBuilder.newBuilder().maximumSize(maxSize).initialCapacity(10).build());
     }
 
-    public CachedIndexManagerDecorator(IndexManager<K, V> indexManager, Cache<CacheID<K>, V> cache) {
-        super(indexManager);
+    public CachedUniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager, Cache<CacheID<K>, V> cache) {
+        super(uniqueTreeIndexManager);
         this.cache = cache;
     }
 

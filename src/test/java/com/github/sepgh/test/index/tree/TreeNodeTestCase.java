@@ -1,5 +1,6 @@
 package com.github.sepgh.test.index.tree;
 
+import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.TreeNodeUtils;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
@@ -156,10 +157,10 @@ public class TreeNodeTestCase {
         Assertions.assertInstanceOf(LeafClusterTreeNode.class, node);
         LeafClusterTreeNode<Long> treeNode = (LeafClusterTreeNode<Long>) node;
 
-        Iterator<LeafClusterTreeNode.KeyValue<Long, Pointer>> iterator = treeNode.getKeyValues(3);
+        Iterator<KeyValue<Long, Pointer>> iterator = treeNode.getKeyValues(3);
 
         Assertions.assertTrue(iterator.hasNext());
-        LeafClusterTreeNode.KeyValue<Long, Pointer> next = iterator.next();
+        KeyValue<Long, Pointer> next = iterator.next();
         Assertions.assertEquals(15, next.key());
         Pointer pointer = next.value();
         Assertions.assertFalse(pointer.isNodePointer());

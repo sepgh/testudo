@@ -3,7 +3,6 @@ package com.github.sepgh.testudo.index;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
 import com.github.sepgh.testudo.utils.LockableIterator;
@@ -12,12 +11,12 @@ import java.util.Optional;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
-public class AsyncIndexManagerDecorator<K extends Comparable<K>, V> extends IndexManagerDecorator<K, V> {
+public class AsyncUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> extends UniqueTreeIndexManagerDecorator<K, V> {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
-    public AsyncIndexManagerDecorator(IndexManager<K, V> indexManager) {
-        super(indexManager);
+    public AsyncUniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager) {
+        super(uniqueTreeIndexManager);
     }
     
     @Override
@@ -71,8 +70,8 @@ public class AsyncIndexManagerDecorator<K extends Comparable<K>, V> extends Inde
     }
 
     @Override
-    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator() throws InternalOperationException {
-        LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> iterator = super.getSortedIterator();
+    public LockableIterator<KeyValue<K, V>> getSortedIterator() throws InternalOperationException {
+        LockableIterator<KeyValue<K, V>> iterator = super.getSortedIterator();
         return new LockableIterator<>() {
             @Override
             public void lock() {
@@ -90,7 +89,7 @@ public class AsyncIndexManagerDecorator<K extends Comparable<K>, V> extends Inde
             }
 
             @Override
-            public AbstractLeafTreeNode.KeyValue<K, V> next() {
+            public KeyValue<K, V> next() {
                 return iterator.next();
             }
         };

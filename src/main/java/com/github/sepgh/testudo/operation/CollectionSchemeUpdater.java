@@ -1,9 +1,9 @@
 package com.github.sepgh.testudo.operation;
 
 import com.github.sepgh.testudo.exception.*;
-import com.github.sepgh.testudo.index.IndexManager;
+import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
+import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.scheme.SchemeManager;
@@ -49,9 +49,9 @@ public class CollectionSchemeUpdater {
 
         this.validateTypeCompatibilities();
 
-        IndexManager<K, Pointer> pkIndexManager = (IndexManager<K, Pointer>) this.schemeManager.getPKIndexManager(this.collectionFieldsUpdate.getBefore());
+        UniqueTreeIndexManager<K, Pointer> pkUniqueTreeIndexManager = (UniqueTreeIndexManager<K, Pointer>) this.schemeManager.getPKIndexManager(this.collectionFieldsUpdate.getBefore());
 
-        LockableIterator<? extends AbstractLeafTreeNode.KeyValue<K, Pointer>> lockableIterator = pkIndexManager.getSortedIterator();
+        LockableIterator<? extends KeyValue<K, Pointer>> lockableIterator = pkUniqueTreeIndexManager.getSortedIterator();
 
         lockableIterator.forEachRemaining(keyValue -> {
             Pointer pointer = keyValue.value();
@@ -74,7 +74,7 @@ public class CollectionSchemeUpdater {
                             } else {
                                 dbObject.deactivate();
                                 try {
-                                    bytes = createNew(dbObject, pkIndexManager, keyValue);
+                                    bytes = createNew(dbObject, pkUniqueTreeIndexManager, keyValue);
                                 } catch (IOException | ExecutionException | InterruptedException |
                                          IndexExistsException | InternalOperationException |
                                          IndexBinaryObject.InvalidIndexBinaryObject |
@@ -107,8 +107,8 @@ public class CollectionSchemeUpdater {
     private <K extends Comparable<K>, V> void updateIndexes(byte[] obj, V pk) throws DeserializationException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
         for (Scheme.Field field : collectionFieldsUpdate.getRemovedFields()) {
             if (field.isIndex()){
-                IndexManager<?, ?> indexManager = this.schemeManager.getFieldIndexManagerProvider().getIndexManager(collectionFieldsUpdate.getBefore(), field);
-                indexManager.purgeIndex();
+                UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.schemeManager.getFieldIndexManagerProvider().getIndexManager(collectionFieldsUpdate.getBefore(), field);
+                uniqueTreeIndexManager.purgeIndex();
             }
         }
 
@@ -117,14 +117,14 @@ public class CollectionSchemeUpdater {
                 return;
             }
 
-            IndexManager<K, V> indexManager = (IndexManager<K, V>) this.schemeManager.getFieldIndexManagerProvider().getIndexManager(collectionFieldsUpdate.getAfter(), field);
+            UniqueTreeIndexManager<K, V> uniqueTreeIndexManager = (UniqueTreeIndexManager<K, V>) this.schemeManager.getFieldIndexManagerProvider().getIndexManager(collectionFieldsUpdate.getAfter(), field);
             K value = CollectionSerializationUtil.getValueOfFieldAsObject(collectionFieldsUpdate.getAfter(), field, obj);
-            indexManager.addIndex(value, pk);
+            uniqueTreeIndexManager.addIndex(value, pk);
         }
 
     }
 
-    private <K extends Comparable<K>> byte[] createNew(DBObject dbObject, IndexManager<K, Pointer> pkIndexManager, AbstractLeafTreeNode.KeyValue<K, Pointer> keyValue) throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException, SerializationException {
+    private <K extends Comparable<K>> byte[] createNew(DBObject dbObject, UniqueTreeIndexManager<K, Pointer> pkUniqueTreeIndexManager, KeyValue<K, Pointer> keyValue) throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException, SerializationException {
         Map<Integer, byte[]> valueMap = new HashMap<>();
 
         collectionFieldsUpdate.getBefore().getFields().forEach(field -> {
@@ -154,7 +154,7 @@ public class CollectionSchemeUpdater {
                 newObj
         );
 
-        pkIndexManager.updateIndex(keyValue.key(), pointer);
+        pkUniqueTreeIndexManager.updateIndex(keyValue.key(), pointer);
         return newObj;
     }
 

@@ -3,9 +3,9 @@ package com.github.sepgh.test.index.tree.storing;
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.IndexManager;
 import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
+import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
+import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeUniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.data.PointerIndexBinaryObject;
@@ -36,7 +36,7 @@ import static com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageMa
 /*
 *  The purpose of this test case is to assure allocation wouldn't cause issue in multi-table environment
 */
-public class MultiTableBPlusTreeIndexManagerOrganizedAllocationTestCase {
+public class MultiTableBPlusTreeUniqueTreeIndexManagerOrganizedAllocationTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private int degree = 4;
@@ -108,20 +108,20 @@ public class MultiTableBPlusTreeIndexManagerOrganizedAllocationTestCase {
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager1 = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
-        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
 
 
         for (int tableId = 1; tableId <= 2; tableId++){
 
-            IndexManager<Long, Pointer> currentIndexManager = null;
+            UniqueTreeIndexManager<Long, Pointer> currentUniqueTreeIndexManager = null;
             if (tableId == 1)
-                currentIndexManager = indexManager1;
+                currentUniqueTreeIndexManager = uniqueTreeIndexManager1;
             else
-                currentIndexManager = indexManager2;
+                currentUniqueTreeIndexManager = uniqueTreeIndexManager2;
 
             for (long testIdentifier : testIdentifiers) {
-                currentIndexManager.addIndex(testIdentifier, samplePointer);
+                currentUniqueTreeIndexManager.addIndex(testIdentifier, samplePointer);
             }
 
             Optional<IndexStorageManager.NodeData> optional = organizedFileIndexStorageManager.getRoot(tableId, new KVSize(LongIndexBinaryObject.BYTES, PointerIndexBinaryObject.BYTES)).get();
@@ -140,14 +140,14 @@ public class MultiTableBPlusTreeIndexManagerOrganizedAllocationTestCase {
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager1 = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
-        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
 
         int index = 0;
         int runs = 0;
         while (runs < testIdentifiers.size()){
-            indexManager1.addIndex( testIdentifiers.get(index), samplePointer);
-            indexManager2.addIndex(testIdentifiers.get(index) * 10, samplePointer);
+            uniqueTreeIndexManager1.addIndex( testIdentifiers.get(index), samplePointer);
+            uniqueTreeIndexManager2.addIndex(testIdentifiers.get(index) * 10, samplePointer);
             index++;
             runs++;
         }
@@ -201,18 +201,18 @@ public class MultiTableBPlusTreeIndexManagerOrganizedAllocationTestCase {
 
 
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager1 = new ClusterBPlusTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
-        IndexManager<Long, Pointer> indexManager2 = new ClusterBPlusTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
 
         for (int tableId = 1; tableId <= 2; tableId++){
-            IndexManager<Long, Pointer> currentIndexManager = null;
+            UniqueTreeIndexManager<Long, Pointer> currentUniqueTreeIndexManager = null;
             if (tableId == 1)
-                currentIndexManager = indexManager1;
+                currentUniqueTreeIndexManager = uniqueTreeIndexManager1;
             else
-                currentIndexManager = indexManager2;
+                currentUniqueTreeIndexManager = uniqueTreeIndexManager2;
 
             for (long testIdentifier : testIdentifiers) {
-                currentIndexManager.addIndex(testIdentifier, samplePointer);
+                currentUniqueTreeIndexManager.addIndex(testIdentifier, samplePointer);
             }
 
             Optional<IndexStorageManager.NodeData> optional = organizedFileIndexStorageManager.getRoot(tableId, new KVSize(LongIndexBinaryObject.BYTES, PointerIndexBinaryObject.BYTES)).get();

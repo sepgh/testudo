@@ -1,9 +1,9 @@
 package com.github.sepgh.testudo.scheme;
 
 import com.github.sepgh.testudo.EngineConfig;
-import com.github.sepgh.testudo.index.IndexManager;
+import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
+import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.operation.CollectionSchemeUpdater;
 import com.github.sepgh.testudo.operation.FieldIndexManagerProvider;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
@@ -121,28 +121,28 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
     /*  TODO  */
 
     @SneakyThrows
-    private void removeDBObject(AbstractLeafTreeNode.KeyValue<?, ?> keyValue) {
+    private void removeDBObject(KeyValue<?, ?> keyValue) {
         Pointer pointer = (Pointer) keyValue.value();
         databaseStorageManager.remove(pointer);
     }
 
-    public IndexManager<?, ?> getPKIndexManager(Scheme.Collection collection) {
+    public UniqueTreeIndexManager<?, ?> getPKIndexManager(Scheme.Collection collection) {
         Optional<Scheme.Field> optionalField = collection.getFields().stream().filter(Scheme.Field::isPrimary).findFirst();
         Scheme.Field primaryField = optionalField.get();
         return this.fieldIndexManagerProvider.getIndexManager(collection, primaryField);
     }
 
     @SneakyThrows
-    public LockableIterator<? extends AbstractLeafTreeNode.KeyValue<?, ?>> getPKIterator(Scheme.Collection collection) {
+    public LockableIterator<? extends KeyValue<?, ?>> getPKIterator(Scheme.Collection collection) {
         Optional<Scheme.Field> optionalField = collection.getFields().stream().filter(Scheme.Field::isPrimary).findFirst();
         Scheme.Field primaryField = optionalField.get();
-        IndexManager<?, ?> indexManager = this.fieldIndexManagerProvider.getIndexManager(collection, primaryField);
-        return indexManager.getSortedIterator();
+        UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.fieldIndexManagerProvider.getIndexManager(collection, primaryField);
+        return uniqueTreeIndexManager.getSortedIterator();
     }
 
     @SneakyThrows
     private void collectionRemoved(Scheme.Collection collection) {
-        LockableIterator<? extends AbstractLeafTreeNode.KeyValue<?, ?>> lockableIterator = getPKIterator(collection);
+        LockableIterator<? extends KeyValue<?, ?>> lockableIterator = getPKIterator(collection);
         try {
             lockableIterator.lock();
             lockableIterator.forEachRemaining(this::removeDBObject);
@@ -152,8 +152,8 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
 
         collection.getFields().forEach(field -> {
             if (field.isIndex()) {
-                IndexManager<?, ?> indexManager = this.fieldIndexManagerProvider.getIndexManager(collection, field);
-                indexManager.purgeIndex();
+                UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.fieldIndexManagerProvider.getIndexManager(collection, field);
+                uniqueTreeIndexManager.purgeIndex();
             }
         });
     }

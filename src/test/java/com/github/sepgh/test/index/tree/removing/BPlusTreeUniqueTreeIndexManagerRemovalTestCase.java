@@ -2,10 +2,10 @@ package com.github.sepgh.test.index.tree.removing;
 
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.AsyncIndexManagerDecorator;
-import com.github.sepgh.testudo.index.IndexManager;
+import com.github.sepgh.testudo.index.AsyncUniqueTreeIndexManagerDecorator;
 import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
+import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
+import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeUniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Timeout;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
-public class BPlusTreeIndexManagerRemovalTestCase extends BaseBPlusTreeIndexManagerRemovalTestCase {
+public class BPlusTreeUniqueTreeIndexManagerRemovalTestCase extends BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
 
     protected IndexStorageManager getIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
         return new OrganizedFileIndexStorageManager(
@@ -30,39 +30,39 @@ public class BPlusTreeIndexManagerRemovalTestCase extends BaseBPlusTreeIndexMana
         );
     }
 
-    protected IndexManager<Long, Pointer> getIndexManager(IndexStorageManager indexStorageManager) {
-        return new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, new LongIndexBinaryObject.Factory());
+    protected UniqueTreeIndexManager<Long, Pointer> getIndexManager(IndexStorageManager indexStorageManager) {
+        return new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, new LongIndexBinaryObject.Factory());
     }
 
     @Test
     public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
-        super.testRemovingLeftToRight(indexManager, indexStorageManager);
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = getIndexManager(indexStorageManager);
+        super.testRemovingLeftToRight(uniqueTreeIndexManager, indexStorageManager);
     }
 
     @Test
     public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
-        super.testRemovingRightToLeft(indexManager, indexStorageManager);
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = getIndexManager(indexStorageManager);
+        super.testRemovingRightToLeft(uniqueTreeIndexManager, indexStorageManager);
     }
 
 
     @Test
     public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
-        super.testRemovingRoot(indexManager, indexStorageManager);
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = getIndexManager(indexStorageManager);
+        super.testRemovingRoot(uniqueTreeIndexManager, indexStorageManager);
     }
 
     @Test
     @Timeout(2)
     public void testRemovingLeftToRightAsync() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
-        IndexManager<Long, Pointer> indexManager = getIndexManager(indexStorageManager);
-        IndexManager<Long, Pointer> asycnIndexManager = new AsyncIndexManagerDecorator<>(indexManager);
-        super.testRemovingLeftToRightAsync(asycnIndexManager);
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = getIndexManager(indexStorageManager);
+        UniqueTreeIndexManager<Long, Pointer> asycnUniqueTreeIndexManager = new AsyncUniqueTreeIndexManagerDecorator<>(uniqueTreeIndexManager);
+        super.testRemovingLeftToRightAsync(asycnUniqueTreeIndexManager);
     }
 
 }

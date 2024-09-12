@@ -1,9 +1,9 @@
 package com.github.sepgh.testudo.index;
 
-public abstract class AbstractIndexManager<K extends Comparable<K>, V> implements IndexManager<K,V> {
+public abstract class AbstractUniqueTreeIndexManager<K extends Comparable<K>, V> implements UniqueTreeIndexManager<K,V> {
     protected final int indexId;
 
-    public AbstractIndexManager(int indexId) {
+    public AbstractUniqueTreeIndexManager(int indexId) {
         this.indexId = indexId;
     }
 

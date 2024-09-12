@@ -3,54 +3,53 @@ package com.github.sepgh.testudo.index;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.util.Optional;
 
-public class IndexManagerDecorator<K extends Comparable<K>, V> implements IndexManager<K, V> {
-    protected final IndexManager<K, V> indexManager;
+public class UniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> implements UniqueTreeIndexManager<K, V> {
+    protected final UniqueTreeIndexManager<K, V> uniqueTreeIndexManager;
 
-    public IndexManagerDecorator(IndexManager<K, V> indexManager) {
-        this.indexManager = indexManager;
+    public UniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager) {
+        this.uniqueTreeIndexManager = uniqueTreeIndexManager;
     }
 
     public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException {
-        return this.indexManager.addIndex(identifier, value);
+        return this.uniqueTreeIndexManager.addIndex(identifier, value);
     }
 
     @Override
     public AbstractTreeNode<K> updateIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException {
-        return this.indexManager.updateIndex(identifier, value);
+        return this.uniqueTreeIndexManager.updateIndex(identifier, value);
     }
 
     public Optional<V> getIndex(K identifier) throws InternalOperationException {
-        return this.indexManager.getIndex(identifier);
+        return this.uniqueTreeIndexManager.getIndex(identifier);
     }
 
     public boolean removeIndex(K identifier) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
-        return this.indexManager.removeIndex(identifier);
+        return this.uniqueTreeIndexManager.removeIndex(identifier);
     }
 
     @Override
     public int size() throws InternalOperationException {
-        return this.indexManager.size();
+        return this.uniqueTreeIndexManager.size();
     }
 
     @Override
-    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator() throws InternalOperationException {
-        return this.indexManager.getSortedIterator();
+    public LockableIterator<KeyValue<K, V>> getSortedIterator() throws InternalOperationException {
+        return this.uniqueTreeIndexManager.getSortedIterator();
     }
 
     @Override
     public void purgeIndex() {
-        this.indexManager.purgeIndex();
+        this.uniqueTreeIndexManager.purgeIndex();
     }
 
     @Override
     public int getIndexId() {
-        return this.indexManager.getIndexId();
+        return this.uniqueTreeIndexManager.getIndexId();
     }
 }

@@ -1,5 +1,6 @@
 package com.github.sepgh.testudo.index.tree.node;
 
+import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.TreeNodeUtils;
 import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
@@ -96,7 +97,7 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V> extends AbstractTr
     }
 
     public int addKeyValue(KeyValue<K, V> keyValue, int degree) throws IndexBinaryObject.InvalidIndexBinaryObject {
-        return this.addKeyValue(keyValue.key, keyValue.value, degree);
+        return this.addKeyValue(keyValue.key(), keyValue.value(), degree);
     }
 
     public void removeKeyValue(int index) {
@@ -105,7 +106,14 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V> extends AbstractTr
 
     public boolean removeKeyValue(K key, int degree) throws IndexBinaryObject.InvalidIndexBinaryObject {
         List<KeyValue<K, V>> keyValueList = new ArrayList<>(this.getKeyValueList(degree));
-        boolean removed = keyValueList.removeIf(keyValue -> keyValue.key.compareTo(key) == 0);
+        boolean removed = keyValueList.removeIf(keyValue -> keyValue.key().compareTo(key) == 0);
+        setKeyValues(keyValueList, degree);
+        return removed;
+    }
+
+    public boolean removeKeyValue(K key, V value, int degree) throws IndexBinaryObject.InvalidIndexBinaryObject {
+        List<KeyValue<K, V>> keyValueList = new ArrayList<>(this.getKeyValueList(degree));
+        boolean removed = keyValueList.removeIf(keyValue -> keyValue.key().compareTo(key) == 0 && keyValue.value().equals(value));
         setKeyValues(keyValueList, degree);
         return removed;
     }
@@ -114,15 +122,6 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V> extends AbstractTr
     public KVSize getKVSize() {
         return new KVSize(kIndexBinaryObjectFactory.size(), valueIndexBinaryObjectFactory.size());
     }
-
-    public record KeyValue<K extends Comparable<K>, V>(K key,
-                                                                             V value) implements Comparable<KeyValue<K, V>> {
-
-        @Override
-            public int compareTo(KeyValue<K, V> o) {
-                return this.key.compareTo(o.key);
-            }
-        }
 
     private class KeyValueIterator implements Iterator<KeyValue<K, V>>{
         private int cursor = 0;

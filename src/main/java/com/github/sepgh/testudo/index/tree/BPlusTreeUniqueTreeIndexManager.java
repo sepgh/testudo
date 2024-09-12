@@ -3,7 +3,8 @@ package com.github.sepgh.testudo.index.tree;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.AbstractIndexManager;
+import com.github.sepgh.testudo.index.AbstractUniqueTreeIndexManager;
+import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
@@ -26,7 +27,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.github.sepgh.testudo.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
 
-public class BPlusTreeIndexManager<K extends Comparable<K>, V> extends AbstractIndexManager<K, V> {
+public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends AbstractUniqueTreeIndexManager<K, V> {
     private final IndexStorageManager indexStorageManager;
     private final IndexIOSessionFactory indexIOSessionFactory;
     private final int degree;
@@ -35,7 +36,7 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V> extends AbstractI
     private final NodeFactory<K> nodeFactory;
     protected final KVSize kvSize;
 
-    public BPlusTreeIndexManager(int index, int degree, IndexStorageManager indexStorageManager, IndexIOSessionFactory indexIOSessionFactory, IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory, NodeFactory<K> nodeFactory) {
+    public BPlusTreeUniqueTreeIndexManager(int index, int degree, IndexStorageManager indexStorageManager, IndexIOSessionFactory indexIOSessionFactory, IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory, NodeFactory<K> nodeFactory) {
         super(index);
         this.degree = degree;
         this.indexStorageManager = indexStorageManager;
@@ -49,11 +50,11 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V> extends AbstractI
         );
     }
 
-    public BPlusTreeIndexManager(int index, int degree, IndexStorageManager indexStorageManager, IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory, NodeFactory<K> nodeFactory){
+    public BPlusTreeUniqueTreeIndexManager(int index, int degree, IndexStorageManager indexStorageManager, IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory, NodeFactory<K> nodeFactory){
         this(index, degree, indexStorageManager, ImmediateCommitIndexIOSession.Factory.getInstance(), keyIndexBinaryObjectFactory, valueIndexBinaryObjectFactory, nodeFactory);
     }
 
-    public BPlusTreeIndexManager(int index, int degree, IndexStorageManager indexStorageManager, IndexIOSessionFactory indexIOSessionFactory, IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory){
+    public BPlusTreeUniqueTreeIndexManager(int index, int degree, IndexStorageManager indexStorageManager, IndexIOSessionFactory indexIOSessionFactory, IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory){
         this(index, degree, indexStorageManager, indexIOSessionFactory, keyIndexBinaryObjectFactory, valueIndexBinaryObjectFactory, new NodeFactory<K>() {
             @Override
             public AbstractTreeNode<K> fromBytes(byte[] bytes) {
@@ -72,7 +73,7 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V> extends AbstractI
 
     }
 
-    public BPlusTreeIndexManager(int index, int degree, IndexStorageManager indexStorageManager, IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory){
+    public BPlusTreeUniqueTreeIndexManager(int index, int degree, IndexStorageManager indexStorageManager, IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory){
         this(index, degree, indexStorageManager, ImmediateCommitIndexIOSession.Factory.getInstance(), keyIndexBinaryObjectFactory, valueIndexBinaryObjectFactory);
     }
 
@@ -93,7 +94,7 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V> extends AbstractI
             throw new IndexMissingException();
         }
 
-        node.setKeyValue(keyList.indexOf(identifier), new AbstractLeafTreeNode.KeyValue<>(identifier, value));
+        node.setKeyValue(keyList.indexOf(identifier), new KeyValue<>(identifier, value));
         indexIOSession.update(node);
         indexIOSession.commit();
         return node;
@@ -104,7 +105,7 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V> extends AbstractI
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
 
         AbstractLeafTreeNode<K, V> baseTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory, valueIndexBinaryObjectFactory);
-        for (AbstractLeafTreeNode.KeyValue<K, V> entry : baseTreeNode.getKeyValueList(degree)) {
+        for (KeyValue<K, V> entry : baseTreeNode.getKeyValueList(degree)) {
             if (entry.key() == identifier)
                 return Optional.of(entry.value());
         }
@@ -155,10 +156,10 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V> extends AbstractI
     }
 
     @Override
-    public LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>> getSortedIterator() throws InternalOperationException {
+    public LockableIterator<KeyValue<K, V>> getSortedIterator() throws InternalOperationException {
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
 
-        return new LockableIterator<AbstractLeafTreeNode.KeyValue<K, V>>() {
+        return new LockableIterator<>() {
             @Override
             public void lock() {
             }
@@ -180,8 +181,8 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V> extends AbstractI
 
             @SneakyThrows
             @Override
-            public AbstractLeafTreeNode.KeyValue<K, V> next() {
-                List<AbstractLeafTreeNode.KeyValue<K, V>> keyValueList = currentLeaf.getKeyValueList(degree);
+            public KeyValue<K, V> next() {
+                List<KeyValue<K, V>> keyValueList = currentLeaf.getKeyValueList(degree);
 
                 if (keyIndex == keyValueList.size()){
                     currentLeaf = (AbstractLeafTreeNode<K, V>) indexIOSession.read(currentLeaf.getNextSiblingPointer(degree).get());
@@ -189,7 +190,7 @@ public class BPlusTreeIndexManager<K extends Comparable<K>, V> extends AbstractI
                     keyValueList = currentLeaf.getKeyValueList(degree);
                 }
 
-                AbstractLeafTreeNode.KeyValue<K, V> output = keyValueList.get(keyIndex);
+                KeyValue<K, V> output = keyValueList.get(keyIndex);
                 keyIndex += 1;
                 return output;
             }

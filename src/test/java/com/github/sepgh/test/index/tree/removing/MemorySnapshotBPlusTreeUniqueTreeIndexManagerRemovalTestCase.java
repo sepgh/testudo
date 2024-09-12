@@ -2,9 +2,9 @@ package com.github.sepgh.test.index.tree.removing;
 
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.IndexManager;
 import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
+import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
+import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeUniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
@@ -17,11 +17,11 @@ import java.util.concurrent.ExecutionException;
 
 
 /* Identical copy of BPlusTreeIndexManagerRemovalTestCase */
-public class MemorySnapshotBPlusTreeIndexManagerRemovalTestCase extends BPlusTreeIndexManagerRemovalTestCase {
+public class MemorySnapshotBPlusTreeUniqueTreeIndexManagerRemovalTestCase extends BPlusTreeUniqueTreeIndexManagerRemovalTestCase {
 
     @Override
-    protected IndexManager<Long, Pointer> getIndexManager(IndexStorageManager indexStorageManager) {
-        return new ClusterBPlusTreeIndexManager<>(1, degree, indexStorageManager, MemorySnapshotIndexIOSession.Factory.getInstance(), new LongIndexBinaryObject.Factory());
+    protected UniqueTreeIndexManager<Long, Pointer> getIndexManager(IndexStorageManager indexStorageManager) {
+        return new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, MemorySnapshotIndexIOSession.Factory.getInstance(), new LongIndexBinaryObject.Factory());
     }
 
     @Test

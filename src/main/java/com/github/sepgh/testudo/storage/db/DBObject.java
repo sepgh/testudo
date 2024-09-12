@@ -63,6 +63,10 @@ public class DBObject {
         return DBObject.isAlive(this.wrappedData, this.begin);
     }
 
+    public int getObjectSize() {
+        return this.getDataSize() + DBObject.META_BYTES;
+    }
+
     public int getDataSize() {
         return DBObject.getDataSize(this.wrappedData, this.begin);
     }

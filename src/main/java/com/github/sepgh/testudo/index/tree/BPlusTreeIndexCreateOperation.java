@@ -2,6 +2,7 @@ package com.github.sepgh.testudo.index.tree;
 
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
+import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
@@ -61,7 +62,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V> {
 
                 /* Current node didn't have any space, so let's create a sibling and split */
                 AbstractLeafTreeNode<K, V> newSiblingLeafNode = new AbstractLeafTreeNode<>(indexIOSession.getIndexStorageManager().getEmptyNode(this.kvSize), kIndexBinaryObjectFactory, valueIndexBinaryObjectFactory);
-                List<AbstractLeafTreeNode.KeyValue<K, V>> passingKeyValues = ((AbstractLeafTreeNode<K, V>) currentNode).addAndSplit(identifier, value, degree);
+                List<KeyValue<K, V>> passingKeyValues = ((AbstractLeafTreeNode<K, V>) currentNode).addAndSplit(identifier, value, degree);
                 newSiblingLeafNode.setKeyValues(passingKeyValues, degree);
                 indexIOSession.write(newSiblingLeafNode); // we want the node to have a value so that we can fix siblings
                 /* Fix sibling pointers */

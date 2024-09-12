@@ -4,23 +4,21 @@ import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.IndexManager;
+import com.github.sepgh.testudo.index.AsyncUniqueTreeIndexManagerDecorator;
 import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
-import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeIndexManager;
+import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeUniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
-import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
+import com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,18 +26,22 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager.INDEX_FILE_NAME;
+import static com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager.INDEX_FILE_NAME;
 
-public class MultiTableBPlusTreeIndexManagerOrganizedTestCase {
+public class MultiTableBPlusTreeUniqueTreeIndexManagerSingleStorageManagerTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
-    private int degree = 4;
+    private final int degree = 4;
 
     @BeforeEach
     public void setUp() throws IOException {
-        dbPath = Files.createTempDirectory("TEST_MultiTableBTreeIndexManagerTestCase");
+        dbPath = Files.createTempDirectory("TEST_MultiTableBPlusTreeIndexManagerSingleStorageManagerTestCase");
         engineConfig = EngineConfig.builder()
                 .baseDBPath(dbPath.toString())
                 .bTreeDegree(degree)
@@ -48,7 +50,7 @@ public class MultiTableBPlusTreeIndexManagerOrganizedTestCase {
         engineConfig.setBTreeMaxFileSize(2 * 15L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES));
 
         byte[] writingBytes = new byte[2 * 13 * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES)];
-        Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
+        Path indexPath = Path.of(dbPath.toString(), String.format("%s.bin", INDEX_FILE_NAME));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
     }
 
@@ -57,14 +59,14 @@ public class MultiTableBPlusTreeIndexManagerOrganizedTestCase {
         FileUtils.deleteDirectory(dbPath.toString());
     }
 
-    private OrganizedFileIndexStorageManager getCompactFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
-        return new OrganizedFileIndexStorageManager(
-                "test",
+    private CompactFileIndexStorageManager getSingleFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
+        return new CompactFileIndexStorageManager(
                 new JsonIndexHeaderManager.Factory(),
                 engineConfig,
                 new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
         );
     }
+
 
     /**
      *
@@ -98,20 +100,21 @@ public class MultiTableBPlusTreeIndexManagerOrganizedTestCase {
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         for (int tableId = 1; tableId <= 2; tableId++){
-            OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+            CompactFileIndexStorageManager compactFileIndexStorageManager = getSingleFileIndexStorageManager();
+            UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(tableId, degree, compactFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+
 
 
             AbstractTreeNode<Long> lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
-                lastTreeNode = indexManager.addIndex(testIdentifier, samplePointer);
+                lastTreeNode = uniqueTreeIndexManager.addIndex(testIdentifier, samplePointer);
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());
             Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerIndexBinaryObject.BYTES).size());
             Assertions.assertEquals(samplePointer.getPosition(), ((AbstractLeafTreeNode<Long, Pointer>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
-            StoredTreeStructureVerifier.testOrderedTreeStructure(organizedFileIndexStorageManager, tableId, 1, degree);
+            StoredTreeStructureVerifier.testOrderedTreeStructure(compactFileIndexStorageManager, tableId, 1, degree);
         }
 
     }
@@ -146,22 +149,85 @@ public class MultiTableBPlusTreeIndexManagerOrganizedTestCase {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 4L, 9L, 6L, 10L, 8L, 3L, 2L, 11L, 5L, 7L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
-        OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
+        CompactFileIndexStorageManager compactFileIndexStorageManager = getSingleFileIndexStorageManager();
 
         for (int tableId = 1; tableId <= 2; tableId++){
-            IndexManager<Long, Pointer> indexManager = new ClusterBPlusTreeIndexManager<>(tableId, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+            UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(tableId, degree, compactFileIndexStorageManager, new LongIndexBinaryObject.Factory());
 
             AbstractTreeNode<Long> lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
-                lastTreeNode = indexManager.addIndex(testIdentifier, samplePointer);
+                lastTreeNode = uniqueTreeIndexManager.addIndex(testIdentifier, samplePointer);
             }
 
             Assertions.assertTrue(lastTreeNode.isLeaf());
             Assertions.assertEquals(2, lastTreeNode.getKeyList(degree, PointerIndexBinaryObject.BYTES).size());
             Assertions.assertEquals(samplePointer.getPosition(), ((AbstractLeafTreeNode<Long, Pointer>) lastTreeNode).getKeyValues(degree).next().value().getPosition());
 
-            StoredTreeStructureVerifier.testUnOrderedTreeStructure1(organizedFileIndexStorageManager, tableId, 1, degree);
+            StoredTreeStructureVerifier.testUnOrderedTreeStructure1(compactFileIndexStorageManager, tableId, 1, degree);
 
+        }
+
+    }
+
+
+    // Todo: this test failure proves that we need a mechanism for just a single lock around multiple index managers
+    @Timeout(2)
+    @Test
+    public void testAddIndexDifferentAddOrdersOnDBLevelAsyncIndexManager_usingSingleFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
+        List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
+        Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
+
+        CompactFileIndexStorageManager compactFileIndexStorageManager = getSingleFileIndexStorageManager();
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, compactFileIndexStorageManager, new LongIndexBinaryObject.Factory()));
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, compactFileIndexStorageManager, new LongIndexBinaryObject.Factory()));
+
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
+        CountDownLatch countDownLatch = new CountDownLatch((2 * testIdentifiers.size()) - 2);
+
+
+        AtomicInteger index1 = new AtomicInteger(0);
+        AtomicInteger index2 = new AtomicInteger(0);
+
+        int runs = 0;
+        while (runs < testIdentifiers.size()){
+            executorService.submit(() -> {
+                try {
+                    uniqueTreeIndexManager1.addIndex(testIdentifiers.get(index1.getAndIncrement()), samplePointer);
+                    countDownLatch.countDown();
+                } catch (IndexBinaryObject.InvalidIndexBinaryObject | IndexExistsException |
+                         InternalOperationException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            executorService.submit(() -> {
+                try {
+                    uniqueTreeIndexManager2.addIndex(testIdentifiers.get(index2.getAndIncrement()) * 10, samplePointer);
+                    countDownLatch.countDown();
+                } catch (IndexBinaryObject.InvalidIndexBinaryObject | IndexExistsException |
+                         InternalOperationException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            runs++;
+        }
+
+        countDownLatch.await();
+
+        for (int tableId = 1; tableId <= 2; tableId++) {
+            UniqueTreeIndexManager<Long, Pointer> currentUniqueTreeIndexManager = null;
+            if (tableId == 1)
+                currentUniqueTreeIndexManager = uniqueTreeIndexManager1;
+            else
+                currentUniqueTreeIndexManager = uniqueTreeIndexManager2;
+
+            int multi = 1;
+            if (tableId == 2){
+                multi = 10;
+            }
+            // Cant verify structure but can check if all index are added
+            for (Long testIdentifier : testIdentifiers) {
+                Assertions.assertTrue(currentUniqueTreeIndexManager.getIndex(testIdentifier * multi).isPresent(), "Index %d not present in manager %d".formatted(testIdentifier * multi, tableId));
+            }
         }
 
     }
