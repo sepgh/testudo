@@ -107,7 +107,7 @@ public class CollectionSchemeUpdater {
     private <K extends Comparable<K>, V> void updateIndexes(byte[] obj, V pk) throws DeserializationException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
         for (Scheme.Field field : collectionFieldsUpdate.getRemovedFields()) {
             if (field.isIndex()){
-                UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.schemeManager.getFieldIndexManagerProvider().getIndexManager(collectionFieldsUpdate.getBefore(), field);
+                UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.schemeManager.getFieldIndexManagerProvider().getUniqueIndexManager(collectionFieldsUpdate.getBefore(), field);
                 uniqueTreeIndexManager.purgeIndex();
             }
         }
@@ -117,7 +117,7 @@ public class CollectionSchemeUpdater {
                 return;
             }
 
-            UniqueTreeIndexManager<K, V> uniqueTreeIndexManager = (UniqueTreeIndexManager<K, V>) this.schemeManager.getFieldIndexManagerProvider().getIndexManager(collectionFieldsUpdate.getAfter(), field);
+            UniqueTreeIndexManager<K, V> uniqueTreeIndexManager = (UniqueTreeIndexManager<K, V>) this.schemeManager.getFieldIndexManagerProvider().getUniqueIndexManager(collectionFieldsUpdate.getAfter(), field);
             K value = CollectionSerializationUtil.getValueOfFieldAsObject(collectionFieldsUpdate.getAfter(), field, obj);
             uniqueTreeIndexManager.addIndex(value, pk);
         }

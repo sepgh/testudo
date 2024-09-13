@@ -118,8 +118,6 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
         }
     }
 
-    /*  TODO  */
-
     @SneakyThrows
     private void removeDBObject(KeyValue<?, ?> keyValue) {
         Pointer pointer = (Pointer) keyValue.value();
@@ -129,14 +127,14 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
     public UniqueTreeIndexManager<?, ?> getPKIndexManager(Scheme.Collection collection) {
         Optional<Scheme.Field> optionalField = collection.getFields().stream().filter(Scheme.Field::isPrimary).findFirst();
         Scheme.Field primaryField = optionalField.get();
-        return this.fieldIndexManagerProvider.getIndexManager(collection, primaryField);
+        return this.fieldIndexManagerProvider.getUniqueIndexManager(collection, primaryField);
     }
 
     @SneakyThrows
     public LockableIterator<? extends KeyValue<?, ?>> getPKIterator(Scheme.Collection collection) {
         Optional<Scheme.Field> optionalField = collection.getFields().stream().filter(Scheme.Field::isPrimary).findFirst();
         Scheme.Field primaryField = optionalField.get();
-        UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.fieldIndexManagerProvider.getIndexManager(collection, primaryField);
+        UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.fieldIndexManagerProvider.getUniqueIndexManager(collection, primaryField);
         return uniqueTreeIndexManager.getSortedIterator();
     }
 
@@ -152,7 +150,7 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
 
         collection.getFields().forEach(field -> {
             if (field.isIndex()) {
-                UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.fieldIndexManagerProvider.getIndexManager(collection, field);
+                UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.fieldIndexManagerProvider.getUniqueIndexManager(collection, field);
                 uniqueTreeIndexManager.purgeIndex();
             }
         });

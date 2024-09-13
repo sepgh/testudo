@@ -76,7 +76,7 @@ public class Scheme {
         private Meta meta = Meta.builder().build();
         private boolean primary;
         private boolean index;
-//        private boolean indexUnique;
+        private boolean indexUnique;
         private String defaultValue;
         @Builder.Default
         private boolean supportZero = true;

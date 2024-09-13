@@ -137,7 +137,7 @@ public class SchemeManagerTestCase {
 
         Assertions.assertEquals(scheme, newScheme2);
 
-        UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = fieldIndexManagerProvider.getIndexManager(
+        UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = fieldIndexManagerProvider.getUniqueIndexManager(
                 scheme.getCollections().getFirst(),
                 scheme.getCollections().getFirst().getFields().getFirst()
         );
@@ -234,7 +234,7 @@ public class SchemeManagerTestCase {
         Assertions.assertEquals(1, dbObject.getVersion());
 
         // --- ADDING THE DATA TO INDEX, WHICH IS CLUSTER INDEX AND IS AVAILABLE TO MANAGER TOO --- //
-        UniqueTreeIndexManager<Integer, Pointer> uniqueTreeIndexManager = (UniqueTreeIndexManager<Integer, Pointer>) fieldIndexManagerProvider.getIndexManager(
+        UniqueTreeIndexManager<Integer, Pointer> uniqueTreeIndexManager = (UniqueTreeIndexManager<Integer, Pointer>) fieldIndexManagerProvider.getUniqueIndexManager(
                 scheme.getCollections().getFirst(),
                 scheme.getCollections().getFirst().getFields().getFirst()
         );
@@ -326,7 +326,7 @@ public class SchemeManagerTestCase {
         schemeManager.update();
 
 
-        UniqueTreeIndexManager<Integer, Integer> newFieldUniqueTreeIndexManager = (UniqueTreeIndexManager<Integer, Integer>) fieldIndexManagerProvider.getIndexManager(scheme.getCollections().getFirst(), newField);
+        UniqueTreeIndexManager<Integer, Integer> newFieldUniqueTreeIndexManager = (UniqueTreeIndexManager<Integer, Integer>) fieldIndexManagerProvider.getUniqueIndexManager(scheme.getCollections().getFirst(), newField);
         Assertions.assertEquals(1, newFieldUniqueTreeIndexManager.size());
         Optional<Integer> optionalIndexValue = newFieldUniqueTreeIndexManager.getIndex(defaultValue);
         Assertions.assertTrue(optionalIndexValue.isPresent());

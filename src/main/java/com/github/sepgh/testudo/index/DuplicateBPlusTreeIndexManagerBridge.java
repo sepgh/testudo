@@ -112,6 +112,7 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
         return Optional.empty();
     }
 
+    // Todo: after removing an index, the list may be empty. We can remove the pointer from bridge index manager
     @Override
     public synchronized boolean removeIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IOException, ExecutionException, InterruptedException {
         Optional<Pointer> pointerOptional = this.indexManager.getIndex(identifier);
@@ -178,6 +179,7 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
         };
     }
 
+    // Todo: purging the bridge index manager is not enough, the list is stored in DB storage
     @Override
     public void purgeIndex() {
         this.indexManager.purgeIndex();

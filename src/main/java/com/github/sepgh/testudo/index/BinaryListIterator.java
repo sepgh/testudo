@@ -233,7 +233,10 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
 
             Optional<V> objectAtMidOptional = getObjectAt(mid);
 
-            // Todo: this is done linearly :/
+            // Todo: This is done linearly :/
+            //       Alternative solution: keep track of last element index (store it in the data)
+            //       If last element is smaller than the new value, just add the new value to last+1
+            //       Otherwise, run the binary search with low=0 and high=last so we wont face problems in middle
             // START SECTION OF COMMENT ^
             if (objectAtMidOptional.isEmpty()){
                 for (int i = low; i < mid; i++){
