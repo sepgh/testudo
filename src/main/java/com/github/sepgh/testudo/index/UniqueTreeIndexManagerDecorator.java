@@ -21,7 +21,7 @@ public class UniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> impleme
     }
 
     @Override
-    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException {
+    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException {
         return this.uniqueTreeIndexManager.updateIndex(identifier, value);
     }
 

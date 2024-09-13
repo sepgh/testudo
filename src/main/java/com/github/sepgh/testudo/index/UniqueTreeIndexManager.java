@@ -11,7 +11,7 @@ import java.util.Optional;
 
 public interface UniqueTreeIndexManager<K extends Comparable<K>, V> {
     AbstractTreeNode<K> addIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject;
-    AbstractTreeNode<K> updateIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException;
+    AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException;
     Optional<V> getIndex(K identifier) throws InternalOperationException;
     boolean removeIndex(K identifier) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject;
     int size() throws InternalOperationException;

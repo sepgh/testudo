@@ -168,7 +168,7 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         return this.data.length + DBObject.META_BYTES;
     }
     
-    public void addNew(V v) throws IndexBinaryObject.InvalidIndexBinaryObject {
+    public boolean addNew(V v) throws IndexBinaryObject.InvalidIndexBinaryObject {
 
         if (getObjectAt(this.numberOfElements - 1).isPresent()){
             if ((engineConfig.getDbPageSize()) > getDbObjectSize() + (5 * valueIndexBinaryObjectFactory.size())){
@@ -182,11 +182,16 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
                 );
                 this.data = newData;
             } else {
+                // Todo: throw better exception
                 throw new RuntimeException("No space left to add item. This will exceed the limit of DB Page size.");
             }
         }
 
         int i = binarySearchPosition(v);
+
+        if (i == -1)
+            return false;
+
         if (i != 0){
             System.arraycopy(
                     this.data,
@@ -206,6 +211,7 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         );
 
         this.numberOfElements = this.data.length / valueIndexBinaryObjectFactory.size();
+        return true;
     }
 
     private Optional<V> getObjectAt(int index) {
@@ -226,13 +232,23 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
             mid = low + (high - low) / 2;
 
             Optional<V> objectAtMidOptional = getObjectAt(mid);
-            if (objectAtMidOptional.isEmpty())
+
+            // Todo: this is done linearly :/
+            // START SECTION OF COMMENT ^
+            if (objectAtMidOptional.isEmpty()){
+                for (int i = low; i < mid; i++){
+                    if (getObjectAt(i).isEmpty()) {
+                        return i;
+                    }
+                }
                 return mid;
+            }
+            // END SECTION OF COMMENT
 
             V objectAtMid = objectAtMidOptional.get();
 
             if (objectAtMid.compareTo(v) == 0) {
-                return mid;
+                return -1;
             } else if (objectAtMid.compareTo(v) < 0) {
                 low = mid + 1;
             } else {
@@ -240,7 +256,7 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
             }
         }
 
-        return mid;
+        return -(low + 1);
     }
 
     private int binarySearchMatching(V v) {

@@ -50,7 +50,7 @@ public class AsyncUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> ex
     }
 
     @Override
-    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException {
+    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException {
         writeLock.lock();
         try {
             return super.updateIndex(identifier, value);

@@ -36,8 +36,8 @@ public class CachedUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> e
     }
 
     @Override
-    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException {
-        AbstractTreeNode<K> baseClusterTreeNode = super.addIndex(identifier, value);
+    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException {
+        AbstractTreeNode<K> baseClusterTreeNode = super.updateIndex(identifier, value);
         cache.put(new CacheID<>(getIndexId(), identifier), value);
         return baseClusterTreeNode;
     }

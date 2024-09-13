@@ -19,7 +19,7 @@ public class BinaryListIteratorTestCase {
 
     @BeforeEach
     public void setUp() throws IOException {
-        this.dbPath = Files.createTempDirectory("TEST_DatabaseStorageManagerTestCase");
+        this.dbPath = Files.createTempDirectory("TEST_BinaryListIteratorTestCase");
         this.engineConfig = EngineConfig.builder()
                 .clusterIndexKeyStrategy(EngineConfig.ClusterIndexKeyStrategy.INTEGER)
                 .baseDBPath(this.dbPath.toString())
@@ -125,7 +125,6 @@ public class BinaryListIteratorTestCase {
 
         Assertions.assertTrue(binaryListIterator.remove(3));
 
-
         Assertions.assertTrue(binaryListIterator.hasNext());
         Assertions.assertEquals(1, binaryListIterator.next());
         Assertions.assertTrue(binaryListIterator.hasNext());
@@ -134,10 +133,6 @@ public class BinaryListIteratorTestCase {
 
 
         Assertions.assertFalse(binaryListIterator.remove(10));
-
-
-
-
         Assertions.assertTrue(binaryListIterator.remove(2));
         binaryListIterator.resetCursor();
 
