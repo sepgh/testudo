@@ -1,4 +1,4 @@
-package com.github.sepgh.testudo.index.tree.node.data;
+package com.github.sepgh.testudo.index.data;
 
 public interface IndexBinaryObject<E> {
     E asObject();

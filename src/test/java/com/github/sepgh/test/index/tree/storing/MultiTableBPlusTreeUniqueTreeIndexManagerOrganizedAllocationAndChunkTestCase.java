@@ -5,10 +5,9 @@ import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
+import com.github.sepgh.testudo.index.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeUniqueTreeIndexManager;
-import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
-import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
-import com.github.sepgh.testudo.index.tree.node.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
@@ -33,6 +32,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import static com.github.sepgh.test.TestParams.DEFAULT_INDEX_BINARY_OBJECT_FACTORY;
 import static com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager.INDEX_FILE_NAME;
 
 /*
@@ -54,9 +54,9 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerOrganizedAllocationAndChun
                 .fileAcquireUnit(TimeUnit.SECONDS)
                 .bTreeGrowthNodeAllocationCount(1)
                 .build();
-        engineConfig.setBTreeMaxFileSize(2L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES));
+        engineConfig.setBTreeMaxFileSize(2L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get().size()));
 
-        byte[] writingBytes = new byte[6 * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES)];
+        byte[] writingBytes = new byte[6 * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get().size())];
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
         indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 1));
@@ -112,8 +112,8 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerOrganizedAllocationAndChun
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
 
         for (int tableId = 1; tableId <= 2; tableId++){
             UniqueTreeIndexManager<Long, Pointer> currentUniqueTreeIndexManager = null;
@@ -126,7 +126,7 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerOrganizedAllocationAndChun
                 currentUniqueTreeIndexManager.addIndex(testIdentifier, samplePointer);
             }
 
-            Optional<IndexStorageManager.NodeData> optional = organizedFileIndexStorageManager.getRoot(tableId, new KVSize(LongIndexBinaryObject.BYTES, PointerIndexBinaryObject.BYTES)).get();
+            Optional<IndexStorageManager.NodeData> optional = organizedFileIndexStorageManager.getRoot(tableId, new KVSize(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get().size(), PointerIndexBinaryObject.BYTES)).get();
             Assertions.assertTrue(optional.isPresent());
             Assertions.assertTrue(optional.get().pointer().getChunk() != 0);
 
@@ -146,8 +146,8 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerOrganizedAllocationAndChun
 
         LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(), 1);
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
 
         for (int tableId = 1; tableId <= 2; tableId++) {
             UniqueTreeIndexManager<Long, Pointer> currentUniqueTreeIndexManager = null;
@@ -179,8 +179,8 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerOrganizedAllocationAndChun
 
         LimitedFileHandlerPool limitedFileHandlerPool = new LimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(), 2);
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new ClusterBPlusTreeUniqueTreeIndexManager(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new ClusterBPlusTreeUniqueTreeIndexManager(1, degree, organizedFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager(2, degree, organizedFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
 
         for (int tableId = 1; tableId <= 2; tableId++) {
             UniqueTreeIndexManager<Long, Pointer> currentUniqueTreeIndexManager = null;
@@ -213,8 +213,8 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerOrganizedAllocationAndChun
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
 
         int index = 0;
         int runs = 0;
@@ -271,8 +271,8 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerOrganizedAllocationAndChun
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, organizedFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
 
         for (int tableId = 1; tableId <= 2; tableId++){
             UniqueTreeIndexManager<Long, Pointer> currentUniqueTreeIndexManager = null;

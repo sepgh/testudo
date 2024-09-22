@@ -1,13 +1,9 @@
 package com.github.sepgh.testudo;
 
-import com.github.sepgh.testudo.index.tree.node.data.IntegerIndexBinaryObject;
-import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
-import com.github.sepgh.testudo.index.tree.node.data.NoZeroIntegerIndexBinaryObject;
-import com.github.sepgh.testudo.index.tree.node.data.NoZeroLongIndexBinaryObject;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 
 import java.util.concurrent.TimeUnit;
 
@@ -49,8 +45,6 @@ public class EngineConfig {
     @Builder.Default
     private String baseDBPath = "/temp";
     @Builder.Default
-    private ClusterIndexKeyStrategy clusterIndexKeyStrategy = ClusterIndexKeyStrategy.LONG;
-    @Builder.Default
     private OperationMode operationMode = OperationMode.ASYNC;
     @Builder.Default
     private int dbPageSize = 64000;  // Page size in bytes
@@ -64,20 +58,6 @@ public class EngineConfig {
 
     public enum OperationMode {
         ASYNC, SYNC
-    }
-
-    @Getter
-    public enum ClusterIndexKeyStrategy {
-        LONG(LongIndexBinaryObject.BYTES),
-        LONG_NO_ZERO(NoZeroLongIndexBinaryObject.BYTES),
-        INTEGER(IntegerIndexBinaryObject.BYTES),
-        INTEGER_NO_ZERO(NoZeroIntegerIndexBinaryObject.BYTES);
-
-        private final int size;
-
-        ClusterIndexKeyStrategy(int size) {
-            this.size = size;
-        }
     }
 
     public enum FileHandlerStrategy {

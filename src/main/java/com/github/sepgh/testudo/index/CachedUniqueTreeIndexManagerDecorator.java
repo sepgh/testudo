@@ -3,8 +3,8 @@ package com.github.sepgh.testudo.index;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
+import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
-import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 

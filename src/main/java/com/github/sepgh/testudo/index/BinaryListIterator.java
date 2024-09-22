@@ -1,15 +1,16 @@
 package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.EngineConfig;
-import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
-import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObjectFactory;
+import com.github.sepgh.testudo.index.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import lombok.Getter;
 
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
+
+// Todo: has next and has previous functions cant check with null (no longer Optional), so go back to previous implementation where currentValue property was not used
 public class BinaryListIterator<V extends Comparable<V>> implements ListIterator<V> {
 
     private final EngineConfig engineConfig;
@@ -43,11 +44,8 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
     public boolean hasNext() {
         if (cursor < numberOfElements){
             fixCursorBound();
-            Optional<V> optional = getObjectAt(cursor);
-            if (optional.isPresent()){
-                currentValue = optional.get();
-                return true;
-            }
+            currentValue = getObjectAt(cursor);
+            return true;
         }
         currentValue = null;
         return false;
@@ -67,12 +65,8 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
             } finally {
                 currentValue = null;
             }
-            Optional<V> optional = getObjectAt(cursor);
-            if (optional.isPresent()){
-                cursor++;
-                return optional.get();
-            }
-            throw new NoSuchElementException();
+            cursor++;
+            return getObjectAt(cursor);
         }
     }
 
@@ -80,11 +74,8 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
     public boolean hasPrevious() {
         if (cursor >= 0){
             fixCursorBound();
-            Optional<V> optional = getObjectAt(cursor);
-            if (optional.isPresent()){
-                currentValue = optional.get();
-                return true;
-            }
+            currentValue = getObjectAt(cursor);
+            return true;
         }
         currentValue = null;
         return false;
@@ -104,12 +95,9 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
             } finally {
                 currentValue = null;
             }
-            Optional<V> optional = getObjectAt(cursor);
-            if (optional.isPresent()){
-                cursor--;
-                return optional.get();
-            }
-            throw new NoSuchElementException();
+
+            cursor--;
+            return getObjectAt(cursor);
         }
     }
 
@@ -170,7 +158,7 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
     
     public boolean addNew(V v) throws IndexBinaryObject.InvalidIndexBinaryObject {
 
-        if (getObjectAt(this.numberOfElements - 1).isPresent()){
+        if (getObjectAt(this.numberOfElements - 1) != null){  // Todo: we wont have null object. track last element
             if ((engineConfig.getDbPageSize()) > getDbObjectSize() + (5 * valueIndexBinaryObjectFactory.size())){
                 byte[] newData = new byte[getDbObjectSize() + (5 * valueIndexBinaryObjectFactory.size())];
                 System.arraycopy(
@@ -214,13 +202,10 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         return true;
     }
 
-    private Optional<V> getObjectAt(int index) {
+    private V getObjectAt(int index) {
         int offset = index * valueIndexBinaryObjectFactory.size();
         IndexBinaryObject<V> vIndexBinaryObject = valueIndexBinaryObjectFactory.create(this.data, offset);
-        if (vIndexBinaryObject.hasValue()) {
-            return Optional.of(vIndexBinaryObject.asObject());
-        }
-        return Optional.empty();
+        return vIndexBinaryObject.asObject();
     }
 
     private int binarySearchPosition(V v){
@@ -231,24 +216,22 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         while (low <= high) {
             mid = low + (high - low) / 2;
 
-            Optional<V> objectAtMidOptional = getObjectAt(mid);
+            V objectAtMid = getObjectAt(mid);
 
             // Todo: This is done linearly :/
             //       Alternative solution: keep track of last element index (store it in the data)
             //       If last element is smaller than the new value, just add the new value to last+1
             //       Otherwise, run the binary search with low=0 and high=last so we wont face problems in middle
             // START SECTION OF COMMENT ^
-            if (objectAtMidOptional.isEmpty()){
+            if (objectAtMid == null){   // Todo: we actually wont have a null object
                 for (int i = low; i < mid; i++){
-                    if (getObjectAt(i).isEmpty()) {
+                    if (getObjectAt(i) != null) {
                         return i;
                     }
                 }
                 return mid;
             }
             // END SECTION OF COMMENT
-
-            V objectAtMid = objectAtMidOptional.get();
 
             if (objectAtMid.compareTo(v) == 0) {
                 return -1;
@@ -269,11 +252,7 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         while (low <= high) {
             int mid = low + (high - low) / 2;
 
-            Optional<V> objectAtMidOptional = getObjectAt(mid);
-            if (objectAtMidOptional.isEmpty())
-                return -1;
-
-            V objectAtMid = objectAtMidOptional.get();
+            V objectAtMid = getObjectAt(mid);
 
             if (objectAtMid.compareTo(v) == 0) {
                 return mid;

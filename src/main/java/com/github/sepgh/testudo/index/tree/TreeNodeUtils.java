@@ -1,10 +1,12 @@
 package com.github.sepgh.testudo.index.tree;
 
 import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.index.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
-import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
-import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObjectFactory;
+import com.github.sepgh.testudo.utils.BinaryUtils;
+import com.google.common.hash.HashCode;
 
 import java.util.AbstractMap;
 import java.util.Map;
@@ -95,7 +97,14 @@ public class TreeNodeUtils {
         int keyStartIndex = getKeyStartOffset(treeNode, index, kIndexBinaryObjectFactory.size(), valueSize);
         if (keyStartIndex + kIndexBinaryObjectFactory.size() > treeNode.getData().length)
             return false;
-        return kIndexBinaryObjectFactory.create(treeNode.getData(), keyStartIndex).hasValue();
+
+
+        // Todo: refactor: remove commented print lines
+        /*System.out.println("Has Key At Index " + index + "? > keyStartIndex: " + keyStartIndex + ", size: " + kIndexBinaryObjectFactory.size() + ", value size: " + valueSize + ", degree: " + degree);
+        System.out.println(HashCode.fromBytes(treeNode.toBytes()));
+        System.out.println(!BinaryUtils.isAllZeros(treeNode.getData(), keyStartIndex, kIndexBinaryObjectFactory.size()));
+        System.out.println(!BinaryUtils.isAllZeros(treeNode.getData(), keyStartIndex + kIndexBinaryObjectFactory.size(), valueSize));*/
+        return !BinaryUtils.isAllZeros(treeNode.getData(), keyStartIndex, kIndexBinaryObjectFactory.size()) || !BinaryUtils.isAllZeros(treeNode.getData(), keyStartIndex + kIndexBinaryObjectFactory.size(), valueSize);
     }
 
 
@@ -184,9 +193,13 @@ public class TreeNodeUtils {
 
         // Linearly looking for key position
         for (int i = 0; i < degree - 1; i++){
+            if (!hasKeyAtIndex(treeNode, i, degree, indexBinaryObjectFactory, valueSize)){
+                indexToFill = i;
+                break;
+            }
             keyAtIndex = getKeyAtIndex(treeNode, i, indexBinaryObjectFactory, valueSize);
             K data = keyAtIndex.asObject();
-            if (!keyAtIndex.hasValue() || data.compareTo(key) > 0){
+            if (data.compareTo(key) > 0){
                 indexToFill = i;
                 break;
             }

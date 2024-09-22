@@ -1,11 +1,12 @@
 package com.github.sepgh.test.index;
 
+import com.github.sepgh.test.TestParams;
 import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.index.*;
+import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.BPlusTreeUniqueTreeIndexManager;
-import com.github.sepgh.testudo.index.tree.node.data.NoZeroIntegerIndexBinaryObject;
-import com.github.sepgh.testudo.index.tree.node.data.PointerIndexBinaryObject;
+import com.github.sepgh.testudo.serialization.IntegerSerializer;
 import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
@@ -33,7 +34,6 @@ public class DuplicateBPlusTreeIndexManagerBridgeTestCase {
     public void setUp() throws IOException {
         this.dbPath = Files.createTempDirectory("TEST_BinaryListIteratorTestCase");
         this.engineConfig = EngineConfig.builder()
-                .clusterIndexKeyStrategy(EngineConfig.ClusterIndexKeyStrategy.INTEGER)
                 .baseDBPath(this.dbPath.toString())
                 .bTreeDegree(10)
                 .build();
@@ -59,7 +59,7 @@ public class DuplicateBPlusTreeIndexManagerBridgeTestCase {
                 1,
                 engineConfig,
                 uniqueTreeIndexManager,
-                new NoZeroIntegerIndexBinaryObject.Factory(),
+                new IntegerSerializer().getIndexBinaryObjectFactory(TestParams.FAKE_FIELD),
                 diskPageDatabaseStorageManager
         );
 
@@ -98,7 +98,7 @@ public class DuplicateBPlusTreeIndexManagerBridgeTestCase {
                 1,
                 engineConfig,
                 uniqueTreeIndexManager,
-                new NoZeroIntegerIndexBinaryObject.Factory(),
+                new IntegerSerializer().getIndexBinaryObjectFactory(TestParams.FAKE_FIELD),
                 diskPageDatabaseStorageManager
         );
 
@@ -139,7 +139,7 @@ public class DuplicateBPlusTreeIndexManagerBridgeTestCase {
                 1,
                 engineConfig.getBTreeDegree(),
                 indexStorageManager,
-                new NoZeroIntegerIndexBinaryObject.Factory(),
+                new IntegerSerializer().getIndexBinaryObjectFactory(TestParams.FAKE_FIELD),
                 new PointerIndexBinaryObject.Factory()
         );
     }

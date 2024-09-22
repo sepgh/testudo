@@ -1,12 +1,11 @@
 package com.github.sepgh.test.index.tree.storing;
 
 import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.index.tree.node.cluster.LeafClusterTreeNode;
-import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
-import com.github.sepgh.testudo.index.tree.node.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
 import com.github.sepgh.testudo.utils.KVSize;
@@ -17,10 +16,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+import static com.github.sepgh.test.TestParams.DEFAULT_INDEX_BINARY_OBJECT_FACTORY;
 import static com.github.sepgh.test.TestParams.DEFAULT_KV_SIZE;
 
 public class StoredTreeStructureVerifier {
-    private final static KVSize KV_SIZE = new KVSize(LongIndexBinaryObject.BYTES, PointerIndexBinaryObject.BYTES);
+    private final static KVSize KV_SIZE = new KVSize(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get().size(), PointerIndexBinaryObject.BYTES);
 
     /*
      * 009
@@ -45,7 +45,7 @@ public class StoredTreeStructureVerifier {
     public static void testUnOrderedTreeStructure1(IndexStorageManager indexStorageManager, int table, long multi, int degree) throws ExecutionException, InterruptedException, IOException {
         Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table, KV_SIZE).get();
         Assertions.assertTrue(optional.isPresent());
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongIndexBinaryObject.Factory());
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
 
         AbstractTreeNode<Long> rootNode = nodeFactory.fromBytes(optional.get().bytes());
         Assertions.assertTrue(rootNode.isRoot());
@@ -171,9 +171,9 @@ public class StoredTreeStructureVerifier {
      *     └── 012
      */
     public static void testOrderedTreeStructure(IndexStorageManager indexStorageManager, int table, long multi, int degree) throws ExecutionException, InterruptedException, IOException {
-        Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table, new KVSize(LongIndexBinaryObject.BYTES, PointerIndexBinaryObject.BYTES)).get();
+        Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table, new KVSize(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get().size(), PointerIndexBinaryObject.BYTES)).get();
         Assertions.assertTrue(optional.isPresent());
-        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(new LongIndexBinaryObject.Factory());
+        NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
 
         AbstractTreeNode<Long> rootNode = nodeFactory.fromBytes(optional.get().bytes());
         Assertions.assertTrue(rootNode.isRoot());

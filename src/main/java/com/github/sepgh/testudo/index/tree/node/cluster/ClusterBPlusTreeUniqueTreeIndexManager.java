@@ -1,10 +1,10 @@
 package com.github.sepgh.testudo.index.tree.node.cluster;
 
 import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
+import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.BPlusTreeUniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
-import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObjectFactory;
-import com.github.sepgh.testudo.index.tree.node.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.session.ImmediateCommitIndexIOSession;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSessionFactory;

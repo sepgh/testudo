@@ -7,9 +7,8 @@ import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.CachedUniqueTreeIndexManagerDecorator;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
+import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeUniqueTreeIndexManager;
-import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
-import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.index.CachedIndexStorageManagerDecorator;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
@@ -29,6 +28,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+import static com.github.sepgh.test.TestParams.DEFAULT_INDEX_BINARY_OBJECT_FACTORY;
 import static com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager.INDEX_FILE_NAME;
 
 public class CacheBPlusTreeUniqueTreeIndexManagerReadingTestCase {
@@ -45,7 +45,7 @@ public class CacheBPlusTreeUniqueTreeIndexManagerReadingTestCase {
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(2)
                 .build();
-        engineConfig.setBTreeMaxFileSize(12L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES));
+        engineConfig.setBTreeMaxFileSize(12L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get().size()));
 
         byte[] writingBytes = new byte[]{};
         indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
@@ -71,7 +71,7 @@ public class CacheBPlusTreeUniqueTreeIndexManagerReadingTestCase {
         IndexStorageManager indexStorageManager = getStorageManager();
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 30);
 
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, new LongIndexBinaryObject.Factory());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         for (long i = 0; i < 20; i++){
@@ -92,7 +92,7 @@ public class CacheBPlusTreeUniqueTreeIndexManagerReadingTestCase {
         indexStorageManager = getStorageManager();
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 12);
 
-        uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, new LongIndexBinaryObject.Factory());
+        uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
         UniqueTreeIndexManager<Long, Pointer> finalUniqueTreeIndexManager = uniqueTreeIndexManager;
 
         Optional<Pointer> index = finalUniqueTreeIndexManager.getIndex(10L);
@@ -107,7 +107,7 @@ public class CacheBPlusTreeUniqueTreeIndexManagerReadingTestCase {
         IndexStorageManager indexStorageManager = getStorageManager();
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 12);
 
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, new LongIndexBinaryObject.Factory());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         for (long i = 0; i < 20; i++){
@@ -131,7 +131,7 @@ public class CacheBPlusTreeUniqueTreeIndexManagerReadingTestCase {
         IndexStorageManager indexStorageManager = getStorageManager();
 
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new CachedUniqueTreeIndexManagerDecorator<>(
-                new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, new LongIndexBinaryObject.Factory()),
+                new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()),
                 20
         );
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
@@ -157,7 +157,7 @@ public class CacheBPlusTreeUniqueTreeIndexManagerReadingTestCase {
     public void findIndexFailure_cachedIndexManager() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, InternalOperationException, IndexExistsException {
         IndexStorageManager indexStorageManager = getStorageManager();
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new CachedUniqueTreeIndexManagerDecorator<>(
-                new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, new LongIndexBinaryObject.Factory()),
+                new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()),
                 20
         );
         Pointer dataPointer = new Pointer(Pointer.TYPE_DATA, 100, 0);

@@ -6,7 +6,7 @@ import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
-import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.operation.DefaultFieldIndexManagerProvider;
 import com.github.sepgh.testudo.operation.FieldIndexManagerProvider;
 import com.github.sepgh.testudo.scheme.Scheme;
@@ -51,7 +51,6 @@ public class SchemeManagerTestCase {
     public void setUp() throws IOException {
         this.dbPath = Files.createTempDirectory("TEST_DatabaseStorageManagerTestCase");
         this.engineConfig = EngineConfig.builder()
-                .clusterIndexKeyStrategy(EngineConfig.ClusterIndexKeyStrategy.INTEGER)
                 .baseDBPath(this.dbPath.toString())
                 .bTreeDegree(10)
                 .build();

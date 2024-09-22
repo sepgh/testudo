@@ -7,12 +7,11 @@ import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.AsyncUniqueTreeIndexManagerDecorator;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
+import com.github.sepgh.testudo.index.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeUniqueTreeIndexManager;
-import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
-import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
-import com.github.sepgh.testudo.index.tree.node.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
@@ -32,6 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.github.sepgh.test.TestParams.DEFAULT_INDEX_BINARY_OBJECT_FACTORY;
 import static com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager.INDEX_FILE_NAME;
 
 public class MultiTableBPlusTreeUniqueTreeIndexManagerSingleStorageManagerTestCase {
@@ -47,9 +47,9 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerSingleStorageManagerTestCa
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(10)
                 .build();
-        engineConfig.setBTreeMaxFileSize(2 * 15L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES));
+        engineConfig.setBTreeMaxFileSize(2 * 15L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get().size()));
 
-        byte[] writingBytes = new byte[2 * 13 * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES)];
+        byte[] writingBytes = new byte[2 * 13 * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get().size())];
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.bin", INDEX_FILE_NAME));
         Files.write(indexPath, writingBytes, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
     }
@@ -101,7 +101,7 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerSingleStorageManagerTestCa
 
         for (int tableId = 1; tableId <= 2; tableId++){
             CompactFileIndexStorageManager compactFileIndexStorageManager = getSingleFileIndexStorageManager();
-            UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(tableId, degree, compactFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+            UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(tableId, degree, compactFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
 
 
 
@@ -152,7 +152,7 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerSingleStorageManagerTestCa
         CompactFileIndexStorageManager compactFileIndexStorageManager = getSingleFileIndexStorageManager();
 
         for (int tableId = 1; tableId <= 2; tableId++){
-            UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(tableId, degree, compactFileIndexStorageManager, new LongIndexBinaryObject.Factory());
+            UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(tableId, degree, compactFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
 
             AbstractTreeNode<Long> lastTreeNode = null;
             for (long testIdentifier : testIdentifiers) {
@@ -178,8 +178,8 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerSingleStorageManagerTestCa
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         CompactFileIndexStorageManager compactFileIndexStorageManager = getSingleFileIndexStorageManager();
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, compactFileIndexStorageManager, new LongIndexBinaryObject.Factory()));
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, compactFileIndexStorageManager, new LongIndexBinaryObject.Factory()));
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, compactFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()));
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, compactFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()));
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         CountDownLatch countDownLatch = new CountDownLatch((2 * testIdentifiers.size()) - 2);

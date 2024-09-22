@@ -1,7 +1,7 @@
 package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.io.IOException;

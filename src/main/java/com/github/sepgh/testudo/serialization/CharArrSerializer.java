@@ -2,11 +2,12 @@ package com.github.sepgh.testudo.serialization;
 
 import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.SerializationException;
-import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObjectFactory;
-import com.github.sepgh.testudo.index.tree.node.data.StringIndexBinaryObject;
+import com.github.sepgh.testudo.index.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.scheme.Scheme;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class CharArrSerializer implements Serializer<String> {
@@ -70,16 +71,65 @@ public class CharArrSerializer implements Serializer<String> {
 
     @Override
     public int getSize(Scheme.Meta meta) {
+        if (meta.getMaxSize() == null)
+            return MAX_LENGTH;
         return Integer.parseInt(meta.getMaxSize());
     }
 
-    @Override
-    public IndexBinaryObjectFactory<String> getIndexBinaryObjectFactory(Scheme.Field field) {
-        return new StringIndexBinaryObject.Factory(field.getMeta().getMax());
-    }
 
     @Override
     public byte[] serializeDefault(String defaultValue, Scheme.Meta meta) throws SerializationException {
         return this.serialize(defaultValue, meta);
+    }
+
+    @Override
+    public IndexBinaryObjectFactory<String> getIndexBinaryObjectFactory(Scheme.Field field) {
+        return new CharArrIndexBinaryObjectFactory(this.getSize(field.getMeta()), this);
+    }
+
+    public static class CharArrIndexBinaryObjectFactory implements IndexBinaryObjectFactory<String> {
+        private final int size;
+        private final CharArrSerializer serializer;
+
+        public CharArrIndexBinaryObjectFactory(int size, CharArrSerializer serializer) {
+            this.size = size;
+            this.serializer = serializer;
+        }
+
+        @Override
+        public IndexBinaryObject<String> create(String s) throws IndexBinaryObject.InvalidIndexBinaryObject {
+            byte[] temp = s.getBytes(StandardCharsets.UTF_8);
+            if (temp.length > size) {
+                throw new RuntimeException("Fuck");  // Todo: proper exception to be thrown here. currently impossible
+            }
+
+            byte[] result = new byte[size];
+
+            System.arraycopy(temp, 0, result, 0, temp.length);
+
+            for (int i = temp.length; i < size; i++) {
+                result[i] = 0;
+            }
+
+            return new IndexBinaryObjectSerializer<>(result, serializer);
+        }
+
+        @Override
+        public IndexBinaryObject<String> create(byte[] bytes, int beginning) {
+            byte[] data = new byte[size];
+            System.arraycopy(
+                    bytes,
+                    beginning,
+                    data,
+                    0,
+                    this.size()
+            );
+            return new IndexBinaryObjectSerializer<>(data, serializer);
+        }
+
+        @Override
+        public int size() {
+            return size;
+        }
     }
 }

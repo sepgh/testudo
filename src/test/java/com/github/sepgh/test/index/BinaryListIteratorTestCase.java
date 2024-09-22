@@ -1,9 +1,11 @@
 package com.github.sepgh.test.index;
 
+import com.github.sepgh.test.TestParams;
 import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.index.BinaryListIterator;
-import com.github.sepgh.testudo.index.tree.node.data.NoZeroIntegerIndexBinaryObject;
+import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
+import com.github.sepgh.testudo.serialization.IntegerSerializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,9 +23,8 @@ public class BinaryListIteratorTestCase {
     public void setUp() throws IOException {
         this.dbPath = Files.createTempDirectory("TEST_BinaryListIteratorTestCase");
         this.engineConfig = EngineConfig.builder()
-                .clusterIndexKeyStrategy(EngineConfig.ClusterIndexKeyStrategy.INTEGER)
                 .baseDBPath(this.dbPath.toString())
-                .dbPageSize(10 * NoZeroIntegerIndexBinaryObject.BYTES)
+                .dbPageSize(12 * Integer.BYTES)
                 .bTreeDegree(10)
                 .build();
     }
@@ -35,7 +36,7 @@ public class BinaryListIteratorTestCase {
 
     @Test
     public void test_next_previous() throws Exception {
-        NoZeroIntegerIndexBinaryObject.Factory factory = new NoZeroIntegerIndexBinaryObject.Factory();
+        IndexBinaryObjectFactory<Integer> factory = new IntegerSerializer().getIndexBinaryObjectFactory(TestParams.FAKE_FIELD);
 
         byte[] data = new byte[factory.size() * 3];
         System.arraycopy(
@@ -91,7 +92,7 @@ public class BinaryListIteratorTestCase {
 
     @Test
     public void test_remove() throws Exception {
-        NoZeroIntegerIndexBinaryObject.Factory factory = new NoZeroIntegerIndexBinaryObject.Factory();
+        IndexBinaryObjectFactory<Integer> factory = new IntegerSerializer().getIndexBinaryObjectFactory(TestParams.FAKE_FIELD);
 
         byte[] data = new byte[factory.size() * 3];
         System.arraycopy(
@@ -144,7 +145,7 @@ public class BinaryListIteratorTestCase {
 
     @Test
     public void test_addNew() throws Exception {
-        NoZeroIntegerIndexBinaryObject.Factory factory = new NoZeroIntegerIndexBinaryObject.Factory();
+        IndexBinaryObjectFactory<Integer> factory = new IntegerSerializer().getIndexBinaryObjectFactory(TestParams.FAKE_FIELD);
 
         byte[] data = new byte[factory.size() * 3];
         System.arraycopy(

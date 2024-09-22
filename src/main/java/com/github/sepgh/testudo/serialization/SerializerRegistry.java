@@ -13,6 +13,7 @@ public class SerializerRegistry {
         this.register(new LongSerializer());
         this.register(new BooleanSerializer());
         this.register(new CharArrSerializer());
+        this.register(new UnsignedLongSerializer());
     }
 
     public static SerializerRegistry getInstance(){

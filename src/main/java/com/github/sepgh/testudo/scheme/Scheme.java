@@ -66,6 +66,40 @@ public class Scheme {
         }
     }
 
+
+    public static class ImmutableDefaultMeta extends Meta {
+        public static Meta INSTANCE = ImmutableDefaultMeta.builder().build();
+
+        private ImmutableDefaultMeta(String comment, String maxSize, Integer max, Integer min, String charset) {
+            super(comment, maxSize, max, min, charset);
+        }
+
+        @Override
+        public void setComment(String comment) {
+            super.setComment(comment);
+        }
+
+        @Override
+        public void setMaxSize(String maxSize) {
+            super.setMaxSize(maxSize);
+        }
+
+        @Override
+        public void setMax(Integer max) {
+            super.setMax(max);
+        }
+
+        @Override
+        public void setMin(Integer min) {
+            super.setMin(min);
+        }
+
+        @Override
+        public void setCharset(String charset) {
+            super.setCharset(charset);
+        }
+    }
+
     @Data
     @Builder
     public static class Field {

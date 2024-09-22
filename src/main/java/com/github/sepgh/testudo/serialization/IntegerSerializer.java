@@ -1,9 +1,6 @@
 package com.github.sepgh.testudo.serialization;
 
 import com.github.sepgh.testudo.exception.SerializationException;
-import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObjectFactory;
-import com.github.sepgh.testudo.index.tree.node.data.IntegerIndexBinaryObject;
-import com.github.sepgh.testudo.index.tree.node.data.NoZeroIntegerIndexBinaryObject;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.utils.BinaryUtils;
 import com.google.common.primitives.Ints;
@@ -57,14 +54,6 @@ public class IntegerSerializer implements Serializer<Integer> {
     @Override
     public int getSize(Scheme.Meta meta) {
         return Integer.BYTES;
-    }
-
-    @Override
-    public IndexBinaryObjectFactory<Integer> getIndexBinaryObjectFactory(Scheme.Field field) {
-        if (field.isSupportZero())
-            return new IntegerIndexBinaryObject.Factory();
-
-        return new NoZeroIntegerIndexBinaryObject.Factory();
     }
 
     @Override

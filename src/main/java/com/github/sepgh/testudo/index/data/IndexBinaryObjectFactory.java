@@ -1,4 +1,4 @@
-package com.github.sepgh.testudo.index.tree.node.data;
+package com.github.sepgh.testudo.index.data;
 
 public interface IndexBinaryObjectFactory<E> {
     IndexBinaryObject<E> create(E e) throws IndexBinaryObject.InvalidIndexBinaryObject;

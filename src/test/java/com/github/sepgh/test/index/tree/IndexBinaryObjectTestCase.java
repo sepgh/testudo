@@ -1,18 +1,24 @@
 package com.github.sepgh.test.index.tree;
 
+import com.github.sepgh.test.TestParams;
 import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
+import com.github.sepgh.testudo.index.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
+import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.BPlusTreeUniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeUniqueTreeIndexManager;
-import com.github.sepgh.testudo.index.tree.node.data.*;
+import com.github.sepgh.testudo.scheme.Scheme;
+import com.github.sepgh.testudo.serialization.CharArrSerializer;
+import com.github.sepgh.testudo.serialization.IntegerSerializer;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
@@ -32,6 +38,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.ExecutionException;
 
+import static com.github.sepgh.test.TestParams.DEFAULT_INDEX_BINARY_OBJECT_FACTORY;
+import static com.github.sepgh.test.TestParams.FAKE_FIELD_SUPPLIER;
 import static com.github.sepgh.testudo.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
 import static com.github.sepgh.testudo.storage.index.BaseFileIndexStorageManager.INDEX_FILE_NAME;
 
@@ -50,7 +58,7 @@ public class IndexBinaryObjectTestCase {
                 .bTreeGrowthNodeAllocationCount(2)
                 .baseDBPath(dbPath.toString())
                 .build();
-        engineConfig.setBTreeMaxFileSize(4L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES));
+        engineConfig.setBTreeMaxFileSize(4L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get().size()));
 
         byte[] writingBytes = new byte[]{};
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
@@ -75,14 +83,14 @@ public class IndexBinaryObjectTestCase {
     public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getStorageManager();
 
-        UniqueTreeIndexManager<Integer, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new IntegerIndexBinaryObject.Factory());
+        UniqueTreeIndexManager<Integer, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new IntegerSerializer().getIndexBinaryObjectFactory(TestParams.FAKE_FIELD));
 
         for (int i = 0; i < 13; i ++){
             uniqueTreeIndexManager.addIndex(i, Pointer.empty());
         }
 
         for (int i = 0; i < 13; i ++){
-            Assertions.assertTrue(uniqueTreeIndexManager.getIndex(i).isPresent());
+            Assertions.assertTrue(uniqueTreeIndexManager.getIndex(i).isPresent(), "%d is not present".formatted(i));
         }
 
         for (int i = 0; i < 13; i ++){
@@ -90,61 +98,6 @@ public class IndexBinaryObjectTestCase {
         }
 
         for (int i = 0; i < 13; i ++){
-            Assertions.assertFalse(uniqueTreeIndexManager.getIndex(i).isPresent());
-        }
-
-    }
-    @Test
-    public void test_NoZeroIntegerIdentifier() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, InternalOperationException, IndexExistsException {
-        OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getStorageManager();
-
-        UniqueTreeIndexManager<Integer, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new NoZeroIntegerIndexBinaryObject.Factory());
-
-        Assertions.assertThrows(IndexBinaryObject.InvalidIndexBinaryObject.class, () -> {
-            uniqueTreeIndexManager.addIndex(0, Pointer.empty());
-        });
-
-        for (int i = 1; i < 13; i ++){
-            uniqueTreeIndexManager.addIndex(i, Pointer.empty());
-        }
-
-        for (int i = 1; i < 13; i ++){
-            Assertions.assertTrue(uniqueTreeIndexManager.getIndex(i).isPresent());
-        }
-
-        for (int i = 1; i < 13; i ++){
-            Assertions.assertTrue(uniqueTreeIndexManager.removeIndex(i));
-        }
-
-        for (int i = 1; i < 13; i ++){
-            Assertions.assertFalse(uniqueTreeIndexManager.getIndex(i).isPresent());
-        }
-
-    }
-
-    @Test
-    public void test_NoZeroLongIdentifier() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, InternalOperationException, IndexExistsException {
-        OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getStorageManager();
-
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new NoZeroLongIndexBinaryObject.Factory());
-
-        Assertions.assertThrows(IndexBinaryObject.InvalidIndexBinaryObject.class, () -> {
-            uniqueTreeIndexManager.addIndex(0L, Pointer.empty());
-        });
-
-        for (long i = 1; i < 13; i ++){
-            uniqueTreeIndexManager.addIndex(i, Pointer.empty());
-        }
-
-        for (long i = 1; i < 13; i ++){
-            Assertions.assertTrue(uniqueTreeIndexManager.getIndex(i).isPresent());
-        }
-
-        for (long i = 1; i < 13; i ++){
-            Assertions.assertTrue(uniqueTreeIndexManager.removeIndex(i));
-        }
-
-        for (long i = 1; i < 13; i ++){
             Assertions.assertFalse(uniqueTreeIndexManager.getIndex(i).isPresent());
         }
 
@@ -159,7 +112,9 @@ public class IndexBinaryObjectTestCase {
                 new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
         );
 
-        IndexBinaryObjectFactory<String> keyIndexBinaryObjectFactory = new StringIndexBinaryObject.Factory(20);
+        Scheme.Field field = FAKE_FIELD_SUPPLIER.get();
+        field.setMeta(Scheme.Meta.builder().maxSize("3").build());
+        IndexBinaryObjectFactory<String> keyIndexBinaryObjectFactory = new CharArrSerializer().getIndexBinaryObjectFactory(field);
 
         NodeFactory<String> nodeFactory = new NodeFactory<>() {
             @Override

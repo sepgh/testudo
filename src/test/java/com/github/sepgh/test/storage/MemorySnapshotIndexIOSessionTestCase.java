@@ -5,11 +5,10 @@ import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
+import com.github.sepgh.testudo.index.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeUniqueTreeIndexManager;
-import com.github.sepgh.testudo.index.tree.node.data.IndexBinaryObject;
-import com.github.sepgh.testudo.index.tree.node.data.LongIndexBinaryObject;
-import com.github.sepgh.testudo.index.tree.node.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
@@ -31,10 +30,11 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.ExecutionException;
 
+import static com.github.sepgh.test.TestParams.DEFAULT_INDEX_BINARY_OBJECT_FACTORY;
 import static com.github.sepgh.testudo.storage.index.BaseFileIndexStorageManager.INDEX_FILE_NAME;
 
 public class MemorySnapshotIndexIOSessionTestCase {
-    private final static KVSize KV_SIZE =  new KVSize(LongIndexBinaryObject.BYTES, PointerIndexBinaryObject.BYTES);
+    private final static KVSize KV_SIZE =  new KVSize(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get().size(), PointerIndexBinaryObject.BYTES);
     private Path dbPath;
     private EngineConfig engineConfig;
     private int degree = 4;
@@ -47,7 +47,7 @@ public class MemorySnapshotIndexIOSessionTestCase {
                 .bTreeDegree(degree)
                 .bTreeGrowthNodeAllocationCount(5)
                 .build();
-        engineConfig.setBTreeMaxFileSize(20L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, LongIndexBinaryObject.BYTES));
+        engineConfig.setBTreeMaxFileSize(20L * BTreeSizeCalculator.getClusteredBPlusTreeSize(degree, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get().size()));
 
         byte[] writingBytes = new byte[]{};
         Path indexPath = Path.of(dbPath.toString(), String.format("%s.%d", INDEX_FILE_NAME, 0));
@@ -78,13 +78,13 @@ public class MemorySnapshotIndexIOSessionTestCase {
     public void testCreateRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, IndexBinaryObject.InvalidIndexBinaryObject, InternalOperationException, IndexExistsException {
         
         IndexStorageManager indexStorageManager = getCompactFileIndexStorageManager();
-        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(new LongIndexBinaryObject.Factory()), KV_SIZE);
+        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()), KV_SIZE);
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, new IndexIOSessionFactory() {
             @Override
             public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, NodeFactory<K> nodeFactory, KVSize kvSize) {
                 return (IndexIOSession<K>) indexIOSession;
             }
-        }, new LongIndexBinaryObject.Factory());
+        }, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
 
         for (long i = 1; i < 12; i++){
             uniqueTreeIndexManager.addIndex(i, Pointer.empty());
@@ -101,7 +101,7 @@ public class MemorySnapshotIndexIOSessionTestCase {
         method.invoke(indexIOSession);
 
         // Since the same indexIOSession instance shouldn't be used to re-read after rollback we create a new instance
-        uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, new LongIndexBinaryObject.Factory());
+        uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
         Assertions.assertFalse(uniqueTreeIndexManager.getIndex(12L).isPresent());
 
         indexStorageManager.close();
@@ -112,14 +112,14 @@ public class MemorySnapshotIndexIOSessionTestCase {
     public void testDeleteRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, IndexBinaryObject.InvalidIndexBinaryObject, InternalOperationException, IndexExistsException {
 
         IndexStorageManager indexStorageManager = getCompactFileIndexStorageManager();
-        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(new LongIndexBinaryObject.Factory()), KV_SIZE);
+        final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()), KV_SIZE);
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, new IndexIOSessionFactory() {
             @Override
             public <K extends Comparable<K>> IndexIOSession<K> create(IndexStorageManager indexStorageManager, int table, NodeFactory<K> nodeFactory, KVSize kvSize) {
                 return (IndexIOSession<K>) indexIOSession;
             }
-        }, new LongIndexBinaryObject.Factory());
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, new LongIndexBinaryObject.Factory());
+        }, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
 
         for (long i = 1; i < 13; i++){
             uniqueTreeIndexManager2.addIndex(i, Pointer.empty());
