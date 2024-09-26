@@ -7,6 +7,7 @@ import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.TreeNodeUtils;
 import com.github.sepgh.testudo.utils.KVSize;
 import com.google.common.collect.ImmutableList;
+import com.google.common.hash.HashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -16,10 +17,10 @@ import java.util.List;
 
 /*
   Structure of a node in binary for non-leaf
-  [1 byte -6 empty bits- IS_ROOT | IS_LEAF] + [POINTER_SIZE bytes child] + (([LONG_SIZE bytes id] + [POINTER_SIZE bytes child]) * max node size)
+  [1 byte -6 empty bits- IS_ROOT | IS_LEAF] + [POINTER_SIZE bytes child] + (([K_SIZE bytes id] + [POINTER_SIZE bytes child]) * max node size)
 
   Structure of a node in binary for leaf
-  [1 byte -6 empty bits- IS_ROOT | IS_LEAF] + (([LONG_SIZE bytes id] + [POINTER_SIZE bytes data]) * max node size) + [POINTER_SIZE bytes previous leaf node] + [POINTER_SIZE bytes next leaf node]
+  [1 byte -6 empty bits- IS_ROOT | IS_LEAF] + (([K_SIZE bytes id] + [POINTER_SIZE bytes data]) * max node size) + [POINTER_SIZE bytes previous leaf node] + [POINTER_SIZE bytes next leaf node]
 */
 @Getter
 public abstract class AbstractTreeNode<K extends Comparable<K>> {
@@ -80,7 +81,7 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
     }
 
     public Iterator<K> getKeys(int degree, int valueSize){
-        return new TreeNodeKeysIterator<K>(this, degree, valueSize);
+        return new TreeNodeKeysIterator<>(this, degree, valueSize);
     }
 
     public List<K> getKeyList(int degree, int valueSize){
@@ -97,6 +98,8 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
 
     @SneakyThrows
     public void removeKey(int idx, int degree, int valueSize) {
+        System.out.println("index: " + idx);
+        System.out.println("Before: " + HashCode.fromBytes(getData()));
         List<K> keyList = this.getKeyList(degree, valueSize);
         TreeNodeUtils.removeKeyAtIndex(this, idx, kIndexBinaryObjectFactory.size(), valueSize);
         List<K> subList = keyList.subList(idx + 1, keyList.size());
@@ -115,6 +118,7 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
                 TreeNodeUtils.removeKeyAtIndex(this, i, kIndexBinaryObjectFactory.size(), valueSize);
             }
         }
+        System.out.println("After: " + HashCode.fromBytes(getData()));
     }
 
     @Getter

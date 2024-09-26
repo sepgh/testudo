@@ -87,12 +87,12 @@ public class MemorySnapshotIndexIOSessionTestCase {
         }, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
 
         for (long i = 1; i < 12; i++){
-            uniqueTreeIndexManager.addIndex(i, Pointer.empty());
+            uniqueTreeIndexManager.addIndex(i, new Pointer(Pointer.TYPE_DATA, 0, 0));
         }
 
         Assertions.assertTrue(uniqueTreeIndexManager.getIndex(11L).isPresent());
 
-        uniqueTreeIndexManager.addIndex(12L, Pointer.empty());
+        uniqueTreeIndexManager.addIndex(12L, new Pointer(Pointer.TYPE_DATA, 0, 0));
         Assertions.assertTrue(uniqueTreeIndexManager.getIndex(12L).isPresent());
 
         Class<MemorySnapshotIndexIOSession> aClass = MemorySnapshotIndexIOSession.class;
@@ -122,7 +122,7 @@ public class MemorySnapshotIndexIOSessionTestCase {
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
 
         for (long i = 1; i < 13; i++){
-            uniqueTreeIndexManager2.addIndex(i, Pointer.empty());
+            uniqueTreeIndexManager2.addIndex(i, new Pointer(Pointer.TYPE_DATA, 0, 0));
         }
 
         Assertions.assertTrue(uniqueTreeIndexManager2.getIndex(12L).isPresent());

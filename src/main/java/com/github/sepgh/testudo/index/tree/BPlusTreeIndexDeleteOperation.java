@@ -10,6 +10,7 @@ import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
+import com.google.common.hash.HashCode;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -32,7 +33,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
     }
 
     public boolean removeIndex(AbstractTreeNode<K> root, K identifier) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
-
+        System.out.println("Removing id: " + identifier);
         List<AbstractTreeNode<K>> path = new LinkedList<>();
         BPlusTreeUtils.getPathToResponsibleNode(indexIOSession, path, root, identifier, degree);
         boolean result = false;
@@ -311,6 +312,21 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
             idx = tempSib;
         }
 
+
+        /*
+         *   Before we execute below if statements and move children / key-value list from sibling to child
+         *   we create empty list of those types and process the movement later after we dealt possibly adding parent removed key to child
+         *   Reason:
+         *      if we move the children first (child pointers) we would create a possibly empty byte array as key before last child
+         *      the empty byte array will be detected as "0" or a valid key because TreeNodeUtils.hasKeyAtIndex() relies on checking empty byte-array to say if a value is present or not
+         *      as a result, when we later add removed key from parent to the child, it will move to an invalid position
+         *
+         *   {VALIDATION OF CHILD MOVEMENT}
+         */
+
+        ArrayList<KeyValue<K, V>> keyValueListToMove = null;
+        ArrayList<Pointer> childPointersToMove = null;
+
         /*
          *  For internal node we grab all sibling keys and add them to child
          *  We also add sibling 'child pointers' at the beginning or end of child's 'child pointers' depending on their position
@@ -324,28 +340,31 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
             childKeyList.sort(K::compareTo);
             childInternalTreeNode.setKeys(childKeyList);
 
-            ArrayList<Pointer> childPointers = new ArrayList<>(childInternalTreeNode.getChildrenList());
+            childPointersToMove = new ArrayList<>(childInternalTreeNode.getChildrenList());
             // Prepend or append
             if (idx > siblingIndex){
-                childPointers.addAll(0, ((InternalTreeNode<K>) sibling).getChildrenList());
+                childPointersToMove.addAll(0, ((InternalTreeNode<K>) sibling).getChildrenList());
             } else {
-                childPointers.addAll(((InternalTreeNode<K>) sibling).getChildrenList());
+                childPointersToMove.addAll(((InternalTreeNode<K>) sibling).getChildrenList());
             }
-            childInternalTreeNode.setChildren(childPointers);
 
         } else {
             AbstractLeafTreeNode<K, V> childLeafTreeNode = (AbstractLeafTreeNode<K, V>) child;
-            ArrayList<KeyValue<K, V>> keyValueList = new ArrayList<>(childLeafTreeNode.getKeyValueList(degree));
-            keyValueList.addAll(((AbstractLeafTreeNode<K, V>) sibling).getKeyValueList(degree));
-            Collections.sort(keyValueList);
-            ((AbstractLeafTreeNode<K, V>) child).setKeyValues(keyValueList, degree);
+            keyValueListToMove = new ArrayList<>(childLeafTreeNode.getKeyValueList(degree));
+            keyValueListToMove.addAll(((AbstractLeafTreeNode<K, V>) sibling).getKeyValueList(degree));
+            Collections.sort(keyValueListToMove);
         }
 
         int keyToRemoveIndex = siblingIndex == 0 ? siblingIndex : siblingIndex - 1;
         K parentKeyAtIndex = parent.getKeyList(degree).get(keyToRemoveIndex);
 
+        System.out.println("Parent keys: " + parent.getKeyList(degree, valueIndexBinaryObjectFactory.size()));
+        System.out.println("Sibling keys: " + sibling.getKeyList(degree, valueIndexBinaryObjectFactory.size()));
+        System.out.println("Child keys: " + child.getKeyList(degree, valueIndexBinaryObjectFactory.size()));
         parent.removeKey(keyToRemoveIndex, degree);
         parent.removeChild(siblingIndex, degree);
+        System.out.println("After child remove: " + HashCode.fromBytes(parent.getData()));
+        System.out.println("Keys: " + parent.getKeyList(degree));
 
         /*
          *   We may have removed the only key remaining in the parent
@@ -355,22 +374,33 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
         if (parent.getKeyList(degree).isEmpty()){
             if (!child.isLeaf()) {
                 assert child instanceof InternalTreeNode;
+                System.out.println("Child before: " + HashCode.fromBytes(child.getData()));
                 ((InternalTreeNode<K>) child).addKey(parentKeyAtIndex, degree);
+                System.out.println("Child after: " + HashCode.fromBytes(child.getData()));
             }
             if (parent.isRoot()){
+                System.out.println("Child is new root");
                 child.setAsRoot();
                 parent.unsetAsRoot();
             }
-            indexIOSession.update(child);
             indexIOSession.remove(parent);
         }else{
             indexIOSession.update(parent);
-            indexIOSession.update(child);
         }
+
+        if (child.isLeaf()){
+            ((AbstractLeafTreeNode<K, V>) child).setKeyValues(keyValueListToMove, degree);
+        } else {
+            ((InternalTreeNode<K>) child).setChildren(childPointersToMove);
+        }
+
+        indexIOSession.update(child);
+
         if (toRemove.isLeaf()) {
             assert toRemove instanceof AbstractLeafTreeNode<K, ?>;
             this.connectSiblings((AbstractLeafTreeNode<K, V>) toRemove);
         }
+
         indexIOSession.remove(toRemove);
     }
 

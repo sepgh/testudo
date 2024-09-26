@@ -85,8 +85,10 @@ public class IndexBinaryObjectTestCase {
 
         UniqueTreeIndexManager<Integer, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new IntegerSerializer().getIndexBinaryObjectFactory(TestParams.FAKE_FIELD));
 
+
+        Pointer P = new Pointer(Pointer.TYPE_DATA, 0, 0);
         for (int i = 0; i < 13; i ++){
-            uniqueTreeIndexManager.addIndex(i, Pointer.empty());
+            uniqueTreeIndexManager.addIndex(i, P);
         }
 
         for (int i = 0; i < 13; i ++){
@@ -136,28 +138,28 @@ public class IndexBinaryObjectTestCase {
         UniqueTreeIndexManager<String, Pointer> uniqueTreeIndexManager = new BPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, keyIndexBinaryObjectFactory, new PointerIndexBinaryObject.Factory(), nodeFactory);
 
 
-        uniqueTreeIndexManager.addIndex("AAA", Pointer.empty());
-        uniqueTreeIndexManager.addIndex("BBB", Pointer.empty());
-        uniqueTreeIndexManager.addIndex("CAB", Pointer.empty());
-        uniqueTreeIndexManager.addIndex("AAC", Pointer.empty());
-        uniqueTreeIndexManager.addIndex("BAC", Pointer.empty());
-        uniqueTreeIndexManager.addIndex("CAA", Pointer.empty());
+        uniqueTreeIndexManager.addIndex("AAA", new Pointer(Pointer.TYPE_DATA, 0, 0));
+        uniqueTreeIndexManager.addIndex("BBB", new Pointer(Pointer.TYPE_DATA, 0, 0));
+        uniqueTreeIndexManager.addIndex("CAB", new Pointer(Pointer.TYPE_DATA, 0, 0));
+        uniqueTreeIndexManager.addIndex("AAC", new Pointer(Pointer.TYPE_DATA, 0, 0));
+        uniqueTreeIndexManager.addIndex("BAC", new Pointer(Pointer.TYPE_DATA, 0, 0));
+        uniqueTreeIndexManager.addIndex("CAA", new Pointer(Pointer.TYPE_DATA, 0, 0));
 
-        uniqueTreeIndexManager.addIndex("AAB", Pointer.empty());
-        uniqueTreeIndexManager.addIndex("AAD", Pointer.empty());
+        uniqueTreeIndexManager.addIndex("AAB", new Pointer(Pointer.TYPE_DATA, 0, 0));
+        uniqueTreeIndexManager.addIndex("AAD", new Pointer(Pointer.TYPE_DATA, 0, 0));
 
-        uniqueTreeIndexManager.addIndex("ABA", Pointer.empty());
-        uniqueTreeIndexManager.addIndex("ABB", Pointer.empty());
-        uniqueTreeIndexManager.addIndex("ABC", Pointer.empty());
+        uniqueTreeIndexManager.addIndex("ABA", new Pointer(Pointer.TYPE_DATA, 0, 0));
+        uniqueTreeIndexManager.addIndex("ABB", new Pointer(Pointer.TYPE_DATA, 0, 0));
+        uniqueTreeIndexManager.addIndex("ABC", new Pointer(Pointer.TYPE_DATA, 0, 0));
 
-        uniqueTreeIndexManager.addIndex("ACA", Pointer.empty());
-        uniqueTreeIndexManager.addIndex("ACB", Pointer.empty());
-        uniqueTreeIndexManager.addIndex("ACC", Pointer.empty());
+        uniqueTreeIndexManager.addIndex("ACA", new Pointer(Pointer.TYPE_DATA, 0, 0));
+        uniqueTreeIndexManager.addIndex("ACB", new Pointer(Pointer.TYPE_DATA, 0, 0));
+        uniqueTreeIndexManager.addIndex("ACC", new Pointer(Pointer.TYPE_DATA, 0, 0));
 
-        uniqueTreeIndexManager.addIndex("BAA", Pointer.empty());
-        uniqueTreeIndexManager.addIndex("BAB", Pointer.empty());
-        uniqueTreeIndexManager.addIndex("BBA", Pointer.empty());
-        uniqueTreeIndexManager.addIndex("BBC", Pointer.empty());
+        uniqueTreeIndexManager.addIndex("BAA", new Pointer(Pointer.TYPE_DATA, 0, 0));
+        uniqueTreeIndexManager.addIndex("BAB", new Pointer(Pointer.TYPE_DATA, 0, 0));
+        uniqueTreeIndexManager.addIndex("BBA", new Pointer(Pointer.TYPE_DATA, 0, 0));
+        uniqueTreeIndexManager.addIndex("BBC", new Pointer(Pointer.TYPE_DATA, 0, 0));
 
 
         KVSize kvSize = new KVSize(20, PointerIndexBinaryObject.BYTES);
