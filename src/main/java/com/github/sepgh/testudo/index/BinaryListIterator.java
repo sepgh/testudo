@@ -12,7 +12,6 @@ import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
 
-// Todo: has next and has previous functions cant check with null (no longer Optional), so go back to previous implementation where currentValue property was not used
 public class BinaryListIterator<V extends Comparable<V>> implements ListIterator<V> {
 
     private final EngineConfig engineConfig;

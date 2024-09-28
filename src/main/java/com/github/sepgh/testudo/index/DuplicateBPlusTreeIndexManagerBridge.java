@@ -118,7 +118,6 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
         return Optional.empty();
     }
 
-    // Todo: after removing an index, the list may be empty. We can remove the pointer from bridge index manager
     @Override
     public synchronized boolean removeIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IOException, ExecutionException, InterruptedException {
         Optional<Pointer> pointerOptional = this.indexManager.getIndex(identifier);
@@ -143,6 +142,12 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
                 }
             });
         }
+
+        // the list is empty, remove the object from index and DB storage
+        this.indexManager.removeIndex(identifier);
+        binaryListIterator.resetCursor();
+        if (!binaryListIterator.hasNext())
+            databaseStorageManager.remove(pointer);
 
         return result;
     }
@@ -185,10 +190,29 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
         };
     }
 
-    // Todo: purging the bridge index manager is not enough, the list is stored in DB storage
     @Override
     public void purgeIndex() {
-        this.indexManager.purgeIndex();
+        try {
+            LockableIterator<KeyValue<K, Pointer>> lockableIterator = this.indexManager.getSortedIterator();
+
+            try {
+                lockableIterator.lock();
+                while (lockableIterator.hasNext()) {
+                    Pointer pointer = lockableIterator.next().value();
+                    databaseStorageManager.remove(pointer);
+                }
+            } catch (IOException | ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
+            } finally {
+                lockableIterator.unlock();
+            }
+
+
+            this.indexManager.purgeIndex();
+        } catch (InternalOperationException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override

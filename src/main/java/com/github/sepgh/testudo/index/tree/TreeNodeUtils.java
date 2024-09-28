@@ -97,12 +97,6 @@ public class TreeNodeUtils {
         if (keyStartIndex + kIndexBinaryObjectFactory.size() > treeNode.getData().length)
             return false;
 
-
-        // Todo: refactor: remove commented print lines
-        /*System.out.println("Has Key At Index " + index + "? > keyStartIndex: " + keyStartIndex + ", size: " + kIndexBinaryObjectFactory.size() + ", value size: " + valueSize + ", degree: " + degree);
-        System.out.println(HashCode.fromBytes(treeNode.toBytes()));
-        System.out.println(!BinaryUtils.isAllZeros(treeNode.getData(), keyStartIndex, kIndexBinaryObjectFactory.size()));
-        System.out.println(!BinaryUtils.isAllZeros(treeNode.getData(), keyStartIndex + kIndexBinaryObjectFactory.size(), valueSize));*/
         return !BinaryUtils.isAllZeros(treeNode.getData(), keyStartIndex, kIndexBinaryObjectFactory.size()) || !BinaryUtils.isAllZeros(treeNode.getData(), keyStartIndex + kIndexBinaryObjectFactory.size(), valueSize);
     }
 
