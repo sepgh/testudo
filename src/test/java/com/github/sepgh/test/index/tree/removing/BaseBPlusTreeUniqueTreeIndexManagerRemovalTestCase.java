@@ -16,7 +16,6 @@ import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
 import com.github.sepgh.testudo.utils.KVSize;
-import com.google.common.hash.HashCode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -362,13 +361,11 @@ public class BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
         Assertions.assertTrue(uniqueTreeIndexManager.removeIndex(7L));
         Assertions.assertFalse(uniqueTreeIndexManager.removeIndex(7L));
 
-        System.out.println("\n\n=== HERE ===\n");
         Assertions.assertTrue(uniqueTreeIndexManager.removeIndex(6L));
         Assertions.assertFalse(uniqueTreeIndexManager.removeIndex(6L));
 
 
         root = (InternalTreeNode<Long>) nodeFactory.fromNodeData(indexStorageManager.getRoot(1, new KVSize(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get().size(), PointerIndexBinaryObject.BYTES)).get().get());
-        System.out.println("H > " + HashCode.fromBytes(root.getData()));
         Assertions.assertEquals(2, root.getKeyList(degree).size(), "Keys: " + root.getKeyList(degree));
         Assertions.assertEquals(3, root.getKeyList(degree).getFirst());
         Assertions.assertEquals(5, root.getKeyList(degree).getLast());

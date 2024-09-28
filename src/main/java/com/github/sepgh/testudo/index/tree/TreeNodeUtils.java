@@ -6,7 +6,6 @@ import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.utils.BinaryUtils;
-import com.google.common.hash.HashCode;
 
 import java.util.AbstractMap;
 import java.util.Map;

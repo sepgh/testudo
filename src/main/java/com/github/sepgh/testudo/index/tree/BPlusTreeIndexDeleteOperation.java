@@ -10,7 +10,6 @@ import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
-import com.google.common.hash.HashCode;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -33,7 +32,6 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
     }
 
     public boolean removeIndex(AbstractTreeNode<K> root, K identifier) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
-        System.out.println("Removing id: " + identifier);
         List<AbstractTreeNode<K>> path = new LinkedList<>();
         BPlusTreeUtils.getPathToResponsibleNode(indexIOSession, path, root, identifier, degree);
         boolean result = false;
@@ -358,13 +356,8 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
         int keyToRemoveIndex = siblingIndex == 0 ? siblingIndex : siblingIndex - 1;
         K parentKeyAtIndex = parent.getKeyList(degree).get(keyToRemoveIndex);
 
-        System.out.println("Parent keys: " + parent.getKeyList(degree, valueIndexBinaryObjectFactory.size()));
-        System.out.println("Sibling keys: " + sibling.getKeyList(degree, valueIndexBinaryObjectFactory.size()));
-        System.out.println("Child keys: " + child.getKeyList(degree, valueIndexBinaryObjectFactory.size()));
         parent.removeKey(keyToRemoveIndex, degree);
         parent.removeChild(siblingIndex, degree);
-        System.out.println("After child remove: " + HashCode.fromBytes(parent.getData()));
-        System.out.println("Keys: " + parent.getKeyList(degree));
 
         /*
          *   We may have removed the only key remaining in the parent
@@ -374,12 +367,9 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
         if (parent.getKeyList(degree).isEmpty()){
             if (!child.isLeaf()) {
                 assert child instanceof InternalTreeNode;
-                System.out.println("Child before: " + HashCode.fromBytes(child.getData()));
                 ((InternalTreeNode<K>) child).addKey(parentKeyAtIndex, degree);
-                System.out.println("Child after: " + HashCode.fromBytes(child.getData()));
             }
             if (parent.isRoot()){
-                System.out.println("Child is new root");
                 child.setAsRoot();
                 parent.unsetAsRoot();
             }

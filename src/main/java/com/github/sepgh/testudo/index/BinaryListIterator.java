@@ -4,6 +4,8 @@ import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.storage.db.DBObject;
+import com.github.sepgh.testudo.utils.BinaryUtils;
+import com.google.common.primitives.Ints;
 import lombok.Getter;
 
 import java.util.ListIterator;
@@ -15,90 +17,75 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
 
     private final EngineConfig engineConfig;
     private final IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory;
-    private int numberOfElements = 0;
-    private volatile int cursor = 0;
+    private volatile int cursor = -1;
+    private boolean lastCallWasNext = false;
     @Getter
     private byte[] data;
-    private volatile V currentValue;
+    public static final int META_SIZE_END_CURSOR = Integer.BYTES;
+    public static final int META_INDEX_END_CURSOR = 0;
+    public static final int META_INDEX_END_CURSOR_DEFAULT = -1;
+    public static final int META_SIZE = META_SIZE_END_CURSOR;
 
     public BinaryListIterator(EngineConfig engineConfig, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory, byte[] data) {
         this.engineConfig = engineConfig;
         this.valueIndexBinaryObjectFactory = valueIndexBinaryObjectFactory;
         this.data = data;
-        this.numberOfElements = this.data.length / valueIndexBinaryObjectFactory.size();
     }
 
-    private void fixCursorBound(){
-        if (cursor < 0)
-            cursor = 0;
-        if (cursor >= numberOfElements)
-            cursor = numberOfElements - 1;
+    public void initialize() {
+        System.arraycopy(
+                Ints.toByteArray(META_INDEX_END_CURSOR_DEFAULT),
+                0,
+                data,
+                0,
+                META_SIZE_END_CURSOR
+        );
     }
 
-    public void resetCursor(){
-        cursor = 0;
-        currentValue = null;
+    private int getNumberOfElements() {
+        return this.data.length - META_SIZE / valueIndexBinaryObjectFactory.size();
+    }
+
+    public int getLastItemIndex(){
+        return BinaryUtils.bytesToInteger(data, META_INDEX_END_CURSOR);
+    }
+
+    public void setLastItemIndex(int index) {
+        byte[] byteArray = Ints.toByteArray(index);
+        System.arraycopy(byteArray, 0, data, META_INDEX_END_CURSOR, byteArray.length);
     }
 
     @Override
     public boolean hasNext() {
-        if (cursor < numberOfElements){
-            fixCursorBound();
-            currentValue = getObjectAt(cursor);
-            return true;
-        }
-        currentValue = null;
-        return false;
+        return cursor + 1 <= getLastItemIndex();
     }
 
     @Override
-    public V next() {
-        if (cursor >= numberOfElements)
-            throw new NoSuchElementException();
-
-        synchronized (this){
-            try {
-                if (currentValue != null){
-                    cursor++;
-                    return currentValue;
-                }
-            } finally {
-                currentValue = null;
-            }
+    public synchronized V next() {
+        if (cursor + 1 <= getLastItemIndex()) {
+            V next = getObjectAt(cursor + 1);
             cursor++;
-            return getObjectAt(cursor);
+            lastCallWasNext = true;
+            return next;
         }
+
+        throw new NoSuchElementException();
     }
 
     @Override
     public boolean hasPrevious() {
-        if (cursor >= 0){
-            fixCursorBound();
-            currentValue = getObjectAt(cursor);
-            return true;
-        }
-        currentValue = null;
-        return false;
+        return cursor >= 0;
     }
 
     @Override
-    public V previous() {
-        if (cursor < 0)
+    public synchronized V previous() {
+        if (cursor < 0) {
             throw new NoSuchElementException();
-
-        synchronized (this){
-            try {
-                if (currentValue != null){
-                    cursor--;
-                    return currentValue;
-                }
-            } finally {
-                currentValue = null;
-            }
-
-            cursor--;
-            return getObjectAt(cursor);
         }
+
+        V previous = getObjectAt(cursor);
+        cursor--;
+        return previous;
     }
 
     @Override
@@ -118,26 +105,20 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
 
     public boolean remove(V value) {
         int i = binarySearchMatching(value);
+
         if (i == -1)
             return false;
 
-        // Shift back the bytes after the element
-        System.arraycopy(
-                this.data,
-                (i + 1) * this.valueIndexBinaryObjectFactory.size(),
-                this.data,
-                i * this.valueIndexBinaryObjectFactory.size(),
-                this.data.length - (i + 1) * this.valueIndexBinaryObjectFactory.size()
-        );
+        clearObjectAt(i);
 
-        // Remove the end
-        System.arraycopy(
-                new byte[this.valueIndexBinaryObjectFactory.size()],
-                0,
-                this.data,
-                this.data.length - this.valueIndexBinaryObjectFactory.size(),
-                this.valueIndexBinaryObjectFactory.size()
-        );
+        if (i < this.getLastItemIndex()){
+            for (int j = i; j < getLastItemIndex() - 1; j++) {
+                byte[] bytesAtJPlusOne = getObjectBytes(j + 1);
+                setObjectBytes(j, bytesAtJPlusOne);
+            }
+        }
+
+        this.setLastItemIndex(this.getLastItemIndex() - 1);
 
         return true;
     }
@@ -157,8 +138,9 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
     }
     
     public boolean addNew(V v) throws IndexBinaryObject.InvalidIndexBinaryObject {
-
-        if (getObjectAt(this.numberOfElements - 1) != null){  // Todo: we wont have null object. track last element
+        // GROW BYTE[] IF POSSIBLE
+        int lastItemIndex = getLastItemIndex();
+        if (lastItemIndex == this.getNumberOfElements() - 1) {
             if ((engineConfig.getDbPageSize()) > getDbObjectSize() + (5 * valueIndexBinaryObjectFactory.size())){
                 byte[] newData = new byte[getDbObjectSize() + (5 * valueIndexBinaryObjectFactory.size())];
                 System.arraycopy(
@@ -180,58 +162,65 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         if (i == -1)
             return false;
 
-        if (i != 0){
-            System.arraycopy(
-                    this.data,
-                    i * this.valueIndexBinaryObjectFactory.size(),
-                    this.data,
-                    (i + 1) * this.valueIndexBinaryObjectFactory.size(),
-                    this.data.length - (i + 1) * this.valueIndexBinaryObjectFactory.size()
-            );
+        if (i <= this.getLastItemIndex()){
+            for (int j = this.getLastItemIndex(); j > i; j--) {
+                byte[] bytesAtJ = getObjectBytes(j);
+                setObjectBytes(j+1, bytesAtJ);
+            }
         }
 
-        System.arraycopy(
-                this.valueIndexBinaryObjectFactory.create(v).getBytes(),
-                0,
-                this.data,
-                i * this.valueIndexBinaryObjectFactory.size(),
-                this.valueIndexBinaryObjectFactory.size()
-        );
-
-        this.numberOfElements = this.data.length / valueIndexBinaryObjectFactory.size();
+        setObjectAt(i, v);
+        setLastItemIndex(lastItemIndex + 1);
         return true;
     }
 
     private V getObjectAt(int index) {
-        int offset = index * valueIndexBinaryObjectFactory.size();
+        int offset = META_SIZE + index * valueIndexBinaryObjectFactory.size();
         IndexBinaryObject<V> vIndexBinaryObject = valueIndexBinaryObjectFactory.create(this.data, offset);
         return vIndexBinaryObject.asObject();
     }
 
+    private byte[] getObjectBytes(int index) {
+        int offset = META_SIZE + index * valueIndexBinaryObjectFactory.size();
+        IndexBinaryObject<V> vIndexBinaryObject = valueIndexBinaryObjectFactory.create(this.data, offset);
+        return vIndexBinaryObject.getBytes();
+    }
+
+    private void clearObjectAt(int index) {
+        int offset = META_SIZE + index * valueIndexBinaryObjectFactory.size();
+        System.arraycopy(
+                new byte[valueIndexBinaryObjectFactory.size()],
+                0,
+                this.data,
+                offset,
+                valueIndexBinaryObjectFactory.size()
+        );
+    }
+
+    private void setObjectBytes(int index, byte[] bytes) {
+        int offset = META_SIZE + index * valueIndexBinaryObjectFactory.size();
+        System.arraycopy(bytes, 0, this.data, offset, bytes.length);
+    }
+
+    private void setObjectAt(int index, V v) throws IndexBinaryObject.InvalidIndexBinaryObject {
+        int offset = META_SIZE + index * valueIndexBinaryObjectFactory.size();
+        IndexBinaryObject<V> vIndexBinaryObject = valueIndexBinaryObjectFactory.create(v);
+        byte[] bytes = vIndexBinaryObject.getBytes();
+        System.arraycopy(bytes, 0, this.data, offset, bytes.length);
+    }
+
     private int binarySearchPosition(V v){
         int low = 0;
-        int high = numberOfElements - 1;
+        int high = getLastItemIndex();
         int mid = 0;
+
+        if (v.compareTo(getObjectAt(high)) > 0)
+            return high + 1;
 
         while (low <= high) {
             mid = low + (high - low) / 2;
 
             V objectAtMid = getObjectAt(mid);
-
-            // Todo: This is done linearly :/
-            //       Alternative solution: keep track of last element index (store it in the data)
-            //       If last element is smaller than the new value, just add the new value to last+1
-            //       Otherwise, run the binary search with low=0 and high=last so we wont face problems in middle
-            // START SECTION OF COMMENT ^
-            if (objectAtMid == null){   // Todo: we actually wont have a null object
-                for (int i = low; i < mid; i++){
-                    if (getObjectAt(i) != null) {
-                        return i;
-                    }
-                }
-                return mid;
-            }
-            // END SECTION OF COMMENT
 
             if (objectAtMid.compareTo(v) == 0) {
                 return -1;
@@ -247,7 +236,7 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
 
     private int binarySearchMatching(V v) {
         int low = 0;
-        int high = numberOfElements - 1;
+        int high = getLastItemIndex();
 
         while (low <= high) {
             int mid = low + (high - low) / 2;
@@ -264,5 +253,9 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         }
 
         return -1;
+    }
+
+    public void resetCursor() {
+        cursor = -1;
     }
 }

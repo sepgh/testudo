@@ -6,6 +6,7 @@ import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.index.BinaryListIterator;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.serialization.IntegerSerializer;
+import com.google.common.primitives.Ints;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,26 +39,33 @@ public class BinaryListIteratorTestCase {
     public void test_next_previous() throws Exception {
         IndexBinaryObjectFactory<Integer> factory = new IntegerSerializer().getIndexBinaryObjectFactory(TestParams.FAKE_FIELD);
 
-        byte[] data = new byte[factory.size() * 3];
+        byte[] data = new byte[BinaryListIterator.META_SIZE + factory.size() * 3];
+        System.arraycopy(
+                Ints.toByteArray(2),
+                0,
+                data,
+                0,
+                factory.size()
+        );
         System.arraycopy(
                 factory.create(1).getBytes(),
                 0,
                 data,
-                0,
+                BinaryListIterator.META_SIZE,
                 factory.size()
         );
         System.arraycopy(
                 factory.create(2).getBytes(),
                 0,
                 data,
-                factory.size(),
+                BinaryListIterator.META_SIZE + factory.size(),
                 factory.size()
         );
         System.arraycopy(
                 factory.create(3).getBytes(),
                 0,
                 data,
-                2 * factory.size(),
+                BinaryListIterator.META_SIZE + 2 * factory.size(),
                 factory.size()
         );
 
@@ -94,26 +102,33 @@ public class BinaryListIteratorTestCase {
     public void test_remove() throws Exception {
         IndexBinaryObjectFactory<Integer> factory = new IntegerSerializer().getIndexBinaryObjectFactory(TestParams.FAKE_FIELD);
 
-        byte[] data = new byte[factory.size() * 3];
+        byte[] data = new byte[BinaryListIterator.META_SIZE + factory.size() * 3];
+        System.arraycopy(
+                Ints.toByteArray(2),
+                0,
+                data,
+                0,
+                BinaryListIterator.META_SIZE
+        );
         System.arraycopy(
                 factory.create(1).getBytes(),
                 0,
                 data,
-                0,
+                BinaryListIterator.META_SIZE,
                 factory.size()
         );
         System.arraycopy(
                 factory.create(2).getBytes(),
                 0,
                 data,
-                factory.size(),
+                BinaryListIterator.META_SIZE + factory.size(),
                 factory.size()
         );
         System.arraycopy(
                 factory.create(3).getBytes(),
                 0,
                 data,
-                2 * factory.size(),
+                BinaryListIterator.META_SIZE + factory.size() * 2,
                 factory.size()
         );
 
@@ -147,19 +162,26 @@ public class BinaryListIteratorTestCase {
     public void test_addNew() throws Exception {
         IndexBinaryObjectFactory<Integer> factory = new IntegerSerializer().getIndexBinaryObjectFactory(TestParams.FAKE_FIELD);
 
-        byte[] data = new byte[factory.size() * 3];
+        byte[] data = new byte[BinaryListIterator.META_SIZE + factory.size() * 3];
+        System.arraycopy(
+                Ints.toByteArray(1),
+                0,
+                data,
+                0,
+                BinaryListIterator.META_SIZE
+        );
         System.arraycopy(
                 factory.create(1).getBytes(),
                 0,
                 data,
-                0,
+                factory.size(),
                 factory.size()
         );
         System.arraycopy(
                 factory.create(2).getBytes(),
                 0,
                 data,
-                factory.size(),
+                factory.size() * 2,
                 factory.size()
         );
 

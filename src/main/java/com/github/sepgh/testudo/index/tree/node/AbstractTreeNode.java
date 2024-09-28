@@ -7,7 +7,6 @@ import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.TreeNodeUtils;
 import com.github.sepgh.testudo.utils.KVSize;
 import com.google.common.collect.ImmutableList;
-import com.google.common.hash.HashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -98,8 +97,6 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
 
     @SneakyThrows
     public void removeKey(int idx, int degree, int valueSize) {
-        System.out.println("index: " + idx);
-        System.out.println("Before: " + HashCode.fromBytes(getData()));
         List<K> keyList = this.getKeyList(degree, valueSize);
         TreeNodeUtils.removeKeyAtIndex(this, idx, kIndexBinaryObjectFactory.size(), valueSize);
         List<K> subList = keyList.subList(idx + 1, keyList.size());
@@ -118,7 +115,6 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
                 TreeNodeUtils.removeKeyAtIndex(this, i, kIndexBinaryObjectFactory.size(), valueSize);
             }
         }
-        System.out.println("After: " + HashCode.fromBytes(getData()));
     }
 
     @Getter

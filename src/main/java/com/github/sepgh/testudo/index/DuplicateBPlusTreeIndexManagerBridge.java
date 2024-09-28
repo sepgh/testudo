@@ -83,10 +83,16 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
 
         }
 
+        // Creating new binary list iterator and add the object
 
-        byte[] bytes = new byte[valueIndexBinaryObjectFactory.size() * 5];   // Todo: "5" here is just random! Need a better plan?
-        System.arraycopy(valueIndexBinaryObjectFactory.create(value).getBytes(), 0, bytes, 0, valueIndexBinaryObjectFactory.size());
-        Pointer pointer = databaseStorageManager.store(collectionId, -1, bytes);
+        byte[] bytes = new byte[BinaryListIterator.META_SIZE + valueIndexBinaryObjectFactory.size() * 5];   // Todo: "5" here is just random! Need a better plan?
+        BinaryListIterator<V> binaryListIterator = new BinaryListIterator<>(engineConfig, valueIndexBinaryObjectFactory, bytes);
+        binaryListIterator.initialize();
+        binaryListIterator.addNew(value);
+
+        // Insert to DB
+
+        Pointer pointer = databaseStorageManager.store(collectionId, -1, binaryListIterator.getData());
         try {
             this.indexManager.addIndex(identifier, pointer);
             return true;
