@@ -14,6 +14,7 @@ public class SerializerRegistry {
         this.register(new BooleanSerializer());
         this.register(new CharArrSerializer());
         this.register(new UnsignedLongSerializer());
+        this.register(new UnsignedIntegerSerializer());
     }
 
     public static SerializerRegistry getInstance(){

@@ -1,9 +1,11 @@
 package com.github.sepgh.testudo;
 
 
+import com.github.sepgh.testudo.serialization.FieldType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 
 import java.util.concurrent.TimeUnit;
 
@@ -54,7 +56,15 @@ public class EngineConfig {
     private long dbPageMaxFileSize = UNLIMITED_FILE_SIZE;
     @Builder.Default
     private boolean supportZeroInClusterKeys = false;
+    @Builder.Default
+    private ClusterKeyType clusterKeyType = ClusterKeyType.ULONG;
 
+    @Getter
+    @AllArgsConstructor
+    public enum ClusterKeyType {
+        UINT(FieldType.UNSIGNED_INT.getName()), ULONG(FieldType.UNSIGNED_LONG.getName());
+        private final String typeName;
+    }
 
     public enum OperationMode {
         ASYNC, SYNC

@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.operation;
 
 import com.github.sepgh.testudo.exception.*;
+import com.github.sepgh.testudo.index.DuplicateIndexManager;
 import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
@@ -44,14 +45,14 @@ public class CollectionSchemeUpdater {
     }
 
     @SneakyThrows
-    public <K extends Comparable<K>> void update() {
+    public <K extends Number & Comparable<K>> void update() {
         assert this.collectionFieldsUpdate != null;
 
         this.validateTypeCompatibilities();
 
-        UniqueTreeIndexManager<K, Pointer> pkUniqueTreeIndexManager = (UniqueTreeIndexManager<K, Pointer>) this.schemeManager.getPKIndexManager(this.collectionFieldsUpdate.getBefore());
+        UniqueTreeIndexManager<K, Pointer> clusterIndexManager = (UniqueTreeIndexManager<K, Pointer>) this.schemeManager.getClusterIndexManager(this.collectionFieldsUpdate.getBefore());
 
-        LockableIterator<? extends KeyValue<K, Pointer>> lockableIterator = pkUniqueTreeIndexManager.getSortedIterator();
+        LockableIterator<? extends KeyValue<K, Pointer>> lockableIterator = clusterIndexManager.getSortedIterator();
 
         lockableIterator.forEachRemaining(keyValue -> {
             Pointer pointer = keyValue.value();
@@ -74,7 +75,7 @@ public class CollectionSchemeUpdater {
                             } else {
                                 dbObject.deactivate();
                                 try {
-                                    bytes = createNew(dbObject, pkUniqueTreeIndexManager, keyValue);
+                                    bytes = createNew(dbObject, clusterIndexManager, keyValue);
                                 } catch (IOException | ExecutionException | InterruptedException |
                                          IndexExistsException | InternalOperationException |
                                          IndexBinaryObject.InvalidIndexBinaryObject |
@@ -84,14 +85,9 @@ public class CollectionSchemeUpdater {
                             }
 
                             try {
-                                Comparable fieldAsObject = CollectionSerializationUtil.getValueOfFieldAsObject(
-                                        collectionFieldsUpdate.getAfter(),
-                                        collectionFieldsUpdate.getAfter().getPrimaryField().get(),
-                                        bytes
-                                );
-                                updateIndexes(bytes, fieldAsObject);
+                                updateIndexes(bytes, keyValue.key());
                             } catch (DeserializationException | IndexExistsException | InternalOperationException |
-                                     IndexBinaryObject.InvalidIndexBinaryObject e) {
+                                     IndexBinaryObject.InvalidIndexBinaryObject | IOException | ExecutionException | InterruptedException e) {
                                 throw new RuntimeException(e);
                             }
 
@@ -102,24 +98,38 @@ public class CollectionSchemeUpdater {
             }
         });
 
+        purgeIndexesOfRemovedFields();
+
     }
 
-    private <K extends Comparable<K>, V> void updateIndexes(byte[] obj, V pk) throws DeserializationException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    private void purgeIndexesOfRemovedFields() {
         for (Scheme.Field field : collectionFieldsUpdate.getRemovedFields()) {
             if (field.isIndex()){
-                UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.schemeManager.getFieldIndexManagerProvider().getUniqueIndexManager(collectionFieldsUpdate.getBefore(), field);
-                uniqueTreeIndexManager.purgeIndex();
+                if (field.isIndexUnique()){
+                    UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.schemeManager.getFieldIndexManagerProvider().getUniqueIndexManager(collectionFieldsUpdate.getBefore(), field);
+                    uniqueTreeIndexManager.purgeIndex();
+                } else {
+                    DuplicateIndexManager<?, ?> duplicateIndexManager = this.schemeManager.getFieldIndexManagerProvider().getDuplicateIndexManager(collectionFieldsUpdate.getBefore(), field);
+                    duplicateIndexManager.purgeIndex();
+                }
             }
         }
+    }
 
+    private <K extends Comparable<K>, V extends Number & Comparable<V>> void updateIndexes(byte[] obj, V clusterId) throws DeserializationException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IOException, ExecutionException, InterruptedException {
         for (Scheme.Field field : collectionFieldsUpdate.getNewFields()) {
             if (!field.isIndex()){
                 return;
             }
 
-            UniqueTreeIndexManager<K, V> uniqueTreeIndexManager = (UniqueTreeIndexManager<K, V>) this.schemeManager.getFieldIndexManagerProvider().getUniqueIndexManager(collectionFieldsUpdate.getAfter(), field);
-            K value = CollectionSerializationUtil.getValueOfFieldAsObject(collectionFieldsUpdate.getAfter(), field, obj);
-            uniqueTreeIndexManager.addIndex(value, pk);
+            K key = CollectionSerializationUtil.getValueOfFieldAsObject(collectionFieldsUpdate.getAfter(), field, obj);
+            if (field.isIndexUnique()){
+                UniqueTreeIndexManager<K, V> uniqueTreeIndexManager = (UniqueTreeIndexManager<K, V>) this.schemeManager.getFieldIndexManagerProvider().getUniqueIndexManager(collectionFieldsUpdate.getAfter(), field);
+                uniqueTreeIndexManager.addIndex(key, clusterId);
+            } else {
+                DuplicateIndexManager<K, V> duplicateIndexManager = (DuplicateIndexManager<K, V>) this.schemeManager.getFieldIndexManagerProvider().getDuplicateIndexManager(collectionFieldsUpdate.getBefore(), field);
+                duplicateIndexManager.addIndex(key, clusterId);
+            }
         }
 
     }

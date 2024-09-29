@@ -7,6 +7,7 @@ import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
+import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.operation.DefaultFieldIndexManagerProvider;
 import com.github.sepgh.testudo.operation.FieldIndexManagerProvider;
 import com.github.sepgh.testudo.scheme.Scheme;
@@ -22,6 +23,7 @@ import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 import com.google.common.primitives.Ints;
+import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
@@ -70,7 +72,7 @@ public class SchemeManagerTestCase {
     @Test
     public void test_SchemeManager() throws IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        FieldIndexManagerProvider fieldIndexManagerProvider = new DefaultFieldIndexManagerProvider(engineConfig, indexStorageManagerFactory);
+        FieldIndexManagerProvider fieldIndexManagerProvider = new DefaultFieldIndexManagerProvider(engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
         Scheme scheme = Scheme.builder()
                 .dbName("test")
                 .version(1)
@@ -167,7 +169,7 @@ public class SchemeManagerTestCase {
     @Test
     public void test_SchemeManager_WithData() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        DefaultFieldIndexManagerProvider fieldIndexManagerProvider = new DefaultFieldIndexManagerProvider(engineConfig, indexStorageManagerFactory);
+        DefaultFieldIndexManagerProvider fieldIndexManagerProvider = new DefaultFieldIndexManagerProvider(engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
 
         // --- CREATING BASE SCHEME --- //
         Scheme scheme = Scheme.builder()
@@ -218,7 +220,7 @@ public class SchemeManagerTestCase {
         Assertions.assertTrue(Files.exists(path));
 
         // --- ADD DATA TO THE COLLECTION --- //
-        byte[] data = new byte[]{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01};
+        byte[] data = new byte[]{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01};  // We have 2 integer fields defined in scheme above, so our data is also 2 int fields
         Pointer pointer = this.databaseStorageManager.store(1, schemeManager.getScheme().getVersion(), data);
 
         // --- READING DATA AND VERIFYING DB CAN RETURN PROPER OBJ --- //
@@ -233,12 +235,11 @@ public class SchemeManagerTestCase {
         Assertions.assertEquals(1, dbObject.getVersion());
 
         // --- ADDING THE DATA TO INDEX, WHICH IS CLUSTER INDEX AND IS AVAILABLE TO MANAGER TOO --- //
-        UniqueTreeIndexManager<Integer, Pointer> uniqueTreeIndexManager = (UniqueTreeIndexManager<Integer, Pointer>) fieldIndexManagerProvider.getUniqueIndexManager(
-                scheme.getCollections().getFirst(),
-                scheme.getCollections().getFirst().getFields().getFirst()
+        UniqueTreeIndexManager<UnsignedLong, Pointer> uniqueTreeIndexManager = (UniqueTreeIndexManager<UnsignedLong, Pointer>) fieldIndexManagerProvider.getClusterIndexManager(
+                scheme.getCollections().getFirst()
         );
-        uniqueTreeIndexManager.addIndex(1, pointer);
-        Optional<Pointer> optionalPointer = uniqueTreeIndexManager.getIndex(1);
+        AbstractTreeNode<UnsignedLong> treeNode = uniqueTreeIndexManager.addIndex(UnsignedLong.valueOf(1), pointer);
+        Optional<Pointer> optionalPointer = uniqueTreeIndexManager.getIndex(UnsignedLong.valueOf(1));
         Assertions.assertTrue(optionalPointer.isPresent());
         Assertions.assertEquals(pointer, optionalPointer.get());
 
@@ -266,7 +267,7 @@ public class SchemeManagerTestCase {
         // --- SELECTING OBJECT USING OLD POINTER TO MAKE SURE ITS CHANGED AND IS NO LONGER ALIVE --- //
         dbObject = this.databaseStorageManager.select(pointer).get();
         Assertions.assertFalse(dbObject.isAlive());
-        optionalPointer = uniqueTreeIndexManager.getIndex(1);
+        optionalPointer = uniqueTreeIndexManager.getIndex(UnsignedLong.valueOf(1));
         Assertions.assertNotEquals(pointer, optionalPointer.get());
 
         // --- SELECTING UPDATED OBJECT AND CHECKING IF DEFAULT VALUE OF NEWLY ADDED FIELD IS SET --- //
@@ -293,7 +294,7 @@ public class SchemeManagerTestCase {
         );
         schemeManager.update();
 
-        optionalPointer = uniqueTreeIndexManager.getIndex(1);
+        optionalPointer = uniqueTreeIndexManager.getIndex(UnsignedLong.valueOf(1));
         Assertions.assertEquals(pointer, optionalPointer.get());
         dbObject = this.databaseStorageManager.select(pointer).get();
         Assertions.assertTrue(dbObject.isAlive());
@@ -311,6 +312,7 @@ public class SchemeManagerTestCase {
                 .type(FieldType.INT.getName())
                 .name("x")
                 .defaultValue(String.valueOf(defaultValue))
+                .indexUnique(true)
                 .index(true)
                 .build();
         fields.add(newField);
@@ -325,11 +327,11 @@ public class SchemeManagerTestCase {
         schemeManager.update();
 
 
-        UniqueTreeIndexManager<Integer, Integer> newFieldUniqueTreeIndexManager = (UniqueTreeIndexManager<Integer, Integer>) fieldIndexManagerProvider.getUniqueIndexManager(scheme.getCollections().getFirst(), newField);
+        UniqueTreeIndexManager<Integer, UnsignedLong> newFieldUniqueTreeIndexManager = (UniqueTreeIndexManager<Integer, UnsignedLong>) fieldIndexManagerProvider.getUniqueIndexManager(scheme.getCollections().getFirst(), newField);
         Assertions.assertEquals(1, newFieldUniqueTreeIndexManager.size());
-        Optional<Integer> optionalIndexValue = newFieldUniqueTreeIndexManager.getIndex(defaultValue);
+        Optional<UnsignedLong> optionalIndexValue = newFieldUniqueTreeIndexManager.getIndex(defaultValue);
         Assertions.assertTrue(optionalIndexValue.isPresent());
-        Assertions.assertEquals(1, optionalIndexValue.get());
+        Assertions.assertEquals(UnsignedLong.valueOf(1L), optionalIndexValue.get());
 
     }
 }

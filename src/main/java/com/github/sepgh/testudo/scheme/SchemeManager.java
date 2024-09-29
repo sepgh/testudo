@@ -138,9 +138,18 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
         return uniqueTreeIndexManager.getSortedIterator();
     }
 
+    public UniqueTreeIndexManager<?, Pointer> getClusterIndexManager(Scheme.Collection collection) {
+        return this.fieldIndexManagerProvider.getClusterIndexManager(collection);
+    }
+
+    @SneakyThrows
+    public LockableIterator<? extends KeyValue<?, ?>> getClusterIterator(Scheme.Collection collection) {
+        return getClusterIndexManager(collection).getSortedIterator();
+    }
+
     @SneakyThrows
     private void collectionRemoved(Scheme.Collection collection) {
-        LockableIterator<? extends KeyValue<?, ?>> lockableIterator = getPKIterator(collection);
+        LockableIterator<? extends KeyValue<?, ?>> lockableIterator = getClusterIterator(collection);
         try {
             lockableIterator.lock();
             lockableIterator.forEachRemaining(this::removeDBObject);

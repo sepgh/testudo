@@ -5,8 +5,8 @@ import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 
 public class IndexBinaryObjectSerializer<T extends Comparable<T>> implements IndexBinaryObject<T> {
-    private final byte[] bytes;
-    private final Serializer<T> serializer;
+    protected final byte[] bytes;
+    protected final Serializer<T> serializer;
 
     public IndexBinaryObjectSerializer(byte[] bytes, int beginning, Serializer<T> serializer) {
         this.serializer = serializer;

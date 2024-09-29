@@ -103,11 +103,11 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
     @Override
     public Optional<V> getIndex(K identifier) throws InternalOperationException {
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
-
         AbstractLeafTreeNode<K, V> baseTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory, valueIndexBinaryObjectFactory);
         for (KeyValue<K, V> entry : baseTreeNode.getKeyValueList(degree)) {
-            if (entry.key() == identifier)
+            if (entry.key().equals(identifier)){
                 return Optional.of(entry.value());
+            }
         }
 
         return Optional.empty();

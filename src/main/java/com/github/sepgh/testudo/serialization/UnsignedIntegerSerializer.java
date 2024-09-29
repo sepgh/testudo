@@ -3,22 +3,22 @@ package com.github.sepgh.testudo.serialization;
 import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.scheme.Scheme;
-import com.google.common.primitives.UnsignedLong;
+import com.google.common.primitives.UnsignedInteger;
 
 import java.math.BigInteger;
 import java.util.List;
 
 import static com.github.sepgh.testudo.utils.BinaryUtils.toByteArray;
 
-public class UnsignedLongSerializer implements Serializer<UnsignedLong> {
+public class UnsignedIntegerSerializer implements Serializer<UnsignedInteger> {
     @Override
-    public Class<UnsignedLong> getType() {
-        return UnsignedLong.class;
+    public Class<UnsignedInteger> getType() {
+        return UnsignedInteger.class;
     }
 
     @Override
     public String typeName() {
-        return FieldType.UNSIGNED_LONG.getName();
+        return FieldType.UNSIGNED_INT.getName();
     }
 
     @Override
@@ -28,32 +28,32 @@ public class UnsignedLongSerializer implements Serializer<UnsignedLong> {
 
     @Override
     public int maxSize() {
-        return Long.BYTES;
+        return Integer.BYTES;
     }
 
     @Override
     public int minSize() {
-        return Long.BYTES;
+        return Integer.BYTES;
     }
 
     @Override
-    public byte[] serialize(UnsignedLong unsignedLong, Scheme.Meta meta) throws SerializationException {
-        return toByteArray(unsignedLong);
+    public byte[] serialize(UnsignedInteger unsignedInteger, Scheme.Meta meta) throws SerializationException {
+        return toByteArray(unsignedInteger);
     }
 
     @Override
-    public UnsignedLong deserialize(byte[] bytes, Scheme.Meta meta) throws DeserializationException {
+    public UnsignedInteger deserialize(byte[] bytes, Scheme.Meta meta) throws DeserializationException {
         BigInteger bigInteger = new BigInteger(1, bytes);
-        return UnsignedLong.valueOf(bigInteger);
+        return UnsignedInteger.valueOf(bigInteger);
     }
 
     @Override
     public int getSize(Scheme.Meta meta) {
-        return Long.BYTES;
+        return Integer.BYTES;
     }
 
     @Override
     public byte[] serializeDefault(String defaultValue, Scheme.Meta meta) throws SerializationException {
-        return new byte[Long.BYTES];
+        return new byte[Integer.BYTES];
     }
 }
