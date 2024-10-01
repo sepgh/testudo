@@ -7,6 +7,7 @@ import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.TreeNodeUtils;
 import com.github.sepgh.testudo.utils.CollectionUtils;
 import com.google.common.collect.ImmutableList;
+import com.google.common.hash.HashCode;
 import lombok.*;
 
 import javax.annotation.Nullable;
@@ -38,10 +39,10 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
             TreeNodeUtils.setKeyAtIndex(this, keyPointer.index, kIndexBinaryObjectFactory.create(keyPointer.key), PointerIndexBinaryObject.BYTES);
 
             if (i == 0){
-                TreeNodeUtils.setPointerToChild(this, 0, keyPointer.left, kIndexBinaryObjectFactory.size());
-                TreeNodeUtils.setPointerToChild(this, 1, keyPointer.right, kIndexBinaryObjectFactory.size());
+                TreeNodeUtils.setChildPointerAtIndex(this, 0, keyPointer.left, kIndexBinaryObjectFactory.size());
+                TreeNodeUtils.setChildPointerAtIndex(this, 1, keyPointer.right, kIndexBinaryObjectFactory.size());
             } else {
-                TreeNodeUtils.setPointerToChild(this, keyPointer.index + 1, keyPointer.right, kIndexBinaryObjectFactory.size());
+                TreeNodeUtils.setChildPointerAtIndex(this, keyPointer.index + 1, keyPointer.right, kIndexBinaryObjectFactory.size());
             }
             i++;
         }
@@ -82,12 +83,12 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
         modified();
         int i = this.addKey(identifier, degree);
         if (left != null){
-            TreeNodeUtils.setPointerToChild(this, i, left, kIndexBinaryObjectFactory.size());
+            TreeNodeUtils.setChildPointerAtIndex(this, i, left, kIndexBinaryObjectFactory.size());
         }
         else if (clearForNull)
             TreeNodeUtils.removeChildAtIndex(this, i, kIndexBinaryObjectFactory.size());
         if (right != null)
-            TreeNodeUtils.setPointerToChild(this, i+1, right, kIndexBinaryObjectFactory.size());
+            TreeNodeUtils.setChildPointerAtIndex(this, i+1, right, kIndexBinaryObjectFactory.size());
         else if (clearForNull)
             TreeNodeUtils.removeChildAtIndex(this, i + 1, kIndexBinaryObjectFactory.size());
     }
@@ -121,7 +122,7 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
     }
 
     public void setChildAtIndex(int index, Pointer pointer){
-        TreeNodeUtils.setPointerToChild(this, index, pointer, kIndexBinaryObjectFactory.size());
+        TreeNodeUtils.setChildPointerAtIndex(this, index, pointer, kIndexBinaryObjectFactory.size());
     }
 
     public Pointer getChildAtIndex(int index) {
@@ -188,7 +189,7 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
         int lastIndex = -1;
         for (int i = 0; i < subList.size(); i++) {
             lastIndex = idx + i;
-            TreeNodeUtils.setPointerToChild(this, lastIndex, subList.get(i), kIndexBinaryObjectFactory.size());
+            TreeNodeUtils.setChildPointerAtIndex(this, lastIndex, subList.get(i), kIndexBinaryObjectFactory.size());
         }
         if (lastIndex != -1){
             for (int i = lastIndex + 1; i < degree; i++){

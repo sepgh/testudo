@@ -40,11 +40,6 @@ public class IndexBinaryObjectSerializer<T extends Comparable<T>> implements Ind
     }
 
     @Override
-    public boolean hasValue() {
-        return asObject() != null;
-    }
-
-    @Override
     public int size() {
         return bytes.length;
     }

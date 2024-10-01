@@ -1,5 +1,7 @@
 package com.github.sepgh.testudo.utils;
 
+import com.google.common.hash.HashCode;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
@@ -34,6 +36,7 @@ public class FileUtils {
 
 
     public static CompletableFuture<Long> allocate(AsynchronousFileChannel asynchronousFileChannel, int size) throws IOException {
+        System.out.println("Allocating " + size + " bytes at end of file");
         CompletableFuture<Long> future = new CompletableFuture<>();
         long fileSize = asynchronousFileChannel.size();
         asynchronousFileChannel.write(ByteBuffer.allocate(size), fileSize, null, new CompletionHandler<Integer, Object>() {
@@ -51,6 +54,7 @@ public class FileUtils {
     }
 
     public static CompletableFuture<Long> allocate(AsynchronousFileChannel asynchronousFileChannel, long position, int size) throws IOException {
+        System.out.println("Allocating " + size + " bytes at " + position);
         CompletableFuture<Long> future = new CompletableFuture<>();
 
         int readSize = (int) (asynchronousFileChannel.size() - position);

@@ -20,6 +20,32 @@ public interface NodeFactory<K extends Comparable<K>> {
     }
     AbstractTreeNode<K> fromBytes(byte[] emptyNode, AbstractTreeNode.Type type);
 
+
+    class DefaultNodeFactory<K extends Comparable<K>> implements NodeFactory<K> {
+        private final IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory;
+        private final IndexBinaryObjectFactory<?> valueIndexBinaryObjectFactory;
+
+        public DefaultNodeFactory(IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory, IndexBinaryObjectFactory<?> valueIndexBinaryObjectFactory) {
+            this.keyIndexBinaryObjectFactory = keyIndexBinaryObjectFactory;
+            this.valueIndexBinaryObjectFactory = valueIndexBinaryObjectFactory;
+        }
+
+        @Override
+        public AbstractTreeNode<K> fromBytes(byte[] bytes) {
+            if ((bytes[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT)
+                return new AbstractLeafTreeNode<>(bytes, keyIndexBinaryObjectFactory, valueIndexBinaryObjectFactory);
+            return new InternalTreeNode<>(bytes, keyIndexBinaryObjectFactory);
+        }
+
+        @Override
+        public AbstractTreeNode<K> fromBytes(byte[] bytes, AbstractTreeNode.Type type) {
+            if (type.equals(AbstractTreeNode.Type.LEAF))
+                return new AbstractLeafTreeNode<>(bytes, keyIndexBinaryObjectFactory, valueIndexBinaryObjectFactory);
+            return new InternalTreeNode<>(bytes, keyIndexBinaryObjectFactory);
+        }
+    }
+
+
     class ClusterNodeFactory<K extends Comparable<K>> implements NodeFactory<K> {
 
         private final IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory;

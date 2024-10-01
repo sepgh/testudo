@@ -110,7 +110,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
             }
         }
 
-        int nodeKeySize = internalTreeNode.getKeyList(degree).size();
+        int nodeKeySize = internalTreeNode.getKeyList(degree).size();  // Todo: replace getList() with keyList var?
         if (nodeKeySize < minKeys && !internalTreeNode.isRoot()){
             InternalTreeNode<K> parent = (InternalTreeNode<K>) path.get(nodeIndex + 1);
             this.fillNode(internalTreeNode, parent, parent.getIndexOfChild(internalTreeNode.getPointer()));
@@ -378,6 +378,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
             indexIOSession.update(parent);
         }
 
+        // {VALIDATION OF CHILD MOVEMENT}   (search for this phrase to see related section)
         if (child.isLeaf()){
             ((AbstractLeafTreeNode<K, V>) child).setKeyValues(keyValueListToMove, degree);
         } else {

@@ -178,7 +178,7 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
         int binarySpace = this.getBinarySpace(kvSize);
         if (data.length < binarySpace){
             byte[] finalData = new byte[binarySpace];
-            System.arraycopy(data, 0, finalData, 0, binarySpace);
+            System.arraycopy(data, 0, finalData, 0, data.length);
             data = finalData;
         }
 
@@ -278,7 +278,8 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
 
     @Override
     public CompletableFuture<Integer> removeNode(int indexId, Pointer pointer, KVSize size) throws InterruptedException {
-        long offset = indexHeaderManager.getIndexBeginningInChunk(indexId, pointer.getChunk()).get().getOffset() + pointer.getPosition();
+        IndexHeaderManager.Location location = indexHeaderManager.getIndexBeginningInChunk(indexId, pointer.getChunk()).orElseGet(() -> new IndexHeaderManager.Location(pointer.getChunk(), 0));
+        long offset = location.getOffset() + pointer.getPosition();
         return FileUtils.write(acquireFileChannel(indexId, pointer.getChunk()), offset, new byte[this.getBinarySpace(size)]).whenComplete((integer, throwable) -> releaseFileChannel(indexId, pointer.getChunk()));
     }
 

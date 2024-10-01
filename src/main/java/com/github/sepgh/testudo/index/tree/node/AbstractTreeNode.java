@@ -15,7 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /*
-  Structure of a node in binary for non-leaf
+  Structure of a node in binary for internal node
   [1 byte -6 empty bits- IS_ROOT | IS_LEAF] + [POINTER_SIZE bytes child] + (([K_SIZE bytes id] + [POINTER_SIZE bytes child]) * max node size)
 
   Structure of a node in binary for leaf

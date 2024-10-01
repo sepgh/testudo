@@ -2,7 +2,6 @@ package com.github.sepgh.testudo.index.data;
 
 public interface IndexBinaryObject<E> {
     E asObject();
-    boolean hasValue();
     int size();
     byte[] getBytes();
 

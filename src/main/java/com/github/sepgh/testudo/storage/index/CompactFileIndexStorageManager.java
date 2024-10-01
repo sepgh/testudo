@@ -21,16 +21,8 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
         super(null, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
     }
 
-    public CompactFileIndexStorageManager(String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) {
-        super(customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
-    }
-
     public CompactFileIndexStorageManager(IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig) {
         super(indexHeaderManagerFactory, engineConfig);
-    }
-
-    public CompactFileIndexStorageManager(String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig) {
-        super(customName, indexHeaderManagerFactory, engineConfig);
     }
 
     protected Path getIndexFilePath(int indexId, int chunk) {
@@ -42,13 +34,24 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
         return new IndexHeaderManager.Location(0,0);
     }
 
+    /* Todo:
+    *           When nodes with different types of keys and values try to allocate space from the same file
+    *       we will face a problem when we want to check if there is empty space at the end of the file
+    *           The way checking for space works is by seeing if according the the currently passed `kvSize` there is a node
+    *       at a specific byte (checking first byte and see if it equals to any bit flags of a tree node).
+    *       This logic is present at getPossibleAllocationLocation() method.
+    *           Considering that different kvSizes may be passed here, allocation can simply fail
+    *       and a space that is already used by another node (but may be empty for now) may be returned!
+    *           Possible workaround is either to track last node position and size, or to change implementation and use PageBuffer
+    */
     protected Pointer getAllocatedSpaceForNewNode(int indexId, int chunk, KVSize kvSize) throws IOException, ExecutionException, InterruptedException {
         ManagedFileHandler managedFileHandler = this.getManagedFileHandler(indexId, 0);
         AsynchronousFileChannel asynchronousFileChannel = managedFileHandler.getAsynchronousFileChannel();
 
         synchronized (this){
-            // Check if we have an empty space
             long fileSize = asynchronousFileChannel.size();
+
+            // Check if we have an empty space
             if (fileSize >= this.getIndexGrowthAllocationSize(kvSize)){
                 long positionToCheck = fileSize - this.getIndexGrowthAllocationSize(kvSize);
 

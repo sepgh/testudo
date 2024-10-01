@@ -11,6 +11,7 @@ import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
 import com.github.sepgh.testudo.utils.KVSize;
+import com.google.common.hash.HashCode;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -48,7 +49,6 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V> {
                 /* current node is a leaf which should handle storing the data */
 
                 List<K> currentNodeKeyList = currentNode.getKeyList(degree, valueIndexBinaryObjectFactory.size());
-
                 if (currentNodeKeyList.contains(identifier))
                     throw new IndexExistsException();
 
@@ -99,6 +99,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V> {
                 InternalTreeNode<K> currentInternalTreeNode = (InternalTreeNode<K>) currentNode;
                 if (currentInternalTreeNode.getKeyList(degree).size() < degree - 1) {
                     /* current internal node can store the key */
+
                     int indexOfAddedKey = currentInternalTreeNode.addKey(idForParentToStore, degree);
                     if (newChildForParent.getKeyList(degree, valueIndexBinaryObjectFactory.size()).getFirst().compareTo(idForParentToStore) < 0){
                         currentInternalTreeNode.addChildAtIndex(indexOfAddedKey, newChildForParent.getPointer());

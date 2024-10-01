@@ -21,6 +21,7 @@ import com.github.sepgh.testudo.utils.KVSize;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import lombok.SneakyThrows;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -35,6 +36,7 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
     private final IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory;
     private final NodeFactory<K> nodeFactory;
     protected final KVSize kvSize;
+    public static final int PURGE_ITERATION_MULTIPLIER = 2;  // Todo: the `2` here is just an example. Make it configurable?
 
     public BPlusTreeUniqueTreeIndexManager(int index, int degree, IndexStorageManager indexStorageManager, IndexIOSessionFactory indexIOSessionFactory, IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory, NodeFactory<K> nodeFactory) {
         super(index);
@@ -55,21 +57,7 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
     }
 
     public BPlusTreeUniqueTreeIndexManager(int index, int degree, IndexStorageManager indexStorageManager, IndexIOSessionFactory indexIOSessionFactory, IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory){
-        this(index, degree, indexStorageManager, indexIOSessionFactory, keyIndexBinaryObjectFactory, valueIndexBinaryObjectFactory, new NodeFactory<K>() {
-            @Override
-            public AbstractTreeNode<K> fromBytes(byte[] bytes) {
-                if ((bytes[0] & TYPE_LEAF_NODE_BIT) == TYPE_LEAF_NODE_BIT)
-                    return new AbstractLeafTreeNode<>(bytes, keyIndexBinaryObjectFactory, valueIndexBinaryObjectFactory);
-                return new InternalTreeNode<>(bytes, keyIndexBinaryObjectFactory);
-            }
-
-            @Override
-            public AbstractTreeNode<K> fromBytes(byte[] bytes, AbstractTreeNode.Type type) {
-                if (type.equals(AbstractTreeNode.Type.LEAF))
-                    return new AbstractLeafTreeNode<>(bytes, keyIndexBinaryObjectFactory, valueIndexBinaryObjectFactory);
-                return new InternalTreeNode<>(bytes, keyIndexBinaryObjectFactory);
-            }
-        });
+        this(index, degree, indexStorageManager, indexIOSessionFactory, keyIndexBinaryObjectFactory, valueIndexBinaryObjectFactory, new NodeFactory.DefaultNodeFactory<>(keyIndexBinaryObjectFactory, valueIndexBinaryObjectFactory));
 
     }
 
@@ -198,12 +186,42 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
     }
 
     @Override
-    public void purgeIndex() {
+    public synchronized void purgeIndex() {
         if (this.indexStorageManager.supportsPurge()) {
             this.indexStorageManager.purgeIndex(indexId);
         }
 
-        // Todo: traverse tree and remove nodes if storage manager doesnt support purge
+        boolean removed;
+        int maxPerIteration = this.degree * PURGE_ITERATION_MULTIPLIER;
+
+        do {
+            try {
+                LockableIterator<KeyValue<K, V>> sortedIterator = getSortedIterator();
+                List<K> toRemove = new ArrayList<>();
+                int i = 0;
+
+                try {
+                    sortedIterator.lock();
+                    while (sortedIterator.hasNext() && i < maxPerIteration){
+                        KeyValue<K, V> next = sortedIterator.next();
+                        toRemove.add(next.key());
+                        i++;
+                    }
+                } finally {
+                    sortedIterator.unlock();
+                }
+
+                removed = !toRemove.isEmpty();
+
+                for (K k : toRemove) {
+                    this.removeIndex(k);
+                }
+
+            } catch (InternalOperationException | IndexBinaryObject.InvalidIndexBinaryObject e) {
+                throw new RuntimeException(e);  // Todo
+            }
+        } while (removed);
+
     }
 
     protected AbstractLeafTreeNode<K, V> getFarLeftLeaf() throws InternalOperationException {

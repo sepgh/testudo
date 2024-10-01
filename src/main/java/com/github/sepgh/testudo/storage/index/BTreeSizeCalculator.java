@@ -25,8 +25,12 @@ public class BTreeSizeCalculator {
         return this;
     }
 
+    private int getMaxValueSize() {
+        return Math.max(valueSize, Pointer.BYTES);
+    }
+
     public int calculate(){
-        int value = 1 + (degree * (keySize + valueSize)) + (2 * Pointer.BYTES);
+        int value = 1 + (degree * (keySize + getMaxValueSize())) + (2 * Pointer.BYTES);
         int i = value % 8;
         if (i == 0){
             return value;

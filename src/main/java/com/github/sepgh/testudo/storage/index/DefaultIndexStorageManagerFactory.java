@@ -63,7 +63,7 @@ public class DefaultIndexStorageManagerFactory extends IndexStorageManagerFactor
             if (indexStorageManagerStrategy.equals(EngineConfig.IndexStorageManagerStrategy.ORGANIZED)) {
                 return new OrganizedFileIndexStorageManager(customName, indexHeaderManagerFactory, engineConfig, getFileHandlerPool());
             } else {
-                return new CompactFileIndexStorageManager(customName, indexHeaderManagerFactory, engineConfig, getFileHandlerPool());
+                return new CompactFileIndexStorageManager(indexHeaderManagerFactory, engineConfig, getFileHandlerPool());
             }
 
         });

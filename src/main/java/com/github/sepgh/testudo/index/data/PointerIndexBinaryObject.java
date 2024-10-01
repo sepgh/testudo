@@ -20,11 +20,6 @@ public class PointerIndexBinaryObject extends AbstractIndexBinaryObject<Pointer>
     }
 
     @Override
-    public boolean hasValue() {
-        return bytes[0] != 0x00;
-    }
-
-    @Override
     public int size() {
         return BYTES;
     }

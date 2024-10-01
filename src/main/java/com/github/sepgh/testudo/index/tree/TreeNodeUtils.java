@@ -6,6 +6,7 @@ import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.utils.BinaryUtils;
+import com.google.common.hash.HashCode;
 
 import java.util.AbstractMap;
 import java.util.Map;
@@ -57,7 +58,7 @@ public class TreeNodeUtils {
      * @param index index of the pointer to set
      * @param pointer object to set
      */
-    public static void setPointerToChild(AbstractTreeNode<?> treeNode, int index, Pointer pointer, int keySize){
+    public static void setChildPointerAtIndex(AbstractTreeNode<?> treeNode, int index, Pointer pointer, int keySize){
         if (index == 0){
             System.arraycopy(pointer.toBytes(), 0, treeNode.getData(), OFFSET_TREE_NODE_FLAGS_END, Pointer.BYTES);
         } else {
@@ -231,7 +232,6 @@ public class TreeNodeUtils {
         );
 
         return indexToFill;
-
     }
 
     public static void removeKeyValueAtIndex(AbstractTreeNode<?> treeNode, int index, int keySize, int valueSize) {
@@ -269,7 +269,10 @@ public class TreeNodeUtils {
         }
 
         return Optional.of(
-                Pointer.fromBytes(treeNode.getData(), OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * (keySize + valueSize)))
+                Pointer.fromBytes(
+                        treeNode.getData(),
+                        OFFSET_LEAF_NODE_KEY_BEGIN + ((degree - 1) * (keySize + valueSize))
+                )
         );
     }
 
