@@ -11,7 +11,6 @@ import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
 import com.github.sepgh.testudo.utils.KVSize;
-import com.google.common.hash.HashCode;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -119,7 +118,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V> {
                 passingChildPointers.removeFirst();
 
                 InternalTreeNode<K> newInternalSibling = new InternalTreeNode<K>(indexIOSession.getIndexStorageManager().getEmptyNode(this.kvSize), kIndexBinaryObjectFactory);
-                newInternalSibling.setChildPointers(passingChildPointers, degree, true);
+                newInternalSibling.setChildPointers(passingChildPointers, degree, false);
                 indexIOSession.write(newInternalSibling);
 
                 // Current node was root and needs a new parent

@@ -5,20 +5,23 @@ import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.BPlusTreeUniqueTreeIndexManager;
-import com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
+import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static com.github.sepgh.test.TestParams.DEFAULT_INDEX_BINARY_OBJECT_FACTORY;
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
-public class CompactFileIndexStorageManagerPurgeTestCase extends BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
+import static com.github.sepgh.test.TestParams.LONG_INDEX_BINARY_OBJECT_FACTORY;
 
-    private IndexStorageManager getIndexStorageManager() {
-        return new CompactFileIndexStorageManager(
+public class TestAddRemoveLong extends BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
+
+    protected IndexStorageManager getIndexStorageManager() {
+        return new OrganizedFileIndexStorageManager(
+                "test",
                 new JsonIndexHeaderManager.Factory(),
                 engineConfig,
                 new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
@@ -26,23 +29,20 @@ public class CompactFileIndexStorageManagerPurgeTestCase extends BaseBPlusTreeUn
     }
 
     private UniqueTreeIndexManager<Long, Long> getIndexManager(IndexStorageManager indexStorageManager) {
-        return new BPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get(), DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
+        return new BPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, LONG_INDEX_BINARY_OBJECT_FACTORY.get(), LONG_INDEX_BINARY_OBJECT_FACTORY.get());
     }
 
     @Test
-    public void testPurge() throws IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    public void test() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
-
         UniqueTreeIndexManager<Long, Long> indexManager = getIndexManager(indexStorageManager);
 
         for (long i = 1; i < 11; i++) {
             indexManager.addIndex(i, i);
         }
 
-        indexManager.purgeIndex();
-
-        for (long i = 1; i < 10L * degree * BPlusTreeUniqueTreeIndexManager.PURGE_ITERATION_MULTIPLIER; i++) {
-            Assertions.assertFalse(indexManager.getIndex(i).isPresent(), "%d is present while it shouldn't be!".formatted(i));
+        for (long i = 1; i < 11; i++) {
+            indexManager.removeIndex(i);
         }
 
     }

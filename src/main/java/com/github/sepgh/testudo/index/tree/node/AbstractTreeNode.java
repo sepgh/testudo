@@ -146,8 +146,7 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
             if (!hasNext)
                 return false;
 
-            hasNext = TreeNodeUtils.hasKeyAtIndex(this.node, cursor, degree, this.node.kIndexBinaryObjectFactory, valueSize);
-            return hasNext;
+            return TreeNodeUtils.hasKeyAtIndex(this.node, cursor, degree, this.node.kIndexBinaryObjectFactory, valueSize);
         }
 
         @SneakyThrows

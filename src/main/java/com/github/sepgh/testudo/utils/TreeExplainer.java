@@ -1,4 +1,4 @@
-package com.github.sepgh.test;
+package com.github.sepgh.testudo.utils;
 
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
@@ -7,7 +7,6 @@ import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
-import com.github.sepgh.testudo.utils.KVSize;
 import com.google.common.hash.HashCode;
 
 import java.io.IOException;

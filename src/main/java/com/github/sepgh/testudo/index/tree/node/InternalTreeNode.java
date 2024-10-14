@@ -7,7 +7,6 @@ import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.TreeNodeUtils;
 import com.github.sepgh.testudo.utils.CollectionUtils;
 import com.google.common.collect.ImmutableList;
-import com.google.common.hash.HashCode;
 import lombok.*;
 
 import javax.annotation.Nullable;
@@ -32,7 +31,7 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
     public void setChildPointers(List<ChildPointers<K>> childPointers, int degree, boolean cleanRest) throws IndexBinaryObject.InvalidIndexBinaryObject {
         modified();
         if (cleanRest)
-            TreeNodeUtils.cleanChildrenPointers(this, degree, kIndexBinaryObjectFactory.size(), PointerIndexBinaryObject.BYTES);
+            TreeNodeUtils.cleanChildrenPointers(this, degree, kIndexBinaryObjectFactory.size());
         int i = 0;
         for (ChildPointers<K> keyPointer : childPointers) {
             keyPointer.setIndex(i);
@@ -50,7 +49,7 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
     }
 
     public Iterator<K> getKeys(int degree){
-        return super.getKeys(degree, Pointer.BYTES);
+        return super.getKeys(degree, PointerIndexBinaryObject.BYTES);
     }
 
     public List<K> getKeyList(int degree){
@@ -59,7 +58,7 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
 
     @SneakyThrows
     public void setKey(int index, K key){
-        super.setKey(index,key, PointerIndexBinaryObject.BYTES);
+        super.setKey(index, key, PointerIndexBinaryObject.BYTES);
     }
 
     public void removeKey(int idx, int degree) {

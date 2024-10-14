@@ -3,10 +3,10 @@ package com.github.sepgh.testudo.index.tree;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
+import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.utils.BinaryUtils;
-import com.google.common.hash.HashCode;
 
 import java.util.AbstractMap;
 import java.util.Map;
@@ -18,6 +18,10 @@ public class TreeNodeUtils {
     private static final int OFFSET_LEAF_NODE_KEY_BEGIN = OFFSET_TREE_NODE_FLAGS_END;
     private static final int SIZE_LEAF_NODE_SIBLING_POINTERS = 2 * Pointer.BYTES;
 
+    private static int getChildPointerOffset(int index, int keySize) {
+        return OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + keySize));
+    }
+
     /**
      *
      * @param treeNode node to read/write from/to
@@ -26,11 +30,10 @@ public class TreeNodeUtils {
      *         Note that index is the index of the pointer object we want to refer to, not the byte position in byte array
      */
     public static boolean hasChildPointerAtIndex(AbstractTreeNode<?> treeNode, int index, int keySize){
-        if (OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + keySize)) > treeNode.getData().length)
+        if (getChildPointerOffset(index, keySize) > treeNode.getData().length)
             return false;
 
-
-        return treeNode.getData()[OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + keySize))] == Pointer.TYPE_NODE;
+        return treeNode.getData()[getChildPointerOffset(index, keySize)] == Pointer.TYPE_NODE;
     }
 
 
@@ -39,7 +42,7 @@ public class TreeNodeUtils {
      * @param index to check child pointer
      * @return Pointer to child node at index
      */public static Pointer getChildPointerAtIndex(AbstractTreeNode<?> treeNode, int index, int keySize){
-        return Pointer.fromBytes(treeNode.getData(), OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + keySize)));
+        return Pointer.fromBytes(treeNode.getData(), getChildPointerOffset(index, keySize));
     }
 
     // This will not pull remaining children (won't shift them one step behind)
@@ -48,7 +51,7 @@ public class TreeNodeUtils {
                 new byte[Pointer.BYTES],
                 0,
                 treeNode.getData(),
-                OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + keySize)),
+                getChildPointerOffset(index, keySize),
                 Pointer.BYTES
         );
     }
@@ -66,7 +69,7 @@ public class TreeNodeUtils {
                     pointer.toBytes(),
                     0,
                     treeNode.getData(),
-                    OFFSET_TREE_NODE_FLAGS_END + (index * (Pointer.BYTES + keySize)),
+                    getChildPointerOffset(index, keySize),
                     Pointer.BYTES
             );
         }
@@ -140,7 +143,7 @@ public class TreeNodeUtils {
             IndexBinaryObjectFactory<V> vIndexBinaryObjectFactory
     ){
         int keyStartIndex = getKeyStartOffset(treeNode, index, kIndexBinaryObjectFactory.size(), vIndexBinaryObjectFactory.size());
-        return new AbstractMap.SimpleImmutableEntry<K, V>(
+        return new AbstractMap.SimpleImmutableEntry<>(
                 kIndexBinaryObjectFactory.create(treeNode.getData(), keyStartIndex).asObject(),
                 vIndexBinaryObjectFactory.create(treeNode.getData(), keyStartIndex + kIndexBinaryObjectFactory.size()).asObject()
         );
@@ -306,8 +309,8 @@ public class TreeNodeUtils {
         );
     }
 
-    public static void cleanChildrenPointers(InternalTreeNode<?> treeNode, int degree, int keySize, int valueSize) {
-        int len = ((degree - 1) * ((keySize + valueSize)) + Pointer.BYTES);
+    public static void cleanChildrenPointers(InternalTreeNode<?> treeNode, int degree, int keySize) {
+        int len = ((degree - 1) * ((keySize + PointerIndexBinaryObject.BYTES))) + Pointer.BYTES;
         System.arraycopy(
                 new byte[len],
                 0,
