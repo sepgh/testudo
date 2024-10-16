@@ -63,14 +63,18 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
         List<Pointer> childrenList = node.getChildrenList();
         if (idx != 0){
             AbstractTreeNode<K> leftIDXChild = indexIOSession.read(childrenList.get(idx - 1));
-            if (leftIDXChild.getKeyList(degree, valueIndexBinaryObjectFactory.size()).size() >= minKeys){
+            int keyListSize = leftIDXChild.isLeaf() ? leftIDXChild.getKeyList(degree, valueIndexBinaryObjectFactory.size()).size() :
+                    ((InternalTreeNode<K>) leftIDXChild).getKeyList(degree).size();
+            if (keyListSize >= minKeys){
                 K pred = this.getPredecessor(node, idx);
                 node.setKey(idx, pred);
                 indexIOSession.update(node);
             }
         } else {
             AbstractTreeNode<K> rightIDXChild = indexIOSession.read(childrenList.get(idx + 1));
-            if (rightIDXChild.getKeyList(degree, valueIndexBinaryObjectFactory.size()).size() >= minKeys) {
+            int keyListSize = rightIDXChild.isLeaf() ? rightIDXChild.getKeyList(degree, valueIndexBinaryObjectFactory.size()).size() :
+                    ((InternalTreeNode<K>) rightIDXChild).getKeyList(degree).size();
+            if (keyListSize >= minKeys) {
                 K succ = getSuccessor(node, idx);
                 node.setKey(idx, succ);
                 indexIOSession.update(node);
@@ -237,7 +241,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
     }
 
     /**
-     * Borrow a node from sibling at right (next)
+     * Borrow a key from sibling at right (next)
      * We remove sibling first child pointer and pass it to child (current node)
      * If child (and sibling) is an internal node, then we be careful that the child may already "LOOK EMPTY" in terms of keys,
      *      but still include child pointers, so the position of sibling first child entrance to child's children is important
