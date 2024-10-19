@@ -135,8 +135,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
                 identifier,
                 indexId,
                 degree,
-                nodeFactory,
-                valueIndexBinaryObjectFactory
+                nodeFactory
         );
 
         internalTreeNode.setKey(indexOfKey, leafTreeNode.getKeyList(degree).getLast());

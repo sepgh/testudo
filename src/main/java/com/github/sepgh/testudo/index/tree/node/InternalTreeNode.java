@@ -271,15 +271,19 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
     @Getter
     @Setter
     @ToString
-    public static class ChildPointers<E extends Comparable<E>> implements Comparable<ChildPointers<E>> {
+    public static class ChildPointers<K extends Comparable<K>> implements Comparable<ChildPointers<K>> {
 
         private int index;
-        private E key;
+        private K key;
         private Pointer left;
         private Pointer right;
 
+        public static <K extends Comparable<K>> ChildPointers<K> getChildPointerOfKey(K key){
+            return new ChildPointers<>(-1, key, null, null);
+        }
+
         @Override
-        public int compareTo(ChildPointers<E> o) {
+        public int compareTo(ChildPointers<K> o) {
             return this.key.compareTo(o.getKey());
         }
     }

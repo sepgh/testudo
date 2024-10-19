@@ -74,7 +74,7 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
     public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException {
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
 
-        AbstractLeafTreeNode<K, V> node = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory, valueIndexBinaryObjectFactory);
+        AbstractLeafTreeNode<K, V> node = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory);
         List<K> keyList = node.getKeyList(degree);
         if (!keyList.contains(identifier)) {
             throw new IndexMissingException();
@@ -89,7 +89,7 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
     @Override
     public Optional<V> getIndex(K identifier) throws InternalOperationException {
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
-        AbstractLeafTreeNode<K, V> baseTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory, valueIndexBinaryObjectFactory);
+        AbstractLeafTreeNode<K, V> baseTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory);
         for (KeyValue<K, V> entry : baseTreeNode.getKeyValueList(degree)) {
             if (entry.key().equals(identifier)){
                 return Optional.of(entry.value());
