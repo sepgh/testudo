@@ -35,9 +35,24 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
 - [X] Basic implementation of Tree-Based [`Unique Index Management`](https://github.com/sepgh/testudo/blob/main/src/main/java/com/github/sepgh/testudo/index/UniqueTreeIndexManager.java) using B+Tree 
 - [X] Cluster implementation of B+Tree
 - [ ] All "collections" should have a default cluster B+Tree implementation despite their Primary key. Perhaps the Primary Key should point to the cluster id of a collection object (traditionally known as a row of a table).
-- [X] Storage management of B+Tree
+  - [X] Implement UnsignedLong serializer, which would be cluster key type
+  - [ ] Update `SchemeManager` logic
+  - [ ] Update `FieldIndexManagerProvider` logic (name should get updated as well, right?)
+- [ ] Storage management of B+Tree
+  - [X] Storage management using `CompactFileIndexStorageManager` and `OrganizedFileIndexStorageManager`
+  - [ ] Additional Storage Management impelementation using `DatabaseStorageManager` (the `DiskDatabaseStorageManager` uses `PageBuffer`s)
 - [X] Generic decorator pattern for `UniqueTreeIndexManager`
 - [X] LRU Cache implementation for `UniqueTreeIndexManager` decorator. **(More tests required)**
+- [ ] Tree Index Manager Locks:
+  - [ ] Async decorator for `UniqueTreeIndexManager` to decorate multiple objects using a single decorator (locking operations of multiple IndexManagers using a single decorator)
+  - [ ] Async decorator for `DuplicateIndexManager` to decorate multiple objects using a single decorator (locking operations of multiple IndexManagers using a single decorator)
+  - [ ] The implementation should be able to combine lock for both Duplicate and Unique Index Managers
 - [X] Providing solution for differentiating `zero` (number) and `null` in a byte array. **(Flag byte is used, which is not the best solution, bitmaps can help here)**
+- [ ] Non-unique Index Manager
+  - [X] B+Tree and `LinkedList` (binary) implementation
+  - [ ] Bitmap implementation
+- [ ] Database Storage Manager
+  - [X] Disk Database Storage Manager Basics (Page Buffer)
+  - [ ] Write Queue to make writes Async (is it even safe/possible?) 
 
 
