@@ -8,7 +8,6 @@ import lombok.Getter;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -31,9 +30,9 @@ public class PageBuffer {
                 .build();
     }
 
-    public synchronized Page aquire(PageTitle title) {
+    public synchronized Page acquire(PageTitle title) {
         PageWrapper pageWrapper1 = this.referencedWrappers.computeIfAbsent(title, pageTitle -> {
-            PageWrapper pageWrapper = null;
+            PageWrapper pageWrapper;
             pageWrapper = buffer.getIfPresent(title);
             if (pageWrapper == null) {
                 Page page = factory.apply(title);
@@ -48,15 +47,12 @@ public class PageBuffer {
     }
 
     public synchronized void release(PageTitle title) {
-        AtomicBoolean referred = new AtomicBoolean(false);
         this.referencedWrappers.computeIfPresent(title, (pageTitle, pageWrapper) -> {
-            referred.set(true);
             pageWrapper.decrementRefCount();
+            if (pageWrapper.getRefCount() == 0)
+                return null;
             return pageWrapper;
         });
-        if (referred.get()){
-            this.referencedWrappers.remove(title);
-        }
     }
 
     public void release(Page page){

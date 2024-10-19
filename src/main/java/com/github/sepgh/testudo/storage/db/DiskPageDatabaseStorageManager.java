@@ -129,7 +129,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
 
     public void update(Pointer pointer, Consumer<DBObject> dbObjectConsumer) throws IOException, ExecutionException, InterruptedException {
         PageBuffer.PageTitle pageTitle = new PageBuffer.PageTitle(pointer.getChunk(), (int) (pointer.getPosition() / this.engineConfig.getDbPageSize()));
-        Page page = this.pageBuffer.aquire(pageTitle);
+        Page page = this.pageBuffer.acquire(pageTitle);
 
         try {
             Optional<DBObject> optionalDBObjectWrapper = null;
@@ -155,7 +155,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
 
     public Optional<DBObject> select(Pointer pointer){
         PageBuffer.PageTitle pageTitle = new PageBuffer.PageTitle(pointer.getChunk(), (int) (pointer.getPosition() / this.engineConfig.getDbPageSize()));
-        Page page = this.pageBuffer.aquire(pageTitle);
+        Page page = this.pageBuffer.acquire(pageTitle);
 
         try {
             Optional<DBObject> optional = page.getDBObjectWrapper(
@@ -174,7 +174,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
 
     public void remove(Pointer pointer) throws IOException, ExecutionException, InterruptedException {
         PageBuffer.PageTitle pageTitle = new PageBuffer.PageTitle(pointer.getChunk(), (int) (pointer.getPosition() / this.engineConfig.getDbPageSize()));
-        Page page = this.pageBuffer.aquire(pageTitle);
+        Page page = this.pageBuffer.acquire(pageTitle);
 
         try {
             Optional<DBObject> optional = page.getDBObjectWrapper(
@@ -208,7 +208,8 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         // Todo: could return future instead maybe? Or just queue for submission?
         //       For transactions we'd need something similar to FileSessionIO!
         //       In such case, releasing the page from buffer should happen after write is completed
-        //       Maybe would be a good idea to do that (last line) here now too?
+        //       Maybe would be a good idea to do that (last line) here now too?  Temp Answer: No, we'd release twice for a single acquire
+        //       Call backs could help in that case (CompletableFuture has such functionality)
         FileUtils.write(fileChannel, (long) page.getPageNumber() * this.engineConfig.getDbPageSize(), page.getData()).get();
 
         this.fileHandlerPool.releaseFileChannel(path, 100, TimeUnit.SECONDS); // Todo
@@ -250,7 +251,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
     private Page getBufferedPage(int chunk, long offset) {
         int pageNumber = (int) (offset / this.engineConfig.getDbPageSize());
         PageBuffer.PageTitle pageTitle = new PageBuffer.PageTitle(chunk, pageNumber);
-        return this.pageBuffer.aquire(pageTitle);
+        return this.pageBuffer.acquire(pageTitle);
     }
 
     private synchronized Page getBufferedNewPage() throws IOException, ExecutionException, InterruptedException {
@@ -271,7 +272,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         this.generateNewEmptyPage(chunk);
 
         this.lastPageTitle = new PageBuffer.PageTitle(chunk, pageNumber);
-        return this.pageBuffer.aquire(this.lastPageTitle);
+        return this.pageBuffer.acquire(this.lastPageTitle);
     }
 
     private synchronized void generateNewEmptyPage(int chunk) throws IOException, InterruptedException, ExecutionException {
@@ -287,7 +288,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
 
     private Optional<Page> getBufferedLastPage() throws IOException, InterruptedException {
         if (this.lastPageTitle != null){
-            return Optional.of(this.pageBuffer.aquire(this.lastPageTitle));
+            return Optional.of(this.pageBuffer.acquire(this.lastPageTitle));
         }
 
         int lastChunk = -1;
@@ -311,7 +312,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
 
             this.lastPageTitle = new PageBuffer.PageTitle(lastChunk, pageNumber);
 
-            return Optional.of(this.pageBuffer.aquire(this.lastPageTitle));
+            return Optional.of(this.pageBuffer.acquire(this.lastPageTitle));
         }
     }
 

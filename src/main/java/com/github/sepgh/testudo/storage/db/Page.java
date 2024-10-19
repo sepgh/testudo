@@ -11,6 +11,11 @@ import lombok.SneakyThrows;
 
 import java.util.*;
 
+
+/*
+*   Meta:  cursorPosition (int)
+*/
+
 @AllArgsConstructor
 @Data
 public class Page {
