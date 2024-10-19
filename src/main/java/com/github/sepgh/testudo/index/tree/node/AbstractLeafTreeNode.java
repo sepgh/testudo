@@ -93,7 +93,9 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V> extends AbstractTr
     }
 
     public int addKeyValue(K identifier, V v, int degree) throws IndexBinaryObject.InvalidIndexBinaryObject {
-        return TreeNodeUtils.addKeyValueAndGetIndex(this, degree, kIndexBinaryObjectFactory, identifier, valueIndexBinaryObjectFactory, v);
+        int i = CollectionUtils.indexToInsert(getKeyList(degree), identifier);
+        TreeNodeUtils.addKeyValue(this, degree, kIndexBinaryObjectFactory, identifier, valueIndexBinaryObjectFactory, v, i);
+        return i;
     }
 
     public int addKeyValue(KeyValue<K, V> keyValue, int degree) throws IndexBinaryObject.InvalidIndexBinaryObject {
@@ -106,16 +108,24 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V> extends AbstractTr
 
     public boolean removeKeyValue(K key, int degree) throws IndexBinaryObject.InvalidIndexBinaryObject {
         List<KeyValue<K, V>> keyValueList = new ArrayList<>(this.getKeyValueList(degree));
-        boolean removed = keyValueList.removeIf(keyValue -> keyValue.key().compareTo(key) == 0);
-        setKeyValues(keyValueList, degree);
-        return removed;
+        int i = Collections.binarySearch(getKeyList(degree), key);
+        if (i >= 0){
+            keyValueList.remove(i);
+            setKeyValues(keyValueList, degree);
+            return true;
+        }
+        return false;
     }
 
     public boolean removeKeyValue(K key, V value, int degree) throws IndexBinaryObject.InvalidIndexBinaryObject {
         List<KeyValue<K, V>> keyValueList = new ArrayList<>(this.getKeyValueList(degree));
-        boolean removed = keyValueList.removeIf(keyValue -> keyValue.key().compareTo(key) == 0 && keyValue.value().equals(value));
-        setKeyValues(keyValueList, degree);
-        return removed;
+        int i = Collections.binarySearch(getKeyList(degree), key);
+        if (i >= 0 && keyValueList.get(i).key().equals(key)){
+            keyValueList.remove(i);
+            setKeyValues(keyValueList, degree);
+            return true;
+        }
+        return false;
     }
 
     @Override

@@ -169,44 +169,17 @@ public class TreeNodeUtils {
 
     }
 
-
-    /**
-     * Todo: performance improvements may be possible
-     *       linear search is used to sort the keys
-     *       binary search could be used
-     */
-    public static <K extends Comparable<K>, V> int addKeyValueAndGetIndex(
+    public static <K extends Comparable<K>, V> void addKeyValue(
             AbstractTreeNode<?> treeNode,
             int degree,
             IndexBinaryObjectFactory<K> indexBinaryObjectFactory,
             K key,
             IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory,
-            V value
+            V value,
+            int indexToFill
     ) throws IndexBinaryObject.InvalidIndexBinaryObject {
-        int indexToFill = -1;
-        IndexBinaryObject<K> keyAtIndex;
         int keySize = indexBinaryObjectFactory.size();
         int valueSize = valueIndexBinaryObjectFactory.size();
-
-        // Linearly looking for key position
-        for (int i = 0; i < degree - 1; i++){
-            if (!hasKeyAtIndex(treeNode, i, degree, indexBinaryObjectFactory, valueSize)){
-                indexToFill = i;
-                break;
-            }
-            keyAtIndex = getKeyAtIndex(treeNode, i, indexBinaryObjectFactory, valueSize);
-            K data = keyAtIndex.asObject();
-            if (data.compareTo(key) > 0){
-                indexToFill = i;
-                break;
-            }
-        }
-
-        if (indexToFill == -1){
-            throw new RuntimeException("Logical chaos! Couldn't find the index to fill ...");
-        }
-
-
         int max = degree - 1;
         int bufferSize = ((max - indexToFill - 1) * (keySize + valueSize));
 
@@ -233,6 +206,46 @@ public class TreeNodeUtils {
                 OFFSET_LEAF_NODE_KEY_BEGIN + ((indexToFill + 1) * (keySize + valueSize)),
                 temp.length
         );
+
+    }
+
+
+    /**
+     * Todo: performance improvements may be possible
+     *       linear search is used to sort the keys
+     *       binary search could be used
+     */
+    public static <K extends Comparable<K>, V> int addKeyValueAndGetIndex(
+            AbstractTreeNode<?> treeNode,
+            int degree,
+            IndexBinaryObjectFactory<K> indexBinaryObjectFactory,
+            K key,
+            IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory,
+            V value
+    ) throws IndexBinaryObject.InvalidIndexBinaryObject {
+        int indexToFill = -1;
+        IndexBinaryObject<K> keyAtIndex;
+        int valueSize = valueIndexBinaryObjectFactory.size();
+
+        // Linearly looking for key position
+        for (int i = 0; i < degree - 1; i++){
+            if (!hasKeyAtIndex(treeNode, i, degree, indexBinaryObjectFactory, valueSize)){
+                indexToFill = i;
+                break;
+            }
+            keyAtIndex = getKeyAtIndex(treeNode, i, indexBinaryObjectFactory, valueSize);
+            K data = keyAtIndex.asObject();
+            if (data.compareTo(key) > 0){
+                indexToFill = i;
+                break;
+            }
+        }
+
+        if (indexToFill == -1){
+            throw new RuntimeException("Logical chaos! Couldn't find the index to fill ...");
+        }
+
+        addKeyValue(treeNode, degree, indexBinaryObjectFactory, key, valueIndexBinaryObjectFactory, value, indexToFill);
 
         return indexToFill;
     }
