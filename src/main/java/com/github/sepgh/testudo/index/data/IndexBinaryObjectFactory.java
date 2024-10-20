@@ -7,4 +7,5 @@ public interface IndexBinaryObjectFactory<E> {
         return create(bytes, 0);
     }
     int size();
+    Class<E> getType();
 }

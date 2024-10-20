@@ -42,5 +42,10 @@ public class PointerIndexBinaryObject extends AbstractIndexBinaryObject<Pointer>
         public int size() {
             return BYTES;
         }
+
+        @Override
+        public Class<Pointer> getType() {
+            return Pointer.class;
+        }
     }
 }

@@ -131,5 +131,10 @@ public class CharArrSerializer implements Serializer<String> {
         public int size() {
             return size;
         }
+
+        @Override
+        public Class<String> getType() {
+            return String.class;
+        }
     }
 }

@@ -53,6 +53,11 @@ public interface Serializer<T extends Comparable<T>> {
             public int size() {
                 return SERIALIZER.getSize(field.getMeta());
             }
+
+            @Override
+            public Class<T> getType() {
+                return SERIALIZER.getType();
+            }
         };
     }
 
