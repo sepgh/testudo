@@ -47,7 +47,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
             Bitmap<V> vBitmap = new Bitmap<>(valueIndexBinaryObjectFactory.getType(), dbObject.getData());
             vBitmap.on(value);
 
-            if (initialSize <= vBitmap.getData().length) {
+            if (initialSize >= vBitmap.getData().length) {
                 databaseStorageManager.update(pointer, dbObject1 -> {
                     try {
                         dbObject1.modifyData(vBitmap.getData());
@@ -66,6 +66,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
             }
         } else {
             Bitmap<V> vBitmap = new Bitmap<>(valueIndexBinaryObjectFactory.getType(), new byte[1]);
+            vBitmap.on(value);
             Pointer pointer = databaseStorageManager.store(collectionId, 1, vBitmap.getData());
             try {
                 this.indexManager.addIndex(identifier, pointer);
@@ -103,7 +104,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
             if (dbObjectOptional.isPresent()) {
                 DBObject dbObject = dbObjectOptional.get();
                 Bitmap<V> vBitmap = new Bitmap<>(valueIndexBinaryObjectFactory.getType(), dbObject.getData());
-                vBitmap.on(value);
+                vBitmap.off(value);
                 databaseStorageManager.update(pointer, dbObject1 -> {
                     try {
                         dbObject1.modifyData(vBitmap.getData());
@@ -111,6 +112,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
                         throw new RuntimeException(e);
                     }
                 });
+                return true;
             }
         }
 
@@ -125,7 +127,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
     @Override
     public LockableIterator<KeyValue<K, ListIterator<V>>> getSortedIterator() throws InternalOperationException {
         LockableIterator<KeyValue<K, Pointer>> lockableIterator = this.indexManager.getSortedIterator();
-        return new LockableIterator<KeyValue<K, ListIterator<V>>>() {
+        return new LockableIterator<>() {
 
             @Override
             public boolean hasNext() {

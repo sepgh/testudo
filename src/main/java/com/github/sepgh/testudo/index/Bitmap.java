@@ -28,7 +28,7 @@ public class Bitmap<K extends Number> {
         int bitPosition = bitIndex.mod(BigInteger.valueOf(Byte.SIZE)).intValue();
 
         // Set the bit
-        data[byteIndex] |= (1 << bitPosition);
+        data[byteIndex] |= (byte) (1 << bitPosition);
     }
 
     public void off(K k) {
@@ -40,7 +40,7 @@ public class Bitmap<K extends Number> {
         int bitPosition = bitIndex.mod(BigInteger.valueOf(Byte.SIZE)).intValue();
 
         // Clear the bit
-        data[byteIndex] &= ~(1 << bitPosition);
+        data[byteIndex] &= (byte) ~(1 << bitPosition);
     }
 
     // Convert K to a BigInteger, handling UnsignedLong values beyond Long.MAX_VALUE
@@ -68,12 +68,12 @@ public class Bitmap<K extends Number> {
 
     // Iterator to return indices of all 'on' bits (1s)
     public ListIterator<K> getOnIterator() {
-        return new BitIterator(true, kClass);
+        return new BitIterator(true);
     }
 
     // Iterator to return indices of all 'off' bits (0s)
     public ListIterator<K> getOffIterator() {
-        return new BitIterator(false, kClass);
+        return new BitIterator(false);
     }
 
     // Iterator class that separates bit and byte index handling
@@ -81,12 +81,10 @@ public class Bitmap<K extends Number> {
         private int currentByteIndex = 0;
         private int currentBitPosition = 0;
         private final boolean checkForOnBit;  // true for 'on' iterator, false for 'off' iterator
-        private final Class<?> kClass;
-        private int lastReturnedBitIndex = -1;
+        private BigInteger lastReturnedBitIndex = BigInteger.valueOf(-1);
 
-        public BitIterator(boolean checkForOnBit, Class<?> kClass) {
+        public BitIterator(boolean checkForOnBit) {
             this.checkForOnBit = checkForOnBit;
-            this.kClass = kClass;
         }
 
         @Override
@@ -115,9 +113,10 @@ public class Bitmap<K extends Number> {
                 boolean isBitSet = (data[currentByteIndex] & (1 << currentBitPosition)) != 0;
 
                 if ((isBitSet && checkForOnBit) || (!isBitSet && !checkForOnBit)) {
-                    lastReturnedBitIndex = currentByteIndex * Byte.SIZE + currentBitPosition;
+                    lastReturnedBitIndex = BigInteger.valueOf(currentByteIndex).multiply(BigInteger.valueOf(Byte.SIZE)).add(BigInteger.valueOf(currentBitPosition));
+                    System.out.println(lastReturnedBitIndex.intValue());
                     moveToNextBit();
-                    return convertIndexToK(BigInteger.valueOf(lastReturnedBitIndex));
+                    return convertIndexToK(lastReturnedBitIndex);
                 }
 
                 moveToNextBit();
@@ -172,8 +171,8 @@ public class Bitmap<K extends Number> {
                 boolean isBitSet = (data[currentByteIndex] & (1 << currentBitPosition)) != 0;
 
                 if ((isBitSet && checkForOnBit) || (!isBitSet && !checkForOnBit)) {
-                    lastReturnedBitIndex = currentByteIndex * Byte.SIZE + currentBitPosition;
-                    return convertIndexToK(BigInteger.valueOf(lastReturnedBitIndex));
+                    lastReturnedBitIndex = BigInteger.valueOf(currentByteIndex).multiply(BigInteger.valueOf(Byte.SIZE)).add(BigInteger.valueOf(currentBitPosition));;
+                    return convertIndexToK(lastReturnedBitIndex);
                 }
 
                 if (currentBitPosition == 0) {
@@ -188,12 +187,12 @@ public class Bitmap<K extends Number> {
 
         @Override
         public int nextIndex() {
-            return lastReturnedBitIndex + 1;
+            return lastReturnedBitIndex.add(BigInteger.valueOf(1)).intValue();
         }
 
         @Override
         public int previousIndex() {
-            return lastReturnedBitIndex - 1;
+            return lastReturnedBitIndex.subtract(BigInteger.valueOf(1)).intValue();
         }
 
         @Override
@@ -221,10 +220,12 @@ public class Bitmap<K extends Number> {
 
         // Convert BigInteger index to K type
         private K convertIndexToK(BigInteger index) {
-            if (UnsignedLong.class.isAssignableFrom(this.kClass)) {
+            if (UnsignedLong.class.isAssignableFrom(kClass)) {
                 return (K) UnsignedLong.valueOf(index);  // Handle UnsignedLong
+            } else if (Long.class.isAssignableFrom(kClass)) {
+                return (K) Long.valueOf(index.longValue());  // Handle UnsignedLong
             }
-            return (K) Long.valueOf(index.longValue());  // Default handling for Long/Integer
+            return (K) Integer.valueOf(index.intValue());  // Default handling for Long/Integer
         }
     }
 

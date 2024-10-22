@@ -48,9 +48,9 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
   - [ ] Async decorator for `DuplicateIndexManager` to decorate multiple objects using a single decorator (locking operations of multiple IndexManagers using a single decorator)
   - [ ] The implementation should be able to combine lock for both Duplicate and Unique Index Managers
 - [X] Providing solution for differentiating `zero` (number) and `null` in a byte array. **(Flag byte is used, which is not the best solution, bitmaps can help here)**
-- [ ] Non-unique Index Manager
+- [X] Non-unique Index Manager
   - [X] B+Tree and `LinkedList` (binary) implementation
-  - [ ] Bitmap implementation
+  - [X] Bitmap implementation
 - [ ] Database Storage Manager
   - [X] Disk Database Storage Manager Basics (Page Buffer)
   - [ ] Write Queue to make writes Async (is it even safe/possible?) 
