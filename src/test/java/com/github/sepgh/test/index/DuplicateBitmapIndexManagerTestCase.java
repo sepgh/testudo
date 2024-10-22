@@ -79,7 +79,7 @@ public class DuplicateBitmapIndexManagerTestCase {
         int[] testItems = new int[]{1,2,3,4,9,10,11,12};
 
         for (int item : testItems) {
-            duplicateIndexManager.addIndex(1, item);
+            Assertions.assertTrue(duplicateIndexManager.addIndex(1, item));
         }
 
 
@@ -96,11 +96,7 @@ public class DuplicateBitmapIndexManagerTestCase {
 
 
         Assertions.assertTrue(duplicateIndexManager.removeIndex(1, testItems[0]));
-
-        // Todo: items that dont exist should return false when getting removed
-        //       Currently an exception is thrown because doing `off()` on bitmap will extend it's size,
-        //       and updating with extended size is not valid
-//        Assertions.assertFalse(duplicateIndexManager.removeIndex(1, 10000));
+        Assertions.assertFalse(duplicateIndexManager.removeIndex(1, 10000));
 
 
         listIteratorOptional = duplicateIndexManager.getIndex(1);

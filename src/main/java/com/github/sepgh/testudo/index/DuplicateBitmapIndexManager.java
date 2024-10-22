@@ -30,7 +30,6 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
     }
 
 
-    // Todo: current implementation never returns false
     @Override
     public boolean addIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IOException, ExecutionException, InterruptedException {
         Optional<Pointer> pointerOptional = this.indexManager.getIndex(identifier);
@@ -45,38 +44,42 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
             int initialSize = dbObject.getDataSize();
 
             Bitmap<V> vBitmap = new Bitmap<>(valueIndexBinaryObjectFactory.getType(), dbObject.getData());
-            vBitmap.on(value);
+            boolean result = vBitmap.on(value);
 
-            if (initialSize >= vBitmap.getData().length) {
-                databaseStorageManager.update(pointer, dbObject1 -> {
+            if (result) {
+                if (initialSize >= vBitmap.getData().length) {
+                    databaseStorageManager.update(pointer, dbObject1 -> {
+                        try {
+                            dbObject1.modifyData(vBitmap.getData());
+                        } catch (VerificationException.InvalidDBObjectWrapper e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                } else {
+                    Pointer pointer1 = databaseStorageManager.store(collectionId, 1, vBitmap.getData());
                     try {
-                        dbObject1.modifyData(vBitmap.getData());
-                    } catch (VerificationException.InvalidDBObjectWrapper e) {
+                        this.indexManager.updateIndex(identifier, pointer1);
+                        databaseStorageManager.remove(pointer);
+                    } catch (IndexMissingException e) {
                         throw new RuntimeException(e);
                     }
-                });
-            } else {
-                Pointer pointer1 = databaseStorageManager.store(collectionId, 1, vBitmap.getData());
-                try {
-                    this.indexManager.updateIndex(identifier, pointer1);
-                    databaseStorageManager.remove(pointer);
-                } catch (IndexMissingException e) {
-                    throw new RuntimeException(e);
                 }
             }
+
+            return result;
         } else {
             Bitmap<V> vBitmap = new Bitmap<>(valueIndexBinaryObjectFactory.getType(), new byte[1]);
             vBitmap.on(value);
             Pointer pointer = databaseStorageManager.store(collectionId, 1, vBitmap.getData());
             try {
                 this.indexManager.addIndex(identifier, pointer);
+                return true;
             } catch (IndexExistsException e) {
                 // Another thread stored index? shouldn't happen, but retry
-                this.addIndex(identifier, value);
+                return this.addIndex(identifier, value);
             }
         }
 
-        return true;
     }
 
 
@@ -104,15 +107,19 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
             if (dbObjectOptional.isPresent()) {
                 DBObject dbObject = dbObjectOptional.get();
                 Bitmap<V> vBitmap = new Bitmap<>(valueIndexBinaryObjectFactory.getType(), dbObject.getData());
-                vBitmap.off(value);
-                databaseStorageManager.update(pointer, dbObject1 -> {
-                    try {
-                        dbObject1.modifyData(vBitmap.getData());
-                    } catch (VerificationException.InvalidDBObjectWrapper e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-                return true;
+                boolean result = vBitmap.off(value);
+
+                if (result) {
+                    databaseStorageManager.update(pointer, dbObject1 -> {
+                        try {
+                            dbObject1.modifyData(vBitmap.getData());
+                        } catch (VerificationException.InvalidDBObjectWrapper e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
+
+                return result;
             }
         }
 

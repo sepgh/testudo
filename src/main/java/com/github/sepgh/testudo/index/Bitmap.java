@@ -19,28 +19,40 @@ public class Bitmap<K extends Number> {
         this.width = data.length * Byte.SIZE;
     }
 
-    public void on(K k) {
+    public boolean on(K k) {
         BigInteger bitIndex = convertKeyToBigInteger(k);  // Convert to BigInteger for safety
         ensureCapacity(bitIndex);  // Resize if necessary
 
         // Calculate the byte and bit position
         int byteIndex = bitIndex.divide(BigInteger.valueOf(Byte.SIZE)).intValue();
         int bitPosition = bitIndex.mod(BigInteger.valueOf(Byte.SIZE)).intValue();
+
+        if ((data[byteIndex] & (1 << bitPosition)) != 0)
+            return false;
 
         // Set the bit
         data[byteIndex] |= (byte) (1 << bitPosition);
+        return true;
     }
 
-    public void off(K k) {
+    public boolean off(K k) {
         BigInteger bitIndex = convertKeyToBigInteger(k);  // Convert to BigInteger for safety
-        ensureCapacity(bitIndex);  // Resize if necessary
+
+        if (needsExpansion(bitIndex)){
+            return false;
+        }
 
         // Calculate the byte and bit position
         int byteIndex = bitIndex.divide(BigInteger.valueOf(Byte.SIZE)).intValue();
         int bitPosition = bitIndex.mod(BigInteger.valueOf(Byte.SIZE)).intValue();
 
+        if ((data[byteIndex] & (1 << bitPosition)) == 0){
+            return false;
+        }
+
         // Clear the bit
         data[byteIndex] &= (byte) ~(1 << bitPosition);
+        return true;
     }
 
     // Convert K to a BigInteger, handling UnsignedLong values beyond Long.MAX_VALUE
@@ -51,9 +63,13 @@ public class Bitmap<K extends Number> {
         return BigInteger.valueOf(k.longValue());  // Handles Long, Integer, etc.
     }
 
+    private boolean needsExpansion(BigInteger bitIndex) {
+        return bitIndex.compareTo(BigInteger.valueOf(width)) >= 0;
+    }
+
     // Ensure the byte array has enough space to handle the bit at bitIndex
     private void ensureCapacity(BigInteger bitIndex) {
-        if (bitIndex.compareTo(BigInteger.valueOf(width)) >= 0) {
+        if (needsExpansion(bitIndex)) {
             // We need to grow the array to accommodate the new bit index
             int newWidth = bitIndex.intValue() + 1;  // At least one more than the current bit index
             int newLength = (newWidth + Byte.SIZE - 1) / Byte.SIZE;  // Convert bits to bytes
@@ -114,7 +130,6 @@ public class Bitmap<K extends Number> {
 
                 if ((isBitSet && checkForOnBit) || (!isBitSet && !checkForOnBit)) {
                     lastReturnedBitIndex = BigInteger.valueOf(currentByteIndex).multiply(BigInteger.valueOf(Byte.SIZE)).add(BigInteger.valueOf(currentBitPosition));
-                    System.out.println(lastReturnedBitIndex.intValue());
                     moveToNextBit();
                     return convertIndexToK(lastReturnedBitIndex);
                 }
