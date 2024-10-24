@@ -10,62 +10,62 @@ import com.github.sepgh.testudo.utils.LockableIterator;
 import java.util.Optional;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-
+// Note: I'm guessing this is useless! We need to lock multiple addIndex() operations and this is not the place for that!
 public class AsyncUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> extends UniqueTreeIndexManagerDecorator<K, V> {
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
-    public AsyncUniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager) {
+    private final IndexManagerLock indexManagerLock;
+
+    public AsyncUniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager, IndexManagerLock indexManagerLock) {
         super(uniqueTreeIndexManager);
+        this.indexManagerLock = indexManagerLock;
     }
     
     @Override
     public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException {
-        writeLock.lock();
+        indexManagerLock.getWriteLock().lock();
         try {
             return super.addIndex(identifier, value);
         } finally {
-            writeLock.unlock();
+            indexManagerLock.getWriteLock().unlock();
         }
     }
 
     @Override
     public Optional<V> getIndex(K identifier) throws InternalOperationException {
-        readLock.lock();
+        indexManagerLock.getReadLock().lock();
         try {
             return super.getIndex(identifier);
         } finally {
-            readLock.unlock();
+            indexManagerLock.getReadLock().unlock();
         }
     }
 
     @Override
     public boolean removeIndex(K identifier) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
-        writeLock.lock();
+        indexManagerLock.getWriteLock().lock();
         try {
             return super.removeIndex(identifier);
         } finally {
-            writeLock.unlock();
+            indexManagerLock.getWriteLock().unlock();
         }
     }
 
     @Override
     public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException {
-        writeLock.lock();
+        indexManagerLock.getWriteLock().lock();
         try {
             return super.updateIndex(identifier, value);
         } finally {
-            writeLock.unlock();
+            indexManagerLock.getWriteLock().unlock();
         }
     }
 
     @Override
     public void purgeIndex() {
-        writeLock.lock();
+        indexManagerLock.getWriteLock().lock();
         try {
             super.purgeIndex();
         } finally {
-            writeLock.unlock();
+            indexManagerLock.getWriteLock().unlock();
         }
     }
 
@@ -75,12 +75,12 @@ public class AsyncUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> ex
         return new LockableIterator<>() {
             @Override
             public void lock() {
-                readLock.lock();
+                indexManagerLock.getReadLock().lock();
             }
 
             @Override
             public void unlock() {
-                readLock.unlock();
+                indexManagerLock.getReadLock().unlock();
             }
 
             @Override
@@ -95,4 +95,6 @@ public class AsyncUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> ex
         };
 
     }
+
+
 }

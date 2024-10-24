@@ -3,10 +3,7 @@ package com.github.sepgh.test.index.tree.storing;
 import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.AsyncUniqueTreeIndexManagerDecorator;
-import com.github.sepgh.testudo.index.KeyValue;
-import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
+import com.github.sepgh.testudo.index.*;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
@@ -228,7 +225,8 @@ public class BPlusTreeUniqueTreeIndexManagerTestCase {
 
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new AsyncUniqueTreeIndexManagerDecorator<>(
-                new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get())
+                new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()),
+                new IndexManagerLock()
         );
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);

@@ -5,6 +5,7 @@ import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.AsyncUniqueTreeIndexManagerDecorator;
+import com.github.sepgh.testudo.index.IndexManagerLock;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
@@ -170,7 +171,9 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerSingleStorageManagerTestCa
     }
 
 
-    // Todo: this test failure proves that we need a mechanism for just a single lock around multiple index managers
+    // Note: this test failure proves that we need a mechanism for just a single lock around multiple index managers
+    // Update:  test no longer fails since we use single instance of IndexManagerLock for both Trees
+    //          however this doesn't mean that the final approach would use the decorator at all
     @Timeout(2)
     @Test
     public void testAddIndexDifferentAddOrdersOnDBLevelAsyncIndexManager_usingSingleFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
@@ -178,8 +181,9 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerSingleStorageManagerTestCa
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         CompactFileIndexStorageManager compactFileIndexStorageManager = getSingleFileIndexStorageManager();
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, compactFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()));
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, compactFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()));
+        IndexManagerLock indexManagerLock = new IndexManagerLock();
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, compactFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()), indexManagerLock);
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, compactFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()), indexManagerLock);
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         CountDownLatch countDownLatch = new CountDownLatch((2 * testIdentifiers.size()) - 2);
