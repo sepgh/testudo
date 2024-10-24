@@ -44,9 +44,9 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
 - [X] Generic decorator pattern for `UniqueTreeIndexManager`
 - [X] LRU Cache implementation for `UniqueTreeIndexManager` decorator. **(More tests required)**
 - [ ] Tree Index Manager Locks:
-  - [ ] Async decorator for `UniqueTreeIndexManager` to decorate multiple objects using a single decorator (locking operations of multiple IndexManagers using a single decorator)
-  - [ ] Async decorator for `DuplicateIndexManager` to decorate multiple objects using a single decorator (locking operations of multiple IndexManagers using a single decorator)
-  - [ ] The implementation should be able to combine lock for both Duplicate and Unique Index Managers
+  - [X] Async decorator for `UniqueTreeIndexManager` to decorate multiple objects using a single decorator (locking operations of multiple IndexManagers using a single decorator)
+  - [X] Async decorator for `DuplicateIndexManager` to decorate multiple objects using a single decorator (locking operations of multiple IndexManagers using a single decorator)
+  - [ ] The implementation should be able to combine lock for both Duplicate and Unique Index Managers  (The final implementation may not even need the decorators, so not marking this as done for now, while it's implemented)
 - [X] Providing solution for differentiating `zero` (number) and `null` in a byte array. **(Flag byte is used, which is not the best solution, bitmaps can help here)**
 - [X] Non-unique Index Manager
   - [X] B+Tree and `LinkedList` (binary) implementation

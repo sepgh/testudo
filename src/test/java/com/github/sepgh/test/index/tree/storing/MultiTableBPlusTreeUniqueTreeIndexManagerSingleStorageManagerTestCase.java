@@ -171,7 +171,7 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerSingleStorageManagerTestCa
     }
 
 
-    // Note: this test failure proves that we need a mechanism for just a single lock around multiple index managers
+    // Note: this test failure proved that we need a mechanism for just a single lock around multiple index managers
     // Update:  test no longer fails since we use single instance of IndexManagerLock for both Trees
     //          however this doesn't mean that the final approach would use the decorator at all
     @Timeout(2)
