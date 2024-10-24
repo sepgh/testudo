@@ -54,5 +54,6 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
 - [ ] Database Storage Manager
   - [X] Disk Database Storage Manager Basics (Page Buffer)
   - [ ] Write Queue to make writes Async (is it even safe/possible?) 
+- [ ] Logging
 
 
