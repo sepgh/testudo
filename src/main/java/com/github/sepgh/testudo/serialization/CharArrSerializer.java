@@ -97,7 +97,7 @@ public class CharArrSerializer implements Serializer<String> {
         }
 
         @Override
-        public IndexBinaryObject<String> create(String s) throws IndexBinaryObject.InvalidIndexBinaryObject {
+        public IndexBinaryObject<String> create(String s) {
             byte[] temp = s.getBytes(StandardCharsets.UTF_8);
             if (temp.length > size) {
                 throw new RuntimeException("Fuck");  // Todo: proper exception to be thrown here. currently impossible

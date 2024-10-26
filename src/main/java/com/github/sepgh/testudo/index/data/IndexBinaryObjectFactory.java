@@ -1,7 +1,7 @@
 package com.github.sepgh.testudo.index.data;
 
 public interface IndexBinaryObjectFactory<E> {
-    IndexBinaryObject<E> create(E e) throws IndexBinaryObject.InvalidIndexBinaryObject;
+    IndexBinaryObject<E> create(E e);
     IndexBinaryObject<E> create(byte[] bytes, int beginning);
     default IndexBinaryObject<E> create(byte[] bytes) {
         return create(bytes, 0);

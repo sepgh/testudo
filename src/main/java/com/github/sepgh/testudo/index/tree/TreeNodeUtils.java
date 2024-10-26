@@ -177,7 +177,7 @@ public class TreeNodeUtils {
             IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory,
             V value,
             int indexToFill
-    ) throws IndexBinaryObject.InvalidIndexBinaryObject {
+    ) {
         int keySize = indexBinaryObjectFactory.size();
         int valueSize = valueIndexBinaryObjectFactory.size();
         int max = degree - 1;
@@ -223,7 +223,7 @@ public class TreeNodeUtils {
             K key,
             IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory,
             V value
-    ) throws IndexBinaryObject.InvalidIndexBinaryObject {
+    ) {
         int indexToFill = -1;
         IndexBinaryObject<K> keyAtIndex;
         int valueSize = valueIndexBinaryObjectFactory.size();

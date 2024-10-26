@@ -87,7 +87,7 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
         return ImmutableList.copyOf(getKeys(degree, valueSize));
     }
 
-    public void setKey(int index, K key, int valueSize) throws IndexBinaryObject.InvalidIndexBinaryObject {
+    public void setKey(int index, K key, int valueSize) {
         TreeNodeUtils.setKeyAtIndex(this, index, kIndexBinaryObjectFactory.create(key), valueSize);
     }
 

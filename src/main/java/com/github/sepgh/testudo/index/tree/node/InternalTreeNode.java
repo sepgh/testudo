@@ -28,7 +28,7 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
         return ImmutableList.copyOf(getChildPointers(degree));
     }
 
-    public void setChildPointers(List<ChildPointers<K>> childPointers, int degree, boolean cleanRest) throws IndexBinaryObject.InvalidIndexBinaryObject {
+    public void setChildPointers(List<ChildPointers<K>> childPointers, int degree, boolean cleanRest) {
         modified();
         if (cleanRest)
             TreeNodeUtils.cleanChildrenPointers(this, degree, kIndexBinaryObjectFactory.size());
@@ -142,7 +142,7 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
      *
      *   The returned list first node should be passed to parent and the remaining should be stored in a new node
      */
-    public List<ChildPointers<K>> addAndSplit(K identifier, Pointer pointer, int degree) throws IndexBinaryObject.InvalidIndexBinaryObject {
+    public List<ChildPointers<K>> addAndSplit(K identifier, Pointer pointer, int degree) {
         modified();
         int mid = (degree - 1) / 2;
 

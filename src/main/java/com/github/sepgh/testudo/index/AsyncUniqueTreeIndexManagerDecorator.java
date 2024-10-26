@@ -3,12 +3,10 @@ package com.github.sepgh.testudo.index;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.util.Optional;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 // Note: I'm guessing this is useless! We need to lock multiple addIndex() operations and this is not the place for that!
 public class AsyncUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> extends UniqueTreeIndexManagerDecorator<K, V> {
@@ -20,7 +18,7 @@ public class AsyncUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> ex
     }
     
     @Override
-    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException {
+    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, IndexExistsException {
         indexManagerLock.getWriteLock().lock();
         try {
             return super.addIndex(identifier, value);
@@ -40,7 +38,7 @@ public class AsyncUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> ex
     }
 
     @Override
-    public boolean removeIndex(K identifier) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    public boolean removeIndex(K identifier) throws InternalOperationException {
         indexManagerLock.getWriteLock().lock();
         try {
             return super.removeIndex(identifier);
@@ -50,7 +48,7 @@ public class AsyncUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> ex
     }
 
     @Override
-    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException {
+    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexMissingException {
         indexManagerLock.getWriteLock().lock();
         try {
             return super.updateIndex(identifier, value);

@@ -27,7 +27,7 @@ public class PointerIndexBinaryObject extends AbstractIndexBinaryObject<Pointer>
     public static class Factory implements IndexBinaryObjectFactory<Pointer> {
 
         @Override
-        public IndexBinaryObject<Pointer> create(Pointer pointer) throws InvalidIndexBinaryObject {
+        public IndexBinaryObject<Pointer> create(Pointer pointer) {
             return new PointerIndexBinaryObject(pointer.toBytes());
         }
 

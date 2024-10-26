@@ -136,7 +136,7 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         return this.data.length + DBObject.META_BYTES;
     }
     
-    public boolean addNew(V v) throws IndexBinaryObject.InvalidIndexBinaryObject {
+    public boolean addNew(V v) {
         // GROW BYTE[] IF POSSIBLE
         int lastItemIndex = getLastItemIndex();
         if (lastItemIndex == this.getNumberOfElements() - 1) {
@@ -201,7 +201,7 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         System.arraycopy(bytes, 0, this.data, offset, bytes.length);
     }
 
-    private void setObjectAt(int index, V v) throws IndexBinaryObject.InvalidIndexBinaryObject {
+    private void setObjectAt(int index, V v) {
         int offset = META_SIZE + index * valueIndexBinaryObjectFactory.size();
         IndexBinaryObject<V> vIndexBinaryObject = valueIndexBinaryObjectFactory.create(v);
         byte[] bytes = vIndexBinaryObject.getBytes();

@@ -4,7 +4,6 @@ import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
-import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeUniqueTreeIndexManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.session.MemorySnapshotIndexIOSession;
@@ -28,7 +27,7 @@ public class MemorySnapshotBPlusTreeUniqueTreeIndexManagerRemovalTestCase extend
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
+    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         super.testRemovingLeftToRight();
     }
 
@@ -36,14 +35,14 @@ public class MemorySnapshotBPlusTreeUniqueTreeIndexManagerRemovalTestCase extend
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
+    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         super.testRemovingRightToLeft();
     }
 
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
+    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         super.testRemovingRoot();
     }
 

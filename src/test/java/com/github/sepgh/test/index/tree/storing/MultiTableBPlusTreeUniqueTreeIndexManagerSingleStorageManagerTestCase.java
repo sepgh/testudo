@@ -8,7 +8,6 @@ import com.github.sepgh.testudo.index.AsyncUniqueTreeIndexManagerDecorator;
 import com.github.sepgh.testudo.index.IndexManagerLock;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
-import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
@@ -95,7 +94,7 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerSingleStorageManagerTestCa
      *     └── 012
      */
     @Test
-    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
+    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
@@ -146,7 +145,7 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerSingleStorageManagerTestCa
      *     └── 012
      */
     @Test
-    public void testMultiSplitAddIndex2() throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException, InternalOperationException {
+    public void testMultiSplitAddIndex2() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 4L, 9L, 6L, 10L, 8L, 3L, 2L, 11L, 5L, 7L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
@@ -198,7 +197,7 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerSingleStorageManagerTestCa
                 try {
                     uniqueTreeIndexManager1.addIndex(testIdentifiers.get(index1.getAndIncrement()), samplePointer);
                     countDownLatch.countDown();
-                } catch (IndexBinaryObject.InvalidIndexBinaryObject | IndexExistsException |
+                } catch (IndexExistsException |
                          InternalOperationException e) {
                     throw new RuntimeException(e);
                 }
@@ -207,7 +206,7 @@ public class MultiTableBPlusTreeUniqueTreeIndexManagerSingleStorageManagerTestCa
                 try {
                     uniqueTreeIndexManager2.addIndex(testIdentifiers.get(index2.getAndIncrement()) * 10, samplePointer);
                     countDownLatch.countDown();
-                } catch (IndexBinaryObject.InvalidIndexBinaryObject | IndexExistsException |
+                } catch (IndexExistsException |
                          InternalOperationException e) {
                     throw new RuntimeException(e);
                 }

@@ -1,7 +1,6 @@
 package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.io.IOException;
@@ -17,7 +16,7 @@ public class DuplicateIndexManagerDecorator<K extends Comparable<K>, V extends N
     }
 
     @Override
-    public boolean addIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IOException, ExecutionException, InterruptedException {
+    public boolean addIndex(K identifier, V value) throws InternalOperationException, IOException, ExecutionException, InterruptedException {
         return this.decorated.addIndex(identifier, value);
     }
 
@@ -27,7 +26,7 @@ public class DuplicateIndexManagerDecorator<K extends Comparable<K>, V extends N
     }
 
     @Override
-    public boolean removeIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IOException, ExecutionException, InterruptedException {
+    public boolean removeIndex(K identifier, V value) throws InternalOperationException, IOException, ExecutionException, InterruptedException {
         return this.decorated.removeIndex(identifier, value);
     }
 

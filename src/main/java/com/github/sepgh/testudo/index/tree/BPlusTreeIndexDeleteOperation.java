@@ -3,7 +3,6 @@ package com.github.sepgh.testudo.index.tree;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
@@ -31,7 +30,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
         this.nodeFactory = nodeFactory;
     }
 
-    public boolean removeIndex(AbstractTreeNode<K> root, K identifier) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    public boolean removeIndex(AbstractTreeNode<K> root, K identifier) throws InternalOperationException {
         List<AbstractTreeNode<K>> path = new LinkedList<>();
         BPlusTreeUtils.getPathToResponsibleNode(indexIOSession, path, root, identifier, degree);
         boolean result = false;
@@ -59,7 +58,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
     }
 
 
-    private void deleteInternalNode(InternalTreeNode<K> parent, InternalTreeNode<K> node, int idx) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    private void deleteInternalNode(InternalTreeNode<K> parent, InternalTreeNode<K> node, int idx) throws InternalOperationException {
         List<Pointer> childrenList = node.getChildrenList();
         if (idx != 0){
             AbstractTreeNode<K> leftIDXChild = indexIOSession.read(childrenList.get(idx - 1));
@@ -101,7 +100,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
         return cur.getKeyList(degree, valueIndexBinaryObjectFactory.size()).getFirst();
     }
 
-    private void checkInternalNode(InternalTreeNode<K> internalTreeNode, List<AbstractTreeNode<K>> path, int nodeIndex, K identifier) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    private void checkInternalNode(InternalTreeNode<K> internalTreeNode, List<AbstractTreeNode<K>> path, int nodeIndex, K identifier) throws InternalOperationException {
         List<K> keyList = internalTreeNode.getKeyList(degree);
 
         // Checking an old root, which should already been handled, so return
@@ -142,7 +141,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
         indexIOSession.update(internalTreeNode);
     }
 
-    private void fillNode(AbstractTreeNode<K> currentNode, InternalTreeNode<K> parentNode, int idx) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    private void fillNode(AbstractTreeNode<K> currentNode, InternalTreeNode<K> parentNode, int idx) throws InternalOperationException {
         boolean borrowed;
         if (idx == 0){  // Leaf was at the beginning, check if we can borrow from right
             borrowed = tryBorrowRight(parentNode, idx, currentNode);
@@ -163,7 +162,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
         }
     }
 
-    private boolean tryBorrowRight(InternalTreeNode<K> parentNode, int idx, AbstractTreeNode<K> child) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    private boolean tryBorrowRight(InternalTreeNode<K> parentNode, int idx, AbstractTreeNode<K> child) throws InternalOperationException {
         AbstractTreeNode<K> sibling = indexIOSession.read(parentNode.getChildrenList().get(idx + 1));
         int keyCount = sibling.isLeaf() ? sibling.getKeyList(degree, valueIndexBinaryObjectFactory.size()).size() : ((InternalTreeNode<K>) sibling).getKeyList(degree).size();
         if (keyCount > minKeys){
@@ -173,7 +172,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
         return false;
     }
 
-    private boolean tryBorrowLeft(InternalTreeNode<K> parentNode, int idx, AbstractTreeNode<K> child) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    private boolean tryBorrowLeft(InternalTreeNode<K> parentNode, int idx, AbstractTreeNode<K> child) throws InternalOperationException {
         AbstractTreeNode<K> sibling = indexIOSession.read(parentNode.getChildrenList().get(idx - 1));
         int keyCount = sibling.isLeaf() ? sibling.getKeyList(degree, valueIndexBinaryObjectFactory.size()).size() : ((InternalTreeNode<K>) sibling).getKeyList(degree).size();
         if (keyCount > minKeys){
@@ -193,7 +192,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
      * @param idx index of child in parent
      * @param optionalChild nullable child node, if not provided it will be calculated based on idx
      */
-    private void borrowFromPrev(InternalTreeNode<K> parent, int idx, @Nullable AbstractTreeNode<K> optionalChild) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    private void borrowFromPrev(InternalTreeNode<K> parent, int idx, @Nullable AbstractTreeNode<K> optionalChild) throws InternalOperationException {
         AbstractTreeNode<K> child = optionalChild != null ? optionalChild : indexIOSession.read(parent.getChildrenList().get(idx));
         AbstractTreeNode<K> sibling = indexIOSession.read(parent.getChildrenList().get(idx - 1));
 
@@ -249,7 +248,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
      * @param idx index of child in parent
      * @param optionalChild nullable child node, if not provided it will be calculated based on idx
      */
-    private void borrowFromNext(InternalTreeNode<K> parent, int idx, @Nullable AbstractTreeNode<K> optionalChild) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    private void borrowFromNext(InternalTreeNode<K> parent, int idx, @Nullable AbstractTreeNode<K> optionalChild) throws InternalOperationException {
         AbstractTreeNode<K> child = optionalChild != null ? optionalChild : indexIOSession.read(parent.getChildrenList().get(idx));
         AbstractTreeNode<K> sibling = indexIOSession.read(parent.getChildrenList().get(idx + 1));
 
@@ -305,7 +304,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
      * @param child The current node. We will merge into child (we may switch it with sibling first)
      * @param idx The index of the child parent to merge.
      */
-    private void merge(InternalTreeNode<K> parent, AbstractTreeNode<K> child, int idx) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    private void merge(InternalTreeNode<K> parent, AbstractTreeNode<K> child, int idx) throws InternalOperationException {
         int toRemoveIndex = idx + 1;
         if (idx == parent.getChildrenList().size() - 1){
             toRemoveIndex = idx - 1;

@@ -32,6 +32,8 @@ public class DBObject {
     private final int length;
     @Getter
     private final Page page;
+    @Getter
+    private boolean modified;
 
     public DBObject(Page page, int begin, int end) throws VerificationException.InvalidDBObjectWrapper {
         this.wrappedData = page.getData();
@@ -89,6 +91,8 @@ public class DBObject {
             throw new VerificationException.InvalidDBObjectWrapper("Todo"); // Todo
         }
 
+        this.modified = true;
+
         System.arraycopy(
                 value,
                 0,
@@ -99,6 +103,8 @@ public class DBObject {
     }
 
     public void modifyData(int offset, byte[] value){
+        this.modified = true;
+
         System.arraycopy(
                 value,
                 0,
@@ -113,6 +119,8 @@ public class DBObject {
     }
 
     public void setVersion(int version) {
+        this.modified = true;
+
         System.arraycopy(
                 Ints.toByteArray(version),
                 0,
@@ -123,6 +131,8 @@ public class DBObject {
     }
 
     public void setCollectionId(int collectionId) {
+        this.modified = true;
+
         System.arraycopy(
                 Ints.toByteArray(collectionId),
                 0,
@@ -133,6 +143,8 @@ public class DBObject {
     }
 
     public void setSize(int size) {
+        this.modified = true;
+
         System.arraycopy(
                 Ints.toByteArray(size),
                 0,
@@ -143,10 +155,12 @@ public class DBObject {
     }
 
     public void deactivate() {
+        this.modified = true;
         this.wrappedData[begin] = (byte) (wrappedData[begin] & ~ALIVE_OBJ);
     }
 
     public void activate() {
+        this.modified = true;
         this.wrappedData[begin] = (byte) (wrappedData[begin] | ALIVE_OBJ);
     }
 

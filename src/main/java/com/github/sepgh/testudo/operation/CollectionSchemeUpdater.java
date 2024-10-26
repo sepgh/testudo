@@ -5,7 +5,6 @@ import com.github.sepgh.testudo.index.DuplicateIndexManager;
 import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
-import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.scheme.SchemeManager;
 import com.github.sepgh.testudo.serialization.CollectionSerializationUtil;
@@ -15,16 +14,10 @@ import com.github.sepgh.testudo.utils.LockableIterator;
 import lombok.SneakyThrows;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 
-// Todo:
-// Index updating: Removed fields needs to drop indexes
-//                 An index itself may have been removed as well
-//                 Newly added indexes should also be handled
 public class CollectionSchemeUpdater {
     private SchemeManager.CollectionFieldsUpdate collectionFieldsUpdate;
     private DatabaseStorageManager databaseStorageManager;
@@ -44,6 +37,11 @@ public class CollectionSchemeUpdater {
         this.collectionFieldsUpdate = collectionFieldsUpdate;
     }
 
+    /*  Update process
+    *   Grab all rows/objects using cluster IndexManager and loop over them
+    *   Keep it the same or Compare and update the object
+    *   Update indexes
+    */
     @SneakyThrows
     public <K extends Number & Comparable<K>> void update() {
         assert this.collectionFieldsUpdate != null;
@@ -54,51 +52,74 @@ public class CollectionSchemeUpdater {
 
         LockableIterator<? extends KeyValue<K, Pointer>> lockableIterator = clusterIndexManager.getSortedIterator();
 
+        List<K> removedObjects = new ArrayList<>();
+
         lockableIterator.forEachRemaining(keyValue -> {
             Pointer pointer = keyValue.value();
             try {
-                databaseStorageManager.update(
-                        pointer,
-                        dbObject -> {
-                            if (collectionFieldsUpdate.getVersion() <= dbObject.getVersion())
-                                return;
+                Optional<DBObject> dbObjectOptional = databaseStorageManager.select(pointer);
+                if (dbObjectOptional.isEmpty() || !dbObjectOptional.get().isAlive()) {
+                    removedObjects.add(keyValue.key());
+                    return;
+                }
 
-                            byte[] bytes;
+                DBObject dbObject = dbObjectOptional.get();
 
-                            if (hasSpace(dbObject, this.collectionFieldsUpdate.getAfter())){
-                                try {
-                                    update(dbObject);
-                                    bytes = dbObject.getData();
-                                } catch (SerializationException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            } else {
-                                dbObject.deactivate();
-                                try {
-                                    bytes = createNew(dbObject, clusterIndexManager, keyValue);
-                                } catch (IOException | ExecutionException | InterruptedException |
-                                         IndexExistsException | InternalOperationException |
-                                         IndexBinaryObject.InvalidIndexBinaryObject |
-                                         IndexMissingException | SerializationException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
+                if (collectionFieldsUpdate.getVersion() <= dbObject.getVersion())
+                    return;
 
-                            try {
-                                updateIndexes(bytes, keyValue.key());
-                            } catch (DeserializationException | IndexExistsException | InternalOperationException |
-                                     IndexBinaryObject.InvalidIndexBinaryObject | IOException | ExecutionException | InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
+                dbObject.setVersion(collectionFieldsUpdate.getVersion());
 
+                byte[] bytes;
+
+                if (hasSpace(dbObject, this.collectionFieldsUpdate.getAfter())){
+                    try {
+                        update(dbObject);
+                    } catch (SerializationException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    bytes = dbObject.getData();
+                    this.databaseStorageManager.update(pointer, dbObject1 -> {
+                        dbObject1.setVersion(collectionFieldsUpdate.getVersion());
+                        try {
+                            dbObject1.modifyData(bytes);
+                        } catch (VerificationException.InvalidDBObjectWrapper e) {
+                            throw new RuntimeException(e);
                         }
-                );
-            } catch (IOException | ExecutionException | InterruptedException e) {
+                    });
+
+                } else {
+                    dbObject.deactivate();
+                    try {
+                        bytes = createNew(dbObject);
+                        Pointer newPointer = this.databaseStorageManager.store(
+                                this.collectionFieldsUpdate.getAfter().getId(),
+                                this.collectionFieldsUpdate.getVersion(),
+                                bytes
+                        );
+                        clusterIndexManager.updateIndex(keyValue.key(), newPointer);
+                        this.databaseStorageManager.remove(pointer);
+                    } catch (IOException | ExecutionException | InterruptedException | IndexExistsException | InternalOperationException | IndexMissingException | SerializationException  e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                updateIndexes(bytes, keyValue.key());
+            } catch (DeserializationException | IndexExistsException | InternalOperationException | IOException | ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
         });
 
         purgeIndexesOfRemovedFields();
+
+        removedObjects.forEach(k -> {
+            try {
+                clusterIndexManager.removeIndex(k);
+            } catch (InternalOperationException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
     }
 
@@ -116,7 +137,7 @@ public class CollectionSchemeUpdater {
         }
     }
 
-    private <K extends Comparable<K>, V extends Number & Comparable<V>> void updateIndexes(byte[] obj, V clusterId) throws DeserializationException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IOException, ExecutionException, InterruptedException {
+    private <K extends Comparable<K>, V extends Number & Comparable<V>> void updateIndexes(byte[] obj, V clusterId) throws DeserializationException, IndexExistsException, InternalOperationException, IOException, ExecutionException, InterruptedException {
         for (Scheme.Field field : collectionFieldsUpdate.getNewFields()) {
             if (!field.isIndex()){
                 return;
@@ -134,7 +155,7 @@ public class CollectionSchemeUpdater {
 
     }
 
-    private <K extends Comparable<K>> byte[] createNew(DBObject dbObject, UniqueTreeIndexManager<K, Pointer> pkUniqueTreeIndexManager, KeyValue<K, Pointer> keyValue) throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException, SerializationException {
+    private <K extends Comparable<K>> byte[] createNew(DBObject dbObject) throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, IndexMissingException, SerializationException {
         Map<Integer, byte[]> valueMap = new HashMap<>();
 
         collectionFieldsUpdate.getBefore().getFields().forEach(field -> {
@@ -158,13 +179,6 @@ public class CollectionSchemeUpdater {
             );
         }
 
-        Pointer pointer = databaseStorageManager.store(
-                collectionFieldsUpdate.getAfter().getId(),
-                schemeManager.getScheme().getVersion(),
-                newObj
-        );
-
-        pkUniqueTreeIndexManager.updateIndex(keyValue.key(), pointer);
         return newObj;
     }
 

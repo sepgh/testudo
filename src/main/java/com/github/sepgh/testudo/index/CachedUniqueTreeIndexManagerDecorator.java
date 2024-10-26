@@ -3,7 +3,6 @@ package com.github.sepgh.testudo.index;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -27,7 +26,7 @@ public class CachedUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> e
     }
 
     @Override
-    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException {
+    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, IndexExistsException {
         AbstractTreeNode<K> baseClusterTreeNode = super.addIndex(identifier, value);
         cache.put(new CacheID<>(getIndexId(), identifier), value);
         if (sizeCache.get() > 0)
@@ -36,7 +35,7 @@ public class CachedUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> e
     }
 
     @Override
-    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException {
+    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexMissingException {
         AbstractTreeNode<K> baseClusterTreeNode = super.updateIndex(identifier, value);
         cache.put(new CacheID<>(getIndexId(), identifier), value);
         return baseClusterTreeNode;
@@ -53,7 +52,7 @@ public class CachedUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> e
     }
 
     @Override
-    public boolean removeIndex(K identifier) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    public boolean removeIndex(K identifier) throws InternalOperationException {
         if (super.removeIndex(identifier)) {
             cache.invalidate(new CacheID<>(getIndexId(), identifier));
             if (sizeCache.get() > 0) {

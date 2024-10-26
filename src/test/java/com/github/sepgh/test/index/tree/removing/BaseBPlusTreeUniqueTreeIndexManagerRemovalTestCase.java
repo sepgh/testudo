@@ -6,7 +6,6 @@ import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
-import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
@@ -80,7 +79,7 @@ public class BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
      *     ├── 011
      *     └── 012
      */
-    public void testRemovingLeftToRight(UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, InternalOperationException, IndexExistsException {
+    public void testRemovingLeftToRight(UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, InternalOperationException, IndexExistsException {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
@@ -265,7 +264,7 @@ public class BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
 
     }
 
-    public void testRemovingRightToLeft(UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, InternalOperationException, IndexExistsException {
+    public void testRemovingRightToLeft(UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, InternalOperationException, IndexExistsException {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
         NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
@@ -430,7 +429,7 @@ public class BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
     }
 
 
-    public void testRemovingRoot(UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, IndexBinaryObject.InvalidIndexBinaryObject, InternalOperationException, IndexExistsException {
+    public void testRemovingRoot(UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, InternalOperationException, IndexExistsException {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
         NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
@@ -546,7 +545,7 @@ public class BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
             executorService.submit(() -> {
                 try {
                     uniqueTreeIndexManager.addIndex(testIdentifier, samplePointer);
-                } catch (IndexBinaryObject.InvalidIndexBinaryObject | IndexExistsException |
+                } catch (IndexExistsException |
                          InternalOperationException e) {
                     throw new RuntimeException(e);
                 } finally {
@@ -563,7 +562,7 @@ public class BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
             executorService.submit(() -> {
                 try {
                     uniqueTreeIndexManager.removeIndex(testIdentifier);
-                } catch (InternalOperationException | IndexBinaryObject.InvalidIndexBinaryObject e) {
+                } catch (InternalOperationException e) {
                     throw new RuntimeException(e);
                 } finally {
                     countDownLatch2.countDown();

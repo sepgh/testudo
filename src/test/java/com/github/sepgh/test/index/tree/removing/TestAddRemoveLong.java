@@ -3,7 +3,6 @@ package com.github.sepgh.test.index.tree.removing;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
-import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.BPlusTreeUniqueTreeIndexManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
@@ -33,7 +32,7 @@ public class TestAddRemoveLong extends BaseBPlusTreeUniqueTreeIndexManagerRemova
     }
 
     @Test
-    public void test() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    public void test() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         UniqueTreeIndexManager<Long, Long> indexManager = getIndexManager(indexStorageManager);
 

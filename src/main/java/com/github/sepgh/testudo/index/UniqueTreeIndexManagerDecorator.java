@@ -3,7 +3,6 @@ package com.github.sepgh.testudo.index;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
@@ -16,12 +15,12 @@ public class UniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> impleme
         this.uniqueTreeIndexManager = uniqueTreeIndexManager;
     }
 
-    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexExistsException {
+    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, IndexExistsException {
         return this.uniqueTreeIndexManager.addIndex(identifier, value);
     }
 
     @Override
-    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject, IndexMissingException {
+    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexMissingException {
         return this.uniqueTreeIndexManager.updateIndex(identifier, value);
     }
 
@@ -29,7 +28,7 @@ public class UniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> impleme
         return this.uniqueTreeIndexManager.getIndex(identifier);
     }
 
-    public boolean removeIndex(K identifier) throws InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    public boolean removeIndex(K identifier) throws InternalOperationException {
         return this.uniqueTreeIndexManager.removeIndex(identifier);
     }
 

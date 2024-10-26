@@ -3,7 +3,6 @@ package com.github.sepgh.test.index.tree.removing;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
-import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.BPlusTreeUniqueTreeIndexManager;
 import com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
@@ -30,7 +29,7 @@ public class CompactFileIndexStorageManagerPurgeTestCase extends BaseBPlusTreeUn
     }
 
     @Test
-    public void testPurge() throws IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
+    public void testPurge() throws IndexExistsException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
 
         UniqueTreeIndexManager<Long, Long> indexManager = getIndexManager(indexStorageManager);

@@ -40,7 +40,7 @@ public interface Serializer<T extends Comparable<T>> {
 
             @SneakyThrows   // Todo
             @Override
-            public IndexBinaryObject<T> create(T t) throws IndexBinaryObject.InvalidIndexBinaryObject {
+            public IndexBinaryObject<T> create(T t) {
                 return new IndexBinaryObjectSerializer<>(t, SERIALIZER);
             }
 
