@@ -222,6 +222,6 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
 
     @Override
     public int getIndexId() {
-        return this.collectionId;
+        return this.indexManager.getIndexId();
     }
 }

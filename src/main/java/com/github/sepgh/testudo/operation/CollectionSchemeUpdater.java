@@ -106,10 +106,10 @@ public class CollectionSchemeUpdater {
         for (Scheme.Field field : collectionFieldsUpdate.getRemovedFields()) {
             if (field.isIndex()){
                 if (field.isIndexUnique()){
-                    UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.schemeManager.getFieldIndexManagerProvider().getUniqueIndexManager(collectionFieldsUpdate.getBefore(), field);
+                    UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.schemeManager.getCollectionIndexProviderFactory().create(collectionFieldsUpdate.getBefore()).getUniqueIndexManager(field);
                     uniqueTreeIndexManager.purgeIndex();
                 } else {
-                    DuplicateIndexManager<?, ?> duplicateIndexManager = this.schemeManager.getFieldIndexManagerProvider().getDuplicateIndexManager(collectionFieldsUpdate.getBefore(), field);
+                    DuplicateIndexManager<?, ?> duplicateIndexManager = this.schemeManager.getCollectionIndexProviderFactory().create(collectionFieldsUpdate.getBefore()).getDuplicateIndexManager(field);
                     duplicateIndexManager.purgeIndex();
                 }
             }
@@ -124,10 +124,10 @@ public class CollectionSchemeUpdater {
 
             K key = CollectionSerializationUtil.getValueOfFieldAsObject(collectionFieldsUpdate.getAfter(), field, obj);
             if (field.isIndexUnique()){
-                UniqueTreeIndexManager<K, V> uniqueTreeIndexManager = (UniqueTreeIndexManager<K, V>) this.schemeManager.getFieldIndexManagerProvider().getUniqueIndexManager(collectionFieldsUpdate.getAfter(), field);
+                UniqueTreeIndexManager<K, V> uniqueTreeIndexManager = (UniqueTreeIndexManager<K, V>) this.schemeManager.getCollectionIndexProviderFactory().create(collectionFieldsUpdate.getAfter()).getUniqueIndexManager(field);
                 uniqueTreeIndexManager.addIndex(key, clusterId);
             } else {
-                DuplicateIndexManager<K, V> duplicateIndexManager = (DuplicateIndexManager<K, V>) this.schemeManager.getFieldIndexManagerProvider().getDuplicateIndexManager(collectionFieldsUpdate.getBefore(), field);
+                DuplicateIndexManager<K, V> duplicateIndexManager = (DuplicateIndexManager<K, V>) this.schemeManager.getCollectionIndexProviderFactory().create(collectionFieldsUpdate.getBefore()).getDuplicateIndexManager(field);
                 duplicateIndexManager.addIndex(key, clusterId);
             }
         }

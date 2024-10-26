@@ -8,8 +8,8 @@ import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
-import com.github.sepgh.testudo.operation.DefaultFieldIndexManagerProvider;
-import com.github.sepgh.testudo.operation.FieldIndexManagerProvider;
+import com.github.sepgh.testudo.operation.CollectionIndexProviderFactory;
+import com.github.sepgh.testudo.operation.DefaultCollectionIndexProviderFactory;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.scheme.SchemeManager;
 import com.github.sepgh.testudo.serialization.CollectionSerializationUtil;
@@ -72,7 +72,7 @@ public class SchemeManagerTestCase {
     @Test
     public void test_SchemeManager() throws IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        FieldIndexManagerProvider fieldIndexManagerProvider = new DefaultFieldIndexManagerProvider(engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
         Scheme scheme = Scheme.builder()
                 .dbName("test")
                 .version(1)
@@ -111,7 +111,7 @@ public class SchemeManagerTestCase {
         SchemeManager schemeManager = new SchemeManager(
                 engineConfig,
                 scheme,
-                fieldIndexManagerProvider,
+                collectionIndexProviderFactory,
                 this.databaseStorageManager
         );
         schemeManager.update();
@@ -138,14 +138,13 @@ public class SchemeManagerTestCase {
 
         Assertions.assertEquals(scheme, newScheme2);
 
-        UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = fieldIndexManagerProvider.getUniqueIndexManager(
-                scheme.getCollections().getFirst(),
+        UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = collectionIndexProviderFactory.create(scheme.getCollections().getFirst()).getUniqueIndexManager(
                 scheme.getCollections().getFirst().getFields().getFirst()
         );
 
-        Method method = DefaultFieldIndexManagerProvider.class.getDeclaredMethod("getPoolId", Scheme.Collection.class, Scheme.Field.class);
+        Method method = DefaultCollectionIndexProviderFactory.class.getDeclaredMethod("getIndexId", Scheme.Collection.class, Scheme.Field.class);
         method.setAccessible(true);
-        Object invoked = method.invoke(fieldIndexManagerProvider, scheme.getCollections().getFirst(), scheme.getCollections().getFirst().getFields().getFirst());
+        Object invoked = method.invoke(collectionIndexProviderFactory, scheme.getCollections().getFirst(), scheme.getCollections().getFirst().getFields().getFirst());
 
         Assertions.assertEquals(
                 invoked.hashCode(),
@@ -166,10 +165,12 @@ public class SchemeManagerTestCase {
     *
     *   Afterward, the new object should be 4 bytes longer and store the data set as `defaultValue` for the new field during scheme update.
     */
+
+    // Todo: test fails now that we are working on cluster index ;)
     @Test
     public void test_SchemeManager_WithData() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, IndexBinaryObject.InvalidIndexBinaryObject {
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        DefaultFieldIndexManagerProvider fieldIndexManagerProvider = new DefaultFieldIndexManagerProvider(engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
 
         // --- CREATING BASE SCHEME --- //
         Scheme scheme = Scheme.builder()
@@ -211,7 +212,7 @@ public class SchemeManagerTestCase {
         SchemeManager schemeManager = new SchemeManager(
                 engineConfig,
                 scheme,
-                fieldIndexManagerProvider,
+                collectionIndexProviderFactory,
                 this.databaseStorageManager
         );
         schemeManager.update();
@@ -235,10 +236,7 @@ public class SchemeManagerTestCase {
         Assertions.assertEquals(1, dbObject.getVersion());
 
         // --- ADDING THE DATA TO INDEX, WHICH IS CLUSTER INDEX AND IS AVAILABLE TO MANAGER TOO --- //
-        UniqueTreeIndexManager<UnsignedLong, Pointer> uniqueTreeIndexManager = (UniqueTreeIndexManager<UnsignedLong, Pointer>) fieldIndexManagerProvider.getClusterIndexManager(
-                scheme.getCollections().getFirst()
-        );
-        AbstractTreeNode<UnsignedLong> treeNode = uniqueTreeIndexManager.addIndex(UnsignedLong.valueOf(1), pointer);
+        UniqueTreeIndexManager<UnsignedLong, Pointer> uniqueTreeIndexManager = (UniqueTreeIndexManager<UnsignedLong, Pointer>) collectionIndexProviderFactory.create(scheme.getCollections().getFirst()).getClusterIndexManager();
         Optional<Pointer> optionalPointer = uniqueTreeIndexManager.getIndex(UnsignedLong.valueOf(1));
         Assertions.assertTrue(optionalPointer.isPresent());
         Assertions.assertEquals(pointer, optionalPointer.get());
@@ -259,7 +257,7 @@ public class SchemeManagerTestCase {
         schemeManager = new SchemeManager(
                 engineConfig,
                 scheme,
-                fieldIndexManagerProvider,
+                collectionIndexProviderFactory,
                 this.databaseStorageManager
         );
         schemeManager.update();
@@ -289,7 +287,7 @@ public class SchemeManagerTestCase {
         schemeManager = new SchemeManager(
                 engineConfig,
                 scheme,
-                fieldIndexManagerProvider,
+                collectionIndexProviderFactory,
                 this.databaseStorageManager
         );
         schemeManager.update();
@@ -321,13 +319,13 @@ public class SchemeManagerTestCase {
         schemeManager = new SchemeManager(
                 engineConfig,
                 scheme,
-                fieldIndexManagerProvider,
+                collectionIndexProviderFactory,
                 this.databaseStorageManager
         );
         schemeManager.update();
 
 
-        UniqueTreeIndexManager<Integer, UnsignedLong> newFieldUniqueTreeIndexManager = (UniqueTreeIndexManager<Integer, UnsignedLong>) fieldIndexManagerProvider.getUniqueIndexManager(scheme.getCollections().getFirst(), newField);
+        UniqueTreeIndexManager<Integer, UnsignedLong> newFieldUniqueTreeIndexManager = (UniqueTreeIndexManager<Integer, UnsignedLong>) collectionIndexProviderFactory.create(scheme.getCollections().getFirst()).getUniqueIndexManager(newField);
         Assertions.assertEquals(1, newFieldUniqueTreeIndexManager.size());
         Optional<UnsignedLong> optionalIndexValue = newFieldUniqueTreeIndexManager.getIndex(defaultValue);
         Assertions.assertTrue(optionalIndexValue.isPresent());

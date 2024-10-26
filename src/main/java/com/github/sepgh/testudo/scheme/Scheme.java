@@ -111,6 +111,8 @@ public class Scheme {
         private boolean primary;
         private boolean index;
         private boolean indexUnique;
+        @Builder.Default
+        private boolean lowCardinality = false;
         private String defaultValue;
         @Builder.Default
         private boolean supportZero = true;

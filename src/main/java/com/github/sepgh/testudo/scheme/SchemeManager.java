@@ -4,8 +4,8 @@ import com.github.sepgh.testudo.EngineConfig;
 import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
+import com.github.sepgh.testudo.operation.CollectionIndexProviderFactory;
 import com.github.sepgh.testudo.operation.CollectionSchemeUpdater;
-import com.github.sepgh.testudo.operation.FieldIndexManagerProvider;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import com.google.gson.Gson;
@@ -36,16 +36,16 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
     private final EngineConfig engineConfig;
     private final Gson gson = new GsonBuilder().serializeNulls().create();
     @Getter
-    private final FieldIndexManagerProvider fieldIndexManagerProvider;
+    private final CollectionIndexProviderFactory collectionIndexProviderFactory;
     @Getter
     private final DatabaseStorageManager databaseStorageManager;
     private final List<CollectionFieldsUpdate> collectionFieldsUpdateQueue = new LinkedList<>();
     private final Map<Integer, CollectionFieldsUpdate> collectionFieldTypeUpdateMap = new HashMap<>();
 
-    public SchemeManager(EngineConfig engineConfig, Scheme scheme, FieldIndexManagerProvider fieldIndexManagerProvider, DatabaseStorageManager databaseStorageManager) {
+    public SchemeManager(EngineConfig engineConfig, Scheme scheme, CollectionIndexProviderFactory collectionIndexProviderFactory, DatabaseStorageManager databaseStorageManager) {
         this.scheme = scheme;
         this.engineConfig = engineConfig;
-        this.fieldIndexManagerProvider = fieldIndexManagerProvider;
+        this.collectionIndexProviderFactory = collectionIndexProviderFactory;
         this.databaseStorageManager = databaseStorageManager;
         loadOldScheme();
         init();
@@ -127,19 +127,19 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
     public UniqueTreeIndexManager<?, ?> getPKIndexManager(Scheme.Collection collection) {
         Optional<Scheme.Field> optionalField = collection.getFields().stream().filter(Scheme.Field::isPrimary).findFirst();
         Scheme.Field primaryField = optionalField.get();
-        return this.fieldIndexManagerProvider.getUniqueIndexManager(collection, primaryField);
+        return this.collectionIndexProviderFactory.create(collection).getUniqueIndexManager(primaryField);
     }
 
     @SneakyThrows
     public LockableIterator<? extends KeyValue<?, ?>> getPKIterator(Scheme.Collection collection) {
         Optional<Scheme.Field> optionalField = collection.getFields().stream().filter(Scheme.Field::isPrimary).findFirst();
         Scheme.Field primaryField = optionalField.get();
-        UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.fieldIndexManagerProvider.getUniqueIndexManager(collection, primaryField);
+        UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.collectionIndexProviderFactory.create(collection).getUniqueIndexManager(primaryField);
         return uniqueTreeIndexManager.getSortedIterator();
     }
 
     public UniqueTreeIndexManager<?, Pointer> getClusterIndexManager(Scheme.Collection collection) {
-        return this.fieldIndexManagerProvider.getClusterIndexManager(collection);
+        return this.collectionIndexProviderFactory.create(collection).getClusterIndexManager();
     }
 
     @SneakyThrows
@@ -159,7 +159,7 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
 
         collection.getFields().forEach(field -> {
             if (field.isIndex()) {
-                UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.fieldIndexManagerProvider.getUniqueIndexManager(collection, field);
+                UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.collectionIndexProviderFactory.create(collection).getUniqueIndexManager(field);
                 uniqueTreeIndexManager.purgeIndex();
             }
         });
