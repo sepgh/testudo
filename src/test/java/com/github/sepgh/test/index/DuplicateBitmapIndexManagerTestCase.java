@@ -2,7 +2,7 @@ package com.github.sepgh.test.index;
 
 import com.github.sepgh.test.TestParams;
 import com.github.sepgh.test.utils.FileUtils;
-import com.github.sepgh.testudo.EngineConfig;
+import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.index.DuplicateBitmapIndexManager;
 import com.github.sepgh.testudo.index.DuplicateIndexManager;
 import com.github.sepgh.testudo.index.Pointer;

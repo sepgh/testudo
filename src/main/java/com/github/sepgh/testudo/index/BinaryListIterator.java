@@ -1,6 +1,6 @@
 package com.github.sepgh.testudo.index;
 
-import com.github.sepgh.testudo.EngineConfig;
+import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.storage.db.DBObject;

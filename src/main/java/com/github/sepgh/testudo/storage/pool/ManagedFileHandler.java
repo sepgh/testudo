@@ -1,6 +1,6 @@
 package com.github.sepgh.testudo.storage.pool;
 
-import com.github.sepgh.testudo.EngineConfig;
+import com.github.sepgh.testudo.context.EngineConfig;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;

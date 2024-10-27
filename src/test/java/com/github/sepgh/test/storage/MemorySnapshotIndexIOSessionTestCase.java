@@ -1,6 +1,6 @@
 package com.github.sepgh.test.storage;
 
-import com.github.sepgh.testudo.EngineConfig;
+import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.Pointer;

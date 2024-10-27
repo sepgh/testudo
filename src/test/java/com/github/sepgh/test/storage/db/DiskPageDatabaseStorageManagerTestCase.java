@@ -1,7 +1,7 @@
 package com.github.sepgh.test.storage.db;
 
 import com.github.sepgh.test.utils.FileUtils;
-import com.github.sepgh.testudo.EngineConfig;
+import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;

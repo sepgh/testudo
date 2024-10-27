@@ -1,6 +1,6 @@
 package com.github.sepgh.testudo.scheme;
 
-import com.github.sepgh.testudo.EngineConfig;
+import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;

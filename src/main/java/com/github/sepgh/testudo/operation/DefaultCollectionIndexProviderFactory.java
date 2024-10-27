@@ -1,6 +1,6 @@
 package com.github.sepgh.testudo.operation;
 
-import com.github.sepgh.testudo.EngineConfig;
+import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.index.*;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
@@ -18,9 +18,9 @@ import java.util.Map;
 
 public class DefaultCollectionIndexProviderFactory implements CollectionIndexProviderFactory {
     protected final Map<Scheme.Collection, CollectionIndexProvider> providers = new HashMap<>();
-    protected final Map<String, UniqueTreeIndexManager<?, ?>> uniqueTreeIndexManagers = new HashMap<>();
+    protected final Map<String, UniqueQueryableIndex<?, ? extends Number>> uniqueTreeIndexManagers = new HashMap<>();
     protected final Map<String, UniqueTreeIndexManager<?, Pointer>> clusterIndexManagers = new HashMap<>();
-    protected final Map<String, DuplicateIndexManager<?, ?>> duplicateIndexManagers = new HashMap<>();
+    protected final Map<String, DuplicateIndexManager<?, ? extends Number>> duplicateIndexManagers = new HashMap<>();
     protected final EngineConfig engineConfig;
     protected final IndexStorageManagerFactory indexStorageManagerFactory;
     protected final DatabaseStorageManager databaseStorageManager;
@@ -49,7 +49,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         return "%d_%d".formatted(collection.getId(), field.getId());
     }
 
-    protected UniqueTreeIndexManager<?, ?> buildUniqueIndexManager(Scheme.Collection collection, Scheme.Field field) {
+    protected UniqueQueryableIndex<?, ? extends Number> buildUniqueIndexManager(Scheme.Collection collection, Scheme.Field field) {
         Preconditions.checkArgument(field.isPrimary() || field.isIndexUnique(), "Field should either be primary or unique to build a UniqueIndexManager");
 
         // Raw use of field.id as indexId would force the scheme designer to use unique field ids per whole DB
@@ -60,7 +60,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         Serializer<?> serializer = SerializerRegistry.getInstance().getSerializer(field.getType());
         Serializer<?> clusterSerializer = SerializerRegistry.getInstance().getSerializer(engineConfig.getClusterKeyType().getTypeName());
 
-        return new BPlusTreeUniqueTreeIndexManager<>(
+        return (UniqueQueryableIndex<?, ? extends Number>) new BPlusTreeUniqueTreeIndexManager<>(
                 indexId,
                 engineConfig.getBTreeDegree(),
                 indexStorageManagerFactory.create(collection, field),
@@ -86,17 +86,14 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
     protected <K extends Comparable<K>, V extends Number & Comparable<V>> DuplicateIndexManager<K, V> buildDuplicateIndexManager(Scheme.Collection collection, Scheme.Field field) {
         int indexId = getIndexId(collection, field).hashCode();
 
-        UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = uniqueTreeIndexManagers.computeIfAbsent(getIndexId(collection, field), key -> {
-            Serializer<?> fieldSerializer = SerializerRegistry.getInstance().getSerializer(field.getType());
-
-            return new BPlusTreeUniqueTreeIndexManager<>(
-                    indexId,
-                    engineConfig.getBTreeDegree(),
-                    indexStorageManagerFactory.create(collection, field),
-                    fieldSerializer.getIndexBinaryObjectFactory(field),
-                    new PointerIndexBinaryObject.Factory()
-            );
-        });
+        Serializer<?> fieldSerializer = SerializerRegistry.getInstance().getSerializer(field.getType());
+        BPlusTreeUniqueTreeIndexManager<?, Pointer> uniqueTreeIndexManager = new BPlusTreeUniqueTreeIndexManager<>(
+                indexId,
+                engineConfig.getBTreeDegree(),
+                indexStorageManagerFactory.create(collection, field),
+                fieldSerializer.getIndexBinaryObjectFactory(field),
+                new PointerIndexBinaryObject.Factory()
+        );
 
         Serializer<?> clusterSerializer = SerializerRegistry.getInstance().getSerializer(engineConfig.getClusterKeyType().getTypeName());
 
@@ -122,7 +119,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
 
         return new CollectionIndexProvider() {
             @Override
-            public UniqueTreeIndexManager<?, ?> getUniqueIndexManager(Scheme.Field field) {
+            public UniqueQueryableIndex<?, ? extends Number> getUniqueIndexManager(Scheme.Field field) {
                 Preconditions.checkNotNull(field);
                 Preconditions.checkArgument(field.isIndex() || field.isPrimary(), "Index Manager can only be requested for indexed fields");
                 Preconditions.checkArgument(field.isIndexUnique() || field.isPrimary(), "Unique index manager can only be created for fields with index set as unique or primary");
