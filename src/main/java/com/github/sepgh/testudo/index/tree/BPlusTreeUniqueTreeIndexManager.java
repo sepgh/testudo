@@ -380,7 +380,21 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
     }
 
     @Override
-    public Optional<V> getEqual(K k) throws InternalOperationException {
-        return getIndex(k);
+    public Optional<Iterator<V>> getEqual(K k) throws InternalOperationException {
+        Optional<V> index = getIndex(k);
+        return index.map(v -> new Iterator<>() {
+            boolean hasNext = true;
+
+            @Override
+            public boolean hasNext() {
+                return hasNext;
+            }
+
+            @Override
+            public V next() {
+                hasNext = false;
+                return v;
+            }
+        });
     }
 }

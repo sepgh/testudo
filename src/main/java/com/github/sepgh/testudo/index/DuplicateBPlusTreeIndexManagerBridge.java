@@ -8,6 +8,7 @@ import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
+import com.github.sepgh.testudo.utils.LazyFlattenIterator;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import lombok.SneakyThrows;
 
@@ -17,16 +18,17 @@ import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 
 
-public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V extends Number & Comparable<V>> implements DuplicateIndexManager<K, V> {
+public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V extends Number & Comparable<V>> implements DuplicateQueryableIndex<K, V> {
     private final int collectionId;
-    private final UniqueTreeIndexManager<K, Pointer> indexManager;
+    private final UniqueQueryableIndex<K, Pointer> indexManager;
     private final IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory;
     private final DatabaseStorageManager databaseStorageManager;
     private final EngineConfig engineConfig;
 
-    public DuplicateBPlusTreeIndexManagerBridge(int collectionId, EngineConfig engineConfig, UniqueTreeIndexManager<K, Pointer> indexManager, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory, DatabaseStorageManager databaseStorageManager) {
+    public DuplicateBPlusTreeIndexManagerBridge(int collectionId, EngineConfig engineConfig, UniqueQueryableIndex<K, Pointer> indexManager, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory, DatabaseStorageManager databaseStorageManager) {
         this.collectionId = collectionId;
         this.engineConfig = engineConfig;
         this.indexManager = indexManager;
@@ -217,5 +219,57 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
     @Override
     public int getIndexId() {
         return this.indexManager.getIndexId();
+    }
+
+    private Function<Pointer, Iterator<V>> getListIteratorFunction() {
+        return pointer -> {
+            Optional<DBObject> dbObjectOptional = databaseStorageManager.select(pointer);
+            if (dbObjectOptional.isPresent()) {
+                DBObject dbObject = dbObjectOptional.get();
+                return new BinaryListIterator<>(engineConfig, valueIndexBinaryObjectFactory, dbObject.getData());
+            }
+            return null;
+        };
+    }
+
+    @Override
+    public Iterator<V> getGreaterThan(K k) throws InternalOperationException {
+        return new LazyFlattenIterator<>(
+                this.indexManager.getGreaterThan(k),
+                getListIteratorFunction()
+        );
+    }
+
+    @Override
+    public Iterator<V> getGreaterThanEqual(K k) throws InternalOperationException {
+        return new LazyFlattenIterator<>(
+                this.indexManager.getGreaterThanEqual(k),
+                getListIteratorFunction()
+        );
+    }
+
+    @Override
+    public Iterator<V> getLessThan(K k) throws InternalOperationException {
+        return new LazyFlattenIterator<>(
+                this.indexManager.getLessThan(k),
+                getListIteratorFunction()
+        );
+    }
+
+    @Override
+    public Iterator<V> getLessThanEqual(K k) throws InternalOperationException {
+        return new LazyFlattenIterator<>(
+                this.indexManager.getLessThanEqual(k),
+                getListIteratorFunction()
+        );
+    }
+
+    @Override
+    public Optional<Iterator<V>> getEqual(K k) throws InternalOperationException {
+        Optional<ListIterator<V>> optional = this.getIndex(k);
+        if (optional.isPresent()) {
+            return Optional.of(optional.get());
+        }
+        return Optional.empty();
     }
 }

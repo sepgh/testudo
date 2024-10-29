@@ -10,5 +10,5 @@ public interface QueryableIndex<K extends Comparable<K>, V> {
     Iterator<V> getGreaterThanEqual(K k) throws InternalOperationException;
     Iterator<V> getLessThan(K k) throws InternalOperationException;
     Iterator<V> getLessThanEqual(K k) throws InternalOperationException;
-    Optional<V> getEqual(K k) throws InternalOperationException;
+    Optional<Iterator<V>> getEqual(K k) throws InternalOperationException;
 }

@@ -53,7 +53,7 @@ public class DuplicateBPlusTreeIndexManagerBridgeTestCase {
 
     @Test
     public void test_addRemoveAndIterate() throws Exception {
-        UniqueTreeIndexManager<Integer, Pointer> uniqueTreeIndexManager = getIntegerPointerUniqueTreeIndexManager();
+        UniqueQueryableIndex<Integer, Pointer> uniqueTreeIndexManager = getIntegerPointerUniqueTreeIndexManager();
 
         DuplicateIndexManager<Integer, Integer> duplicateIndexManager = new DuplicateBPlusTreeIndexManagerBridge<>(
                 1,
@@ -92,7 +92,7 @@ public class DuplicateBPlusTreeIndexManagerBridgeTestCase {
 
     @Test
     public void test_iterateKeyValues() throws Exception {
-        UniqueTreeIndexManager<Integer, Pointer> uniqueTreeIndexManager = getIntegerPointerUniqueTreeIndexManager();
+        UniqueQueryableIndex<Integer, Pointer> uniqueTreeIndexManager = getIntegerPointerUniqueTreeIndexManager();
 
         DuplicateIndexManager<Integer, Integer> duplicateIndexManager = new DuplicateBPlusTreeIndexManagerBridge<>(
                 1,
@@ -132,7 +132,7 @@ public class DuplicateBPlusTreeIndexManagerBridgeTestCase {
 
     }
 
-    private UniqueTreeIndexManager<Integer, Pointer> getIntegerPointerUniqueTreeIndexManager() {
+    private UniqueQueryableIndex<Integer, Pointer> getIntegerPointerUniqueTreeIndexManager() {
         IndexStorageManager indexStorageManager = new OrganizedFileIndexStorageManager(new JsonIndexHeaderManager.Factory(), engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()));
 
         return new BPlusTreeUniqueTreeIndexManager<>(

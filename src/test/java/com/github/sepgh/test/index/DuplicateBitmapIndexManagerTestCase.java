@@ -3,10 +3,7 @@ package com.github.sepgh.test.index;
 import com.github.sepgh.test.TestParams;
 import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.EngineConfig;
-import com.github.sepgh.testudo.index.DuplicateBitmapIndexManager;
-import com.github.sepgh.testudo.index.DuplicateIndexManager;
-import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
+import com.github.sepgh.testudo.index.*;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.BPlusTreeUniqueTreeIndexManager;
 import com.github.sepgh.testudo.serialization.IntegerSerializer;
@@ -53,7 +50,7 @@ public class DuplicateBitmapIndexManagerTestCase {
         FileUtils.deleteDirectory(dbPath.toString());
     }
 
-    private UniqueTreeIndexManager<Integer, Pointer> getIntegerPointerUniqueTreeIndexManager() {
+    private UniqueQueryableIndex<Integer, Pointer> getIntegerPointerUniqueTreeIndexManager() {
         IndexStorageManager indexStorageManager = new OrganizedFileIndexStorageManager(new JsonIndexHeaderManager.Factory(), engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()));
 
         return new BPlusTreeUniqueTreeIndexManager<>(
@@ -67,7 +64,7 @@ public class DuplicateBitmapIndexManagerTestCase {
 
     @Test
     public void test_addRemoveAndIterate() throws Exception {
-        UniqueTreeIndexManager<Integer, Pointer> uniqueTreeIndexManager = getIntegerPointerUniqueTreeIndexManager();
+        UniqueQueryableIndex<Integer, Pointer> uniqueTreeIndexManager = getIntegerPointerUniqueTreeIndexManager();
 
         DuplicateIndexManager<Integer, Integer> duplicateIndexManager = new DuplicateBitmapIndexManager<>(
                 1,

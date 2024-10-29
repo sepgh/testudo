@@ -17,7 +17,6 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
     private final EngineConfig engineConfig;
     private final IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory;
     private volatile int cursor = -1;
-    private boolean lastCallWasNext = false;
     @Getter
     private byte[] data;
     public static final int META_SIZE_END_CURSOR = Integer.BYTES;
@@ -64,7 +63,6 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         if (cursor + 1 <= getLastItemIndex()) {
             V next = getObjectAt(cursor + 1);
             cursor++;
-            lastCallWasNext = true;
             return next;
         }
 

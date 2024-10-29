@@ -87,8 +87,8 @@ public class DBObject {
     }
 
     public void modifyData(byte[] value) throws VerificationException.InvalidDBObjectWrapper {
-        if (value.length > this.length - META_BYTES) {
-            throw new VerificationException.InvalidDBObjectWrapper("Todo"); // Todo
+        if (value.length > DBObject.getWrappedSize(value.length)) {
+            throw new VerificationException.InvalidDBObjectWrapper("Can't extend DBObject size. Create a new one."); // Todo
         }
 
         this.modified = true;

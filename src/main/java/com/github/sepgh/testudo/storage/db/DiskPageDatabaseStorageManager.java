@@ -47,7 +47,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
 
 
     public Pointer store(int collectionId, int version, byte[] data) throws IOException, InterruptedException, ExecutionException {
-        Optional<RemovedObjectsTracer.RemovedObjectLocation> optionalRemovedObjectLocation = this.removedObjectsTracer.getRemovedObjectLocation(data.length);
+        Optional<RemovedObjectsTracer.RemovedObjectLocation> optionalRemovedObjectLocation = this.removedObjectsTracer.getRemovedObjectLocation(DBObject.getWrappedSize(data.length));
 
         if (optionalRemovedObjectLocation.isPresent()) {
             RemovedObjectsTracer.RemovedObjectLocation removedObjectLocation = optionalRemovedObjectLocation.get();

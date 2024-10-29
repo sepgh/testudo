@@ -7,27 +7,29 @@ import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
+import com.github.sepgh.testudo.utils.LazyFlattenIterator;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import lombok.SneakyThrows;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 
-public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Number & Comparable<V>> implements DuplicateIndexManager<K, V> {
+public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Number & Comparable<V>> implements DuplicateQueryableIndex<K, V> {
     private final int collectionId;
-    private final UniqueTreeIndexManager<K, Pointer> indexManager;
+    private final UniqueQueryableIndex<K, Pointer> indexManager;
     private final IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory;
     private final DatabaseStorageManager databaseStorageManager;
 
-    public DuplicateBitmapIndexManager(int collectionId, UniqueTreeIndexManager<K, Pointer> indexManager, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory, DatabaseStorageManager databaseStorageManager) {
+    public DuplicateBitmapIndexManager(int collectionId, UniqueQueryableIndex<K, Pointer> indexManager, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory, DatabaseStorageManager databaseStorageManager) {
         this.collectionId = collectionId;
         this.indexManager = indexManager;
         this.valueIndexBinaryObjectFactory = valueIndexBinaryObjectFactory;
         this.databaseStorageManager = databaseStorageManager;
     }
-
 
     @Override
     public boolean addIndex(K identifier, V value) throws InternalOperationException, IOException, ExecutionException, InterruptedException {
@@ -222,5 +224,57 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
     @Override
     public int getIndexId() {
         return this.indexManager.getIndexId();
+    }
+
+    private Function<Pointer, Iterator<V>> getBitmapIteratorFunction() {
+        return pointer -> {
+            Optional<DBObject> dbObjectOptional = databaseStorageManager.select(pointer);
+            if (dbObjectOptional.isPresent()) {
+                DBObject dbObject = dbObjectOptional.get();
+                return new Bitmap<>(valueIndexBinaryObjectFactory.getType(), dbObject.getData()).getOnIterator();
+            }
+            return null;
+        };
+    }
+
+    @Override
+    public Iterator<V> getGreaterThan(K k) throws InternalOperationException {
+        return new LazyFlattenIterator<>(
+                this.indexManager.getGreaterThan(k),
+                getBitmapIteratorFunction()
+        );
+    }
+
+    @Override
+    public Iterator<V> getGreaterThanEqual(K k) throws InternalOperationException {
+        return new LazyFlattenIterator<>(
+                this.indexManager.getGreaterThanEqual(k),
+                getBitmapIteratorFunction()
+        );
+    }
+
+    @Override
+    public Iterator<V> getLessThan(K k) throws InternalOperationException {
+        return new LazyFlattenIterator<>(
+                this.indexManager.getLessThan(k),
+                getBitmapIteratorFunction()
+        );
+    }
+
+    @Override
+    public Iterator<V> getLessThanEqual(K k) throws InternalOperationException {
+        return new LazyFlattenIterator<>(
+                this.indexManager.getLessThanEqual(k),
+                getBitmapIteratorFunction()
+        );
+    }
+
+    @Override
+    public Optional<Iterator<V>> getEqual(K k) throws InternalOperationException {
+        Optional<ListIterator<V>> optional = this.getIndex(k);
+        if (optional.isPresent()) {
+            return Optional.of(optional.get());
+        }
+        return Optional.empty();
     }
 }
