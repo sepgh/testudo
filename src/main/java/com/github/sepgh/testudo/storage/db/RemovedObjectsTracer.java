@@ -38,7 +38,7 @@ public interface RemovedObjectsTracer {
             }
 
 
-            if (i < removedObjectLocationList.size() - 1 && length <= removedObjectLocationList.get(i).length) {
+            if (i <= removedObjectLocationList.size() - 1 && length <= removedObjectLocationList.get(i).length) {
                 return Optional.of(removedObjectLocationList.remove(i));
             }
 
