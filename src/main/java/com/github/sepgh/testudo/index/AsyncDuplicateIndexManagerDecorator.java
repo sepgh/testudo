@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.exception.InternalOperationException;
+import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.io.IOException;
@@ -57,8 +58,8 @@ public class AsyncDuplicateIndexManagerDecorator<K extends Comparable<K>, V exte
     }
 
     @Override
-    public LockableIterator<KeyValue<K, ListIterator<V>>> getSortedIterator() throws InternalOperationException {
-        LockableIterator<KeyValue<K, ListIterator<V>>> sortedIterator = super.getSortedIterator();
+    public LockableIterator<KeyValue<K, ListIterator<V>>> getSortedIterator(Order order) throws InternalOperationException {
+        LockableIterator<KeyValue<K, ListIterator<V>>> sortedIterator = super.getSortedIterator(order);
         return new LockableIterator<KeyValue<K, ListIterator<V>>>() {
             @Override
             public void lock() {

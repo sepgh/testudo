@@ -7,6 +7,7 @@ import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.*;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.BPlusTreeUniqueTreeIndexManager;
+import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.serialization.IntegerSerializer;
 import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
@@ -138,7 +139,7 @@ public class DuplicateQueryableIndexTestCase {
         }
 
 
-        Iterator<Integer> greaterThan = duplicateQueryableIndex.getGreaterThan(1);
+        Iterator<Integer> greaterThan = duplicateQueryableIndex.getGreaterThan(1, Order.ASC);
         for (int i = 2; i < 4; i++) {
             for (int j = 0; j < 3; j++) {
                 int expectedNext = (int) (i * Math.pow(10, j));
@@ -149,7 +150,7 @@ public class DuplicateQueryableIndexTestCase {
         Assertions.assertFalse(greaterThan.hasNext());
 
 
-        Iterator<Integer> greaterThanEQ = duplicateQueryableIndex.getGreaterThanEqual(1);
+        Iterator<Integer> greaterThanEQ = duplicateQueryableIndex.getGreaterThanEqual(1, Order.ASC);
         for (int i = 1; i < 4; i++) {
             for (int j = 0; j < 3; j++) {
                 int expectedNext = (int) (i * Math.pow(10, j));
@@ -169,9 +170,9 @@ public class DuplicateQueryableIndexTestCase {
         }
 
 
-        Iterator<Integer> lessThan = duplicateQueryableIndex.getLessThan(3);
+        Iterator<Integer> lessThan = duplicateQueryableIndex.getLessThan(3, Order.DESC);
         for (int i = 2; i >= 1; i--) {
-            for (int j = 0; j < 3; j++) {
+            for (int j = 2; j >= 0; j--) {
                 int expectedNext = (int) (i * Math.pow(10, j));
                 Assertions.assertTrue(lessThan.hasNext(), "Expected to have next for " + expectedNext);
                 Assertions.assertEquals(expectedNext, lessThan.next());
@@ -180,9 +181,9 @@ public class DuplicateQueryableIndexTestCase {
         Assertions.assertFalse(lessThan.hasNext());
 
 
-        Iterator<Integer> lessThanEQ = duplicateQueryableIndex.getLessThanEqual(3);
+        Iterator<Integer> lessThanEQ = duplicateQueryableIndex.getLessThanEqual(3, Order.DESC);
         for (int i = 3; i >= 1; i--) {
-            for (int j = 0; j < 3; j++) {
+            for (int j = 2; j >= 0; j--) {
                 int expectedNext = (int) (i * Math.pow(10, j));
                 Assertions.assertTrue(lessThanEQ.hasNext(), "Expected to have next for " + expectedNext);
                 Assertions.assertEquals(expectedNext, lessThanEQ.next());

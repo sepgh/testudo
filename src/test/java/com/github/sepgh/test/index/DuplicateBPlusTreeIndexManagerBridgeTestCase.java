@@ -6,6 +6,7 @@ import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.index.*;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.BPlusTreeUniqueTreeIndexManager;
+import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.serialization.IntegerSerializer;
 import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
@@ -108,7 +109,7 @@ public class DuplicateBPlusTreeIndexManagerBridgeTestCase {
         duplicateIndexManager.addIndex(2, 20);
         duplicateIndexManager.addIndex(2, 200);
 
-        LockableIterator<KeyValue<Integer, ListIterator<Integer>>> sortedIterator = duplicateIndexManager.getSortedIterator();
+        LockableIterator<KeyValue<Integer, ListIterator<Integer>>> sortedIterator = duplicateIndexManager.getSortedIterator(Order.DEFAULT);
 
         Assertions.assertTrue(sortedIterator.hasNext());
         KeyValue<Integer, ListIterator<Integer>> iteratorKeyValue = sortedIterator.next();

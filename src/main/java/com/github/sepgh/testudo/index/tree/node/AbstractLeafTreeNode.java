@@ -11,6 +11,8 @@ import lombok.SneakyThrows;
 
 import java.util.*;
 
+
+// Todo: some methods like getKeyList or getKeys can support a caching mechanism that invalidates only on change. We can use decorators for this behavior. This also applies to InternalTreeNode
 public class AbstractLeafTreeNode<K extends Comparable<K>, V> extends AbstractTreeNode<K> {
     protected final IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory;
 

@@ -5,6 +5,7 @@ import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
+import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.utils.LazyFlattenIterator;
@@ -14,6 +15,7 @@ import lombok.SneakyThrows;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.ListIterator;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -83,9 +85,13 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
 
     }
 
-
     @Override
     public Optional<ListIterator<V>> getIndex(K identifier) throws InternalOperationException {
+        return this.getIndex(identifier, Order.DEFAULT);
+    }
+
+    @Override
+    public Optional<ListIterator<V>> getIndex(K identifier, Order order) throws InternalOperationException {
         Optional<Pointer> pointerOptional = this.indexManager.getIndex(identifier);
         if (pointerOptional.isPresent()) {
             Pointer pointer = pointerOptional.get();
@@ -93,7 +99,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
             if (dbObjectOptional.isPresent()) {
                 DBObject dbObject = dbObjectOptional.get();
                 Bitmap<V> vBitmap = new Bitmap<>(valueIndexBinaryObjectFactory.getType(), dbObject.getData());
-                return Optional.of(vBitmap.getOnIterator());
+                return Optional.of(vBitmap.getOnIterator(order));
             }
         }
         return Optional.empty();
@@ -133,8 +139,8 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
     }
 
     @Override
-    public LockableIterator<KeyValue<K, ListIterator<V>>> getSortedIterator() throws InternalOperationException {
-        LockableIterator<KeyValue<K, Pointer>> lockableIterator = this.indexManager.getSortedIterator();
+    public LockableIterator<KeyValue<K, ListIterator<V>>> getSortedIterator(Order order) throws InternalOperationException {
+        LockableIterator<KeyValue<K, Pointer>> lockableIterator = this.indexManager.getSortedIterator(order);
         return new LockableIterator<>() {
 
             @Override
@@ -146,7 +152,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
             public KeyValue<K, ListIterator<V>> next() {
                 KeyValue<K, Pointer> next = lockableIterator.next();
                 try {
-                    return new KeyValue<>(next.key(), getIndex(next.key()).orElseGet(() -> new ListIterator<V>() {
+                    return new KeyValue<>(next.key(), getIndex(next.key(), order).orElseGet(() -> new ListIterator<V>() {
                         @Override
                         public boolean hasNext() {
                             return false;
@@ -212,7 +218,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
     @SneakyThrows
     @Override
     public void purgeIndex() {
-        LockableIterator<KeyValue<K, Pointer>> lockableIterator = this.indexManager.getSortedIterator();
+        LockableIterator<KeyValue<K, Pointer>> lockableIterator = this.indexManager.getSortedIterator(Order.DEFAULT);
         while (lockableIterator.hasNext()){
             KeyValue<K, Pointer> next = lockableIterator.next();
             databaseStorageManager.remove(next.value());
@@ -226,55 +232,65 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
         return this.indexManager.getIndexId();
     }
 
-    private Function<Pointer, Iterator<V>> getBitmapIteratorFunction() {
+    private Function<Pointer, Iterator<V>> getBitmapIteratorFunction(Order order) {
         return pointer -> {
             Optional<DBObject> dbObjectOptional = databaseStorageManager.select(pointer);
             if (dbObjectOptional.isPresent()) {
                 DBObject dbObject = dbObjectOptional.get();
-                return new Bitmap<>(valueIndexBinaryObjectFactory.getType(), dbObject.getData()).getOnIterator();
+                return new Bitmap<>(valueIndexBinaryObjectFactory.getType(), dbObject.getData()).getOnIterator(order);
             }
             return null;
         };
     }
 
     @Override
-    public Iterator<V> getGreaterThan(K k) throws InternalOperationException {
+    public Iterator<V> getGreaterThan(K k, Order order) throws InternalOperationException {
         return new LazyFlattenIterator<>(
-                this.indexManager.getGreaterThan(k),
-                getBitmapIteratorFunction()
+                this.indexManager.getGreaterThan(k, order),
+                getBitmapIteratorFunction(order)
         );
     }
 
     @Override
-    public Iterator<V> getGreaterThanEqual(K k) throws InternalOperationException {
+    public Iterator<V> getGreaterThanEqual(K k, Order order) throws InternalOperationException {
         return new LazyFlattenIterator<>(
-                this.indexManager.getGreaterThanEqual(k),
-                getBitmapIteratorFunction()
+                this.indexManager.getGreaterThanEqual(k, order),
+                getBitmapIteratorFunction(order)
         );
     }
 
     @Override
-    public Iterator<V> getLessThan(K k) throws InternalOperationException {
+    public Iterator<V> getLessThan(K k, Order order) throws InternalOperationException {
         return new LazyFlattenIterator<>(
-                this.indexManager.getLessThan(k),
-                getBitmapIteratorFunction()
+                this.indexManager.getLessThan(k, order),
+                getBitmapIteratorFunction(order)
         );
     }
 
     @Override
-    public Iterator<V> getLessThanEqual(K k) throws InternalOperationException {
+    public Iterator<V> getLessThanEqual(K k, Order order) throws InternalOperationException {
         return new LazyFlattenIterator<>(
-                this.indexManager.getLessThanEqual(k),
-                getBitmapIteratorFunction()
+                this.indexManager.getLessThanEqual(k, order),
+                getBitmapIteratorFunction(order)
         );
     }
 
     @Override
-    public Optional<Iterator<V>> getEqual(K k) throws InternalOperationException {
-        Optional<ListIterator<V>> optional = this.getIndex(k);
+    public Iterator<V> getEqual(K k, Order order) throws InternalOperationException {
+        Optional<ListIterator<V>> optional = this.getIndex(k, order);
         if (optional.isPresent()) {
-            return Optional.of(optional.get());
+            return optional.get();
         }
-        return Optional.empty();
+        return new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return false;
+            }
+
+            @Override
+            public V next() {
+                throw new NoSuchElementException();
+            }
+        };
     }
 }

@@ -6,6 +6,7 @@ import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
+import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.utils.LazyFlattenIterator;
@@ -36,7 +37,7 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
         this.databaseStorageManager = databaseStorageManager;
     }
 
-    private Optional<BinaryListIterator<V>> getBinaryListIterator(K identifier) throws InternalOperationException {
+    private Optional<BinaryList<V>> getBinaryList(K identifier) throws InternalOperationException {
         Optional<Pointer> pointerOptional = this.indexManager.getIndex(identifier);
         if (pointerOptional.isEmpty()) {
             return Optional.empty();
@@ -44,7 +45,7 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
 
         Pointer pointer = pointerOptional.get();
         Optional<DBObject> dbObjectOptional = databaseStorageManager.select(pointer);
-        return dbObjectOptional.map(dbObject -> new BinaryListIterator<>(engineConfig, valueIndexBinaryObjectFactory, dbObject.getData()));
+        return dbObjectOptional.map(dbObject -> new BinaryList<>(engineConfig, valueIndexBinaryObjectFactory, dbObject.getData()));
     }
 
     @Override
@@ -56,22 +57,22 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
             if (dbObjectOptional.isEmpty()) {
                 throw new RuntimeException();   // Todo: it was pointing to somewhere without data
             }
-            BinaryListIterator<V> binaryListIterator = new BinaryListIterator<>(engineConfig, valueIndexBinaryObjectFactory, dbObjectOptional.get().getData());
+            BinaryList<V> BinaryList = new BinaryList<>(engineConfig, valueIndexBinaryObjectFactory, dbObjectOptional.get().getData());
 
-            int prevSize = binaryListIterator.getData().length;
-            binaryListIterator.addNew(value);
-            int afterSize = binaryListIterator.getData().length;
+            int prevSize = BinaryList.getData().length;
+            BinaryList.addNew(value);
+            int afterSize = BinaryList.getData().length;
 
             if (afterSize == prevSize) {
                 databaseStorageManager.update(pointer, dbObject -> {
                     try {
-                        dbObject.modifyData(binaryListIterator.getData());
+                        dbObject.modifyData(BinaryList.getData());
                     } catch (VerificationException.InvalidDBObjectWrapper e) {
                         throw new RuntimeException(e);  // Todo
                     }
                 });
             } else {
-                Pointer pointerNew = databaseStorageManager.store(collectionId, -1, binaryListIterator.getData());
+                Pointer pointerNew = databaseStorageManager.store(collectionId, -1, BinaryList.getData());
                 try {
                     indexManager.updateIndex(identifier, pointerNew);
                 } catch (IndexMissingException e) {
@@ -86,14 +87,14 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
 
         // Creating new binary list iterator and add the object
 
-        byte[] bytes = new byte[BinaryListIterator.META_SIZE + valueIndexBinaryObjectFactory.size() * 5];   // Todo: "5" here is just random! Need a better plan?
-        BinaryListIterator<V> binaryListIterator = new BinaryListIterator<>(engineConfig, valueIndexBinaryObjectFactory, bytes);
-        binaryListIterator.initialize();
-        binaryListIterator.addNew(value);
+        byte[] bytes = new byte[BinaryList.META_SIZE + valueIndexBinaryObjectFactory.size() * 5];   // Todo: "5" here is just random! Need a better plan?
+        BinaryList<V> BinaryList = new BinaryList<>(engineConfig, valueIndexBinaryObjectFactory, bytes);
+        BinaryList.initialize();
+        BinaryList.addNew(value);
 
         // Insert to DB
 
-        Pointer pointer = databaseStorageManager.store(collectionId, -1, binaryListIterator.getData());
+        Pointer pointer = databaseStorageManager.store(collectionId, -1, BinaryList.getData());
         try {
             this.indexManager.addIndex(identifier, pointer);
             return true;
@@ -112,9 +113,14 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
 
     @Override
     public Optional<ListIterator<V>> getIndex(K identifier) throws InternalOperationException {
-        Optional<BinaryListIterator<V>> binaryListIteratorOptional = this.getBinaryListIterator(identifier);
+        return this.getIndex(identifier, Order.DEFAULT);
+    }
+
+    @Override
+    public Optional<ListIterator<V>> getIndex(K identifier, Order order) throws InternalOperationException {
+        Optional<BinaryList<V>> binaryListIteratorOptional = this.getBinaryList(identifier);
         if (binaryListIteratorOptional.isPresent()) {
-            return Optional.of(binaryListIteratorOptional.get());
+            return Optional.of(binaryListIteratorOptional.get().getIterator(order));
         }
         return Optional.empty();
     }
@@ -131,13 +137,13 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
         if (dbObjectOptional.isEmpty()) {
             return false;
         }
-        BinaryListIterator<V> binaryListIterator = new BinaryListIterator<>(engineConfig, valueIndexBinaryObjectFactory, dbObjectOptional.get().getData());
-        boolean result = binaryListIterator.remove(value);
+        BinaryList<V> binaryList = new BinaryList<>(engineConfig, valueIndexBinaryObjectFactory, dbObjectOptional.get().getData());
+        boolean result = binaryList.remove(value);
 
         if (result) {
             databaseStorageManager.update(pointer, dbObject -> {
                 try {
-                    dbObject.modifyData(binaryListIterator.getData());
+                    dbObject.modifyData(binaryList.getData());
                 } catch (VerificationException.InvalidDBObjectWrapper e) {
                     throw new RuntimeException(e);
                 }
@@ -146,8 +152,8 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
 
         // the list is empty, remove the object from index and DB storage
         this.indexManager.removeIndex(identifier);
-        binaryListIterator.resetCursor();
-        if (!binaryListIterator.hasNext())
+        ListIterator<V> iterator = binaryList.getIterator(Order.ASC);
+        if (!iterator.hasNext())
             databaseStorageManager.remove(pointer);
 
         return result;
@@ -159,10 +165,10 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
     }
 
     @Override
-    public LockableIterator<KeyValue<K, ListIterator<V>>> getSortedIterator() throws InternalOperationException {
-        return new LockableIterator<KeyValue<K, ListIterator<V>>>() {
+    public LockableIterator<KeyValue<K, ListIterator<V>>> getSortedIterator(Order order) throws InternalOperationException {
+        return new LockableIterator<>() {
 
-            private final Iterator<KeyValue<K, Pointer>> iterator = indexManager.getSortedIterator();
+            private final Iterator<KeyValue<K, Pointer>> iterator = indexManager.getSortedIterator(order);
 
             @Override
             public void lock() {
@@ -182,9 +188,9 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
             @Override
             public KeyValue<K, ListIterator<V>> next() {
                 KeyValue<K, Pointer> next = iterator.next();
-                Optional<BinaryListIterator<V>> binaryListIteratorOptional = getBinaryListIterator(next.key());
+                Optional<BinaryList<V>> binaryListIteratorOptional = getBinaryList(next.key());
                 if (binaryListIteratorOptional.isPresent()) {
-                    return new KeyValue<>(next.key(), binaryListIteratorOptional.get());
+                    return new KeyValue<>(next.key(), binaryListIteratorOptional.get().getIterator(order));
                 }
                 throw new NoSuchElementException();
             }
@@ -194,7 +200,7 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
     @Override
     public void purgeIndex() {
         try {
-            LockableIterator<KeyValue<K, Pointer>> lockableIterator = this.indexManager.getSortedIterator();
+            LockableIterator<KeyValue<K, Pointer>> lockableIterator = this.indexManager.getSortedIterator(Order.DEFAULT);
 
             try {
                 lockableIterator.lock();
@@ -221,55 +227,65 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
         return this.indexManager.getIndexId();
     }
 
-    private Function<Pointer, Iterator<V>> getListIteratorFunction() {
+    private Function<Pointer, Iterator<V>> getListIteratorFunction(Order order) {
         return pointer -> {
             Optional<DBObject> dbObjectOptional = databaseStorageManager.select(pointer);
             if (dbObjectOptional.isPresent()) {
                 DBObject dbObject = dbObjectOptional.get();
-                return new BinaryListIterator<>(engineConfig, valueIndexBinaryObjectFactory, dbObject.getData());
+                return new BinaryList<>(engineConfig, valueIndexBinaryObjectFactory, dbObject.getData()).getIterator(order);
             }
             return null;
         };
     }
 
     @Override
-    public Iterator<V> getGreaterThan(K k) throws InternalOperationException {
+    public Iterator<V> getGreaterThan(K k, Order order) throws InternalOperationException {
         return new LazyFlattenIterator<>(
-                this.indexManager.getGreaterThan(k),
-                getListIteratorFunction()
+                this.indexManager.getGreaterThan(k, order),
+                getListIteratorFunction(order)
         );
     }
 
     @Override
-    public Iterator<V> getGreaterThanEqual(K k) throws InternalOperationException {
+    public Iterator<V> getGreaterThanEqual(K k, Order order) throws InternalOperationException {
         return new LazyFlattenIterator<>(
-                this.indexManager.getGreaterThanEqual(k),
-                getListIteratorFunction()
+                this.indexManager.getGreaterThanEqual(k, order),
+                getListIteratorFunction(order)
         );
     }
 
     @Override
-    public Iterator<V> getLessThan(K k) throws InternalOperationException {
+    public Iterator<V> getLessThan(K k, Order order) throws InternalOperationException {
         return new LazyFlattenIterator<>(
-                this.indexManager.getLessThan(k),
-                getListIteratorFunction()
+                this.indexManager.getLessThan(k, order),
+                getListIteratorFunction(order)
         );
     }
 
     @Override
-    public Iterator<V> getLessThanEqual(K k) throws InternalOperationException {
+    public Iterator<V> getLessThanEqual(K k, Order order) throws InternalOperationException {
         return new LazyFlattenIterator<>(
-                this.indexManager.getLessThanEqual(k),
-                getListIteratorFunction()
+                this.indexManager.getLessThanEqual(k, order),
+                getListIteratorFunction(order)
         );
     }
 
     @Override
-    public Optional<Iterator<V>> getEqual(K k) throws InternalOperationException {
-        Optional<ListIterator<V>> optional = this.getIndex(k);
+    public Iterator<V> getEqual(K k, Order order) throws InternalOperationException {
+        Optional<ListIterator<V>> optional = this.getIndex(k, order);
         if (optional.isPresent()) {
-            return Optional.of(optional.get());
+            return optional.get();
         }
-        return Optional.empty();
+        return new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return false;
+            }
+
+            @Override
+            public V next() {
+                throw new NoSuchElementException();
+            }
+        };
     }
 }

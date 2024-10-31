@@ -6,6 +6,7 @@ import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.operation.CollectionIndexProviderFactory;
 import com.github.sepgh.testudo.operation.CollectionSchemeUpdater;
+import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import com.google.gson.Gson;
@@ -135,7 +136,7 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
         Optional<Scheme.Field> optionalField = collection.getFields().stream().filter(Scheme.Field::isPrimary).findFirst();
         Scheme.Field primaryField = optionalField.get();
         UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.collectionIndexProviderFactory.create(collection).getUniqueIndexManager(primaryField);
-        return uniqueTreeIndexManager.getSortedIterator();
+        return uniqueTreeIndexManager.getSortedIterator(Order.DEFAULT);
     }
 
     public UniqueTreeIndexManager<?, Pointer> getClusterIndexManager(Scheme.Collection collection) {
@@ -144,7 +145,7 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
 
     @SneakyThrows
     public LockableIterator<? extends KeyValue<?, ?>> getClusterIterator(Scheme.Collection collection) {
-        return getClusterIndexManager(collection).getSortedIterator();
+        return getClusterIndexManager(collection).getSortedIterator(Order.DEFAULT);
     }
 
     @SneakyThrows

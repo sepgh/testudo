@@ -3,28 +3,30 @@ package com.github.sepgh.testudo.index.tree;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.*;
+import com.github.sepgh.testudo.index.AbstractUniqueTreeIndexManager;
+import com.github.sepgh.testudo.index.KeyValue;
+import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.index.UniqueQueryableIndex;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.index.tree.node.cluster.LeafClusterTreeNode;
+import com.github.sepgh.testudo.operation.query.Operation;
+import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.session.ImmediateCommitIndexIOSession;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSessionFactory;
 import com.github.sepgh.testudo.utils.KVSize;
 import com.github.sepgh.testudo.utils.LockableIterator;
+import com.google.common.base.Preconditions;
 import lombok.SneakyThrows;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends AbstractUniqueTreeIndexManager<K, V> implements UniqueQueryableIndex<K, V> {
     private final IndexStorageManager indexStorageManager;
@@ -142,43 +144,33 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
     }
 
     @Override
-    public LockableIterator<KeyValue<K, V>> getSortedIterator() throws InternalOperationException {
+    public LockableIterator<KeyValue<K, V>> getSortedIterator(Order order) throws InternalOperationException {
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
+
+        Iterator<KeyValue<K,V>> iterator = switch (order) {
+            case DESC -> BPlusTreeUtils.getDescendingIterator(indexIOSession, this, degree);
+            case ASC -> BPlusTreeUtils.getAscendingIterator(indexIOSession, this, degree);
+        };
 
         return new LockableIterator<>() {
             @Override
             public void lock() {
+
             }
 
             @Override
             public void unlock() {
-            }
 
-            private int keyIndex = 0;
-            AbstractLeafTreeNode<K, V> currentLeaf = getFarLeftLeaf();
+            }
 
             @Override
             public boolean hasNext() {
-                int size = currentLeaf.getKeyList(degree).size();
-                if (keyIndex == size)
-                    return currentLeaf.getNextSiblingPointer(degree).isPresent();
-                return true;
+                return iterator.hasNext();
             }
 
-            @SneakyThrows
             @Override
             public KeyValue<K, V> next() {
-                List<KeyValue<K, V>> keyValueList = currentLeaf.getKeyValueList(degree);
-
-                if (keyIndex == keyValueList.size()){
-                    currentLeaf = (AbstractLeafTreeNode<K, V>) indexIOSession.read(currentLeaf.getNextSiblingPointer(degree).get());
-                    keyIndex = 0;
-                    keyValueList = currentLeaf.getKeyValueList(degree);
-                }
-
-                KeyValue<K, V> output = keyValueList.get(keyIndex);
-                keyIndex += 1;
-                return output;
+                return iterator.next();
             }
         };
     }
@@ -194,7 +186,7 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
 
         do {
             try {
-                LockableIterator<KeyValue<K, V>> sortedIterator = getSortedIterator();
+                LockableIterator<KeyValue<K, V>> sortedIterator = getSortedIterator(Order.DEFAULT);
                 List<K> toRemove = new ArrayList<>();
                 int i = 0;
 
@@ -222,22 +214,7 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
 
     }
 
-    protected AbstractLeafTreeNode<K, V> getFarLeftLeaf() throws InternalOperationException {
-        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
-        AbstractTreeNode<K> root = getRoot(indexIOSession);
-        if (root.isLeaf())
-            return (AbstractLeafTreeNode<K, V>) root;
-
-        AbstractTreeNode<K> farLeftChild = root;
-
-        while (!farLeftChild.isLeaf()){
-            farLeftChild = indexIOSession.read(((InternalTreeNode<K>) farLeftChild).getChildAtIndex(0));
-        }
-
-        return (AbstractLeafTreeNode<K, V>) farLeftChild;
-    }
-
-    private AbstractTreeNode<K> getRoot(IndexIOSession<K> indexIOSession) throws InternalOperationException {
+    public AbstractTreeNode<K> getRoot(IndexIOSession<K> indexIOSession) throws InternalOperationException {
         Optional<AbstractTreeNode<K>> optionalRoot = indexIOSession.getRoot();
         if (optionalRoot.isPresent()){
             return optionalRoot.get();
@@ -252,149 +229,205 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
         return leafTreeNode;
     }
 
-    private Iterator<V> getGreaterThanIterator(K identifier, boolean supportEQ) throws InternalOperationException {
-        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
+    @Override
+    public Iterator<V> getGreaterThan(K identifier, Order order) throws InternalOperationException {
+        return new QueryIterator(order, Operation.GT, identifier);
+    }
 
-        AbstractLeafTreeNode<K, V> leafTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory);
-        List<KeyValue<K, V>> keyValueList = leafTreeNode.getKeyValueList(degree);
+    @Override
+    public Iterator<V> getGreaterThanEqual(K identifier, Order order) throws InternalOperationException {
+        return new QueryIterator(order, Operation.GTE, identifier);
+    }
 
-        if (keyValueList.getLast().key().compareTo(identifier) <= 0 && !supportEQ && leafTreeNode.getNextSiblingPointer(degree).isPresent()){
-            leafTreeNode = (AbstractLeafTreeNode<K, V>) indexIOSession.read(leafTreeNode.getNextSiblingPointer(degree).get());
-            keyValueList = leafTreeNode.getKeyValueList(degree);
-        }
+    @Override
+    public Iterator<V> getLessThan(K identifier, Order order) throws InternalOperationException {
+        return new QueryIterator(order, Operation.LT, identifier);
+    }
 
-        final AtomicReference<AbstractLeafTreeNode<K, V>> leafReference = new AtomicReference<>(leafTreeNode);
-        final AtomicReference<List<KeyValue<K, V>>> keyValueListReference = new AtomicReference<>(keyValueList);
+    @Override
+    public Iterator<V> getLessThanEqual(K identifier, Order order) throws InternalOperationException {
+        return new QueryIterator(order, Operation.LTE, identifier);
+    }
 
-        AtomicInteger index = new AtomicInteger(-1);
+    @Override
+    public Iterator<V> getEqual(K k, Order order) throws InternalOperationException {
+        Optional<V> index = getIndex(k);
+        if (index.isPresent()){
+            return new Iterator<>() {
+                boolean hasNext = true;
 
-        // Todo: binary search?
-        for (int i = 0; i < keyValueList.size(); i++) {
-            if (
-                    supportEQ && keyValueList.get(i).key().compareTo(identifier) >= 0
-                    ||
-                    !supportEQ && keyValueList.get(i).key().compareTo(identifier) > 0
-            ) {
-                index.set(i);
-                break;
-            }
-        }
-
-        return new Iterator<>() {
-            @SneakyThrows
-            @Override
-            public boolean hasNext() {
-                if (index.get() == -1)
-                    return false;
-
-                if (index.get() == keyValueListReference.get().size()) {
-                    Optional<Pointer> nextSiblingPointerOptional = leafReference.get().getNextSiblingPointer(degree);
-                    if (nextSiblingPointerOptional.isEmpty())
-                        return false;
-                    leafReference.set((AbstractLeafTreeNode<K, V>) indexIOSession.read(nextSiblingPointerOptional.get()));
-                    keyValueListReference.set(leafReference.get().getKeyValueList(degree));
-                    index.set(0);
+                @Override
+                public boolean hasNext() {
+                    return hasNext;
                 }
 
-                return true;
+                @Override
+                public V next() {
+                    hasNext = false;
+                    return index.get();
+                }
+            };
+        }
+        return new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return false;
             }
 
             @Override
             public V next() {
-                int i = index.getAndIncrement();
-                return keyValueListReference.get().get(i).value();
+                throw new NoSuchElementException();
             }
         };
     }
 
-    private Iterator<V> getLessThanIterator(K identifier, boolean supportEQ) throws InternalOperationException {
-        IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
 
-        AbstractLeafTreeNode<K, V> leafTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory);
-        List<KeyValue<K, V>> keyValueList = leafTreeNode.getKeyValueList(degree);
+    private class QueryIterator implements Iterator<V> {
+        private final Order order;
+        private final IndexIOSession<K> indexIOSession;
+        private final Operation operation;
+        private final K identifier;
+        private final Function<K, Boolean> ltf;
+        private final Function<K, Boolean> ltef;
+        private final Function<K, Boolean> gtf;
+        private final Function<K, Boolean> gtef;
+        private final Map<Operation, Function<K, Boolean>> operationFunctionMap = new HashMap<>();
 
-        if (keyValueList.getFirst().key().compareTo(identifier) >= 0 && !supportEQ && leafTreeNode.getPreviousSiblingPointer(degree).isPresent()){
-            leafTreeNode = (AbstractLeafTreeNode<K, V>) indexIOSession.read(leafTreeNode.getPreviousSiblingPointer(degree).get());
-            keyValueList = leafTreeNode.getKeyValueList(degree);
+        private int index = -1;
+        private AbstractLeafTreeNode<K, V> leafTreeNode;
+        private List<KeyValue<K, V>> keyValueList;
+
+        private QueryIterator(Order order, Operation operation, K identifier) throws InternalOperationException {
+            this.order = order;
+            Preconditions.checkArgument(
+                    operation == Operation.LT || operation == Operation.LTE
+                    || operation == Operation.GT || operation == Operation.GTE,
+                    "Only number based operations are supported"
+            );
+            this.operation = operation;
+            this.identifier = identifier;
+            this.indexIOSession = indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
+
+            this.ltf = (k) -> k.compareTo(identifier) < 0;
+            this.ltef = (k) -> k.compareTo(identifier) <= 0;
+            this.gtf = (k) -> k.compareTo(identifier) > 0;
+            this.gtef = (k) -> k.compareTo(identifier) >= 0;
+
+            operationFunctionMap.put(Operation.LT, ltf);
+            operationFunctionMap.put(Operation.LTE, ltef);
+            operationFunctionMap.put(Operation.GT, gtf);
+            operationFunctionMap.put(Operation.GTE, gtef);
+
+            init();
         }
 
-        final AtomicReference<AbstractLeafTreeNode<K, V>> leafReference = new AtomicReference<>(leafTreeNode);
-        final AtomicReference<List<KeyValue<K, V>>> keyValueListReference = new AtomicReference<>(keyValueList);
+        private void init() throws InternalOperationException {
+            leafTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory);
+            keyValueList = leafTreeNode.getKeyValueList(degree);
 
-        AtomicInteger index = new AtomicInteger(-1);
 
-        // Todo: binary search?
-        for (int i = keyValueList.size() - 1; i >= 0; i--) {
-            if (
-                    supportEQ && keyValueList.get(i).key().compareTo(identifier) <= 0
-                    ||
-                    !supportEQ && keyValueList.get(i).key().compareTo(identifier) < 0
-            ) {
-                index.set(i);
-                break;
+            if (order == Order.DESC) {
+
+                // DESC - LT || LTE
+                if (operation == Operation.LT || operation == Operation.LTE) {
+                    if (operation == Operation.LT && keyValueList.getFirst().key().compareTo(identifier) >= 0 && leafTreeNode.getPreviousSiblingPointer(degree).isPresent()){
+                        leafTreeNode = (AbstractLeafTreeNode<K, V>) indexIOSession.read(leafTreeNode.getPreviousSiblingPointer(degree).get());
+                        keyValueList = leafTreeNode.getKeyValueList(degree);
+                    }
+
+                    // Todo: binary search?
+                    for (int i = keyValueList.size() - 1; i >= 0; i--) {
+                        if (
+                            operationFunctionMap.get(operation).apply(keyValueList.get(i).key())
+                        ) {
+                            index = i;
+                            break;
+                        }
+                    }
+                } else {
+
+                    // DESC - GT || GTE
+                    // Todo: binary search?
+                    for (int i = keyValueList.size() - 1; i >= 0; i--) {
+                        if (
+                            operationFunctionMap.get(operation).apply(keyValueList.get(i).key())
+                        ) {
+                            index = i;
+                            break;
+                        }
+                    }
+                }
+            } else {
+
+                //  ASC - GT || GTE
+                if (operation == Operation.GTE || operation == Operation.GT) {
+                    if (operation == Operation.GT && keyValueList.getLast().key().compareTo(identifier) <= 0 && leafTreeNode.getNextSiblingPointer(degree).isPresent()){
+                        leafTreeNode = (AbstractLeafTreeNode<K, V>) indexIOSession.read(leafTreeNode.getNextSiblingPointer(degree).get());
+                        keyValueList = leafTreeNode.getKeyValueList(degree);
+                    }
+
+                    // Todo: binary search?
+                    for (int i = 0; i < keyValueList.size(); i++) {
+                        if (
+                            operationFunctionMap.get(operation).apply(keyValueList.get(i).key())
+                        ) {
+                            index = i;
+                            break;
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < keyValueList.size(); i++) {
+                        if (
+                            operationFunctionMap.get(operation).apply(keyValueList.get(i).key())
+                        ) {
+                            index = i;
+                            break;
+                        }
+                    }
+                }
             }
         }
 
-        return new Iterator<>() {
-            @SneakyThrows
-            @Override
-            public boolean hasNext() {
-                if (index.get() == -1) {
-                    Optional<Pointer> siblingPointer = leafReference.get().getPreviousSiblingPointer(degree);
+        @Override
+        @SneakyThrows
+        public boolean hasNext() {
+            if (order == Order.DESC) {
+                if (index == -1) {
+                    Optional<Pointer> siblingPointer = leafTreeNode.getPreviousSiblingPointer(degree);
+
                     if (siblingPointer.isEmpty())
                         return false;
-                    leafReference.set((AbstractLeafTreeNode<K, V>) indexIOSession.read(siblingPointer.get()));
-                    List<KeyValue<K, V>> keyValueList1 = leafReference.get().getKeyValueList(degree);
-                    keyValueListReference.set(keyValueList1);
-                    index.set(keyValueList1.size() - 1);
+
+                    leafTreeNode = (AbstractLeafTreeNode<K, V>) indexIOSession.read(siblingPointer.get());
+                    keyValueList = leafTreeNode.getKeyValueList(degree);
+                    index = keyValueList.size() - 1;
                 }
-                return true;
+            } else {
+                if (index == -1)
+                    return false;
+
+                if (index == keyValueList.size()) {
+                    Optional<Pointer> nextSiblingPointerOptional = leafTreeNode.getNextSiblingPointer(degree);
+                    if (nextSiblingPointerOptional.isEmpty())
+                        return false;
+                    leafTreeNode = (AbstractLeafTreeNode<K, V>) indexIOSession.read(nextSiblingPointerOptional.get());
+                    keyValueList = leafTreeNode.getKeyValueList(degree);
+                    index = 0;
+                }
             }
+            return operationFunctionMap.get(operation).apply(keyValueList.get(index).key());
+        }
 
-            @Override
-            public V next() {
-                int i = index.getAndDecrement();
-                return keyValueListReference.get().get(i).value();
+        @Override
+        public V next() {
+            V result = keyValueList.get(index).value();
+            if (order == Order.DESC) {
+                index--;
+            } else {
+                index++;
             }
-        };
+            return result;
+        }
     }
 
-    @Override
-    public Iterator<V> getGreaterThan(K identifier) throws InternalOperationException {
-        return getGreaterThanIterator(identifier, false);
-    }
-
-    @Override
-    public Iterator<V> getGreaterThanEqual(K identifier) throws InternalOperationException {
-        return getGreaterThanIterator(identifier, true);
-    }
-
-    @Override
-    public Iterator<V> getLessThan(K k) throws InternalOperationException {
-        return getLessThanIterator(k, false);
-    }
-
-    @Override
-    public Iterator<V> getLessThanEqual(K k) throws InternalOperationException {
-        return getLessThanIterator(k, true);
-    }
-
-    @Override
-    public Optional<Iterator<V>> getEqual(K k) throws InternalOperationException {
-        Optional<V> index = getIndex(k);
-        return index.map(v -> new Iterator<>() {
-            boolean hasNext = true;
-
-            @Override
-            public boolean hasNext() {
-                return hasNext;
-            }
-
-            @Override
-            public V next() {
-                hasNext = false;
-                return v;
-            }
-        });
-    }
 }

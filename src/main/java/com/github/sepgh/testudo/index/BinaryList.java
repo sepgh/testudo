@@ -3,28 +3,25 @@ package com.github.sepgh.testudo.index;
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
+import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.utils.BinaryUtils;
 import com.google.common.primitives.Ints;
 import lombok.Getter;
 
 import java.util.ListIterator;
-import java.util.NoSuchElementException;
 
-
-public class BinaryListIterator<V extends Comparable<V>> implements ListIterator<V> {
-
+public class BinaryList<V extends Comparable<V>> {
     private final EngineConfig engineConfig;
-    private final IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory;
-    private volatile int cursor = -1;
+    protected final IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory;
     @Getter
-    private byte[] data;
+    protected byte[] data;
     public static final int META_SIZE_END_CURSOR = Integer.BYTES;
     public static final int META_INDEX_END_CURSOR = 0;
     public static final int META_INDEX_END_CURSOR_DEFAULT = -1;
     public static final int META_SIZE = META_SIZE_END_CURSOR;
 
-    public BinaryListIterator(EngineConfig engineConfig, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory, byte[] data) {
+    public BinaryList(EngineConfig engineConfig, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory, byte[] data) {
         this.engineConfig = engineConfig;
         this.valueIndexBinaryObjectFactory = valueIndexBinaryObjectFactory;
         this.data = data;
@@ -40,7 +37,7 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         );
     }
 
-    private int getNumberOfElements() {
+    public int getNumberOfElements() {
         return this.data.length - META_SIZE / valueIndexBinaryObjectFactory.size();
     }
 
@@ -52,53 +49,10 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         byte[] byteArray = Ints.toByteArray(index);
         System.arraycopy(byteArray, 0, data, META_INDEX_END_CURSOR, byteArray.length);
     }
-
-    @Override
-    public boolean hasNext() {
-        return cursor + 1 <= getLastItemIndex();
+    private int getDbObjectSize() {
+        return this.data.length + DBObject.META_BYTES;
     }
 
-    @Override
-    public synchronized V next() {
-        if (cursor + 1 <= getLastItemIndex()) {
-            V next = getObjectAt(cursor + 1);
-            cursor++;
-            return next;
-        }
-
-        throw new NoSuchElementException();
-    }
-
-    @Override
-    public boolean hasPrevious() {
-        return cursor >= 0;
-    }
-
-    @Override
-    public synchronized V previous() {
-        if (cursor < 0) {
-            throw new NoSuchElementException();
-        }
-
-        V previous = getObjectAt(cursor);
-        cursor--;
-        return previous;
-    }
-
-    @Override
-    public int nextIndex() {
-        return cursor + 1;
-    }
-
-    @Override
-    public int previousIndex() {
-        return cursor - 1;
-    }
-
-    @Override
-    public void remove() {
-        throw new UnsupportedOperationException();
-    }
 
     public boolean remove(V value) {
         int i = binarySearchMatching(value);
@@ -120,20 +74,7 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         return true;
     }
 
-    @Override
-    public void set(V v) {
-        throw new UnsupportedOperationException();
-    }
 
-    @Override
-    public void add(V v) {
-        throw new UnsupportedOperationException("Use addNew(V) instead to handle exceptions");
-    }
-
-    private int getDbObjectSize() {
-        return this.data.length + DBObject.META_BYTES;
-    }
-    
     public boolean addNew(V v) {
         // GROW BYTE[] IF POSSIBLE
         int lastItemIndex = getLastItemIndex();
@@ -171,19 +112,19 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         return true;
     }
 
-    private V getObjectAt(int index) {
+    public V getObjectAt(int index) {
         int offset = META_SIZE + index * valueIndexBinaryObjectFactory.size();
         IndexBinaryObject<V> vIndexBinaryObject = valueIndexBinaryObjectFactory.create(this.data, offset);
         return vIndexBinaryObject.asObject();
     }
 
-    private byte[] getObjectBytes(int index) {
+    public byte[] getObjectBytes(int index) {
         int offset = META_SIZE + index * valueIndexBinaryObjectFactory.size();
         IndexBinaryObject<V> vIndexBinaryObject = valueIndexBinaryObjectFactory.create(this.data, offset);
         return vIndexBinaryObject.getBytes();
     }
 
-    private void clearObjectAt(int index) {
+    public void clearObjectAt(int index) {
         int offset = META_SIZE + index * valueIndexBinaryObjectFactory.size();
         System.arraycopy(
                 new byte[valueIndexBinaryObjectFactory.size()],
@@ -194,19 +135,19 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         );
     }
 
-    private void setObjectBytes(int index, byte[] bytes) {
+    public void setObjectBytes(int index, byte[] bytes) {
         int offset = META_SIZE + index * valueIndexBinaryObjectFactory.size();
         System.arraycopy(bytes, 0, this.data, offset, bytes.length);
     }
 
-    private void setObjectAt(int index, V v) {
+    public void setObjectAt(int index, V v) {
         int offset = META_SIZE + index * valueIndexBinaryObjectFactory.size();
         IndexBinaryObject<V> vIndexBinaryObject = valueIndexBinaryObjectFactory.create(v);
         byte[] bytes = vIndexBinaryObject.getBytes();
         System.arraycopy(bytes, 0, this.data, offset, bytes.length);
     }
 
-    private int binarySearchPosition(V v){
+    public int binarySearchPosition(V v){
         int low = 0;
         int high = getLastItemIndex();
         int mid = 0;
@@ -231,7 +172,7 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         return -(low + 1);
     }
 
-    private int binarySearchMatching(V v) {
+    public int binarySearchMatching(V v) {
         int low = 0;
         int high = getLastItemIndex();
 
@@ -252,7 +193,10 @@ public class BinaryListIterator<V extends Comparable<V>> implements ListIterator
         return -1;
     }
 
-    public void resetCursor() {
-        cursor = -1;
+    public ListIterator<V> getIterator(Order order) {
+        return switch (order) {
+            case DESC -> new DescendingBinaryListIterator<>(this);
+            case ASC -> new AscendingBinaryListIterator<>(this);
+        };
     }
 }

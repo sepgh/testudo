@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.index.tree;
 
 import com.github.sepgh.testudo.exception.InternalOperationException;
+import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
@@ -8,9 +9,11 @@ import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
+import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -105,5 +108,100 @@ public class BPlusTreeUtils {
         }
 
     }
+
+    public static <K extends Comparable<K>, V> AbstractLeafTreeNode<K, V> getFarLeftLeaf(IndexIOSession<K> indexIOSession, BPlusTreeUniqueTreeIndexManager<K, V> node) throws InternalOperationException {
+        AbstractTreeNode<K> root = node.getRoot(indexIOSession);
+
+        if (root.isLeaf())
+            return (AbstractLeafTreeNode<K, V>) root;
+
+        AbstractTreeNode<K> farLeftChild = root;
+
+        while (!farLeftChild.isLeaf()){
+            farLeftChild = indexIOSession.read(((InternalTreeNode<K>) farLeftChild).getChildAtIndex(0));
+        }
+
+        return (AbstractLeafTreeNode<K, V>) farLeftChild;
+    }
+
+    public static <K extends Comparable<K>, V> AbstractLeafTreeNode<K, V> getFarRightLeaf(IndexIOSession<K> indexIOSession, BPlusTreeUniqueTreeIndexManager<K, V> node) throws InternalOperationException {
+        AbstractTreeNode<K> root = node.getRoot(indexIOSession);
+
+        if (root.isLeaf())
+            return (AbstractLeafTreeNode<K, V>) root;
+
+        AbstractTreeNode<K> farRightChild = root;
+
+        while (!farRightChild.isLeaf()){
+            farRightChild = indexIOSession.read(((InternalTreeNode<K>) farRightChild).getChildrenList().getLast());
+        }
+
+        return (AbstractLeafTreeNode<K, V>) farRightChild;
+    }
+
+    public static <K extends Comparable<K>, V> Iterator<KeyValue<K, V>> getAscendingIterator(IndexIOSession<K> indexIOSession, BPlusTreeUniqueTreeIndexManager<K, V> node, int degree) throws InternalOperationException {
+        return new Iterator<KeyValue<K, V>>() {
+
+            private int keyIndex = 0;
+            AbstractLeafTreeNode<K, V> currentLeaf = getFarLeftLeaf(indexIOSession, node);
+
+            @Override
+            public boolean hasNext() {
+                int size = currentLeaf.getKeyList(degree).size();
+                if (keyIndex == size)
+                    return currentLeaf.getNextSiblingPointer(degree).isPresent();
+                return true;
+            }
+
+            @SneakyThrows
+            @Override
+            public KeyValue<K, V> next() {
+                List<KeyValue<K, V>> keyValueList = currentLeaf.getKeyValueList(degree);
+
+                if (keyIndex == keyValueList.size()){
+                    currentLeaf = (AbstractLeafTreeNode<K, V>) indexIOSession.read(currentLeaf.getNextSiblingPointer(degree).get());
+                    keyIndex = 0;
+                    keyValueList = currentLeaf.getKeyValueList(degree);
+                }
+
+                KeyValue<K, V> output = keyValueList.get(keyIndex);
+                keyIndex += 1;
+                return output;
+            }
+        };
+    }
+
+    public static <K extends Comparable<K>, V> Iterator<KeyValue<K, V>> getDescendingIterator(IndexIOSession<K> indexIOSession, BPlusTreeUniqueTreeIndexManager<K, V> node, int degree) throws InternalOperationException {
+        return new Iterator<KeyValue<K, V>>() {
+
+            private AbstractLeafTreeNode<K, V> currentLeaf = getFarRightLeaf(indexIOSession, node);
+            private int keyIndex = currentLeaf.getKeyList(degree).size() - 1;
+
+            @Override
+            public boolean hasNext() {
+                if (keyIndex == -1) {
+                    return currentLeaf.getPreviousSiblingPointer(degree).isPresent();
+                }
+                return keyIndex >= 0;
+            }
+
+            @SneakyThrows
+            @Override
+            public KeyValue<K, V> next() {
+                List<KeyValue<K, V>> keyValueList = currentLeaf.getKeyValueList(degree);
+
+                if (keyIndex == -1){
+                    currentLeaf = (AbstractLeafTreeNode<K, V>) indexIOSession.read(currentLeaf.getPreviousSiblingPointer(degree).get());
+                    keyIndex = currentLeaf.getKeyList(degree).size() - 1;
+                    keyValueList = currentLeaf.getKeyValueList(degree);
+                }
+
+                KeyValue<K, V> output = keyValueList.get(keyIndex);
+                keyIndex -= 1;
+                return output;
+            }
+        };
+    }
+
 
 }

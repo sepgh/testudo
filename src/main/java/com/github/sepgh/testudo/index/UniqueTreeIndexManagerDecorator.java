@@ -4,6 +4,7 @@ import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
+import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.util.Optional;
@@ -38,8 +39,8 @@ public class UniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> impleme
     }
 
     @Override
-    public LockableIterator<KeyValue<K, V>> getSortedIterator() throws InternalOperationException {
-        return this.uniqueTreeIndexManager.getSortedIterator();
+    public LockableIterator<KeyValue<K, V>> getSortedIterator(Order order) throws InternalOperationException {
+        return this.uniqueTreeIndexManager.getSortedIterator(order);
     }
 
     @Override

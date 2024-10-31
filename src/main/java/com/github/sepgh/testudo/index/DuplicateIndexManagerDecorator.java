@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.exception.InternalOperationException;
+import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.io.IOException;
@@ -26,6 +27,11 @@ public class DuplicateIndexManagerDecorator<K extends Comparable<K>, V extends N
     }
 
     @Override
+    public Optional<ListIterator<V>> getIndex(K identifier, Order order) throws InternalOperationException {
+        return this.decorated.getIndex(identifier, order);
+    }
+
+    @Override
     public boolean removeIndex(K identifier, V value) throws InternalOperationException, IOException, ExecutionException, InterruptedException {
         return this.decorated.removeIndex(identifier, value);
     }
@@ -36,8 +42,8 @@ public class DuplicateIndexManagerDecorator<K extends Comparable<K>, V extends N
     }
 
     @Override
-    public LockableIterator<KeyValue<K, ListIterator<V>>> getSortedIterator() throws InternalOperationException {
-        return this.decorated.getSortedIterator();
+    public LockableIterator<KeyValue<K, ListIterator<V>>> getSortedIterator(Order order) throws InternalOperationException {
+        return this.decorated.getSortedIterator(order);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.github.sepgh.testudo.index;
 
+import com.github.sepgh.testudo.operation.query.Order;
 import com.google.common.primitives.UnsignedLong;
 import lombok.Getter;
 
@@ -83,23 +84,29 @@ public class Bitmap<K extends Number> {
     }
 
     // Iterator to return indices of all 'on' bits (1s)
-    public ListIterator<K> getOnIterator() {
-        return new BitIterator(true);
+    public ListIterator<K> getOnIterator(Order order) {
+        return switch (order) {
+            case DESC -> new DescendingBitIterator(true);
+            case ASC -> new AscendingBitIterator(true);
+        };
     }
 
     // Iterator to return indices of all 'off' bits (0s)
-    public ListIterator<K> getOffIterator() {
-        return new BitIterator(false);
+    public ListIterator<K> getOffIterator(Order order) {
+        return switch (order) {
+            case DESC -> new DescendingBitIterator(false);
+            case ASC -> new AscendingBitIterator(false);
+        };
     }
 
     // Iterator class that separates bit and byte index handling
-    private class BitIterator implements ListIterator<K> {
+    private class AscendingBitIterator implements ListIterator<K> {
         private int currentByteIndex = 0;
         private int currentBitPosition = 0;
-        private final boolean checkForOnBit;  // true for 'on' iterator, false for 'off' iterator
-        private BigInteger lastReturnedBitIndex = BigInteger.valueOf(-1);
+        protected final boolean checkForOnBit;  // true for 'on' iterator, false for 'off' iterator
+        protected BigInteger lastReturnedBitIndex = BigInteger.valueOf(-1);
 
-        public BitIterator(boolean checkForOnBit) {
+        public AscendingBitIterator(boolean checkForOnBit) {
             this.checkForOnBit = checkForOnBit;
         }
 
@@ -186,7 +193,7 @@ public class Bitmap<K extends Number> {
                 boolean isBitSet = (data[currentByteIndex] & (1 << currentBitPosition)) != 0;
 
                 if ((isBitSet && checkForOnBit) || (!isBitSet && !checkForOnBit)) {
-                    lastReturnedBitIndex = BigInteger.valueOf(currentByteIndex).multiply(BigInteger.valueOf(Byte.SIZE)).add(BigInteger.valueOf(currentBitPosition));;
+                    lastReturnedBitIndex = BigInteger.valueOf(currentByteIndex).multiply(BigInteger.valueOf(Byte.SIZE)).add(BigInteger.valueOf(currentBitPosition));
                     return convertIndexToK(lastReturnedBitIndex);
                 }
 
@@ -234,7 +241,8 @@ public class Bitmap<K extends Number> {
         }
 
         // Convert BigInteger index to K type
-        private K convertIndexToK(BigInteger index) {
+        @SuppressWarnings("unchecked")
+        protected K convertIndexToK(BigInteger index) {
             if (UnsignedLong.class.isAssignableFrom(kClass)) {
                 return (K) UnsignedLong.valueOf(index);  // Handle UnsignedLong
             } else if (Long.class.isAssignableFrom(kClass)) {
@@ -242,6 +250,136 @@ public class Bitmap<K extends Number> {
             }
             return (K) Integer.valueOf(index.intValue());  // Default handling for Long/Integer
         }
+    }
+
+    private class DescendingBitIterator extends AscendingBitIterator {
+        private int currentByteIndex;
+        private int currentBitPosition;
+        protected BigInteger lastReturnedBitIndex = BigInteger.valueOf(-1);
+
+        public DescendingBitIterator(boolean checkForOnBit) {
+            super(checkForOnBit);
+            this.currentByteIndex = data.length - 1;  // Start from the highest byte index
+            this.currentBitPosition = Byte.SIZE - 1;  // Start from the highest bit position in the byte
+        }
+
+        @Override
+        public boolean hasNext() {
+            int tempByteIndex = currentByteIndex;
+            int tempBitPosition = currentBitPosition;
+
+            while (tempByteIndex >= 0) {
+                boolean isBitSet = (data[tempByteIndex] & (1 << tempBitPosition)) != 0;
+                if ((isBitSet && checkForOnBit) || (!isBitSet && !checkForOnBit)) {
+                    return true;
+                }
+
+                // Move to the previous bit
+                tempBitPosition--;
+                if (tempBitPosition < 0) {
+                    tempBitPosition = Byte.SIZE - 1;
+                    tempByteIndex--;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public K next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+
+            while (currentByteIndex >= 0) {
+                boolean isBitSet = (data[currentByteIndex] & (1 << currentBitPosition)) != 0;
+
+                if ((isBitSet && checkForOnBit) || (!isBitSet && !checkForOnBit)) {
+                    lastReturnedBitIndex = BigInteger.valueOf(currentByteIndex).multiply(BigInteger.valueOf(Byte.SIZE)).add(BigInteger.valueOf(currentBitPosition));                    moveToPreviousBit();
+                    return convertIndexToK(lastReturnedBitIndex);
+                }
+
+                moveToPreviousBit();
+            }
+            throw new NoSuchElementException();
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            int tempByteIndex = currentByteIndex;
+            int tempBitPosition = currentBitPosition;
+
+            // Move one step forward to simulate the next position
+            tempBitPosition++;
+            if (tempBitPosition >= Byte.SIZE) {
+                tempBitPosition = 0;
+                tempByteIndex++;
+            }
+
+            while (tempByteIndex < data.length) {
+                boolean isBitSet = (data[tempByteIndex] & (1 << tempBitPosition)) != 0;
+                if ((isBitSet && checkForOnBit) || (!isBitSet && !checkForOnBit)) {
+                    return true;
+                }
+
+                // Move to the next bit
+                tempBitPosition++;
+                if (tempBitPosition >= Byte.SIZE) {
+                    tempBitPosition = 0;
+                    tempByteIndex++;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public K previous() {
+            if (!hasPrevious()) {
+                throw new NoSuchElementException();
+            }
+
+            // Move one step forward
+            currentBitPosition++;
+            if (currentBitPosition >= Byte.SIZE) {
+                currentBitPosition = 0;
+                currentByteIndex++;
+            }
+
+            while (currentByteIndex < data.length) {
+                boolean isBitSet = (data[currentByteIndex] & (1 << currentBitPosition)) != 0;
+
+                if ((isBitSet && checkForOnBit) || (!isBitSet && !checkForOnBit)) {
+                    lastReturnedBitIndex = BigInteger.valueOf(currentByteIndex).multiply(BigInteger.valueOf(Byte.SIZE)).add(BigInteger.valueOf(currentBitPosition));
+                    return convertIndexToK(lastReturnedBitIndex);
+                }
+
+                if (currentBitPosition == Byte.SIZE - 1) {
+                    currentByteIndex++;
+                    currentBitPosition = 0;
+                } else {
+                    currentBitPosition++;
+                }
+            }
+            throw new NoSuchElementException();
+        }
+
+        @Override
+        public int nextIndex() {
+            return lastReturnedBitIndex.subtract(BigInteger.ONE).intValue();
+        }
+
+        @Override
+        public int previousIndex() {
+            return lastReturnedBitIndex.add(BigInteger.ONE).intValue();
+        }
+
+        private void moveToPreviousBit() {
+            currentBitPosition--;
+            if (currentBitPosition < 0) {
+                currentBitPosition = Byte.SIZE - 1;
+                currentByteIndex--;
+            }
+        }
+
     }
 
 }
