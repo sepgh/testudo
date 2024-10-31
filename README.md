@@ -53,7 +53,10 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
   - [X] Bitmap implementation
 - [ ] Database Storage Manager
   - [X] Disk Database Storage Manager Basics (Page Buffer)
-  - [ ] Write Queue to make writes Async (is it even safe/possible?) 
+  - [ ] Write Queue to make writes Async (is it even safe/possible?)
+- [ ] Query
+  - [X] Implement `QueryableInterface` to support quicker query operations on IndexManagers (Done for `LT`, `LTE`, `GT`, `GTE`, `EQ`)
+  - [ ] Implement Query Class
 - [ ] Logging
 
 
