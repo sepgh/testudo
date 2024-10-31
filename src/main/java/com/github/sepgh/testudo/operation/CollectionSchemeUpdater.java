@@ -5,6 +5,7 @@ import com.github.sepgh.testudo.index.DuplicateIndexManager;
 import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
+import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.scheme.SchemeManager;
 import com.github.sepgh.testudo.serialization.CollectionSerializationUtil;
@@ -50,7 +51,7 @@ public class CollectionSchemeUpdater {
 
         UniqueTreeIndexManager<K, Pointer> clusterIndexManager = (UniqueTreeIndexManager<K, Pointer>) this.schemeManager.getClusterIndexManager(this.collectionFieldsUpdate.getBefore());
 
-        LockableIterator<? extends KeyValue<K, Pointer>> lockableIterator = clusterIndexManager.getSortedIterator();
+        LockableIterator<? extends KeyValue<K, Pointer>> lockableIterator = clusterIndexManager.getSortedIterator(Order.DEFAULT);
 
         List<K> removedObjects = new ArrayList<>();
 

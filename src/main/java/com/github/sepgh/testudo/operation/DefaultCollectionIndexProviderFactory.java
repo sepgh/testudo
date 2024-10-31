@@ -101,7 +101,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         if (field.isLowCardinality()){
             return new DuplicateBitmapIndexManager<>(
                     collection.getId(),
-                    (UniqueTreeIndexManager<K, Pointer>) uniqueTreeIndexManager,
+                    (UniqueQueryableIndex<K, Pointer>) uniqueTreeIndexManager,
                     (IndexBinaryObjectFactory<V>) clusterSerializer.getIndexBinaryObjectFactory(getClusterField(collection)),
                     databaseStorageManager
             );
@@ -109,7 +109,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         return new DuplicateBPlusTreeIndexManagerBridge<>(
                 collection.getId(),
                 engineConfig,
-                (UniqueTreeIndexManager<K, Pointer>) uniqueTreeIndexManager,
+                (UniqueQueryableIndex<K, Pointer>) uniqueTreeIndexManager,
                 (IndexBinaryObjectFactory<V>) clusterSerializer.getIndexBinaryObjectFactory(getClusterField(collection)),
                 databaseStorageManager
         );
