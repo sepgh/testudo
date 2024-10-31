@@ -148,8 +148,8 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
 
         Iterator<KeyValue<K,V>> iterator = switch (order) {
-            case DESC -> BPlusTreeUtils.getDescendingIterator(indexIOSession, this, degree);
-            case ASC -> BPlusTreeUtils.getAscendingIterator(indexIOSession, this, degree);
+            case DESC -> BPlusTreeUtils.getDescendingIterator(indexIOSession, getRoot(indexIOSession), degree);
+            case ASC -> BPlusTreeUtils.getAscendingIterator(indexIOSession, getRoot(indexIOSession), degree);
         };
 
         return new LockableIterator<>() {
@@ -322,14 +322,15 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
         }
 
         private void init() throws InternalOperationException {
-            leafTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory);
-            keyValueList = leafTreeNode.getKeyValueList(degree);
-
 
             if (order == Order.DESC) {
 
                 // DESC - LT || LTE
                 if (operation == Operation.LT || operation == Operation.LTE) {
+
+                    leafTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory);
+                    keyValueList = leafTreeNode.getKeyValueList(degree);
+
                     if (operation == Operation.LT && keyValueList.getFirst().key().compareTo(identifier) >= 0 && leafTreeNode.getPreviousSiblingPointer(degree).isPresent()){
                         leafTreeNode = (AbstractLeafTreeNode<K, V>) indexIOSession.read(leafTreeNode.getPreviousSiblingPointer(degree).get());
                         keyValueList = leafTreeNode.getKeyValueList(degree);
@@ -346,6 +347,9 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
                     }
                 } else {
 
+                    leafTreeNode = BPlusTreeUtils.getFarRightLeaf(indexIOSession, getRoot(indexIOSession));
+                    keyValueList = leafTreeNode.getKeyValueList(degree);
+
                     // DESC - GT || GTE
                     // Todo: binary search?
                     for (int i = keyValueList.size() - 1; i >= 0; i--) {
@@ -361,6 +365,10 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
 
                 //  ASC - GT || GTE
                 if (operation == Operation.GTE || operation == Operation.GT) {
+
+                    leafTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory);
+                    keyValueList = leafTreeNode.getKeyValueList(degree);
+
                     if (operation == Operation.GT && keyValueList.getLast().key().compareTo(identifier) <= 0 && leafTreeNode.getNextSiblingPointer(degree).isPresent()){
                         leafTreeNode = (AbstractLeafTreeNode<K, V>) indexIOSession.read(leafTreeNode.getNextSiblingPointer(degree).get());
                         keyValueList = leafTreeNode.getKeyValueList(degree);
@@ -376,6 +384,10 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
                         }
                     }
                 } else {
+
+                    leafTreeNode = BPlusTreeUtils.getFarLeftLeaf(indexIOSession, getRoot(indexIOSession));
+                    keyValueList = leafTreeNode.getKeyValueList(degree);
+
                     for (int i = 0; i < keyValueList.size(); i++) {
                         if (
                             operationFunctionMap.get(operation).apply(keyValueList.get(i).key())

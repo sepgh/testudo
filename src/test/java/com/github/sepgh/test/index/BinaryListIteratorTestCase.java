@@ -3,7 +3,6 @@ package com.github.sepgh.test.index;
 import com.github.sepgh.test.TestParams;
 import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.EngineConfig;
-import com.github.sepgh.testudo.index.AscendingBinaryListIterator;
 import com.github.sepgh.testudo.index.BinaryList;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.operation.query.Order;
@@ -19,7 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ListIterator;
 
-public class AscendingBinaryListIteratorTestCase {
+public class BinaryListIteratorTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
 

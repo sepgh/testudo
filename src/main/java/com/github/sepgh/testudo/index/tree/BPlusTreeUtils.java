@@ -109,8 +109,7 @@ public class BPlusTreeUtils {
 
     }
 
-    public static <K extends Comparable<K>, V> AbstractLeafTreeNode<K, V> getFarLeftLeaf(IndexIOSession<K> indexIOSession, BPlusTreeUniqueTreeIndexManager<K, V> node) throws InternalOperationException {
-        AbstractTreeNode<K> root = node.getRoot(indexIOSession);
+    public static <K extends Comparable<K>, V> AbstractLeafTreeNode<K, V> getFarLeftLeaf(IndexIOSession<K> indexIOSession, AbstractTreeNode<K> root) throws InternalOperationException {
 
         if (root.isLeaf())
             return (AbstractLeafTreeNode<K, V>) root;
@@ -124,9 +123,7 @@ public class BPlusTreeUtils {
         return (AbstractLeafTreeNode<K, V>) farLeftChild;
     }
 
-    public static <K extends Comparable<K>, V> AbstractLeafTreeNode<K, V> getFarRightLeaf(IndexIOSession<K> indexIOSession, BPlusTreeUniqueTreeIndexManager<K, V> node) throws InternalOperationException {
-        AbstractTreeNode<K> root = node.getRoot(indexIOSession);
-
+    public static <K extends Comparable<K>, V> AbstractLeafTreeNode<K, V> getFarRightLeaf(IndexIOSession<K> indexIOSession, AbstractTreeNode<K> root) throws InternalOperationException {
         if (root.isLeaf())
             return (AbstractLeafTreeNode<K, V>) root;
 
@@ -139,11 +136,11 @@ public class BPlusTreeUtils {
         return (AbstractLeafTreeNode<K, V>) farRightChild;
     }
 
-    public static <K extends Comparable<K>, V> Iterator<KeyValue<K, V>> getAscendingIterator(IndexIOSession<K> indexIOSession, BPlusTreeUniqueTreeIndexManager<K, V> node, int degree) throws InternalOperationException {
+    public static <K extends Comparable<K>, V> Iterator<KeyValue<K, V>> getAscendingIterator(IndexIOSession<K> indexIOSession, AbstractTreeNode<K> root, int degree) throws InternalOperationException {
         return new Iterator<KeyValue<K, V>>() {
 
             private int keyIndex = 0;
-            AbstractLeafTreeNode<K, V> currentLeaf = getFarLeftLeaf(indexIOSession, node);
+            AbstractLeafTreeNode<K, V> currentLeaf = getFarLeftLeaf(indexIOSession, root);
 
             @Override
             public boolean hasNext() {
@@ -171,10 +168,10 @@ public class BPlusTreeUtils {
         };
     }
 
-    public static <K extends Comparable<K>, V> Iterator<KeyValue<K, V>> getDescendingIterator(IndexIOSession<K> indexIOSession, BPlusTreeUniqueTreeIndexManager<K, V> node, int degree) throws InternalOperationException {
+    public static <K extends Comparable<K>, V> Iterator<KeyValue<K, V>> getDescendingIterator(IndexIOSession<K> indexIOSession, AbstractTreeNode<K> root, int degree) throws InternalOperationException {
         return new Iterator<KeyValue<K, V>>() {
 
-            private AbstractLeafTreeNode<K, V> currentLeaf = getFarRightLeaf(indexIOSession, node);
+            private AbstractLeafTreeNode<K, V> currentLeaf = getFarRightLeaf(indexIOSession, root);
             private int keyIndex = currentLeaf.getKeyList(degree).size() - 1;
 
             @Override

@@ -159,6 +159,29 @@ public class DuplicateQueryableIndexTestCase {
             }
         }
         Assertions.assertFalse(greaterThan.hasNext());
+
+
+        greaterThan = duplicateQueryableIndex.getGreaterThan(1, Order.DESC);
+        for (int i = 3; i > 1; i--) {
+            for (int j = 2; j >= 0; j--) {
+                int expectedNext = (int) (i * Math.pow(10, j));
+                Assertions.assertTrue(greaterThan.hasNext(), "Expected to have next for " + expectedNext);
+                Assertions.assertEquals(expectedNext, greaterThan.next());
+            }
+        }
+        Assertions.assertFalse(greaterThan.hasNext());
+
+
+        greaterThanEQ = duplicateQueryableIndex.getGreaterThanEqual(1, Order.DESC);
+        for (int i = 3; i >= 1; i--) {
+            for (int j = 2; j >= 0; j--) {
+                int expectedNext = (int) (i * Math.pow(10, j));
+                Assertions.assertTrue(greaterThanEQ.hasNext(), "Expected to have next for " + expectedNext);
+                Assertions.assertEquals(expectedNext, greaterThanEQ.next());
+            }
+        }
+        Assertions.assertFalse(greaterThan.hasNext());
+
     }
 
     private void runLessThanTest(DuplicateQueryableIndex<Integer, Integer> duplicateQueryableIndex) throws InternalOperationException, IOException, ExecutionException, InterruptedException {
@@ -184,6 +207,29 @@ public class DuplicateQueryableIndexTestCase {
         Iterator<Integer> lessThanEQ = duplicateQueryableIndex.getLessThanEqual(3, Order.DESC);
         for (int i = 3; i >= 1; i--) {
             for (int j = 2; j >= 0; j--) {
+                int expectedNext = (int) (i * Math.pow(10, j));
+                Assertions.assertTrue(lessThanEQ.hasNext(), "Expected to have next for " + expectedNext);
+                Assertions.assertEquals(expectedNext, lessThanEQ.next());
+            }
+        }
+        Assertions.assertFalse(lessThanEQ.hasNext());
+
+
+
+        lessThan = duplicateQueryableIndex.getLessThan(3, Order.ASC);
+        for (int i = 1; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                int expectedNext = (int) (i * Math.pow(10, j));
+                Assertions.assertTrue(lessThan.hasNext(), "Expected to have next for " + expectedNext);
+                Assertions.assertEquals(expectedNext, lessThan.next());
+            }
+        }
+        Assertions.assertFalse(lessThan.hasNext());
+
+
+        lessThanEQ = duplicateQueryableIndex.getLessThanEqual(3, Order.ASC);
+        for (int i = 1; i <= 3; i++) {
+            for (int j = 0; j < 3; j++) {
                 int expectedNext = (int) (i * Math.pow(10, j));
                 Assertions.assertTrue(lessThanEQ.hasNext(), "Expected to have next for " + expectedNext);
                 Assertions.assertEquals(expectedNext, lessThanEQ.next());
