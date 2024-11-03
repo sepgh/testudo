@@ -49,7 +49,7 @@ public class SchemeManagerTestCase {
 
     @BeforeEach
     public void setUp() throws IOException {
-        this.dbPath = Files.createTempDirectory("TEST_DatabaseStorageManagerTestCase");
+        this.dbPath = Files.createTempDirectory("TEST_" + this.getClass().getSimpleName());
         this.engineConfig = EngineConfig.builder()
                 .baseDBPath(this.dbPath.toString())
                 .bTreeDegree(10)

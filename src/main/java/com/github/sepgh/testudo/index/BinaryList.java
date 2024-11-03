@@ -49,6 +49,7 @@ public class BinaryList<V extends Comparable<V>> {
         byte[] byteArray = Ints.toByteArray(index);
         System.arraycopy(byteArray, 0, data, META_INDEX_END_CURSOR, byteArray.length);
     }
+
     private int getDbObjectSize() {
         return this.data.length + DBObject.META_BYTES;
     }
@@ -150,7 +151,10 @@ public class BinaryList<V extends Comparable<V>> {
     public int binarySearchPosition(V v){
         int low = 0;
         int high = getLastItemIndex();
-        int mid = 0;
+        int mid;
+
+        if (high == -1)
+            return 0;
 
         if (v.compareTo(getObjectAt(high)) > 0)
             return high + 1;

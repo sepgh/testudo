@@ -331,6 +331,11 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
                     leafTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory);
                     keyValueList = leafTreeNode.getKeyValueList(degree);
 
+                    if (keyValueList.isEmpty()){
+                        index = -1;
+                        return;
+                    }
+
                     if (operation == Operation.LT && keyValueList.getFirst().key().compareTo(identifier) >= 0 && leafTreeNode.getPreviousSiblingPointer(degree).isPresent()){
                         leafTreeNode = (AbstractLeafTreeNode<K, V>) indexIOSession.read(leafTreeNode.getPreviousSiblingPointer(degree).get());
                         keyValueList = leafTreeNode.getKeyValueList(degree);
@@ -368,6 +373,11 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
 
                     leafTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory);
                     keyValueList = leafTreeNode.getKeyValueList(degree);
+
+                    if (keyValueList.isEmpty()){
+                        index = -1;
+                        return;
+                    }
 
                     if (operation == Operation.GT && keyValueList.getLast().key().compareTo(identifier) <= 0 && leafTreeNode.getNextSiblingPointer(degree).isPresent()){
                         leafTreeNode = (AbstractLeafTreeNode<K, V>) indexIOSession.read(leafTreeNode.getNextSiblingPointer(degree).get());

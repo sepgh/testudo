@@ -20,7 +20,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
     protected final Map<Scheme.Collection, CollectionIndexProvider> providers = new HashMap<>();
     protected final Map<String, UniqueQueryableIndex<?, ? extends Number>> uniqueTreeIndexManagers = new HashMap<>();
     protected final Map<String, UniqueTreeIndexManager<?, Pointer>> clusterIndexManagers = new HashMap<>();
-    protected final Map<String, DuplicateIndexManager<?, ? extends Number>> duplicateIndexManagers = new HashMap<>();
+    protected final Map<String, DuplicateQueryableIndex<?, ? extends Number>> duplicateIndexManagers = new HashMap<>();
     protected final EngineConfig engineConfig;
     protected final IndexStorageManagerFactory indexStorageManagerFactory;
     protected final DatabaseStorageManager databaseStorageManager;
@@ -36,7 +36,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         return providers.computeIfAbsent(collection, this::getProvider);
     }
 
-    protected Scheme.Field getClusterField(Scheme.Collection collection) {
+    protected Scheme.Field getClusterField() {
         return Scheme.Field.builder()
                 .id(-1)
                 .name("__CLUSTER_ID__")
@@ -65,13 +65,13 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
                 engineConfig.getBTreeDegree(),
                 indexStorageManagerFactory.create(collection, field),
                 serializer.getIndexBinaryObjectFactory(field),
-                clusterSerializer.getIndexBinaryObjectFactory(getClusterField(collection))
+                clusterSerializer.getIndexBinaryObjectFactory(getClusterField())
         );
 
     }
 
     protected UniqueTreeIndexManager<?, Pointer> buildClusterIndexManager(Scheme.Collection collection) {
-        Scheme.Field field = getClusterField(collection);
+        Scheme.Field field = getClusterField();
         int indexId = getIndexId(collection, field).hashCode();
         Serializer<?> serializer = SerializerRegistry.getInstance().getSerializer(field.getType());
 
@@ -83,7 +83,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         );
     }
 
-    protected <K extends Comparable<K>, V extends Number & Comparable<V>> DuplicateIndexManager<K, V> buildDuplicateIndexManager(Scheme.Collection collection, Scheme.Field field) {
+    protected <K extends Comparable<K>, V extends Number & Comparable<V>> DuplicateQueryableIndex<K, V> buildDuplicateIndexManager(Scheme.Collection collection, Scheme.Field field) {
         int indexId = getIndexId(collection, field).hashCode();
 
         Serializer<?> fieldSerializer = SerializerRegistry.getInstance().getSerializer(field.getType());
@@ -102,7 +102,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
             return new DuplicateBitmapIndexManager<>(
                     collection.getId(),
                     (UniqueQueryableIndex<K, Pointer>) uniqueTreeIndexManager,
-                    (IndexBinaryObjectFactory<V>) clusterSerializer.getIndexBinaryObjectFactory(getClusterField(collection)),
+                    (IndexBinaryObjectFactory<V>) clusterSerializer.getIndexBinaryObjectFactory(getClusterField()),
                     databaseStorageManager
             );
         }
@@ -110,7 +110,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
                 collection.getId(),
                 engineConfig,
                 (UniqueQueryableIndex<K, Pointer>) uniqueTreeIndexManager,
-                (IndexBinaryObjectFactory<V>) clusterSerializer.getIndexBinaryObjectFactory(getClusterField(collection)),
+                (IndexBinaryObjectFactory<V>) clusterSerializer.getIndexBinaryObjectFactory(getClusterField()),
                 databaseStorageManager
         );
     }
@@ -127,13 +127,13 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
             }
 
             @Override
-            public DuplicateIndexManager<?, ?> getDuplicateIndexManager(Scheme.Field field) {
+            public DuplicateQueryableIndex<?, ?> getDuplicateIndexManager(Scheme.Field field) {
                 return duplicateIndexManagers.computeIfAbsent(getIndexId(collection, field), key -> buildDuplicateIndexManager(collection, field));
             }
 
             @Override
             public UniqueTreeIndexManager<?, Pointer> getClusterIndexManager() {
-                return clusterIndexManagers.computeIfAbsent(getIndexId(collection, getClusterField(collection)), key -> buildClusterIndexManager(collection));
+                return clusterIndexManagers.computeIfAbsent(getIndexId(collection, getClusterField()), key -> buildClusterIndexManager(collection));
             }
         };
     }

@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.operation.query.Order;
+import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
 import lombok.Getter;
 
@@ -245,6 +246,8 @@ public class Bitmap<K extends Number> {
         protected K convertIndexToK(BigInteger index) {
             if (UnsignedLong.class.isAssignableFrom(kClass)) {
                 return (K) UnsignedLong.valueOf(index);  // Handle UnsignedLong
+            } else if (UnsignedInteger.class.isAssignableFrom(kClass)) {
+                return (K) UnsignedInteger.valueOf(index);  // Handle UnsignedLong
             } else if (Long.class.isAssignableFrom(kClass)) {
                 return (K) Long.valueOf(index.longValue());  // Handle UnsignedLong
             }

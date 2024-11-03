@@ -57,22 +57,23 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
             if (dbObjectOptional.isEmpty()) {
                 throw new RuntimeException();   // Todo: it was pointing to somewhere without data
             }
-            BinaryList<V> BinaryList = new BinaryList<>(engineConfig, valueIndexBinaryObjectFactory, dbObjectOptional.get().getData());
+            BinaryList<V> binaryList = new BinaryList<>(engineConfig, valueIndexBinaryObjectFactory, dbObjectOptional.get().getData());
 
-            int prevSize = BinaryList.getData().length;
-            BinaryList.addNew(value);
-            int afterSize = BinaryList.getData().length;
+            int prevSize = binaryList.getData().length;
+            binaryList.addNew(value);
+            int afterSize = binaryList.getData().length;
+
 
             if (afterSize == prevSize) {
                 databaseStorageManager.update(pointer, dbObject -> {
                     try {
-                        dbObject.modifyData(BinaryList.getData());
+                        dbObject.modifyData(binaryList.getData());
                     } catch (VerificationException.InvalidDBObjectWrapper e) {
                         throw new RuntimeException(e);  // Todo
                     }
                 });
             } else {
-                Pointer pointerNew = databaseStorageManager.store(collectionId, -1, BinaryList.getData());
+                Pointer pointerNew = databaseStorageManager.store(collectionId, -1, binaryList.getData());
                 try {
                     indexManager.updateIndex(identifier, pointerNew);
                 } catch (IndexMissingException e) {
@@ -88,13 +89,12 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
         // Creating new binary list iterator and add the object
 
         byte[] bytes = new byte[BinaryList.META_SIZE + valueIndexBinaryObjectFactory.size() * 5];   // Todo: "5" here is just random! Need a better plan?
-        BinaryList<V> BinaryList = new BinaryList<>(engineConfig, valueIndexBinaryObjectFactory, bytes);
-        BinaryList.initialize();
-        BinaryList.addNew(value);
+        BinaryList<V> binaryList = new BinaryList<>(engineConfig, valueIndexBinaryObjectFactory, bytes);
+        binaryList.initialize();
+        binaryList.addNew(value);
 
         // Insert to DB
-
-        Pointer pointer = databaseStorageManager.store(collectionId, -1, BinaryList.getData());
+        Pointer pointer = databaseStorageManager.store(collectionId, -1, binaryList.getData());
         try {
             this.indexManager.addIndex(identifier, pointer);
             return true;
