@@ -7,10 +7,12 @@ import java.util.PriorityQueue;
 public class CompositeConditionIterator<T extends Comparable<T>> implements Iterator<T> {
     private final CompositeCondition.CompositeOperator operator;
     private final PriorityQueue<PeekableIterator<T>> iterators;
+    private final boolean ascending;
     private T nextItem;
 
     CompositeConditionIterator(CompositeCondition.CompositeOperator operator, List<Iterator<T>> iterators, Order order) {
         this.operator = operator;
+        this.ascending = order == Order.ASC;
         this.iterators = new PriorityQueue<>((a, b) -> order.equals(Order.ASC) ?
                 a.peek().compareTo(b.peek()) : b.peek().compareTo(a.peek()));
 
@@ -33,38 +35,79 @@ public class CompositeConditionIterator<T extends Comparable<T>> implements Iter
 
     private void advanceForAnd() {
         while (!iterators.isEmpty()) {
-            T candidate = iterators.peek().peek();
-            boolean allMatch = true;
-
+            // Find the maximum value among the current head of each iterator
+            T maxCandidate = null;
             for (PeekableIterator<T> it : iterators) {
-                while (it.hasNext() && !it.peek().equals(candidate)) {
-                    it.next();
+                if (it.hasNext()) {
+                    T peeked = it.peek();
+                    if (maxCandidate == null || (ascending ? peeked.compareTo(maxCandidate) > 0 : peeked.compareTo(maxCandidate) < 0)) {
+                        maxCandidate = peeked;
+                    }
                 }
-                if (!it.hasNext() || !it.peek().equals(candidate)) {
+            }
+
+            if (maxCandidate == null) {  // No more items in any iterator
+                nextItem = null;
+                return;
+            }
+
+            // Check if all iterators are at the maxCandidate
+            boolean allMatch = true;
+            for (PeekableIterator<T> it : iterators) {
+                while (it.hasNext() && (ascending ? it.peek().compareTo(maxCandidate) < 0 : it.peek().compareTo(maxCandidate) > 0)) {
+                    it.next();  // Advance to match the maxCandidate
+                }
+                if (!it.hasNext() || !it.peek().equals(maxCandidate)) {
                     allMatch = false;
                     break;
                 }
             }
 
             if (allMatch) {
-                nextItem = candidate;
-                iterators.forEach(PeekableIterator::next);
+                nextItem = maxCandidate;
+                // Move all iterators to the next element
+                for (PeekableIterator<T> it : iterators) {
+                    it.next();
+                }
                 return;
             }
         }
-        nextItem = null;
+        nextItem = null;  // No more matches
     }
 
     private void advanceForOr() {
-        if (!iterators.isEmpty()) {
-            PeekableIterator<T> smallest = iterators.poll();
-            nextItem = smallest.next();
-            if (smallest.hasNext()) {
-                iterators.add(smallest);
-            }
-        } else {
+        if (iterators.isEmpty()) {
             nextItem = null;
+            return;
         }
+
+        // Find the smallest (or largest if descending) item among the iterators
+        T candidate = null;
+        for (PeekableIterator<T> it : iterators) {
+            if (it.hasNext()) {
+                T peeked = it.peek();
+                if (candidate == null || (ascending ? peeked.compareTo(candidate) < 0 : peeked.compareTo(candidate) > 0)) {
+                    candidate = peeked;
+                }
+            }
+        }
+
+        // If there's no candidate (all iterators exhausted), end
+        if (candidate == null) {
+            nextItem = null;
+            return;
+        }
+
+        // Set nextItem to candidate and advance all iterators with this value
+        nextItem = candidate;
+        for (PeekableIterator<T> it : iterators) {
+            if (it.hasNext() && it.peek().equals(candidate)) {
+                it.next();
+            }
+        }
+
+        // Remove exhausted iterators
+        iterators.removeIf(it -> !it.hasNext());
     }
 
     @Override
