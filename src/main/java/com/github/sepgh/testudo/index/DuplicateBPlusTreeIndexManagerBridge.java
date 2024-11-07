@@ -239,6 +239,28 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
         };
     }
 
+    private Function<KeyValue<K, Pointer>, Iterator<KeyValue<K, V>>> getKPListIteratorFunction(Order order) {
+        return kPointer -> {
+            Optional<DBObject> dbObjectOptional = databaseStorageManager.select(kPointer.value());
+            if (dbObjectOptional.isPresent()) {
+                DBObject dbObject = dbObjectOptional.get();
+                return IteratorUtils.modifyNext(
+                        new BinaryList<>(engineConfig, valueIndexBinaryObjectFactory, dbObject.getData()).getIterator(order),
+                        v -> new KeyValue<>(kPointer.key(), v)
+                );
+            }
+            return null;
+        };
+    }
+
+    @Override
+    public Iterator<KeyValue<K, V>> getSortedKeyValueIterator(Order order) throws InternalOperationException {
+        return new LazyFlattenIterator<>(
+                this.indexManager.getSortedKeyValueIterator(order),
+                getKPListIteratorFunction(order)
+        );
+    }
+
     @Override
     public Iterator<V> getGreaterThan(K k, Order order) throws InternalOperationException {
         return new LazyFlattenIterator<>(

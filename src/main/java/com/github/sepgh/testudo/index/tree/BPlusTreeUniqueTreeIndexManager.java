@@ -231,6 +231,11 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
     }
 
     @Override
+    public Iterator<KeyValue<K, V>> getSortedKeyValueIterator(Order order) throws InternalOperationException {
+        return getSortedIterator(order);
+    }
+
+    @Override
     public Iterator<V> getGreaterThan(K identifier, Order order) throws InternalOperationException {
         return new QueryIterator(order, Operation.GT, identifier);
     }

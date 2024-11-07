@@ -1,10 +1,16 @@
 package com.github.sepgh.testudo.operation.query;
 
 import com.github.sepgh.testudo.exception.InternalOperationException;
+import com.github.sepgh.testudo.index.KeyValue;
+import com.github.sepgh.testudo.utils.IteratorUtils;
 
 import java.util.Iterator;
 
 public interface Queryable<K extends Comparable<K>, V> {
+    Iterator<KeyValue<K, V>> getSortedKeyValueIterator(Order order) throws InternalOperationException;
+    default Iterator<V> getSortedValueIterator(Order order) throws InternalOperationException {
+        return IteratorUtils.modifyNext(getSortedKeyValueIterator(order), KeyValue::value);
+    }
     Iterator<V> getGreaterThan(K k, Order order) throws InternalOperationException;
     Iterator<V> getGreaterThanEqual(K k, Order order) throws InternalOperationException;
     Iterator<V> getLessThan(K k, Order order) throws InternalOperationException;

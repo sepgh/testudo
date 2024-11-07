@@ -1,10 +1,6 @@
 package com.github.sepgh.testudo.operation.query;
 
-import com.github.sepgh.testudo.index.KeyValue;
-import com.github.sepgh.testudo.index.UniqueQueryableIndex;
 import com.github.sepgh.testudo.operation.CollectionIndexProvider;
-import com.github.sepgh.testudo.utils.IteratorUtils;
-import com.github.sepgh.testudo.utils.LockableIterator;
 import lombok.SneakyThrows;
 
 import java.util.Collections;
@@ -67,12 +63,12 @@ public class Query {
         );
 
         if (sortField != null) {
-            if (sortField.field().isIndexUnique()) {
-                UniqueQueryableIndex<?, ? extends Number> uniqueIndexManager = collectionIndexProvider.getUniqueIndexManager(sortField.field());
-                LockableIterator<? extends KeyValue<?, ? extends Number>> sortedIterator = uniqueIndexManager.getSortedIterator(sortField.order());
-                Iterator<V> sortedIteratorFinal = IteratorUtils.modifyNext(sortedIterator, keyValue -> (V) keyValue.value());
-                iterator = new SortedIterator<>(iterator, sortedIteratorFinal);
-            }
+            @SuppressWarnings("unchecked")
+            Iterator<V> sortedValueIterator = (Iterator<V>) collectionIndexProvider.getQueryableIndex(sortField.field()).getSortedValueIterator(sortField.order());
+            iterator = new SortedIterator<>(
+                    iterator,
+                    sortedValueIterator
+            );
         }
 
         // Apply offset and limit on the results

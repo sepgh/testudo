@@ -6,6 +6,7 @@ import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.BPlusTreeUniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeUniqueTreeIndexManager;
+import com.github.sepgh.testudo.operation.query.Queryable;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.serialization.Serializer;
 import com.github.sepgh.testudo.serialization.SerializerRegistry;
@@ -15,6 +16,7 @@ import com.google.common.base.Preconditions;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class DefaultCollectionIndexProviderFactory implements CollectionIndexProviderFactory {
     protected final Map<Scheme.Collection, CollectionIndexProvider> providers = new HashMap<>();
@@ -134,6 +136,38 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
             @Override
             public UniqueTreeIndexManager<?, Pointer> getClusterIndexManager() {
                 return clusterIndexManagers.computeIfAbsent(getIndexId(collection, getClusterField()), key -> buildClusterIndexManager(collection));
+            }
+
+            @Override
+            public UniqueQueryableIndex<?, ? extends Number> getUniqueIndexManager(String fieldName) {
+                Optional<Scheme.Field> fieldOptional = collection.getFields().stream().filter(field -> field.getName().equals(fieldName)).findFirst();
+                if (fieldOptional.isEmpty()) {
+                    throw new IllegalArgumentException("Field " + fieldName + " not found");
+                }
+                return getUniqueIndexManager(fieldOptional.get());
+            }
+
+            @Override
+            public DuplicateQueryableIndex<?, ? extends Number> getDuplicateIndexManager(String fieldName) {
+                Optional<Scheme.Field> fieldOptional = collection.getFields().stream().filter(field -> field.getName().equals(fieldName)).findFirst();
+                if (fieldOptional.isEmpty()) {
+                    throw new IllegalArgumentException("Field " + fieldName + " not found");
+                }
+                return getDuplicateIndexManager(fieldOptional.get());
+            }
+
+            @Override
+            public Queryable<?, ? extends Number> getQueryableIndex(Scheme.Field field) {
+                return field.isIndexUnique() ? getUniqueIndexManager(field) : getDuplicateIndexManager(field);
+            }
+
+            @Override
+            public Queryable<?, ? extends Number> getQueryableIndex(String fieldName) {
+                Optional<Scheme.Field> fieldOptional = collection.getFields().stream().filter(field -> field.getName().equals(fieldName)).findFirst();
+                if (fieldOptional.isEmpty()) {
+                    throw new IllegalArgumentException("Field " + fieldName + " not found");
+                }
+                return getQueryableIndex(fieldOptional.get());
             }
         };
     }

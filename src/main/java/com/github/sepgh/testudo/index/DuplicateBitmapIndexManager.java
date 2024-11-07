@@ -243,6 +243,28 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
         };
     }
 
+    private Function<KeyValue<K, Pointer>, Iterator<KeyValue<K, V>>> getKPBitmapIteratorFunction(Order order) {
+        return kPointer -> {
+            Optional<DBObject> dbObjectOptional = databaseStorageManager.select(kPointer.value());
+            if (dbObjectOptional.isPresent()) {
+                DBObject dbObject = dbObjectOptional.get();
+                return IteratorUtils.modifyNext(
+                        new Bitmap<>(valueIndexBinaryObjectFactory.getType(), dbObject.getData()).getOnIterator(order),
+                        v -> new KeyValue<>(kPointer.key(), v)
+                );
+            }
+            return null;
+        };
+    }
+
+    @Override
+    public Iterator<KeyValue<K, V>> getSortedKeyValueIterator(Order order) throws InternalOperationException {
+        return new LazyFlattenIterator<>(
+                this.indexManager.getSortedKeyValueIterator(order),
+                getKPBitmapIteratorFunction(order)
+        );
+    }
+
     @Override
     public Iterator<V> getGreaterThan(K k, Order order) throws InternalOperationException {
         return new LazyFlattenIterator<>(

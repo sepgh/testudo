@@ -100,7 +100,6 @@ public class QueryTestCase {
         Query query = new Query();
         query.where(
                 new SimpleCondition<>(
-                        collection,
                         "pk",
                         Operation.GT,
                         10
@@ -150,7 +149,6 @@ public class QueryTestCase {
         query = new Query();
         query.where(
                 new SimpleCondition<>(
-                        collection,
                         "pk",
                         Operation.GT,
                         1
@@ -165,7 +163,6 @@ public class QueryTestCase {
         query = new Query();
         query.where(
                 new SimpleCondition<>(
-                        collection,
                         "pk",
                         Operation.GTE,
                         1
@@ -181,7 +178,6 @@ public class QueryTestCase {
         query = new Query();
         query.where(
                 new SimpleCondition<>(
-                        collection,
                         "pk",
                         Operation.GTE,
                         1
@@ -196,7 +192,6 @@ public class QueryTestCase {
         query = new Query();
         query.where(
                 new SimpleCondition<>(
-                        collection,
                         "age",
                         Operation.LTE,
                         1
@@ -210,7 +205,6 @@ public class QueryTestCase {
         query = new Query();
         query.where(
                 new SimpleCondition<>(
-                        collection,
                         "age",
                         Operation.EQ,
                         1
@@ -299,7 +293,6 @@ public class QueryTestCase {
         Query query = new Query();
         query.where(
                 new SimpleCondition<>(
-                        collection,
                         "age",
                         Operation.LTE,
                         1
@@ -387,7 +380,6 @@ public class QueryTestCase {
         Query query = new Query();
         query.where(
                 new SimpleCondition<>(
-                        collection,
                         "pk",
                         Operation.GT,
                         1
@@ -395,7 +387,6 @@ public class QueryTestCase {
         );
         query.and(
                 new SimpleCondition<>(
-                        collection,
                         "age",
                         Operation.GTE,
                         2
@@ -408,7 +399,6 @@ public class QueryTestCase {
         query = new Query();
         query.where(
                 new SimpleCondition<>(
-                        collection,
                         "pk",
                         Operation.GT,
                         1
@@ -416,13 +406,12 @@ public class QueryTestCase {
         );
         query.and(
                 new SimpleCondition<>(
-                        collection,
                         "age",
                         Operation.GTE,
                         1
                 )
         );
-        query = query.sort(new SortField(collection.getFields().getFirst(), Order.DESC));
+        query = query.sort(new SortField(collection.getFields().getFirst().getName(), Order.DESC));
         query = query.offset(0);
         queryResults = Lists.newArrayList(query.execute(collectionIndexProvider));
         Assertions.assertEquals(2, queryResults.size());
@@ -511,11 +500,9 @@ public class QueryTestCase {
         pkIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
         ageIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
 
-
         Query query = new Query();
         query.where(
                 new SimpleCondition<>(
-                        collection,
                         "pk",
                         Operation.GT,
                         3
@@ -523,7 +510,6 @@ public class QueryTestCase {
         );
         query.or(
                 new SimpleCondition<>(
-                        collection,
                         "age",
                         Operation.GTE,
                         1
