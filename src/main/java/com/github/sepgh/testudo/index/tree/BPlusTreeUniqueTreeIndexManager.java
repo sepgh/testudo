@@ -19,6 +19,7 @@ import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.session.ImmediateCommitIndexIOSession;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSessionFactory;
+import com.github.sepgh.testudo.utils.IteratorUtils;
 import com.github.sepgh.testudo.utils.KVSize;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import com.google.common.base.Preconditions;
@@ -268,17 +269,7 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
                 }
             };
         }
-        return new Iterator<>() {
-            @Override
-            public boolean hasNext() {
-                return false;
-            }
-
-            @Override
-            public V next() {
-                throw new NoSuchElementException();
-            }
-        };
+        return IteratorUtils.getCleanIterator();
     }
 
 

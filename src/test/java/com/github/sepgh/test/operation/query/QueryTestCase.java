@@ -12,8 +12,10 @@ import com.github.sepgh.testudo.operation.CollectionIndexProvider;
 import com.github.sepgh.testudo.operation.CollectionIndexProviderFactory;
 import com.github.sepgh.testudo.operation.DefaultCollectionIndexProviderFactory;
 import com.github.sepgh.testudo.operation.query.Operation;
+import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.operation.query.Query;
 import com.github.sepgh.testudo.operation.query.SimpleCondition;
+import com.github.sepgh.testudo.operation.query.SortField;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
@@ -422,10 +424,19 @@ public class QueryTestCase {
                         1
                 )
         );
+        query.sort(new SortField(collection.getFields().getFirst(), Order.DESC));
         queryResults = query.execute(collectionIndexProvider);
         Assertions.assertEquals(2, queryResults.size());
+        Assertions.assertEquals(UnsignedInteger.valueOf(3), queryResults.getFirst());
+        Assertions.assertEquals(UnsignedInteger.valueOf(2), queryResults.getLast());
+
+        queryResults = query.limit(1).execute(collectionIndexProvider);
+        Assertions.assertEquals(1, queryResults.size());
+        Assertions.assertEquals(UnsignedInteger.valueOf(3), queryResults.getFirst());
+
+        queryResults = query.offset(1).execute(collectionIndexProvider);
+        Assertions.assertEquals(1, queryResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), queryResults.getFirst());
-        Assertions.assertEquals(UnsignedInteger.valueOf(3), queryResults.getLast());
     }
 
 

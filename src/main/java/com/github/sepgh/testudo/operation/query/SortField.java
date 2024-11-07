@@ -1,5 +1,7 @@
 package com.github.sepgh.testudo.operation.query;
 
-public record SortField(String field, Order order) {
+import com.github.sepgh.testudo.scheme.Scheme;
+
+public record SortField(Scheme.Field field, Order order) {
 
 }

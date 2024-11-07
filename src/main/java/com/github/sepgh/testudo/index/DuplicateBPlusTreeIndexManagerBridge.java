@@ -9,6 +9,7 @@ import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
+import com.github.sepgh.testudo.utils.IteratorUtils;
 import com.github.sepgh.testudo.utils.LazyFlattenIterator;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import lombok.SneakyThrows;
@@ -276,16 +277,6 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
         if (optional.isPresent()) {
             return optional.get();
         }
-        return new Iterator<>() {
-            @Override
-            public boolean hasNext() {
-                return false;
-            }
-
-            @Override
-            public V next() {
-                throw new NoSuchElementException();
-            }
-        };
+        return IteratorUtils.getCleanIterator();
     }
 }

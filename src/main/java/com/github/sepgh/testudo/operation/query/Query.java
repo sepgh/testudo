@@ -1,10 +1,14 @@
 package com.github.sepgh.testudo.operation.query;
 
+import com.github.sepgh.testudo.index.KeyValue;
+import com.github.sepgh.testudo.index.UniqueQueryableIndex;
 import com.github.sepgh.testudo.operation.CollectionIndexProvider;
+import com.github.sepgh.testudo.utils.IteratorUtils;
+import com.github.sepgh.testudo.utils.LockableIterator;
+import com.google.common.collect.Lists;
+import lombok.SneakyThrows;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class Query {
     private Condition rootCondition = null;
@@ -52,12 +56,22 @@ public class Query {
         return this;
     }
 
-    public <V extends Number> List<V> execute(CollectionIndexProvider collectionIndexProvider) {
+    @SneakyThrows
+    public <V extends Number & Comparable<V>> List<V> execute(CollectionIndexProvider collectionIndexProvider) {
         // Initialize iterator based on conditions and sorting
-        Iterator<V> iterator = (Iterator<V>) rootCondition.evaluate(
+        Iterator<V> iterator = rootCondition.evaluate(
                 collectionIndexProvider,
-                sortField == null ? Order.DEFAULT : sortField.order()
+                Order.DEFAULT
         );
+
+        if (sortField != null) {
+            if (sortField.field().isIndexUnique()) {
+                UniqueQueryableIndex<?, ? extends Number> uniqueIndexManager = collectionIndexProvider.getUniqueIndexManager(sortField.field());
+                LockableIterator<? extends KeyValue<?, ? extends Number>> sortedIterator = uniqueIndexManager.getSortedIterator(sortField.order());
+                Iterator<V> sortedIteratorFinal = IteratorUtils.modifyNext(sortedIterator, keyValue -> (V) keyValue.value());
+                iterator = new IteratorSorter<>(iterator, sortedIteratorFinal);
+            }
+        }
 
         // Apply offset and limit on the results
         List<V> results = new ArrayList<>();
