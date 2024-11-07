@@ -5,13 +5,13 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-public class IteratorSorter<T extends Comparable<T>> implements Iterator<T> {
+public class SortedIterator<T extends Comparable<T>> implements Iterator<T> {
     private final Iterator<T> sourceIterator;
     private final Set<T> targetSet = new HashSet<>();
 
     private T next;
 
-    public IteratorSorter(Iterator<T> targetIterator, Iterator<T> sourceIterator) {
+    public SortedIterator(Iterator<T> targetIterator, Iterator<T> sourceIterator) {
         this.sourceIterator = sourceIterator;
 
         while (targetIterator.hasNext()) {
@@ -22,6 +22,9 @@ public class IteratorSorter<T extends Comparable<T>> implements Iterator<T> {
 
     @Override
     public boolean hasNext() {
+        if (next != null) {
+            return true;
+        }
         while (sourceIterator.hasNext()) {
             T current = sourceIterator.next();
             if (targetSet.contains(current)) {
@@ -38,6 +41,8 @@ public class IteratorSorter<T extends Comparable<T>> implements Iterator<T> {
         if (next == null) {
             throw new NoSuchElementException();
         }
-        return next;
+        T t = next;
+        next = null;
+        return t;
     }
 }

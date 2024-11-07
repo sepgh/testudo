@@ -34,7 +34,8 @@ public class CompositeCondition implements Condition {
         List<Iterator<V>> iterators = conditions.stream()
                 .map(cond -> (Iterator<V>) cond.evaluate(collectionIndexProvider, order))
                 .collect(Collectors.toList());
-        return new CompositeConditionIterator<>(operator, iterators, order);    }
+        return new CompositeConditionIterator<>(operator, iterators, order);
+    }
 
     @Override
     public String getField() {

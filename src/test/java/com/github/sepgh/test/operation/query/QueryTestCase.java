@@ -24,6 +24,7 @@ import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
+import com.google.common.collect.Lists;
 import com.google.common.primitives.UnsignedInteger;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.*;
@@ -108,7 +109,7 @@ public class QueryTestCase {
                         10
                 )
         );
-        List<UnsignedInteger> executedResults = query.execute(collectionIndexProvider);
+        List<UnsignedInteger> executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
         Assertions.assertTrue(executedResults.isEmpty());   // NO DATA
 
 
@@ -158,7 +159,7 @@ public class QueryTestCase {
                         1
                 )
         );
-        executedResults = query.execute(collectionIndexProvider);
+        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
         Assertions.assertEquals(2, executedResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(3), executedResults.getLast());
@@ -173,7 +174,7 @@ public class QueryTestCase {
                         1
                 )
         );
-        executedResults = query.execute(collectionIndexProvider);
+        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
         Assertions.assertEquals(3, executedResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(1), executedResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.get(1));
@@ -189,7 +190,7 @@ public class QueryTestCase {
                         1
                 )
         );
-        executedResults = query.execute(collectionIndexProvider);
+        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
         Assertions.assertEquals(3, executedResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(1), executedResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.get(1));
@@ -204,7 +205,7 @@ public class QueryTestCase {
                         1
                 )
         );
-        executedResults = query.execute(collectionIndexProvider);
+        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
         Assertions.assertEquals(2, executedResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(1), executedResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.get(1));
@@ -218,7 +219,7 @@ public class QueryTestCase {
                         1
                 )
         );
-        executedResults = query.execute(collectionIndexProvider);
+        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
         Assertions.assertEquals(2, executedResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(1), executedResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.get(1));
@@ -307,7 +308,7 @@ public class QueryTestCase {
                         1
                 )
         );
-        List<UnsignedInteger> executedResults = query.execute(collectionIndexProvider);
+        List<UnsignedInteger> executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
         Assertions.assertEquals(2, executedResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(1), executedResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.get(1));
@@ -403,7 +404,7 @@ public class QueryTestCase {
                         2
                 )
         );
-        List<UnsignedInteger> queryResults = query.execute(collectionIndexProvider);
+        List<UnsignedInteger> queryResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
         Assertions.assertEquals(1, queryResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(3), queryResults.getFirst());
 
@@ -424,17 +425,18 @@ public class QueryTestCase {
                         1
                 )
         );
-        query.sort(new SortField(collection.getFields().getFirst(), Order.DESC));
-        queryResults = query.execute(collectionIndexProvider);
+        query = query.sort(new SortField(collection.getFields().getFirst(), Order.DESC));
+        query = query.offset(0);
+        queryResults = Lists.newArrayList(query.execute(collectionIndexProvider));
         Assertions.assertEquals(2, queryResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(3), queryResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), queryResults.getLast());
 
-        queryResults = query.limit(1).execute(collectionIndexProvider);
+        queryResults = Lists.newArrayList(query.limit(1).execute(collectionIndexProvider));
         Assertions.assertEquals(1, queryResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(3), queryResults.getFirst());
 
-        queryResults = query.offset(1).execute(collectionIndexProvider);
+        queryResults = Lists.newArrayList(query.offset(1).execute(collectionIndexProvider));
         Assertions.assertEquals(1, queryResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), queryResults.getFirst());
     }
@@ -530,7 +532,7 @@ public class QueryTestCase {
                         1
                 )
         );
-        List<UnsignedInteger> queryResults = query.execute(collectionIndexProvider);
+        List<UnsignedInteger> queryResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
         Assertions.assertEquals(3, queryResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(1), queryResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), queryResults.get(1));

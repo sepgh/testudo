@@ -9,6 +9,7 @@ import com.google.common.collect.Lists;
 import lombok.SneakyThrows;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Query {
     private Condition rootCondition = null;
@@ -57,7 +58,7 @@ public class Query {
     }
 
     @SneakyThrows
-    public <V extends Number & Comparable<V>> List<V> execute(CollectionIndexProvider collectionIndexProvider) {
+    public <V extends Number & Comparable<V>> Iterator<V> execute(CollectionIndexProvider collectionIndexProvider) {
         // Initialize iterator based on conditions and sorting
         Iterator<V> iterator = rootCondition.evaluate(
                 collectionIndexProvider,
@@ -69,23 +70,38 @@ public class Query {
                 UniqueQueryableIndex<?, ? extends Number> uniqueIndexManager = collectionIndexProvider.getUniqueIndexManager(sortField.field());
                 LockableIterator<? extends KeyValue<?, ? extends Number>> sortedIterator = uniqueIndexManager.getSortedIterator(sortField.order());
                 Iterator<V> sortedIteratorFinal = IteratorUtils.modifyNext(sortedIterator, keyValue -> (V) keyValue.value());
-                iterator = new IteratorSorter<>(iterator, sortedIteratorFinal);
+                iterator = new SortedIterator<>(iterator, sortedIteratorFinal);
             }
         }
 
         // Apply offset and limit on the results
-        List<V> results = new ArrayList<>();
-        while (iterator.hasNext() && results.size() < limit) {
-
-            V next = iterator.next();
-
-            if (offset > 0) {
-                offset--;
-                continue;
-            }
-            results.add(next);
+        while (iterator.hasNext() && offset > 0) {
+            iterator.next();
+            offset--;
         }
 
-        return results;
+        if (!iterator.hasNext() || limit <= 0) {
+            return Collections.emptyIterator();
+        }
+
+        final Iterator<V> finalIterator = iterator;
+        final AtomicInteger counter = new AtomicInteger(0);
+
+        return new Iterator<V>() {
+            @Override
+            public boolean hasNext() {
+                return finalIterator.hasNext() && counter.get() < limit;
+            }
+
+            @Override
+            public V next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                V next = finalIterator.next();
+                counter.incrementAndGet();
+                return next;
+            }
+        };
     }
 }
