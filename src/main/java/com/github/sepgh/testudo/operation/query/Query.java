@@ -5,10 +5,11 @@ import com.github.sepgh.testudo.index.UniqueQueryableIndex;
 import com.github.sepgh.testudo.operation.CollectionIndexProvider;
 import com.github.sepgh.testudo.utils.IteratorUtils;
 import com.github.sepgh.testudo.utils.LockableIterator;
-import com.google.common.collect.Lists;
 import lombok.SneakyThrows;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Query {
