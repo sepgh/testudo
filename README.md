@@ -54,9 +54,20 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
 - [ ] Database Storage Manager
   - [X] Disk Database Storage Manager Basics (Page Buffer)
   - [ ] Write Queue to make writes Async (is it even safe/possible?)
-- [ ] Query
+- [X] Query
   - [X] Implement `QueryableInterface` to support quicker query operations on IndexManagers (Done for `LT`, `LTE`, `GT`, `GTE`, `EQ`)
-  - [ ] Implement Query Class
+  - [X] Implement Query Class
 - [ ] Logging
 
+
+
+
+Open Problems:
+
+- Can't perform `query` operation on fields that are not indexed. 
+  Doing so right now will make us use cluster index, load objects into memory to perform comparisons, and the result would be `Iterator<V>` where V is cluster id.
+  This means that these objects may later get loaded into memory again. We need a solution to avoid loading objects twice (once for query, once for the higher level operation such as read/update/delete)
+- Removed object tracer doesn't properly track pointers and size of the open space in the db file.
+  - If multiple **sequential** objects of different sizes are removed from DB file, multiple trace pointers are stored instead of a single one with larger size. Therefore, sequential removes should join as one.
+  - When **a part** trace object is used to refill db file, we should still store the remaining part as trace objects.
 
