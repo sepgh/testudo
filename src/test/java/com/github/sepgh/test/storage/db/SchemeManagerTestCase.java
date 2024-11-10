@@ -94,8 +94,6 @@ public class SchemeManagerTestCase {
                                                                 .name("age")
                                                                 .meta(
                                                                         Scheme.Meta.builder()
-                                                                                .min(15)
-                                                                                .max(60)
                                                                                 .build()
                                                                 )
                                                                 .build()
@@ -194,8 +192,6 @@ public class SchemeManagerTestCase {
                                                                 .name("age")
                                                                 .meta(
                                                                         Scheme.Meta.builder()
-                                                                                .min(15)
-                                                                                .max(60)
                                                                                 .build()
                                                                 )
                                                                 .build()

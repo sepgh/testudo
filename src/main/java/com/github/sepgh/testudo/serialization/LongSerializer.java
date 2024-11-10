@@ -37,12 +37,6 @@ public class LongSerializer implements Serializer<Long> {
 
     @Override
     public byte[] serialize(Long aLong, Scheme.Meta meta) throws SerializationException {
-        if (meta.getMax() != null && aLong > meta.getMax()) {
-            throw new SerializationException("value is greater than max value");
-        }
-        if (meta.getMin() != null && aLong < meta.getMin()) {
-            throw new SerializationException("value is smaller than min value");
-        }
         return Longs.toByteArray(aLong);
     }
 

@@ -37,12 +37,6 @@ public class IntegerSerializer implements Serializer<Integer> {
 
     @Override
     public byte[] serialize(Integer integer, Scheme.Meta meta) throws SerializationException {
-        if (meta.getMax() != null && integer > meta.getMax()) {
-            throw new SerializationException("value is greater than max value");
-        }
-        if (meta.getMin() != null && integer < meta.getMin()) {
-            throw new SerializationException("value is smaller than min value");
-        }
         return Ints.toByteArray(integer);
     }
 

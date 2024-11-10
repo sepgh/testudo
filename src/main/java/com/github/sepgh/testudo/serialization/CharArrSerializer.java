@@ -44,11 +44,11 @@ public class CharArrSerializer implements Serializer<String> {
         try {
             byte[] bytes = s.getBytes(meta.getCharset());
             if (bytes.length > maxSize()) {
-                throw new SerializationException("String too long for charset " + meta.getCharset() + ", length: " + bytes.length);
+                throw new SerializationException("String (as bytes) is too long for charset " + meta.getCharset() + ", length: " + bytes.length);
             }
 
-            if (meta.getMaxSize() != null && bytes.length > Integer.parseInt(meta.getMaxSize())) {
-                throw new SerializationException("String is longer than max size defined in meta: " + meta.getMaxSize());
+            if (meta.getMaxLength() > -1 && bytes.length > meta.getMaxLength()) {
+                throw new SerializationException("String (as bytes) is longer than max size defined in meta: " + meta.getMaxLength() + ", length: " + bytes.length);
             }
 
             return bytes;
@@ -71,9 +71,9 @@ public class CharArrSerializer implements Serializer<String> {
 
     @Override
     public int getSize(Scheme.Meta meta) {
-        if (meta.getMaxSize() == null)
+        if (meta.getMaxLength() == -1)
             return MAX_LENGTH;
-        return Integer.parseInt(meta.getMaxSize());
+        return meta.getMaxLength();
     }
 
 

@@ -43,7 +43,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
                 .id(-1)
                 .name("__CLUSTER_ID__")
                 .type(engineConfig.getClusterKeyType().getTypeName())
-                .meta(Scheme.Meta.builder().min(1).build())
+                .meta(Scheme.Meta.builder().build())
                 .build();
     }
 

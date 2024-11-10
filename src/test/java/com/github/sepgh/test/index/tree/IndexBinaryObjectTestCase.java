@@ -114,7 +114,7 @@ public class IndexBinaryObjectTestCase {
         );
 
         Scheme.Field field = FAKE_FIELD_SUPPLIER.get();
-        field.setMeta(Scheme.Meta.builder().maxSize("3").build());
+        field.setMeta(Scheme.Meta.builder().maxLength(3).build());
         IndexBinaryObjectFactory<String> keyIndexBinaryObjectFactory = new CharArrSerializer().getIndexBinaryObjectFactory(field);
 
         NodeFactory<String> nodeFactory = new NodeFactory<>() {

@@ -46,9 +46,7 @@ public class Scheme {
     @Builder
     public static class Meta {
         private String comment;
-        private String maxSize;
-        private Integer max;
-        private Integer min;
+        private int maxLength;
         @Builder.Default
         private String charset = StandardCharsets.UTF_8.name();
 
@@ -57,12 +55,12 @@ public class Scheme {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Meta meta = (Meta) o;
-            return getMax() == meta.getMax() && getMin() == meta.getMin() && Objects.equals(getComment(), meta.getComment()) && Objects.equals(getMaxSize(), meta.getMaxSize());
+            return Objects.equals(getComment(), meta.getComment()) && Objects.equals(getMaxLength(), meta.getMaxLength());
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(getComment(), getMaxSize(), getMax(), getMin());
+            return Objects.hash(getComment(), getMaxLength());
         }
     }
 
@@ -70,8 +68,8 @@ public class Scheme {
     public static class ImmutableDefaultMeta extends Meta {
         public static Meta INSTANCE = ImmutableDefaultMeta.builder().build();
 
-        private ImmutableDefaultMeta(String comment, String maxSize, Integer max, Integer min, String charset) {
-            super(comment, maxSize, max, min, charset);
+        private ImmutableDefaultMeta(String comment, int maxLength, String charset) {
+            super(comment, maxLength, charset);
         }
 
         @Override
@@ -80,18 +78,8 @@ public class Scheme {
         }
 
         @Override
-        public void setMaxSize(String maxSize) {
-            super.setMaxSize(maxSize);
-        }
-
-        @Override
-        public void setMax(Integer max) {
-            super.setMax(max);
-        }
-
-        @Override
-        public void setMin(Integer min) {
-            super.setMin(min);
+        public void setMaxLength(int maxLength) {
+            super.setMaxLength(maxLength);
         }
 
         @Override
@@ -111,11 +99,12 @@ public class Scheme {
         private boolean primary;
         private boolean index;
         private boolean indexUnique;
+        private boolean autoIncrement;
         @Builder.Default
         private boolean lowCardinality = false;
-        private String defaultValue;
         @Builder.Default
-        private boolean supportZero = true;
+        private boolean nullable = false;
+        private String defaultValue;
 
         @Override
         public boolean equals(Object o) {
