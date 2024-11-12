@@ -34,6 +34,13 @@ public class ModelToSchemeCollectionConverterTestCase {
         private String country;
     }
 
+    @Getter
+    @Collection(id = 1, name = "test")
+    public static class TestModel2 {
+        @Field(id = 1)
+        private TestModel test;
+    }
+
 
     @Test
     public void convert() {
@@ -68,7 +75,10 @@ public class ModelToSchemeCollectionConverterTestCase {
         Assertions.assertTrue(field.isIndex());
         Assertions.assertTrue(field.isLowCardinality());
 
-
+        // Todo: runtime exception should not get thrown
+        Assertions.assertThrows(RuntimeException.class, () -> {
+            new ModelToSchemeCollectionConverter(TestModel2.class).toCollection();
+        });
     }
 
 }
