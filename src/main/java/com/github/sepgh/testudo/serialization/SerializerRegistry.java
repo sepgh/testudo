@@ -2,6 +2,7 @@ package com.github.sepgh.testudo.serialization;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class SerializerRegistry {
     private static final SerializerRegistry INSTANCE = new SerializerRegistry();
@@ -39,6 +40,11 @@ public class SerializerRegistry {
 
     public Serializer<?> getSerializer(String type){
         return serializers.stream().filter(serializer -> serializer.typeName().equals(type)).findFirst().orElse(null);
+    }
+
+    public Optional<String> getTypeOfClass(Class<?> clazz){
+        Optional<Serializer<?>> optional = serializers.stream().filter(serializer -> serializer.getType().equals(clazz)).findFirst();
+        return optional.map(Serializer::typeName);
     }
 
 }

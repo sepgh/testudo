@@ -68,19 +68,19 @@ public class CollectionSerializationUtil {
         return size;
     }
 
-    public static void setValueOfField(Scheme.Collection after, Scheme.Field field, byte[] obj, @Nullable byte[] bytes) throws SerializationException {
-        int offset = getByteArrOffsetTillFieldIndex(after.getFields(), after.getFields().indexOf(field));
+    public static void setValueOfField(Scheme.Collection collection, Scheme.Field field, byte[] obj, @Nullable byte[] value) throws SerializationException {
+        int offset = getByteArrOffsetTillFieldIndex(collection.getFields(), collection.getFields().indexOf(field));
         int size = getByteArrSizeOfField(field);
-        if (bytes != null) {
-            if (bytes.length > size) {
-                System.arraycopy(bytes, 0, bytes, 0, size);
+        if (value != null) {
+            if (value.length > size) {
+                System.arraycopy(value, 0, value, 0, size);
             }
         } else {
             Serializer<?> serializer = SerializerRegistry.getInstance().getSerializer(field.getType());
             assert serializer != null;
-            bytes = serializer.serializeDefault(field.getDefaultValue(), field.getMeta());
+            value = serializer.serializeDefault(field.getDefaultValue(), field.getMeta());
         }
 
-        System.arraycopy(bytes, 0, obj, offset, bytes.length);
+        System.arraycopy(value, 0, obj, offset, value.length);
     }
 }
