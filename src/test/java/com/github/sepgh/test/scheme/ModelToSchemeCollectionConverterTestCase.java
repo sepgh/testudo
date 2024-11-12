@@ -29,7 +29,7 @@ public class ModelToSchemeCollectionConverterTestCase {
         @Index()
         private long age;
 
-        @Field(id = 4)
+        @Field(id = 4, name = "country_code")
         @Index(lowCardinality = true)
         private String country;
     }
@@ -55,6 +55,7 @@ public class ModelToSchemeCollectionConverterTestCase {
 
         Scheme.Field field = fields.getFirst();
         Assertions.assertEquals(1, field.getId());
+        Assertions.assertEquals("id", field.getName());
         Assertions.assertEquals("int", field.getType());
         Assertions.assertTrue(field.isIndex());
         Assertions.assertTrue(field.isPrimary());
@@ -62,16 +63,19 @@ public class ModelToSchemeCollectionConverterTestCase {
 
         field = fields.get(1);
         Assertions.assertEquals(2, field.getId());
+        Assertions.assertEquals("name", field.getName());
         Assertions.assertEquals("char", field.getType());
 
         field = fields.get(2);
         Assertions.assertEquals(3, field.getId());
         Assertions.assertEquals("long", field.getType());
+        Assertions.assertEquals("age", field.getName());
         Assertions.assertTrue(field.isIndex());
 
         field = fields.get(3);
         Assertions.assertEquals(4, field.getId());
         Assertions.assertEquals("char", field.getType());
+        Assertions.assertEquals("country_code", field.getName());
         Assertions.assertTrue(field.isIndex());
         Assertions.assertTrue(field.isLowCardinality());
 

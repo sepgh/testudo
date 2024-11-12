@@ -62,7 +62,7 @@ public class ModelToSchemeCollectionConverter {
         Scheme.Field schemeField = Scheme.Field.builder()
                 .id(fieldAnnotation.id())
                 .type(getFieldType(field, fieldAnnotation))
-                .name(fieldAnnotation.name())
+                .name(fieldAnnotation.name().isEmpty() ? field.getName() : fieldAnnotation.name())
                 .nullable(fieldAnnotation.nullable())
                 .defaultValue(fieldAnnotation.defaultValue())
                 .meta(Scheme.Meta.builder()
