@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.operation.query;
 
 import com.github.sepgh.testudo.operation.CollectionIndexProvider;
+import com.github.sepgh.testudo.utils.IteratorUtils;
 import lombok.SneakyThrows;
 
 import java.util.Collections;
@@ -55,19 +56,30 @@ public class Query {
     }
 
     @SneakyThrows
+    @SuppressWarnings("unchecked")
     public <V extends Number & Comparable<V>> Iterator<V> execute(CollectionIndexProvider collectionIndexProvider) {
-        // Initialize iterator based on conditions and sorting
-        Iterator<V> iterator = rootCondition.evaluate(
-                collectionIndexProvider,
-                Order.DEFAULT
-        );
+        Iterator<V> iterator;
 
-        if (sortField != null) {
-            @SuppressWarnings("unchecked")
-            Iterator<V> sortedValueIterator = (Iterator<V>) collectionIndexProvider.getQueryableIndex(sortField.field()).getSortedValueIterator(sortField.order());
-            iterator = new SortedIterator<>(
-                    iterator,
-                    sortedValueIterator
+        if (rootCondition != null) {
+            // Initialize iterator based on conditions and sorting
+            iterator = rootCondition.evaluate(
+                    collectionIndexProvider,
+                    Order.DEFAULT
+            );
+
+            if (sortField != null) {
+                Iterator<V> sortedValueIterator = (Iterator<V>) collectionIndexProvider.getQueryableIndex(sortField.field()).getSortedValueIterator(sortField.order());
+                iterator = new SortedIterator<>(
+                        iterator,
+                        sortedValueIterator
+                );
+            }
+        } else if (sortField != null) {
+            iterator = (Iterator<V>) collectionIndexProvider.getQueryableIndex(sortField.field()).getSortedValueIterator(sortField.order());
+        } else {
+            iterator = IteratorUtils.modifyNext(
+                    collectionIndexProvider.getClusterIndexManager().getSortedIterator(Order.DEFAULT),
+                    pointerKeyValue -> (V) pointerKeyValue.key()
             );
         }
 

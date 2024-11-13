@@ -215,6 +215,23 @@ public class QueryTestCase {
         Assertions.assertEquals(UnsignedInteger.valueOf(1), executedResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.get(1));
 
+        // Sort only query
+        query = new Query().sort(new SortField("age", Order.ASC));
+        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
+        Assertions.assertEquals(3, executedResults.size());
+        Assertions.assertEquals(UnsignedInteger.valueOf(1), executedResults.getFirst());
+        Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.get(1));
+        Assertions.assertEquals(UnsignedInteger.valueOf(3), executedResults.get(2));
+
+
+        // No condition no sort
+        query = new Query();
+        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
+        Assertions.assertEquals(3, executedResults.size());
+        Assertions.assertEquals(UnsignedInteger.valueOf(1), executedResults.getFirst());
+        Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.get(1));
+        Assertions.assertEquals(UnsignedInteger.valueOf(3), executedResults.get(2));
+
     }
 
     @Test
