@@ -105,6 +105,7 @@ public class Scheme {
         @Builder.Default
         private boolean nullable = false;
         private String defaultValue;
+        private transient String objectFieldName;
 
         @Override
         public boolean equals(Object o) {

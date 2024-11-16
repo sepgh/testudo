@@ -12,7 +12,7 @@ public class IntegerSerializer implements Serializer<Integer> {
 
     @Override
     public Class<Integer> getType() {
-        return Integer.TYPE;
+        return Integer.class;
     }
 
     @Override

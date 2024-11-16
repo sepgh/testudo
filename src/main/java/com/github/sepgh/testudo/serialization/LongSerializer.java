@@ -12,7 +12,7 @@ public class LongSerializer implements Serializer<Long> {
 
     @Override
     public Class<Long> getType() {
-        return Long.TYPE;
+        return Long.class;
     }
 
     @Override

@@ -1,6 +1,6 @@
 package com.github.sepgh.test.scheme;
 
-import com.github.sepgh.testudo.scheme.ModelToSchemeCollectionConverter;
+import com.github.sepgh.testudo.scheme.ModelToCollectionConverter;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.scheme.annotation.AutoIncrement;
 import com.github.sepgh.testudo.scheme.annotation.Collection;
@@ -12,26 +12,31 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class ModelToSchemeCollectionConverterTestCase {
+public class ModelToCollectionConverterTestCase {
 
     @Getter
     @Collection(id = 1, name = "test")
-    public static class TestModel {
+    public static class TestModel implements Comparable<TestModel> {
         @Field(id = 1)
         @AutoIncrement
         @Index(primary = true)
-        private int id;
+        private Integer id;
 
         @Field(id = 2)
         private String name;
 
         @Field(id = 3)
         @Index()
-        private long age;
+        private Long age;
 
         @Field(id = 4, name = "country_code")
         @Index(lowCardinality = true)
         private String country;
+
+        @Override
+        public int compareTo(TestModel testModel) {
+            return 0;
+        }
     }
 
     @Getter
@@ -44,7 +49,7 @@ public class ModelToSchemeCollectionConverterTestCase {
 
     @Test
     public void convert() {
-        ModelToSchemeCollectionConverter converter = new ModelToSchemeCollectionConverter(TestModel.class);
+        ModelToCollectionConverter converter = new ModelToCollectionConverter(TestModel.class);
         Scheme.Collection collection = converter.toCollection();
 
         Assertions.assertEquals(1, collection.getId());
@@ -81,7 +86,7 @@ public class ModelToSchemeCollectionConverterTestCase {
 
         // Todo: runtime exception should not get thrown
         Assertions.assertThrows(RuntimeException.class, () -> {
-            new ModelToSchemeCollectionConverter(TestModel2.class).toCollection();
+            new ModelToCollectionConverter(TestModel2.class).toCollection();
         });
     }
 

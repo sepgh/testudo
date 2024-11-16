@@ -62,8 +62,15 @@ public class CharArrSerializer implements Serializer<String> {
         if (bytes.length > maxSize()) {
             throw new DeserializationException("String too long for deserialization. length: " + bytes.length);
         }
+        int firstNullByte = bytes.length;
+        for (int i = 0; i < bytes.length; i++) {
+            if (bytes[i] == '\0') {
+                firstNullByte = i;
+                break;
+            }
+        }
         try {
-            return new String(bytes, meta.getCharset());
+            return new String(bytes, 0, firstNullByte, meta.getCharset());
         } catch (UnsupportedEncodingException e) {
             throw new DeserializationException(e);
         }

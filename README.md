@@ -54,10 +54,15 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
 - [ ] Database Storage Manager
   - [X] Disk Database Storage Manager Basics (Page Buffer)
   - [X] `RemovedObjectTracer` implementations (default: `InMemoryRemovedObjectTracer`) should support splitting the traced objects if the chosen traced position plus requested size is larger than a threshold.
-  - [ ] Write Queue to make writes Async (is it even safe/possible?)
+  - [ ] Write Queue to make disk writes (page committing) Async (is it even safe/possible?)
 - [X] Query
   - [X] Implement `QueryableInterface` to support quicker query operations on IndexManagers (Done for `LT`, `LTE`, `GT`, `GTE`, `EQ`)
   - [X] Implement Query Class
+- [ ] Serialization
+  - [X] Defining basic serializers for some types including `int`, `long`, `bool`, `char`
+  - [X] Model to Scheme Collection conversion
+  - [X] Model Serialization
+  - [ ] Model DeSerialization
 - [ ] Logging
 
 

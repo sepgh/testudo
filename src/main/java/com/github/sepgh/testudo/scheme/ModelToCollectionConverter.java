@@ -5,17 +5,18 @@ import com.github.sepgh.testudo.scheme.annotation.Collection;
 import com.github.sepgh.testudo.scheme.annotation.Field;
 import com.github.sepgh.testudo.scheme.annotation.Index;
 import com.github.sepgh.testudo.serialization.SerializerRegistry;
+import com.google.common.base.Preconditions;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.stream.Stream;
 
-public class ModelToSchemeCollectionConverter {
+public class ModelToCollectionConverter {
 
     private final Class<?> modelClass;
 
-    public ModelToSchemeCollectionConverter(Class<?> modelClass) {
+    public ModelToCollectionConverter(Class<?> modelClass) {
         this.modelClass = modelClass;
     }
 
@@ -65,6 +66,7 @@ public class ModelToSchemeCollectionConverter {
                 .name(fieldAnnotation.name().isEmpty() ? field.getName() : fieldAnnotation.name())
                 .nullable(fieldAnnotation.nullable())
                 .defaultValue(fieldAnnotation.defaultValue())
+                .objectFieldName(field.getName())
                 .meta(Scheme.Meta.builder()
                         .charset(fieldAnnotation.charset())
                         .comment(fieldAnnotation.comment())
@@ -91,6 +93,7 @@ public class ModelToSchemeCollectionConverter {
 
     private String getFieldType(final java.lang.reflect.Field field, Field fieldAnnotation) {
         if (fieldAnnotation.type().isEmpty()) {
+            Preconditions.checkArgument(Arrays.asList(field.getType().getInterfaces()).contains(Comparable.class), "Fields must have a type of Comparable, but %s doesn't.", field.getName());
             Optional<String> optional = SerializerRegistry.getInstance().getTypeOfClass(field.getType());
             if (optional.isPresent()) {
                 return optional.get();
