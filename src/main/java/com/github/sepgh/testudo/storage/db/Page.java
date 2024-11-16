@@ -41,18 +41,35 @@ public class Page {
         this(pageNumber, pageSize, chunk, new byte[0]);
     }
 
-    public synchronized Optional<DBObject> getDBObjectWrapper(int offset) throws VerificationException.InvalidDBObjectWrapper {
+    public synchronized void cleanPool(int offset, int size) {
+        for (Integer key : wrapperPool.keySet()) {
+            if (key >= offset && key <= offset + size) {
+                wrapperPool.remove(key);
+            }
+        }
+    }
+
+    public synchronized Optional<DBObject> getDBObjectFromPool(int offset) throws VerificationException.InvalidDBObjectWrapper {
+        return this.getDBObjectFromPool(offset, -1, true);
+    }
+
+    public synchronized Optional<DBObject> getDBObjectFromPool(int offset, int onCreateSize) throws VerificationException.InvalidDBObjectWrapper {
+        return this.getDBObjectFromPool(offset, onCreateSize, false);
+    }
+
+    public synchronized Optional<DBObject> getDBObjectFromPool(int offset, int onCreateSize, boolean emptyOnNull) throws VerificationException.InvalidDBObjectWrapper {
         if (wrapperPool.containsKey(offset)) {
             return Optional.of(wrapperPool.get(offset));
         }
 
         int dataSize = DBObject.getDataSize(getData(), offset);
-        if (dataSize == 0) {
+        if (dataSize == 0 && emptyOnNull) {
             return Optional.empty();
         }
 
-        int wrappedSize = DBObject.getWrappedSize(dataSize);
-        DBObject dbObject = new DBObject(this, offset, offset + wrappedSize);
+        int size = DBObject.getWrappedSize(dataSize == 0 ? onCreateSize : dataSize);
+
+        DBObject dbObject = new DBObject(this, offset, offset + size);
 
         wrapperPool.put(offset, dbObject);
         return Optional.of(dbObject);

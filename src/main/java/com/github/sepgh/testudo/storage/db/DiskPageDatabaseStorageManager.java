@@ -38,7 +38,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
     public DiskPageDatabaseStorageManager(EngineConfig engineConfig, FileHandlerPool fileHandlerPool) {
         this.engineConfig = engineConfig;
         this.fileHandlerPool = fileHandlerPool;
-        this.removedObjectsTracer = new RemovedObjectsTracer.InMemoryRemovedObjectsTracer();
+        this.removedObjectsTracer = new RemovedObjectsTracer.InMemoryRemovedObjectsTracer(this.engineConfig.getIMROTMinLengthToSplit());
         this.pageBuffer = new PageBuffer(
                 this.engineConfig.getDbPageBufferSize(),
                 this::pageFactory
@@ -62,7 +62,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
             int offset = (int) (removedObjectLocation.pointer().getPosition() % this.engineConfig.getDbPageSize());
 
             try {
-                Optional<DBObject> optionalDBObjectWrapper = page.getDBObjectWrapper(offset);
+                Optional<DBObject> optionalDBObjectWrapper = page.getDBObjectFromPool(offset, data.length);
                 if (optionalDBObjectWrapper.isPresent()) {
                     try {
                         this.store(optionalDBObjectWrapper.get(), collectionId, version, data);
@@ -133,7 +133,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         try {
             Optional<DBObject> optionalDBObjectWrapper = null;
             try {
-                optionalDBObjectWrapper = page.getDBObjectWrapper(
+                optionalDBObjectWrapper = page.getDBObjectFromPool(
                         (int) (pointer.getPosition() % this.engineConfig.getDbPageSize())
                 );
             } catch (VerificationException.InvalidDBObjectWrapper e) {
@@ -157,7 +157,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         Page page = this.pageBuffer.acquire(pageTitle);
 
         try {
-            Optional<DBObject> optional = page.getDBObjectWrapper(
+            Optional<DBObject> optional = page.getDBObjectFromPool(
                     (int) (pointer.getPosition() % this.engineConfig.getDbPageSize())
             );
             if (optional.isPresent()) {
@@ -176,16 +176,20 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         Page page = this.pageBuffer.acquire(pageTitle);
 
         try {
-            Optional<DBObject> optional = page.getDBObjectWrapper(
+            Optional<DBObject> optional = page.getDBObjectFromPool(
                     (int) (pointer.getPosition() % this.engineConfig.getDbPageSize())
             );
             if (optional.isPresent()) {
-                optional.get().deactivate();
+                DBObject dbObject = optional.get();
+                dbObject.deactivate();
                 this.removedObjectsTracer.add(
                         new RemovedObjectsTracer.RemovedObjectLocation(
-                                pointer, optional.get().getLength()
+                                pointer, dbObject.getLength()
                         )
                 );
+                int offset = (int) (pointer.getPosition() % this.engineConfig.getDbPageSize());
+
+                page.cleanPool(offset, dbObject.getLength());
                 this.commitPage(page);
             }
         } catch (VerificationException.InvalidDBObjectWrapper e) {

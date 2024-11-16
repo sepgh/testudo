@@ -58,6 +58,8 @@ public class EngineConfig {
     private boolean supportZeroInClusterKeys = false;
     @Builder.Default
     private ClusterKeyType clusterKeyType = ClusterKeyType.ULONG;
+    @Builder.Default
+    private int IMROTMinLengthToSplit = Integer.MAX_VALUE;
 
     @Getter
     @AllArgsConstructor
