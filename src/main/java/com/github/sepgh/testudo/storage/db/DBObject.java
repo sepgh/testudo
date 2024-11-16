@@ -41,7 +41,6 @@ public class DBObject {
         this.end = end;
         length = end - begin;
         this.page = page;
-        this.setSize(length);
         this.verify();
     }
 
@@ -193,6 +192,6 @@ public class DBObject {
     }
 
     public static int getWrappedSize(int length) {
-        return META_SIZE_OFFSET + length;
+        return META_BYTES + length;
     }
 }

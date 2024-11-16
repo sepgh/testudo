@@ -29,13 +29,14 @@ public interface RemovedObjectsTracer {
         }
 
         @Override
-        public Optional<RemovedObjectLocation> getRemovedObjectLocation(int length) {
+        public synchronized Optional<RemovedObjectLocation> getRemovedObjectLocation(int length) {
             if (this.removedObjectLocationList.isEmpty())
                 return Optional.empty();
             int i = Collections.binarySearch(this.removedObjectLocationList, new RemovedObjectLocation(null, length), Comparator.comparingInt(RemovedObjectLocation::length));
-            if (i <= 0) {
+            if (i < 0) {
                 i = (i * -1) - 1;
             }
+
 
 
             if (i <= removedObjectLocationList.size() - 1 && length <= removedObjectLocationList.get(i).length) {
