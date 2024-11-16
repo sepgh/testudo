@@ -49,8 +49,10 @@ public class PageBuffer {
     public synchronized void release(PageTitle title) {
         this.referencedWrappers.computeIfPresent(title, (pageTitle, pageWrapper) -> {
             pageWrapper.decrementRefCount();
-            if (pageWrapper.getRefCount() == 0)
+            if (pageWrapper.getRefCount() == 0){
+                buffer.invalidate(title);
                 return null;
+            }
             return pageWrapper;
         });
     }
