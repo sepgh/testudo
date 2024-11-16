@@ -122,7 +122,6 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         dbObject.activate();
         dbObject.modifyData(data);
         dbObject.setCollectionId(collectionId);
-        dbObject.setSize(data.length);
         dbObject.setVersion(version);
         this.commitPage(dbObject.getPage());
     }

@@ -90,6 +90,8 @@ public class DBObject {
             throw new VerificationException.InvalidDBObjectWrapper("Can't extend DBObject size. Create a new one."); // Todo
         }
 
+        this.setSize(value.length);
+
         this.modified = true;
 
         System.arraycopy(
@@ -141,7 +143,7 @@ public class DBObject {
         );
     }
 
-    public void setSize(int size) {
+    private void setSize(int size) {
         this.modified = true;
 
         System.arraycopy(
