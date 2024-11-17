@@ -58,11 +58,11 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
 - [X] Query
   - [X] Implement `QueryableInterface` to support quicker query operations on IndexManagers (Done for `LT`, `LTE`, `GT`, `GTE`, `EQ`)
   - [X] Implement Query Class
-- [ ] Serialization
+- [X] Serialization
   - [X] Defining basic serializers for some types including `int`, `long`, `bool`, `char`
   - [X] Model to Scheme Collection conversion
   - [X] Model Serialization
-  - [ ] Model DeSerialization
+  - [X] Model DeSerialization
 - [ ] Logging
 
 

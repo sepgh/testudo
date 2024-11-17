@@ -8,23 +8,24 @@ import com.github.sepgh.testudo.scheme.annotation.Collection;
 import com.github.sepgh.testudo.scheme.annotation.Field;
 import com.github.sepgh.testudo.scheme.annotation.Index;
 import com.github.sepgh.testudo.serialization.CharArrSerializer;
+import com.github.sepgh.testudo.serialization.ModelDeserializer;
 import com.github.sepgh.testudo.serialization.ModelSerializer;
-import com.google.common.hash.HashCode;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 public class ModelSerializerTestCase {
 
-    @Getter
+    @Data
     @Collection(id = 1, name = "test")
     @Builder
+    @EqualsAndHashCode
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class TestModel {
         @Field(id = 1)
         @AutoIncrement
@@ -75,6 +76,29 @@ public class ModelSerializerTestCase {
         String deserializedCountryCode = new CharArrSerializer().deserialize(countryCode, Scheme.Meta.builder().maxLength(20).charset(StandardCharsets.UTF_8.name()).build());
         Assertions.assertEquals(model.getCountry(), deserializedCountryCode);
 
+    }
+
+    // Depends on serialize to work properly
+    @Test
+    public void deserialize() throws SerializationException, DeserializationException {
+        ModelSerializerTestCase.TestModel model = TestModel.builder()
+                .id(11)
+                .name("test")
+                .age(12L)
+                .country("country")
+                .build();
+
+        ModelSerializer modelSerializer = new ModelSerializer(model);
+        byte[] serialized = modelSerializer.serialize();
+
+        ModelDeserializer modelDeserializer = new ModelDeserializer(serialized);
+        TestModel deserialize = modelDeserializer.deserialize(TestModel.class);
+
+        Assertions.assertEquals(model.getId(), deserialize.getId());
+        Assertions.assertEquals(model.getName(), deserialize.getName());
+        Assertions.assertEquals(model.getAge(), deserialize.getAge());
+        Assertions.assertEquals(model.getCountry(), deserialize.getCountry());
+        Assertions.assertEquals(model, deserialize);
     }
 
 }
