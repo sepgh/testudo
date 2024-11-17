@@ -69,7 +69,7 @@ public class CachedIndexStorageManagerDecorator extends IndexStorageManagerDecor
         });
     }
 
-    public CompletableFuture<Integer> updateNode(int indexId, byte[] data, Pointer pointer, boolean root) throws IOException, InterruptedException {
+    public CompletableFuture<Void> updateNode(int indexId, byte[] data, Pointer pointer, boolean root) throws IOException, InterruptedException {
         return super.updateNode(indexId, data, pointer, root).whenComplete((integer, throwable) -> {
             if (throwable == null) {
                 NodeData nodeData = new NodeData(pointer, data);
@@ -87,7 +87,7 @@ public class CachedIndexStorageManagerDecorator extends IndexStorageManagerDecor
         super.close();
     }
 
-    public CompletableFuture<Integer> removeNode(int indexId, Pointer pointer, KVSize size) throws InterruptedException {
+    public CompletableFuture<Void> removeNode(int indexId, Pointer pointer, KVSize size) throws InterruptedException {
         return super.removeNode(indexId, pointer, size).whenComplete((integer, throwable) -> {
             cache.invalidate(new IndexPointer(indexId, pointer));
             synchronized (rootCache){

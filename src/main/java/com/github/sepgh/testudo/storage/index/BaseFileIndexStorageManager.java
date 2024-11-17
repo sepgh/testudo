@@ -23,14 +23,11 @@ import java.util.concurrent.ExecutionException;
 import static com.github.sepgh.testudo.index.tree.node.AbstractTreeNode.TYPE_INTERNAL_NODE_BIT;
 import static com.github.sepgh.testudo.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
 
-public abstract class BaseFileIndexStorageManager implements IndexStorageManager {
-    protected final Path path;
+public abstract class BaseFileIndexStorageManager extends AbstractFileIndexStorageManager {
     protected final IndexHeaderManager indexHeaderManager;
-    protected final EngineConfig engineConfig;
     protected final FileHandlerPool fileHandlerPool;
     public static final String INDEX_FILE_NAME = "index";
     protected final String customName;
-    private final String ROOT_UPDATE_RUNTIME_ERR_STR = "Failed to update root after writing a node. Your header at %s may be broken for: %s";
 
     public BaseFileIndexStorageManager(
             @Nullable String customName,
@@ -38,10 +35,9 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
             EngineConfig engineConfig,
             FileHandlerPool fileHandlerPool
     ) {
-        this.path = Path.of(engineConfig.getBaseDBPath());
+        super(engineConfig);
         this.customName = customName;
         this.indexHeaderManager = indexHeaderManagerFactory.getInstance(this.getHeaderPath());
-        this.engineConfig = engineConfig;
         this.fileHandlerPool = fileHandlerPool;
     }
 
@@ -59,18 +55,6 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
 
     public BaseFileIndexStorageManager(String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig) {
         this(customName, indexHeaderManagerFactory, engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()));
-    }
-
-    protected int getBinarySpace(KVSize size){
-        return new BTreeSizeCalculator(this.engineConfig.getBTreeDegree(), size.keySize(), size.valueSize()).calculate();
-    }
-
-    protected int getIndexGrowthAllocationSize(KVSize size){
-        return engineConfig.getBTreeGrowthNodeAllocationCount() * this.getBinarySpace(size);
-    }
-
-    protected Path getHeaderPath() {
-        return Path.of(path.toString(), "header.bin");
     }
 
     protected abstract Path getIndexFilePath(int indexId, int chunk);
@@ -135,10 +119,6 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
         return output;
     }
 
-    @Override
-    public byte[] getEmptyNode(KVSize kvSize) {
-        return new byte[this.getBinarySpace(kvSize)];
-    }
 
     @Override
     public CompletableFuture<NodeData> readNode(int indexId, long position, int chunk, KVSize size) throws InterruptedException, IOException {
@@ -247,12 +227,14 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
     }
 
     @Override
-    public CompletableFuture<Integer> updateNode(int indexId, byte[] data, Pointer pointer, boolean isRoot) throws InterruptedException, IOException {
+    public CompletableFuture<Void> updateNode(int indexId, byte[] data, Pointer pointer, boolean isRoot) throws InterruptedException, IOException {
         long offset = getIndexBeginningInChunk(indexId, pointer.getChunk()).getOffset() + pointer.getPosition();
 
         AsynchronousFileChannel asynchronousFileChannel = acquireFileChannel(indexId, pointer.getChunk());
 
-        return FileUtils.write(asynchronousFileChannel, offset, data).whenComplete((integer, throwable) -> {
+        CompletableFuture<Void> output = new CompletableFuture<>();
+
+        FileUtils.write(asynchronousFileChannel, offset, data).whenComplete((integer, throwable) -> {
             releaseFileChannel(indexId, pointer.getChunk());
             if (isRoot){
                 try {
@@ -264,7 +246,10 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
                     );
                 }
             }
+            output.complete(null);
         });
+
+        return output;
     }
 
     private void updateRoot(int indexId, Pointer pointer) throws IOException {
@@ -277,10 +262,21 @@ public abstract class BaseFileIndexStorageManager implements IndexStorageManager
     }
 
     @Override
-    public CompletableFuture<Integer> removeNode(int indexId, Pointer pointer, KVSize size) throws InterruptedException {
+    public CompletableFuture<Void> removeNode(int indexId, Pointer pointer, KVSize size) throws InterruptedException {
+        CompletableFuture<Void> output = new CompletableFuture<>();
+
         IndexHeaderManager.Location location = indexHeaderManager.getIndexBeginningInChunk(indexId, pointer.getChunk()).orElseGet(() -> new IndexHeaderManager.Location(pointer.getChunk(), 0));
         long offset = location.getOffset() + pointer.getPosition();
-        return FileUtils.write(acquireFileChannel(indexId, pointer.getChunk()), offset, new byte[this.getBinarySpace(size)]).whenComplete((integer, throwable) -> releaseFileChannel(indexId, pointer.getChunk()));
+        FileUtils.write(acquireFileChannel(indexId, pointer.getChunk()), offset, new byte[this.getBinarySpace(size)]).whenComplete((integer, throwable) -> {
+            releaseFileChannel(indexId, pointer.getChunk());
+            if (throwable != null){
+                output.completeExceptionally(throwable);
+            } else {
+                output.complete(null);
+            }
+        });
+
+        return output;
     }
 
     @Override

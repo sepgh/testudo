@@ -38,9 +38,9 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
   - [X] Implement UnsignedLong serializer, which would be cluster key type
   - [ ] Update `SchemeManager` logic
   - [ ] Update `FieldIndexManagerProvider` logic (name should get updated as well, right?)
-- [ ] Storage management of B+Tree
+- [X] Storage management of B+Tree
   - [X] Storage management using `CompactFileIndexStorageManager` and `OrganizedFileIndexStorageManager`
-  - [ ] Additional Storage Management implementation using `DatabaseStorageManager` (the `DiskDatabaseStorageManager` uses `PageBuffer`s)
+  - [X] Additional Storage Management implementation using `DatabaseStorageManager` (the `DiskDatabaseStorageManager` uses `PageBuffer`s)
 - [X] Generic decorator pattern for `UniqueTreeIndexManager`
 - [X] LRU Cache implementation for `UniqueTreeIndexManager` decorator. **(More tests required)**
 - [ ] Tree Index Manager Locks:

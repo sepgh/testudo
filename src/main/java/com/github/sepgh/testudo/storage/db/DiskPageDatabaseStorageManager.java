@@ -24,25 +24,29 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
     private final FileHandlerPool fileHandlerPool;
     private final RemovedObjectsTracer removedObjectsTracer;
     private volatile PageBuffer.PageTitle lastPageTitle;
+    private final byte pointerTypes;
 
-    public DiskPageDatabaseStorageManager(EngineConfig engineConfig, FileHandlerPool fileHandlerPool, RemovedObjectsTracer removedObjectsTracer) {
+    public DiskPageDatabaseStorageManager(EngineConfig engineConfig, FileHandlerPool fileHandlerPool, RemovedObjectsTracer removedObjectsTracer, byte pointerTypes) {
         this.engineConfig = engineConfig;
         this.fileHandlerPool = fileHandlerPool;
         this.removedObjectsTracer = removedObjectsTracer;
+        this.pointerTypes = pointerTypes;
         this.pageBuffer = new PageBuffer(
                 this.engineConfig.getDbPageBufferSize(),
                 this::pageFactory
         );
     }
 
+    public DiskPageDatabaseStorageManager(EngineConfig engineConfig, FileHandlerPool fileHandlerPool, RemovedObjectsTracer removedObjectsTracer) {
+        this(engineConfig, fileHandlerPool, removedObjectsTracer, Pointer.TYPE_DATA);
+    }
+
+    public DiskPageDatabaseStorageManager(EngineConfig engineConfig, FileHandlerPool fileHandlerPool, byte pointerTypes) {
+        this(engineConfig, fileHandlerPool, new RemovedObjectsTracer.InMemoryRemovedObjectsTracer(engineConfig.getIMROTMinLengthToSplit()), pointerTypes);
+    }
+
     public DiskPageDatabaseStorageManager(EngineConfig engineConfig, FileHandlerPool fileHandlerPool) {
-        this.engineConfig = engineConfig;
-        this.fileHandlerPool = fileHandlerPool;
-        this.removedObjectsTracer = new RemovedObjectsTracer.InMemoryRemovedObjectsTracer(this.engineConfig.getIMROTMinLengthToSplit());
-        this.pageBuffer = new PageBuffer(
-                this.engineConfig.getDbPageBufferSize(),
-                this::pageFactory
-        );
+        this(engineConfig, fileHandlerPool, new RemovedObjectsTracer.InMemoryRemovedObjectsTracer(engineConfig.getIMROTMinLengthToSplit()), Pointer.TYPE_DATA);
     }
 
 
@@ -106,7 +110,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         try {
             this.store(dbObject, collectionId, version, data);
             return new Pointer(
-                    Pointer.TYPE_DATA,
+                    pointerTypes,
                     ((long) page.getPageNumber() * this.engineConfig.getDbPageSize()) + dbObject.getBegin(),
                     page.getChunk()
             );
@@ -232,6 +236,13 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
             int offset = pageTitle.pageNumber() * size;
 
             byte[] data = FileUtils.readBytes(fileChannel, offset, size).get();
+
+            // Note: Apparently this if statement may not be useful ever!
+            if (data.length == 0) {
+                FileUtils.allocate(fileChannel, offset, size).get();
+                data = FileUtils.readBytes(fileChannel, offset, size).get();
+            }
+
             fileHandlerPool.releaseFileChannel(path, 100, TimeUnit.SECONDS);
             return new Page(
                     pageTitle.pageNumber(),
@@ -271,7 +282,6 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         if (this.engineConfig.getDbPageMaxFileSize() != EngineConfig.UNLIMITED_FILE_SIZE && (long) pageNumber * this.engineConfig.getDbPageSize() > this.engineConfig.getDbPageMaxFileSize()) {
             chunk += 1;
         }
-
         this.generateNewEmptyPage(chunk);
 
         this.lastPageTitle = new PageBuffer.PageTitle(chunk, pageNumber);
@@ -310,7 +320,9 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
 
         synchronized (this){
             AsynchronousFileChannel fileChannel = fileHandlerPool.getFileChannel(getDBFileName(lastChunk), 100, TimeUnit.SECONDS);// Todo
-            int pageNumber = (int) fileChannel.size() / this.engineConfig.getDbPageSize();
+            long fileSize = fileChannel.size();
+            long size = fileSize == 0 ? 0 : fileSize - 1;
+            int pageNumber = (int) (size / this.engineConfig.getDbPageSize());
             fileHandlerPool.releaseFileChannel(getDBFileName(lastChunk), 100, TimeUnit.SECONDS);  // Todo
 
             this.lastPageTitle = new PageBuffer.PageTitle(lastChunk, pageNumber);

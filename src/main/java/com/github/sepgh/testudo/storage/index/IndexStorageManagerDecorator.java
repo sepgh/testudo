@@ -37,10 +37,10 @@ public class IndexStorageManagerDecorator implements IndexStorageManager {
     public  CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data, KVSize size) throws IOException, ExecutionException, InterruptedException {
         return this.writeNewNode(indexId, data, false, size);
     }
-    public  CompletableFuture<Integer> updateNode(int indexId, byte[] data, Pointer pointer) throws IOException, InterruptedException {
+    public  CompletableFuture<Void> updateNode(int indexId, byte[] data, Pointer pointer) throws IOException, InterruptedException {
         return this.decorated.updateNode(indexId, data, pointer, false);
     }
-    public CompletableFuture<Integer> updateNode(int indexId, byte[] data, Pointer pointer, boolean root) throws IOException, InterruptedException {
+    public CompletableFuture<Void> updateNode(int indexId, byte[] data, Pointer pointer, boolean root) throws IOException, InterruptedException {
         return this.decorated.updateNode(indexId, data, pointer, root);
     }
 
@@ -48,7 +48,7 @@ public class IndexStorageManagerDecorator implements IndexStorageManager {
         this.decorated.close();
     }
 
-    public CompletableFuture<Integer> removeNode(int indexId, Pointer pointer, KVSize size) throws InterruptedException {
+    public CompletableFuture<Void> removeNode(int indexId, Pointer pointer, KVSize size) throws InterruptedException {
         return this.decorated.removeNode(indexId, pointer, size);
     }
 

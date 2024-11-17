@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.github.sepgh.test.TestParams.DEFAULT_INDEX_BINARY_OBJECT_FACTORY;
 import static com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager.INDEX_FILE_NAME;
 
-public class MultiTableBPlusTreeUniqueTreeIndexManagerSingleStorageManagerTestCase {
+public class MultiTableBPlusTreeIndexManagerCompactStorageManagerTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private final int degree = 4;

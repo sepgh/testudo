@@ -31,7 +31,7 @@ import java.util.concurrent.ExecutionException;
 import static com.github.sepgh.test.TestParams.DEFAULT_INDEX_BINARY_OBJECT_FACTORY;
 import static com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager.INDEX_FILE_NAME;
 
-public class MultiTableBPlusTreeUniqueTreeIndexManagerOrganizedTestCase {
+public class MultiTableBPlusTreeIndexManagerOrganizedTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
     private int degree = 4;

@@ -21,14 +21,14 @@ public interface IndexStorageManager {
     default CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data, KVSize size) throws IOException, ExecutionException, InterruptedException {
         return this.writeNewNode(indexId, data, false, size);
     }
-    default CompletableFuture<Integer> updateNode(int indexId, byte[] data, Pointer pointer) throws IOException, InterruptedException {
+    default CompletableFuture<Void> updateNode(int indexId, byte[] data, Pointer pointer) throws IOException, InterruptedException {
         return this.updateNode(indexId, data, pointer, false);
     }
-    CompletableFuture<Integer> updateNode(int indexId, byte[] data, Pointer pointer, boolean root) throws IOException, InterruptedException;
+    CompletableFuture<Void> updateNode(int indexId, byte[] data, Pointer pointer, boolean root) throws IOException, InterruptedException;
 
     void close() throws IOException;
 
-    CompletableFuture<Integer> removeNode(int indexId, Pointer pointer, KVSize size) throws InterruptedException;
+    CompletableFuture<Void> removeNode(int indexId, Pointer pointer, KVSize size) throws InterruptedException;
 
     boolean exists(int indexId);
 

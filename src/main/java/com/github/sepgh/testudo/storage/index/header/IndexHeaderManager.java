@@ -36,6 +36,10 @@ public interface IndexHeaderManager {
             return new Location(pointer.getChunk(), pointer.getPosition());
         }
 
+        public Pointer toPointer(byte type) {
+            return new Pointer(type, offset, chunk);
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;

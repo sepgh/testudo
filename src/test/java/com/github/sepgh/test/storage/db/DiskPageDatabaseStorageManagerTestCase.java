@@ -67,6 +67,29 @@ public class DiskPageDatabaseStorageManagerTestCase {
     }
 
     @Test
+    public void test_canChangePages() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
+        this.engineConfig.setDbPageSize(100);
+        DiskPageDatabaseStorageManager storageManager = getDiskPageDatabaseStorageManager();
+
+        byte[] data = new byte[60];
+        Pointer pointer = storageManager.store(17, 1, data);
+        Assertions.assertNotNull(pointer);
+
+        pointer = storageManager.store(17, 1, data);
+        Assertions.assertNotNull(pointer);
+
+        pointer = storageManager.store(17, 1, data);
+        Assertions.assertNotNull(pointer);
+
+        pointer = storageManager.store(17, 1, data);
+        Assertions.assertNotNull(pointer);
+
+        pointer = storageManager.store(17, 1, data);
+        Assertions.assertNotNull(pointer);
+    }
+
+
+    @Test
     public void test_canStoreAndReadObject() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
         DiskPageDatabaseStorageManager storageManager = getDiskPageDatabaseStorageManager();
 
