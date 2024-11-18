@@ -91,8 +91,8 @@ public class ModelSerializerTestCase {
         ModelSerializer modelSerializer = new ModelSerializer(model);
         byte[] serialized = modelSerializer.serialize();
 
-        ModelDeserializer modelDeserializer = new ModelDeserializer(serialized);
-        TestModel deserialize = modelDeserializer.deserialize(TestModel.class);
+        ModelDeserializer<TestModel> modelDeserializer = new ModelDeserializer<>(TestModel.class);
+        TestModel deserialize = modelDeserializer.deserialize(serialized);
 
         Assertions.assertEquals(model.getId(), deserialize.getId());
         Assertions.assertEquals(model.getName(), deserialize.getName());

@@ -8,18 +8,14 @@ import com.github.sepgh.testudo.scheme.Scheme;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class ModelDeserializer {
-    private byte[] bytes;
+public class ModelDeserializer<T> {
+    private final Class<T> tClass;
 
-    public ModelDeserializer(byte[] bytes) {
-        this.reset(bytes);
+    public ModelDeserializer(Class<T> tClass) {
+        this.tClass = tClass;
     }
 
-    public synchronized void reset(byte[] bytes) {
-        this.bytes = bytes;
-    }
-
-    public <T> T deserialize(Class<T> tClass) throws SerializationException, DeserializationException {
+    public T deserialize(byte[] bytes) throws SerializationException, DeserializationException {
         Scheme.Collection collection = new ModelToCollectionConverter(tClass).toCollection();
 
         T t;

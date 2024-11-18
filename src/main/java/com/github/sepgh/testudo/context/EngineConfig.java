@@ -64,7 +64,7 @@ public class EngineConfig {
     @Getter
     @AllArgsConstructor
     public enum ClusterKeyType {
-        UINT(FieldType.UNSIGNED_INT.getName()), ULONG(FieldType.UNSIGNED_LONG.getName());
+        UINT(FieldType.UNSIGNED_INT.getName()), ULONG(FieldType.UNSIGNED_LONG.getName()), LONG(FieldType.LONG.getName()), INT(FieldType.INT.getName());
         private final String typeName;
     }
 

@@ -6,8 +6,10 @@ import com.github.sepgh.testudo.storage.db.DBObject;
 import java.util.Iterator;
 
 public interface CollectionSelectOperation {
+    CollectionSelectOperation fields(String... fields);
     CollectionSelectOperation query(Query query);
-    Iterator<DBObject> execute();
-    <T> Iterator<T> execute(Class<T> clazz);
+    Query getQuery();
+    <V extends Number & Comparable<V>> Iterator<DBObject> execute();
+    <V extends Number & Comparable<V>, T> Iterator<T> execute(Class<T> clazz);
     long count();
 }
