@@ -62,6 +62,9 @@ public class CharArrSerializer implements Serializer<String> {
         if (bytes.length > maxSize()) {
             throw new DeserializationException("String too long for deserialization. length: " + bytes.length);
         }
+
+        // We'd want to remove the ending segment from where null bytes begin
+        // Todo:  use 2 crystal balls algo?
         int firstNullByte = bytes.length;
         for (int i = 0; i < bytes.length; i++) {
             if (bytes[i] == '\0') {
