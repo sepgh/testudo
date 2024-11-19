@@ -146,10 +146,16 @@ public class DefaultCollectionSelectOperationTestCase {
         Assertions.assertEquals(execute.next(), testModel4);
         Assertions.assertFalse(execute.hasNext());
 
-        // Todo: uncomment and see err
-//        collectionSelectOperation.query(new Query().where(new SimpleCondition<>("age", Operation.GT, 10L))).execute(TestModel.class);
-//        Assertions.assertTrue(execute.hasNext());
-//        Assertions.assertEquals(execute.next(), testModel2);
+        execute = collectionSelectOperation.query(
+                new Query().where(new SimpleCondition<>("age", Operation.GT, 10L))
+        ).execute(TestModel.class);
+        Assertions.assertTrue(execute.hasNext());
+        Assertions.assertEquals(execute.next(), testModel2);
+        Assertions.assertTrue(execute.hasNext());
+        Assertions.assertEquals(execute.next(), testModel3);
+        Assertions.assertTrue(execute.hasNext());
+        Assertions.assertEquals(execute.next(), testModel4);
+        Assertions.assertFalse(execute.hasNext());
 
     }
 
