@@ -47,5 +47,10 @@ public class PointerIndexBinaryObject extends AbstractIndexBinaryObject<Pointer>
         public Class<Pointer> getType() {
             return Pointer.class;
         }
+
+        @Override
+        public IndexBinaryObject<Pointer> createEmpty() {
+            return this.create(Pointer.empty());
+        }
     }
 }

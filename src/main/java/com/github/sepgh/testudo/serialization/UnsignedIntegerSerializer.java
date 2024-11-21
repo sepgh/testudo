@@ -2,6 +2,7 @@ package com.github.sepgh.testudo.serialization;
 
 import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.SerializationException;
+import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.google.common.primitives.UnsignedInteger;
 
@@ -55,5 +56,10 @@ public class UnsignedIntegerSerializer implements Serializer<UnsignedInteger> {
     @Override
     public byte[] serializeDefault(String defaultValue, Scheme.Meta meta) throws SerializationException {
         return new byte[Integer.BYTES];
+    }
+
+    @Override
+    public IndexBinaryObjectFactory<UnsignedInteger> getIndexBinaryObjectFactory(Scheme.Field field) {
+        return new SerializerIndexBinaryObjectFactory<>(this, field, () -> UnsignedInteger.valueOf(0L), i -> i.plus(UnsignedInteger.ONE));
     }
 }

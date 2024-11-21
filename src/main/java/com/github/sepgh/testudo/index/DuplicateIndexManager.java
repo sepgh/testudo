@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 public interface DuplicateIndexManager<K extends Comparable<K>, V extends Number & Comparable<V>> {
+    // Todo: throw signature?
     boolean addIndex(K identifier, V value) throws InternalOperationException, IOException, ExecutionException, InterruptedException;
     Optional<ListIterator<V>> getIndex(K identifier) throws InternalOperationException;
     Optional<ListIterator<V>> getIndex(K identifier, Order order) throws InternalOperationException;

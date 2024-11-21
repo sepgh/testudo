@@ -52,4 +52,14 @@ public class UniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> impleme
     public int getIndexId() {
         return this.uniqueTreeIndexManager.getIndexId();
     }
+
+    @Override
+    public boolean supportIncrement() {
+        return this.uniqueTreeIndexManager.supportIncrement();
+    }
+
+    @Override
+    public K nextKey() throws InternalOperationException {
+        return this.uniqueTreeIndexManager.nextKey();
+    }
 }

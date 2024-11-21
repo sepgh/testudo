@@ -6,6 +6,7 @@ import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.operation.query.Query;
+import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.serialization.ModelDeserializer;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
@@ -19,14 +20,16 @@ import java.util.Optional;
 
 public class DefaultCollectionSelectOperation implements CollectionSelectOperation {
 
+    private final Scheme.Collection collection;
     private final CollectionIndexProvider collectionIndexProvider;
     private final DatabaseStorageManager storageManager;
     @Getter
     private Query query;
     private List<String> fields;
 
-    public DefaultCollectionSelectOperation(CollectionIndexProvider collectionIndexProvider, DatabaseStorageManager storageManager) {
-        this.collectionIndexProvider = collectionIndexProvider;
+    public DefaultCollectionSelectOperation(Scheme.Collection collection, CollectionIndexProviderFactory collectionIndexProviderFactory, DatabaseStorageManager storageManager) {
+        this.collection = collection;
+        this.collectionIndexProvider = collectionIndexProviderFactory.create(collection);
         this.storageManager = storageManager;
     }
 

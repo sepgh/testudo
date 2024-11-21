@@ -2,10 +2,8 @@ package com.github.sepgh.testudo.serialization;
 
 import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.SerializationException;
-import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.scheme.Scheme;
-import lombok.SneakyThrows;
 
 import java.util.List;
 
@@ -36,29 +34,7 @@ public interface Serializer<T extends Comparable<T>> {
 
     default IndexBinaryObjectFactory<T> getIndexBinaryObjectFactory(Scheme.Field field) {
         Serializer<T> SERIALIZER = this;
-        return new IndexBinaryObjectFactory<T>() {
-
-            @SneakyThrows   // Todo
-            @Override
-            public IndexBinaryObject<T> create(T t) {
-                return new IndexBinaryObjectSerializer<>(t, SERIALIZER);
-            }
-
-            @Override
-            public IndexBinaryObject<T> create(byte[] bytes, int beginning) {
-                return new IndexBinaryObjectSerializer<>(bytes, beginning, SERIALIZER);
-            }
-
-            @Override
-            public int size() {
-                return SERIALIZER.getSize(field.getMeta());
-            }
-
-            @Override
-            public Class<T> getType() {
-                return SERIALIZER.getType();
-            }
-        };
+        return new SerializerIndexBinaryObjectFactory<>(SERIALIZER, field);
     }
 
     default String asString(byte[] bytes, Scheme.Meta meta) throws DeserializationException {

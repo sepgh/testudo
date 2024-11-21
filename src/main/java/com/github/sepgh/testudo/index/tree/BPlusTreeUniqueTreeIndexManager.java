@@ -7,6 +7,7 @@ import com.github.sepgh.testudo.index.AbstractUniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueQueryableIndex;
+import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
@@ -25,6 +26,7 @@ import com.github.sepgh.testudo.utils.LockableIterator;
 import com.google.common.base.Preconditions;
 import lombok.SneakyThrows;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -33,7 +35,7 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
     private final IndexStorageManager indexStorageManager;
     private final IndexIOSessionFactory indexIOSessionFactory;
     private final int degree;
-    private final IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory;
+    protected final IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory;
     private final IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory;
     private final NodeFactory<K> nodeFactory;
     protected final KVSize kvSize;
@@ -213,6 +215,27 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
             }
         } while (removed);
 
+    }
+
+    @Override
+    public boolean supportIncrement() {
+        return Number.class.isAssignableFrom(keyIndexBinaryObjectFactory.getType());
+    }
+
+    // Todo: this could be done better:
+    // - What if we reach max?
+    // - IndexBinaryObjects can provide "T first()" and "T next(T current)" methods
+    @Override
+    public K nextKey() throws InternalOperationException {
+        if (supportIncrement()) {
+            Iterator<K> sortedKeyIterator = this.getSortedKeyIterator(Order.DESC);
+            if (sortedKeyIterator.hasNext()) {
+                return keyIndexBinaryObjectFactory.create(sortedKeyIterator.next()).getNext();
+            } else {
+                return keyIndexBinaryObjectFactory.createEmpty().asObject();
+            }
+        }
+        throw new UnsupportedOperationException("nextKey not supported");
     }
 
     public AbstractTreeNode<K> getRoot(IndexIOSession<K> indexIOSession) throws InternalOperationException {

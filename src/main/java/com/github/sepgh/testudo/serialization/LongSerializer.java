@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.serialization;
 
 import com.github.sepgh.testudo.exception.SerializationException;
+import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.utils.BinaryUtils;
 import com.google.common.primitives.Longs;
@@ -53,5 +54,10 @@ public class LongSerializer implements Serializer<Long> {
     @Override
     public byte[] serializeDefault(String defaultValue, Scheme.Meta meta) throws SerializationException {
         return this.serialize(Long.parseLong(defaultValue), meta);
+    }
+
+    @Override
+    public IndexBinaryObjectFactory<Long> getIndexBinaryObjectFactory(Scheme.Field field) {
+        return new SerializerIndexBinaryObjectFactory<>(this, field, () -> 0L, i -> i + 1L);
     }
 }

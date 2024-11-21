@@ -1,7 +1,9 @@
 package com.github.sepgh.testudo.scheme;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -11,10 +13,13 @@ import java.util.Optional;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Scheme {
     private String dbName;
     private Integer version;
-    private List<Collection> collections;
+    @Builder.Default
+    private List<Collection> collections = new ArrayList<>();
 
     @Builder
     @Data

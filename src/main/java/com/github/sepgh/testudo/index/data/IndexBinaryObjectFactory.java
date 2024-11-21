@@ -8,4 +8,5 @@ public interface IndexBinaryObjectFactory<E> {
     }
     int size();
     Class<E> getType();
+    IndexBinaryObject<E> createEmpty();
 }

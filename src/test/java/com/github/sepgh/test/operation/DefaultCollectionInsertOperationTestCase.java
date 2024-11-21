@@ -39,7 +39,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 
-public class DefaultCollectionSelectOperationTestCase {
+public class DefaultCollectionInsertOperationTestCase {
 
     private EngineConfig engineConfig;
     private Path dbPath;
@@ -100,37 +100,23 @@ public class DefaultCollectionSelectOperationTestCase {
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
         CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(engineConfig, indexStorageManagerFactory, storageManager);
 
+        Scheme scheme = Scheme.builder()
+                .dbName("test")
+                .version(1)
+                .build();
         Scheme.Collection collection = new ModelToCollectionConverter(TestModel.class).toCollection();
-        CollectionIndexProvider collectionIndexProvider = collectionIndexProviderFactory.create(collection);
+        scheme.getCollections().add(collection);
 
         TestModel testModel1 = TestModel.builder().id(1).age(10L).country("DE").name("John").build();
         TestModel testModel2 = TestModel.builder().id(2).age(20L).country("FR").name("Rose").build();
         TestModel testModel3 = TestModel.builder().id(3).age(30L).country("USA").name("Jack").build();
         TestModel testModel4 = TestModel.builder().id(4).age(40L).country("GB").name("Foo").build();
 
-        long i = 1;
+        CollectionInsertOperation collectionInsertOperation = new DefaultCollectionInsertOperation(scheme, collection, collectionIndexProviderFactory, storageManager);
+
         for (TestModel testModel : Arrays.asList(testModel1, testModel2, testModel3, testModel4)) {
-            ModelSerializer modelSerializer = new ModelSerializer(testModel);
-            byte[] serialize = modelSerializer.serialize();
-
-            Pointer pointer = storageManager.store(collection.getId(), 1, serialize);
-
-            UniqueTreeIndexManager<Long, Pointer> clusterIndexManager = (UniqueTreeIndexManager<Long, Pointer>) collectionIndexProvider.getClusterIndexManager();
-            clusterIndexManager.addIndex(i, pointer);
-
-            UniqueQueryableIndex<Integer, Long> idIndexManager = (UniqueQueryableIndex<Integer, Long>) collectionIndexProvider.getUniqueIndexManager("id");
-            idIndexManager.addIndex(testModel.getId(), i);
-
-            DuplicateQueryableIndex<Long, Long> ageIndexManager = (DuplicateQueryableIndex<Long, Long>) collectionIndexProvider.getDuplicateIndexManager("age");
-            ageIndexManager.addIndex(testModel.getAge(), i);
-
-            DuplicateQueryableIndex<String, Long> countryIndexManager = (DuplicateQueryableIndex<String, Long>) collectionIndexProvider.getDuplicateIndexManager("country_code");
-            countryIndexManager.addIndex(testModel.getCountry(), i);
-
-
-            i++;
+            collectionInsertOperation.insert(testModel);
         }
-
 
         CollectionSelectOperation collectionSelectOperation = new DefaultCollectionSelectOperation(collection, collectionIndexProviderFactory, storageManager);
         long count = collectionSelectOperation.count();

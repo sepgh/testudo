@@ -121,7 +121,7 @@ public class CharArrSerializer implements Serializer<String> {
                 result[i] = 0;
             }
 
-            return new IndexBinaryObjectSerializer<>(result, serializer);
+            return new SerializerIndexBinaryObject<>(result, serializer);
         }
 
         @Override
@@ -134,7 +134,7 @@ public class CharArrSerializer implements Serializer<String> {
                     0,
                     this.size()
             );
-            return new IndexBinaryObjectSerializer<>(data, serializer);
+            return new SerializerIndexBinaryObject<>(data, serializer);
         }
 
         @Override
@@ -145,6 +145,11 @@ public class CharArrSerializer implements Serializer<String> {
         @Override
         public Class<String> getType() {
             return String.class;
+        }
+
+        @Override
+        public IndexBinaryObject<String> createEmpty() {
+            return this.create(new byte[size], 0);
         }
     }
 }

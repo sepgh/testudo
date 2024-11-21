@@ -18,4 +18,6 @@ public interface UniqueTreeIndexManager<K extends Comparable<K>, V> {
     LockableIterator<KeyValue<K, V>> getSortedIterator(Order order) throws InternalOperationException;
     void purgeIndex();
     int getIndexId();
+    boolean supportIncrement();
+    K nextKey() throws InternalOperationException;
 }
