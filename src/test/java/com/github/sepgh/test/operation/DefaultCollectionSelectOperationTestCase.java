@@ -10,9 +10,7 @@ import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueQueryableIndex;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.operation.*;
-import com.github.sepgh.testudo.operation.query.Operation;
-import com.github.sepgh.testudo.operation.query.Query;
-import com.github.sepgh.testudo.operation.query.SimpleCondition;
+import com.github.sepgh.testudo.operation.query.*;
 import com.github.sepgh.testudo.scheme.ModelToCollectionConverter;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.scheme.annotation.AutoIncrement;
@@ -155,6 +153,88 @@ public class DefaultCollectionSelectOperationTestCase {
         Assertions.assertEquals(execute.next(), testModel3);
         Assertions.assertTrue(execute.hasNext());
         Assertions.assertEquals(execute.next(), testModel4);
+        Assertions.assertFalse(execute.hasNext());
+    }
+
+    @Test
+    public void unorderedData() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+        DiskPageDatabaseStorageManager storageManager = getDiskPageDatabaseStorageManager();
+        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(engineConfig, indexStorageManagerFactory, storageManager);
+
+        Scheme.Collection collection = new ModelToCollectionConverter(TestModel.class).toCollection();
+        CollectionIndexProvider collectionIndexProvider = collectionIndexProviderFactory.create(collection);
+
+        TestModel testModel1 = TestModel.builder().id(1).age(30L).country("DE").name("John").build();
+        TestModel testModel2 = TestModel.builder().id(2).age(20L).country("FR").name("Rose").build();
+        TestModel testModel3 = TestModel.builder().id(3).age(40L).country("USA").name("Jack").build();
+        TestModel testModel4 = TestModel.builder().id(4).age(10L).country("GB").name("Foo").build();
+
+        long i = 1;
+        for (TestModel testModel : Arrays.asList(testModel1, testModel2, testModel3, testModel4)) {
+            ModelSerializer modelSerializer = new ModelSerializer(testModel);
+            byte[] serialize = modelSerializer.serialize();
+
+            Pointer pointer = storageManager.store(collection.getId(), 1, serialize);
+
+            UniqueTreeIndexManager<Long, Pointer> clusterIndexManager = (UniqueTreeIndexManager<Long, Pointer>) collectionIndexProvider.getClusterIndexManager();
+            clusterIndexManager.addIndex(i, pointer);
+
+            UniqueQueryableIndex<Integer, Long> idIndexManager = (UniqueQueryableIndex<Integer, Long>) collectionIndexProvider.getUniqueIndexManager("id");
+            idIndexManager.addIndex(testModel.getId(), i);
+
+            DuplicateQueryableIndex<Long, Long> ageIndexManager = (DuplicateQueryableIndex<Long, Long>) collectionIndexProvider.getDuplicateIndexManager("age");
+            ageIndexManager.addIndex(testModel.getAge(), i);
+
+            DuplicateQueryableIndex<String, Long> countryIndexManager = (DuplicateQueryableIndex<String, Long>) collectionIndexProvider.getDuplicateIndexManager("country_code");
+            countryIndexManager.addIndex(testModel.getCountry(), i);
+
+
+            i++;
+        }
+
+
+        CollectionSelectOperation collectionSelectOperation = new DefaultCollectionSelectOperation(collection, collectionIndexProviderFactory, storageManager);
+        long count = collectionSelectOperation.count();
+        Assertions.assertEquals(4L, count);
+        Iterator<TestModel> execute = collectionSelectOperation.execute(TestModel.class);
+        Assertions.assertTrue(execute.hasNext());
+        Assertions.assertEquals(execute.next(), testModel1);
+        Assertions.assertTrue(execute.hasNext());
+        Assertions.assertEquals(execute.next(), testModel2);
+        Assertions.assertTrue(execute.hasNext());
+        Assertions.assertEquals(execute.next(), testModel3);
+        Assertions.assertTrue(execute.hasNext());
+        Assertions.assertEquals(execute.next(), testModel4);
+        Assertions.assertFalse(execute.hasNext());
+
+        execute = collectionSelectOperation.query(
+                new Query().sort(new SortField("age", Order.ASC))
+        ).execute(TestModel.class);
+        Assertions.assertTrue(execute.hasNext());
+        Assertions.assertEquals(execute.next(), testModel4);
+        Assertions.assertTrue(execute.hasNext());
+        Assertions.assertEquals(execute.next(), testModel2);
+        Assertions.assertTrue(execute.hasNext());
+        Assertions.assertEquals(execute.next(), testModel1);
+        Assertions.assertTrue(execute.hasNext());
+        Assertions.assertEquals(execute.next(), testModel3);
+        Assertions.assertFalse(execute.hasNext());
+
+
+        execute = collectionSelectOperation.query(
+                new Query()
+                        .where(new SimpleCondition<>("age", Operation.GTE, 10L))
+                        .sort(new SortField("country_code", Order.ASC))
+        ).execute(TestModel.class);
+        Assertions.assertTrue(execute.hasNext());
+        Assertions.assertEquals(testModel1, execute.next());
+        Assertions.assertTrue(execute.hasNext());
+        Assertions.assertEquals(testModel2, execute.next());
+        Assertions.assertTrue(execute.hasNext());
+        Assertions.assertEquals(testModel4, execute.next());
+        Assertions.assertTrue(execute.hasNext());
+        Assertions.assertEquals(testModel3, execute.next());
         Assertions.assertFalse(execute.hasNext());
 
     }
