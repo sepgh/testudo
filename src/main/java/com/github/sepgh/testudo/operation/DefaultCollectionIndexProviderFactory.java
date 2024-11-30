@@ -11,8 +11,12 @@ import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.serialization.Serializer;
 import com.github.sepgh.testudo.serialization.SerializerRegistry;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
+import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
+import com.github.sepgh.testudo.utils.CacheID;
 import com.google.common.base.Preconditions;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,11 +30,24 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
     protected final EngineConfig engineConfig;
     protected final IndexStorageManagerFactory indexStorageManagerFactory;
     protected final DatabaseStorageManager databaseStorageManager;
+    protected final Object clusterIndexCache;
 
     public DefaultCollectionIndexProviderFactory(EngineConfig engineConfig, IndexStorageManagerFactory indexStorageManagerFactory, DatabaseStorageManager databaseStorageManager) {
         this.engineConfig = engineConfig;
         this.indexStorageManagerFactory = indexStorageManagerFactory;
         this.databaseStorageManager = databaseStorageManager;
+        this.clusterIndexCache = this.generateClusterCache();
+    }
+
+    protected int calculateCacheSize() {
+        EngineConfig.ClusterKeyType clusterKeyType = this.engineConfig.getClusterKeyType();
+        int keySize = SerializerRegistry.getInstance().getSerializer(clusterKeyType.getFieldType()).getSize();
+        int clusterNodeSize = BTreeSizeCalculator.getClusteredBPlusTreeSize(this.engineConfig.getBTreeDegree(), keySize);
+        return this.engineConfig.getIndexCacheSize() / clusterNodeSize;
+    }
+
+    protected Cache<CacheID<?>, Pointer> generateClusterCache() {
+        return CacheBuilder.newBuilder().maximumSize(calculateCacheSize()).initialCapacity(10).build();
     }
 
     @Override
@@ -42,7 +59,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         return Scheme.Field.builder()
                 .id(-1)
                 .name("__CLUSTER_ID__")
-                .type(engineConfig.getClusterKeyType().getTypeName())
+                .type(engineConfig.getClusterKeyType().getFieldType())
                 .meta(Scheme.Meta.builder().build())
                 .build();
     }
@@ -60,7 +77,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         int indexId = getIndexId(collection, field).hashCode();
 
         Serializer<?> serializer = SerializerRegistry.getInstance().getSerializer(field.getType());
-        Serializer<?> clusterSerializer = SerializerRegistry.getInstance().getSerializer(engineConfig.getClusterKeyType().getTypeName());
+        Serializer<?> clusterSerializer = SerializerRegistry.getInstance().getSerializer(engineConfig.getClusterKeyType().getFieldType());
 
         return (UniqueQueryableIndex<?, ? extends Number>) new BPlusTreeUniqueTreeIndexManager<>(
                 indexId,
@@ -77,12 +94,24 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         int indexId = getIndexId(collection, field).hashCode();
         Serializer<?> serializer = SerializerRegistry.getInstance().getSerializer(field.getType());
 
-        return new ClusterBPlusTreeUniqueTreeIndexManager<>(
+        UniqueTreeIndexManager<?, Pointer> clusterIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(
                 indexId,
                 engineConfig.getBTreeDegree(),
                 indexStorageManagerFactory.create(collection, field),
                 serializer.getIndexBinaryObjectFactory(field)
         );
+
+        clusterIndexManager = this.decorateClusterWithCache(clusterIndexManager);
+
+        return clusterIndexManager;
+    }
+
+    private <K extends Comparable<K>> UniqueTreeIndexManager<K, Pointer> decorateClusterWithCache(UniqueTreeIndexManager<K, Pointer> clusterIndexManager) {
+        if (!this.engineConfig.isIndexCache())
+            return clusterIndexManager;
+
+        Cache<CacheID<K>, Pointer> clusterIndexCache1 = (Cache<CacheID<K>, Pointer>) this.clusterIndexCache;
+        return new CachedUniqueTreeIndexManagerDecorator<>(clusterIndexManager, clusterIndexCache1);
     }
 
     protected <K extends Comparable<K>, V extends Number & Comparable<V>> DuplicateQueryableIndex<K, V> buildDuplicateIndexManager(Scheme.Collection collection, Scheme.Field field) {
@@ -97,7 +126,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
                 new PointerIndexBinaryObject.Factory()
         );
 
-        Serializer<?> clusterSerializer = SerializerRegistry.getInstance().getSerializer(engineConfig.getClusterKeyType().getTypeName());
+        Serializer<?> clusterSerializer = SerializerRegistry.getInstance().getSerializer(engineConfig.getClusterKeyType().getFieldType());
 
         // Bitmap or B+Tree?
         if (field.getIndex().isLowCardinality()){

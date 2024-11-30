@@ -29,9 +29,9 @@ public class EngineConfig {
     @Builder.Default
     private long bTreeMaxFileSize = -1L;
     @Builder.Default
-    private boolean indexCache = false;
+    private boolean indexCache = true;
     @Builder.Default
-    private int indexCacheSizePerTable = 1000;
+    private int indexCacheSize = 1000;  // in bytes
     @Builder.Default
     private IndexIOSessionStrategy indexIOSessionStrategy = IndexIOSessionStrategy.IMMEDIATE;
     @Builder.Default
@@ -65,7 +65,7 @@ public class EngineConfig {
     @AllArgsConstructor
     public enum ClusterKeyType {
         UINT(FieldType.UNSIGNED_INT.getName()), ULONG(FieldType.UNSIGNED_LONG.getName()), LONG(FieldType.LONG.getName()), INT(FieldType.INT.getName());
-        private final String typeName;
+        private final String fieldType;
     }
 
     public enum OperationMode {

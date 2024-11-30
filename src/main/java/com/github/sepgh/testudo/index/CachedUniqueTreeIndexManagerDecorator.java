@@ -4,6 +4,7 @@ import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
+import com.github.sepgh.testudo.utils.CacheID;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
@@ -71,21 +72,6 @@ public class CachedUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> e
 
         cachedSize = super.size();
         return cachedSize;
-    }
-
-    public record CacheID<K extends Comparable<K>>(int index, K key) {
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            CacheID<?> cacheID = (CacheID<?>) o;
-            return index == cacheID.index && Objects.equals(key, cacheID.key);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(index, key);
-        }
     }
 
 }
