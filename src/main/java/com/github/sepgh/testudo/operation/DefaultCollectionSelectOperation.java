@@ -23,14 +23,17 @@ public class DefaultCollectionSelectOperation<T extends Number & Comparable<T>> 
     private final Scheme.Collection collection;
     private final CollectionIndexProvider collectionIndexProvider;
     private final DatabaseStorageManager storageManager;
+    private final UniqueTreeIndexManager<T, Pointer> clusterIndexManager;
     @Getter
     private Query query;
     private List<String> fields;
 
+    @SuppressWarnings("unchecked")
     public DefaultCollectionSelectOperation(Scheme.Collection collection, CollectionIndexProviderFactory collectionIndexProviderFactory, DatabaseStorageManager storageManager) {
         this.collection = collection;
         this.collectionIndexProvider = collectionIndexProviderFactory.create(collection);
         this.storageManager = storageManager;
+        this.clusterIndexManager = (UniqueTreeIndexManager<T, Pointer>) this.collectionIndexProvider.getClusterIndexManager();
     }
 
     // Todo: implement the actual field limitations
@@ -56,8 +59,6 @@ public class DefaultCollectionSelectOperation<T extends Number & Comparable<T>> 
     @Override
     public Iterator<DBObject> execute() {
         Iterator<T> executedQuery = getExecutedQuery();
-
-        UniqueTreeIndexManager<T, Pointer> clusterIndexManager = (UniqueTreeIndexManager<T, Pointer>) this.collectionIndexProvider.getClusterIndexManager();
 
         return IteratorUtils.modifyNext(
                 executedQuery,
