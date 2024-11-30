@@ -63,6 +63,9 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
   - [X] Model to Scheme Collection conversion
   - [X] Model Serialization
   - [X] Model DeSerialization
+- [ ] Add support for nullable fields and update model serializer logic
+- [ ] Possibly improve `CharArray` serializer to use less space
+- [ ] Support primitive data types (ex: models should be able to have `int` field instead of `Integer`)
 - [ ] Logging
 
 
