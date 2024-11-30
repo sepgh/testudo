@@ -1,4 +1,4 @@
-package com.github.sepgh.testudo.index;
+package com.github.sepgh.testudo.utils;
 
 import lombok.Getter;
 
@@ -8,18 +8,18 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
 @Getter
-public class IndexManagerLock {
+public class ReaderWriterLock {
     private final ReadWriteLock lock;
     private final Lock readLock;
     private final Lock writeLock;
 
-    public IndexManagerLock() {
+    public ReaderWriterLock() {
         this.lock = new ReentrantReadWriteLock();
         this.readLock = lock.readLock();
         this.writeLock = lock.writeLock();
     }
 
-    public IndexManagerLock(ReadWriteLock readWriteLock) {
+    public ReaderWriterLock(ReadWriteLock readWriteLock) {
         this.lock = readWriteLock;
         this.readLock = lock.readLock();
         this.writeLock = lock.writeLock();

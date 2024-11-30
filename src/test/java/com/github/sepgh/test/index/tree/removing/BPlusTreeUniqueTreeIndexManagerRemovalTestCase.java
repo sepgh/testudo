@@ -3,7 +3,7 @@ package com.github.sepgh.test.index.tree.removing;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.AsyncUniqueTreeIndexManagerDecorator;
-import com.github.sepgh.testudo.index.IndexManagerLock;
+import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeUniqueTreeIndexManager;
@@ -62,7 +62,7 @@ public class BPlusTreeUniqueTreeIndexManagerRemovalTestCase extends BaseBPlusTre
     public void testRemovingLeftToRightAsync() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = getIndexManager(indexStorageManager);
-        UniqueTreeIndexManager<Long, Pointer> asycnUniqueTreeIndexManager = new AsyncUniqueTreeIndexManagerDecorator<>(uniqueTreeIndexManager, new IndexManagerLock());
+        UniqueTreeIndexManager<Long, Pointer> asycnUniqueTreeIndexManager = new AsyncUniqueTreeIndexManagerDecorator<>(uniqueTreeIndexManager, new ReaderWriterLock());
         super.testRemovingLeftToRightAsync(asycnUniqueTreeIndexManager);
     }
 

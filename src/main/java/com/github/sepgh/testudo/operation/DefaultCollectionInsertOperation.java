@@ -12,6 +12,7 @@ import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.serialization.CollectionSerializationUtil;
 import com.github.sepgh.testudo.serialization.ModelSerializer;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
+import com.github.sepgh.testudo.utils.ReaderWriterLock;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -21,14 +22,16 @@ import java.util.concurrent.ExecutionException;
 public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> implements CollectionInsertOperation<T> {
     private final Scheme scheme;
     private final Scheme.Collection collection;
+    private final ReaderWriterLock readerWriterLock;
     private final CollectionIndexProvider collectionIndexProvider;
     private final DatabaseStorageManager storageManager;
     private final UniqueTreeIndexManager<T, Pointer> clusterIndexManager;
 
     @SuppressWarnings("unchecked")
-    public DefaultCollectionInsertOperation(Scheme scheme, Scheme.Collection collection, CollectionIndexProviderFactory collectionIndexProviderFactory, DatabaseStorageManager storageManager) {
+    public DefaultCollectionInsertOperation(Scheme scheme, Scheme.Collection collection, ReaderWriterLock readerWriterLock, CollectionIndexProviderFactory collectionIndexProviderFactory, DatabaseStorageManager storageManager) {
         this.scheme = scheme;
         this.collection = collection;
+        this.readerWriterLock = readerWriterLock;
         this.collectionIndexProvider = collectionIndexProviderFactory.create(collection);
         this.storageManager = storageManager;
         this.clusterIndexManager = (UniqueTreeIndexManager<T, Pointer>) collectionIndexProvider.getClusterIndexManager();
@@ -44,7 +47,7 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
         return storageManager.store(this.collection.getId(), scheme.getVersion(), bytes);
     }
 
-    // Todo: good idea? read README.md
+    // Todo: good idea to have this method as public interface? read README.md
     @Override
     public void insert(byte[] bytes) {
         Pointer pointer;
@@ -55,15 +58,13 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
             throw new RuntimeException(e);  // Todo
         }
 
-        // Todo: lock
-
         try {
+            readerWriterLock.getWriteLock().lock();
             final T key = this.storeClusterIndex(pointer);
             this.storeFieldIndexes(bytes, key, pointer);
         } finally {
-            // Todo: Unlock
+            readerWriterLock.getWriteLock().unlock();
         }
-
 
     }
 

@@ -17,6 +17,7 @@ import com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
+import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import com.github.sepgh.testudo.utils.KVSize;
 import org.junit.jupiter.api.*;
 
@@ -225,7 +226,7 @@ public class BPlusTreeUniqueTreeIndexManagerTestCase {
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new AsyncUniqueTreeIndexManagerDecorator<>(
                 new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()),
-                new IndexManagerLock()
+                new ReaderWriterLock()
         );
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);

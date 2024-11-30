@@ -24,6 +24,7 @@ import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
+import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import lombok.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -130,7 +131,7 @@ public class DefaultCollectionSelectOperationTestCase {
         }
 
 
-        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, collectionIndexProviderFactory, storageManager);
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, new ReaderWriterLock(), collectionIndexProviderFactory, storageManager);
         long count = collectionSelectOperation.count();
         Assertions.assertEquals(4L, count);
         Iterator<TestModel> execute = collectionSelectOperation.execute(TestModel.class);
@@ -194,7 +195,7 @@ public class DefaultCollectionSelectOperationTestCase {
         }
 
 
-        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, collectionIndexProviderFactory, storageManager);
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, new ReaderWriterLock(), collectionIndexProviderFactory, storageManager);
         long count = collectionSelectOperation.count();
         Assertions.assertEquals(4L, count);
         Iterator<TestModel> execute = collectionSelectOperation.execute(TestModel.class);

@@ -5,66 +5,67 @@ import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.operation.query.Order;
+import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.util.Optional;
 
 // Note: I'm guessing this is useless! We need to lock multiple addIndex() operations and this is not the place for that!
 public class AsyncUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> extends UniqueTreeIndexManagerDecorator<K, V> {
-    private final IndexManagerLock indexManagerLock;
+    private final ReaderWriterLock ReaderWriterLock;
 
-    public AsyncUniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager, IndexManagerLock indexManagerLock) {
+    public AsyncUniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager, ReaderWriterLock ReaderWriterLock) {
         super(uniqueTreeIndexManager);
-        this.indexManagerLock = indexManagerLock;
+        this.ReaderWriterLock = ReaderWriterLock;
     }
     
     @Override
     public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, IndexExistsException {
-        indexManagerLock.getWriteLock().lock();
+        ReaderWriterLock.getWriteLock().lock();
         try {
             return super.addIndex(identifier, value);
         } finally {
-            indexManagerLock.getWriteLock().unlock();
+            ReaderWriterLock.getWriteLock().unlock();
         }
     }
 
     @Override
     public Optional<V> getIndex(K identifier) throws InternalOperationException {
-        indexManagerLock.getReadLock().lock();
+        ReaderWriterLock.getReadLock().lock();
         try {
             return super.getIndex(identifier);
         } finally {
-            indexManagerLock.getReadLock().unlock();
+            ReaderWriterLock.getReadLock().unlock();
         }
     }
 
     @Override
     public boolean removeIndex(K identifier) throws InternalOperationException {
-        indexManagerLock.getWriteLock().lock();
+        ReaderWriterLock.getWriteLock().lock();
         try {
             return super.removeIndex(identifier);
         } finally {
-            indexManagerLock.getWriteLock().unlock();
+            ReaderWriterLock.getWriteLock().unlock();
         }
     }
 
     @Override
     public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexMissingException {
-        indexManagerLock.getWriteLock().lock();
+        ReaderWriterLock.getWriteLock().lock();
         try {
             return super.updateIndex(identifier, value);
         } finally {
-            indexManagerLock.getWriteLock().unlock();
+            ReaderWriterLock.getWriteLock().unlock();
         }
     }
 
     @Override
     public void purgeIndex() {
-        indexManagerLock.getWriteLock().lock();
+        ReaderWriterLock.getWriteLock().lock();
         try {
             super.purgeIndex();
         } finally {
-            indexManagerLock.getWriteLock().unlock();
+            ReaderWriterLock.getWriteLock().unlock();
         }
     }
 
@@ -74,12 +75,12 @@ public class AsyncUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> ex
         return new LockableIterator<>() {
             @Override
             public void lock() {
-                indexManagerLock.getReadLock().lock();
+                ReaderWriterLock.getReadLock().lock();
             }
 
             @Override
             public void unlock() {
-                indexManagerLock.getReadLock().unlock();
+                ReaderWriterLock.getReadLock().unlock();
             }
 
             @Override

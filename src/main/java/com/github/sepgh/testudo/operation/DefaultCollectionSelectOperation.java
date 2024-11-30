@@ -11,6 +11,8 @@ import com.github.sepgh.testudo.serialization.ModelDeserializer;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.utils.IteratorUtils;
+import com.github.sepgh.testudo.utils.LockableIterator;
+import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import lombok.Getter;
 
 import java.util.Arrays;
@@ -21,6 +23,7 @@ import java.util.Optional;
 public class DefaultCollectionSelectOperation<T extends Number & Comparable<T>> implements CollectionSelectOperation<T> {
 
     private final Scheme.Collection collection;
+    private final ReaderWriterLock readerWriterLock;
     private final CollectionIndexProvider collectionIndexProvider;
     private final DatabaseStorageManager storageManager;
     private final UniqueTreeIndexManager<T, Pointer> clusterIndexManager;
@@ -29,8 +32,9 @@ public class DefaultCollectionSelectOperation<T extends Number & Comparable<T>> 
     private List<String> fields;
 
     @SuppressWarnings("unchecked")
-    public DefaultCollectionSelectOperation(Scheme.Collection collection, CollectionIndexProviderFactory collectionIndexProviderFactory, DatabaseStorageManager storageManager) {
+    public DefaultCollectionSelectOperation(Scheme.Collection collection, ReaderWriterLock readerWriterLock, CollectionIndexProviderFactory collectionIndexProviderFactory, DatabaseStorageManager storageManager) {
         this.collection = collection;
+        this.readerWriterLock = readerWriterLock;
         this.collectionIndexProvider = collectionIndexProviderFactory.create(collection);
         this.storageManager = storageManager;
         this.clusterIndexManager = (UniqueTreeIndexManager<T, Pointer>) this.collectionIndexProvider.getClusterIndexManager();
@@ -57,10 +61,10 @@ public class DefaultCollectionSelectOperation<T extends Number & Comparable<T>> 
     }
 
     @Override
-    public Iterator<DBObject> execute() {
+    public LockableIterator<DBObject> execute() {
         Iterator<T> executedQuery = getExecutedQuery();
 
-        return IteratorUtils.modifyNext(
+        return LockableIterator.wrapReader(IteratorUtils.modifyNext(
                 executedQuery,
                 i -> {
                     try {
@@ -76,20 +80,25 @@ public class DefaultCollectionSelectOperation<T extends Number & Comparable<T>> 
                         throw new RuntimeException(e); // Todo
                     }
                 }
-        );
+        ), readerWriterLock);
 
     }
 
     @Override
-    public <V> Iterator<V> execute(Class<V> clazz) {
+    public <V> LockableIterator<V> execute(Class<V> clazz) {
         ModelDeserializer<V> modelDeserializer = new ModelDeserializer<>(clazz);
-        return IteratorUtils.modifyNext(execute(), dbObject -> {
+        return LockableIterator.wrapReader(IteratorUtils.modifyNext(execute(), dbObject -> {
             try {
                 return modelDeserializer.deserialize(dbObject.getData());
             } catch (SerializationException | DeserializationException e) {
                 throw new RuntimeException(e); // Todo
             }
-        });
+        }), readerWriterLock);
+    }
+
+    @Override
+    public <V> List<V> asList(Class<V> clazz) {
+        return this.execute(clazz).asList();
     }
 
     @Override

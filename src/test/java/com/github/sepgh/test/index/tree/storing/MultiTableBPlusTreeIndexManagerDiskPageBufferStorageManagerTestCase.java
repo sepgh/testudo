@@ -5,7 +5,7 @@ import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.AsyncUniqueTreeIndexManagerDecorator;
-import com.github.sepgh.testudo.index.IndexManagerLock;
+import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
@@ -13,7 +13,6 @@ import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeUniqueTreeIndexManager;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
-import com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.DiskPageFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
@@ -183,9 +182,9 @@ public class MultiTableBPlusTreeIndexManagerDiskPageBufferStorageManagerTestCase
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
         IndexStorageManager indexStorageManager = getFileIndexManager();
-        IndexManagerLock indexManagerLock = new IndexManagerLock();
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()), indexManagerLock);
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()), indexManagerLock);
+        ReaderWriterLock ReaderWriterLock = new ReaderWriterLock();
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()), ReaderWriterLock);
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()), ReaderWriterLock);
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         CountDownLatch countDownLatch = new CountDownLatch((2 * testIdentifiers.size()) - 2);
