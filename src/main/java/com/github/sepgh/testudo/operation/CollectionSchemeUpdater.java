@@ -43,6 +43,7 @@ public class CollectionSchemeUpdater {
     *   Keep it the same or Compare and update the object
     *   Update indexes
     */
+    @SuppressWarnings("unchecked")
     @SneakyThrows
     public <K extends Number & Comparable<K>> void update() {
         assert this.collectionFieldsUpdate != null;
@@ -126,8 +127,8 @@ public class CollectionSchemeUpdater {
 
     private void purgeIndexesOfRemovedFields() {
         for (Scheme.Field field : collectionFieldsUpdate.getRemovedFields()) {
-            if (field.isIndex()){
-                if (field.isIndexUnique()){
+            if (field.isIndexed()){
+                if (field.getIndex().isUnique()){
                     UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.schemeManager.getCollectionIndexProviderFactory().create(collectionFieldsUpdate.getBefore()).getUniqueIndexManager(field);
                     uniqueTreeIndexManager.purgeIndex();
                 } else {
@@ -138,14 +139,16 @@ public class CollectionSchemeUpdater {
         }
     }
 
+
+    @SuppressWarnings("unchecked")
     private <K extends Comparable<K>, V extends Number & Comparable<V>> void updateIndexes(byte[] obj, V clusterId) throws DeserializationException, IndexExistsException, InternalOperationException, IOException, ExecutionException, InterruptedException {
         for (Scheme.Field field : collectionFieldsUpdate.getNewFields()) {
-            if (!field.isIndex()){
+            if (!field.isIndexed()){
                 return;
             }
 
             K key = CollectionSerializationUtil.getValueOfFieldAsObject(collectionFieldsUpdate.getAfter(), field, obj);
-            if (field.isIndexUnique()){
+            if (field.getIndex().isUnique()){
                 UniqueTreeIndexManager<K, V> uniqueTreeIndexManager = (UniqueTreeIndexManager<K, V>) this.schemeManager.getCollectionIndexProviderFactory().create(collectionFieldsUpdate.getAfter()).getUniqueIndexManager(field);
                 uniqueTreeIndexManager.addIndex(key, clusterId);
             } else {

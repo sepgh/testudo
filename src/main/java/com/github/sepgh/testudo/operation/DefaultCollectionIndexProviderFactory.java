@@ -52,7 +52,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
     }
 
     protected UniqueQueryableIndex<?, ? extends Number> buildUniqueIndexManager(Scheme.Collection collection, Scheme.Field field) {
-        Preconditions.checkArgument(field.isPrimary() || field.isIndexUnique(), "Field should either be primary or unique to build a UniqueIndexManager");
+        Preconditions.checkArgument(field.getIndex().isPrimary() || field.getIndex().isUnique(), "Field should either be primary or unique to build a UniqueIndexManager");
 
         // Raw use of field.id as indexId would force the scheme designer to use unique field ids per whole DB
         // However, using hash code of pool id (which is combination of collection.id and field.id) forces the scheme designer
@@ -100,7 +100,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         Serializer<?> clusterSerializer = SerializerRegistry.getInstance().getSerializer(engineConfig.getClusterKeyType().getTypeName());
 
         // Bitmap or B+Tree?
-        if (field.isLowCardinality()){
+        if (field.getIndex().isLowCardinality()){
             return new DuplicateBitmapIndexManager<>(
                     collection.getId(),
                     (UniqueQueryableIndex<K, Pointer>) uniqueTreeIndexManager,
@@ -123,13 +123,15 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
             @Override
             public UniqueQueryableIndex<?, ? extends Number> getUniqueIndexManager(Scheme.Field field) {
                 Preconditions.checkNotNull(field);
-                Preconditions.checkArgument(field.isIndex() || field.isPrimary(), "Index Manager can only be requested for indexed fields");
-                Preconditions.checkArgument(field.isIndexUnique() || field.isPrimary(), "Unique index manager can only be created for fields with index set as unique or primary");
+                Preconditions.checkNotNull(field.getIndex());
+                Preconditions.checkArgument(field.getIndex().isUnique() || field.getIndex().isPrimary(), "Unique index manager can only be created for fields with index set as unique or primary");
                 return uniqueTreeIndexManagers.computeIfAbsent(getIndexId(collection, field), key -> buildUniqueIndexManager(collection, field));
             }
 
             @Override
             public DuplicateQueryableIndex<?, ?> getDuplicateIndexManager(Scheme.Field field) {
+                Preconditions.checkNotNull(field);
+                Preconditions.checkNotNull(field.getIndex());
                 return duplicateIndexManagers.computeIfAbsent(getIndexId(collection, field), key -> buildDuplicateIndexManager(collection, field));
             }
 
@@ -158,7 +160,9 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
 
             @Override
             public Queryable<?, ? extends Number> getQueryableIndex(Scheme.Field field) {
-                return field.isIndexUnique() ? getUniqueIndexManager(field) : getDuplicateIndexManager(field);
+                Preconditions.checkNotNull(field);
+                Preconditions.checkNotNull(field.getIndex());
+                return field.getIndex().isUnique() ? getUniqueIndexManager(field) : getDuplicateIndexManager(field);
             }
 
             @Override

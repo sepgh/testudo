@@ -125,20 +125,6 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
         databaseStorageManager.remove(pointer);
     }
 
-    public UniqueTreeIndexManager<?, ?> getPKIndexManager(Scheme.Collection collection) {
-        Optional<Scheme.Field> optionalField = collection.getFields().stream().filter(Scheme.Field::isPrimary).findFirst();
-        Scheme.Field primaryField = optionalField.get();
-        return this.collectionIndexProviderFactory.create(collection).getUniqueIndexManager(primaryField);
-    }
-
-    @SneakyThrows
-    public LockableIterator<? extends KeyValue<?, ?>> getPKIterator(Scheme.Collection collection) {
-        Optional<Scheme.Field> optionalField = collection.getFields().stream().filter(Scheme.Field::isPrimary).findFirst();
-        Scheme.Field primaryField = optionalField.get();
-        UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.collectionIndexProviderFactory.create(collection).getUniqueIndexManager(primaryField);
-        return uniqueTreeIndexManager.getSortedIterator(Order.DEFAULT);
-    }
-
     public UniqueTreeIndexManager<?, Pointer> getClusterIndexManager(Scheme.Collection collection) {
         return this.collectionIndexProviderFactory.create(collection).getClusterIndexManager();
     }
@@ -159,7 +145,7 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
         }
 
         collection.getFields().forEach(field -> {
-            if (field.isIndex()) {
+            if (field.isIndexed()) {
                 UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.collectionIndexProviderFactory.create(collection).getUniqueIndexManager(field);
                 uniqueTreeIndexManager.purgeIndex();
             }

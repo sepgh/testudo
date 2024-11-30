@@ -12,4 +12,5 @@ public @interface Index {
     boolean unique() default false;
     boolean primary() default false;
     boolean lowCardinality() default false;
+    boolean autoIncrement() default false;
 }

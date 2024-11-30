@@ -82,12 +82,7 @@ public class ModelToCollectionConverter {
 
         Index index = (Index) indexAnnotationOptional.get();
 
-        schemeField.setIndex(index.enable());
-        schemeField.setIndexUnique(index.unique());
-        schemeField.setPrimary(index.primary());
-        schemeField.setLowCardinality(index.lowCardinality());
-        schemeField.setAutoIncrement(objFieldAnnotations.stream().anyMatch(annotation -> annotation.annotationType().equals(AutoIncrement.class)));
-
+        schemeField.setIndex(Scheme.Index.fromAnnotation(index));
         return Optional.of(schemeField);
     }
 

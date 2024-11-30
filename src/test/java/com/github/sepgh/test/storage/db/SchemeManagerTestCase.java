@@ -83,13 +83,12 @@ public class SchemeManagerTestCase {
                                                 List.of(
                                                         Scheme.Field.builder()
                                                                 .id(1)
-                                                                .primary(true)
+                                                                .index(Scheme.Index.builder().primary(true).build())
                                                                 .type("int")
                                                                 .name("pk")
                                                                 .build(),
                                                         Scheme.Field.builder()
                                                                 .id(2)
-                                                                .primary(false)
                                                                 .type("int")
                                                                 .name("age")
                                                                 .meta(
@@ -181,13 +180,12 @@ public class SchemeManagerTestCase {
                                                 List.of(
                                                         Scheme.Field.builder()
                                                                 .id(1)
-                                                                .primary(true)
+                                                                .index(Scheme.Index.builder().primary(true).build())
                                                                 .type("int")
                                                                 .name("pk")
                                                                 .build(),
                                                         Scheme.Field.builder()
                                                                 .id(2)
-                                                                .primary(false)
                                                                 .type("int")
                                                                 .name("age")
                                                                 .meta(
@@ -304,8 +302,7 @@ public class SchemeManagerTestCase {
                 .type(FieldType.INT.getName())
                 .name("x")
                 .defaultValue(String.valueOf(defaultValue))
-                .indexUnique(true)
-                .index(true)
+                .index(Scheme.Index.builder().unique(true).build())
                 .build();
         fields.add(newField);
         scheme.getCollections().getFirst().setFields(fields);

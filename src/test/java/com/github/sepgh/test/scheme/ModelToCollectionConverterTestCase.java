@@ -62,9 +62,9 @@ public class ModelToCollectionConverterTestCase {
         Assertions.assertEquals(1, field.getId());
         Assertions.assertEquals("id", field.getName());
         Assertions.assertEquals("int", field.getType());
-        Assertions.assertTrue(field.isIndex());
-        Assertions.assertTrue(field.isPrimary());
-        Assertions.assertTrue(field.isAutoIncrement());
+        Assertions.assertTrue(field.isIndexed());
+        Assertions.assertTrue(field.getIndex().isPrimary());
+        Assertions.assertTrue(field.getIndex().isAutoIncrement());
 
         field = fields.get(1);
         Assertions.assertEquals(2, field.getId());
@@ -75,14 +75,14 @@ public class ModelToCollectionConverterTestCase {
         Assertions.assertEquals(3, field.getId());
         Assertions.assertEquals("long", field.getType());
         Assertions.assertEquals("age", field.getName());
-        Assertions.assertTrue(field.isIndex());
+        Assertions.assertTrue(field.isIndexed());
 
         field = fields.get(3);
         Assertions.assertEquals(4, field.getId());
         Assertions.assertEquals("char", field.getType());
         Assertions.assertEquals("country_code", field.getName());
-        Assertions.assertTrue(field.isIndex());
-        Assertions.assertTrue(field.isLowCardinality());
+        Assertions.assertTrue(field.isIndexed());
+        Assertions.assertTrue(field.getIndex().isLowCardinality());
 
         // Todo: runtime exception should not get thrown
         Assertions.assertThrows(RuntimeException.class, () -> {

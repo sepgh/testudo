@@ -16,6 +16,8 @@ import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
+
+// Todo: verification (read README.md)
 public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> implements CollectionInsertOperation<T> {
     private final Scheme scheme;
     private final Scheme.Collection collection;
@@ -42,6 +44,7 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
         return storageManager.store(this.collection.getId(), scheme.getVersion(), bytes);
     }
 
+    // Todo: good idea? read README.md
     @Override
     public void insert(byte[] bytes) {
         Pointer pointer;
@@ -66,10 +69,10 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
 
     @SuppressWarnings("unchecked")
     private void storeFieldIndexes(byte[] bytes, T key, Pointer pointer) {
-        for (Scheme.Field field : collection.getFields().stream().filter(field -> field.isIndex() || field.isPrimary()).toList()) {
+        for (Scheme.Field field : collection.getFields().stream().filter(field -> field.isIndexed()).toList()) {
             try {
                 // Todo: add support for auto increment
-                if (field.isIndexUnique()) {
+                if (field.getIndex().isUnique()) {
                     UniqueQueryableIndex<?, T> uniqueIndexManager = (UniqueQueryableIndex<?, T>) collectionIndexProvider.getUniqueIndexManager(field);
 
                     uniqueIndexManager.addIndex(
