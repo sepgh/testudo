@@ -93,7 +93,6 @@ public class DefaultCollectionInsertOperationTestCase {
 
     }
 
-
     @Test
     public void test() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         DiskPageDatabaseStorageManager storageManager = getDiskPageDatabaseStorageManager();
@@ -112,13 +111,13 @@ public class DefaultCollectionInsertOperationTestCase {
         TestModel testModel3 = TestModel.builder().id(3).age(30L).country("USA").name("Jack").build();
         TestModel testModel4 = TestModel.builder().id(4).age(40L).country("GB").name("Foo").build();
 
-        CollectionInsertOperation collectionInsertOperation = new DefaultCollectionInsertOperation(scheme, collection, collectionIndexProviderFactory, storageManager);
+        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, collectionIndexProviderFactory, storageManager);
 
         for (TestModel testModel : Arrays.asList(testModel1, testModel2, testModel3, testModel4)) {
             collectionInsertOperation.insert(testModel);
         }
 
-        CollectionSelectOperation collectionSelectOperation = new DefaultCollectionSelectOperation(collection, collectionIndexProviderFactory, storageManager);
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, collectionIndexProviderFactory, storageManager);
         long count = collectionSelectOperation.count();
         Assertions.assertEquals(4L, count);
         Iterator<TestModel> execute = collectionSelectOperation.execute(TestModel.class);

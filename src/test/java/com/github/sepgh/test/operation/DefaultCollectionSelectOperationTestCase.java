@@ -130,7 +130,7 @@ public class DefaultCollectionSelectOperationTestCase {
         }
 
 
-        CollectionSelectOperation collectionSelectOperation = new DefaultCollectionSelectOperation(collection, collectionIndexProviderFactory, storageManager);
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, collectionIndexProviderFactory, storageManager);
         long count = collectionSelectOperation.count();
         Assertions.assertEquals(4L, count);
         Iterator<TestModel> execute = collectionSelectOperation.execute(TestModel.class);
@@ -194,7 +194,7 @@ public class DefaultCollectionSelectOperationTestCase {
         }
 
 
-        CollectionSelectOperation collectionSelectOperation = new DefaultCollectionSelectOperation(collection, collectionIndexProviderFactory, storageManager);
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, collectionIndexProviderFactory, storageManager);
         long count = collectionSelectOperation.count();
         Assertions.assertEquals(4L, count);
         Iterator<TestModel> execute = collectionSelectOperation.execute(TestModel.class);

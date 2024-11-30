@@ -16,17 +16,20 @@ import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
-public class DefaultCollectionInsertOperation implements CollectionInsertOperation {
+public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> implements CollectionInsertOperation<T> {
     private final Scheme scheme;
     private final Scheme.Collection collection;
     private final CollectionIndexProvider collectionIndexProvider;
     private final DatabaseStorageManager storageManager;
+    private final UniqueTreeIndexManager<T, Pointer> clusterIndexManager;
 
+    @SuppressWarnings("unchecked")
     public DefaultCollectionInsertOperation(Scheme scheme, Scheme.Collection collection, CollectionIndexProviderFactory collectionIndexProviderFactory, DatabaseStorageManager storageManager) {
         this.scheme = scheme;
         this.collection = collection;
         this.collectionIndexProvider = collectionIndexProviderFactory.create(collection);
         this.storageManager = storageManager;
+        this.clusterIndexManager = (UniqueTreeIndexManager<T, Pointer>) collectionIndexProvider.getClusterIndexManager();
     }
 
     @Override
@@ -35,46 +38,48 @@ public class DefaultCollectionInsertOperation implements CollectionInsertOperati
         this.insert(modelSerializer.serialize());
     }
 
+    protected Pointer storeBytes(byte[] bytes) throws IOException, InterruptedException, ExecutionException {
+        return storageManager.store(this.collection.getId(), scheme.getVersion(), bytes);
+    }
+
     @Override
-    public <T extends Number & Comparable<T>> void insert(byte[] bytes) {
+    public void insert(byte[] bytes) {
         Pointer pointer;
 
         try {
-            pointer = storageManager.store(this.collection.getId(), scheme.getVersion(), bytes);
+            pointer = this.storeBytes(bytes);
         } catch (IOException | InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);  // Todo
         }
 
-        UniqueTreeIndexManager<T, Pointer> clusterIndexManager = (UniqueTreeIndexManager<T, Pointer>) collectionIndexProvider.getClusterIndexManager();
-        T key = null;
+        // Todo: lock
 
-        boolean stored = false;
-        while (!stored) {
-            try {
-                key = clusterIndexManager.nextKey();
-                clusterIndexManager.addIndex(key, pointer);
-                stored = true;
-            } catch (IndexExistsException ignored){}
-            catch (InternalOperationException e) {
-                throw new RuntimeException(e); // Todo
-            }
+        try {
+            final T key = this.storeClusterIndex(pointer);
+            this.storeFieldIndexes(bytes, key, pointer);
+        } finally {
+            // Todo: Unlock
         }
 
-        T finalKey = key;
+
+    }
+
+    @SuppressWarnings("unchecked")
+    private void storeFieldIndexes(byte[] bytes, T key, Pointer pointer) {
         for (Scheme.Field field : collection.getFields().stream().filter(field -> field.isIndex() || field.isPrimary()).toList()) {
             try {
                 // Todo: add support for auto increment
                 if (field.isIndexUnique()) {
                     UniqueQueryableIndex<?, T> uniqueIndexManager = (UniqueQueryableIndex<?, T>) collectionIndexProvider.getUniqueIndexManager(field);
 
-                        uniqueIndexManager.addIndex(
-                                CollectionSerializationUtil.getValueOfFieldAsObject(
-                                        collection,
-                                        field,
-                                        bytes
-                                ),
-                                finalKey
-                        );
+                    uniqueIndexManager.addIndex(
+                            CollectionSerializationUtil.getValueOfFieldAsObject(
+                                    collection,
+                                    field,
+                                    bytes
+                            ),
+                            key
+                    );
 
                 } else {
                     DuplicateQueryableIndex<?, T> duplicateIndexManager = (DuplicateQueryableIndex<?, T>) collectionIndexProvider.getDuplicateIndexManager(field);
@@ -106,5 +111,22 @@ public class DefaultCollectionInsertOperation implements CollectionInsertOperati
                 throw new RuntimeException(e);   // Todo: hopefully these would be handled like above?
             }
         }
+    }
+
+    private T storeClusterIndex(Pointer pointer) {
+        T key = null;
+
+        boolean stored = false;
+        while (!stored) {
+            try {
+                key = clusterIndexManager.nextKey();
+                clusterIndexManager.addIndex(key, pointer);
+                stored = true;
+            } catch (IndexExistsException ignored){}
+            catch (InternalOperationException e) {
+                throw new RuntimeException(e); // Todo
+            }
+        }
+        return key;
     }
 }

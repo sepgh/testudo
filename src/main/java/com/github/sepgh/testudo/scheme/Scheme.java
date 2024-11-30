@@ -105,10 +105,8 @@ public class Scheme {
         private boolean index;
         private boolean indexUnique;
         private boolean autoIncrement;
-        @Builder.Default
-        private boolean lowCardinality = false;
-        @Builder.Default
-        private boolean nullable = false;
+        private boolean lowCardinality;
+        private boolean nullable;
         private String defaultValue;
         private transient String objectFieldName;
 

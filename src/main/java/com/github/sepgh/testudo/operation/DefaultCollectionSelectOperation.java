@@ -18,7 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
-public class DefaultCollectionSelectOperation implements CollectionSelectOperation {
+public class DefaultCollectionSelectOperation<T extends Number & Comparable<T>> implements CollectionSelectOperation<T> {
 
     private final Scheme.Collection collection;
     private final CollectionIndexProvider collectionIndexProvider;
@@ -33,16 +33,15 @@ public class DefaultCollectionSelectOperation implements CollectionSelectOperati
         this.storageManager = storageManager;
     }
 
-
     // Todo: implement the actual field limitations
     @Override
-    public CollectionSelectOperation fields(String... fields) {
+    public CollectionSelectOperation<T> fields(String... fields) {
         this.fields = Arrays.asList(fields);
         return this;
     }
 
     @Override
-    public CollectionSelectOperation query(Query query) {
+    public CollectionSelectOperation<T> query(Query query) {
         this.query = query;
         return this;
     }
@@ -55,10 +54,10 @@ public class DefaultCollectionSelectOperation implements CollectionSelectOperati
     }
 
     @Override
-    public <V extends Number & Comparable<V>> Iterator<DBObject> execute() {
-        Iterator<V> executedQuery = getExecutedQuery();
+    public Iterator<DBObject> execute() {
+        Iterator<T> executedQuery = getExecutedQuery();
 
-        UniqueTreeIndexManager<V, Pointer> clusterIndexManager = (UniqueTreeIndexManager<V, Pointer>) this.collectionIndexProvider.getClusterIndexManager();
+        UniqueTreeIndexManager<T, Pointer> clusterIndexManager = (UniqueTreeIndexManager<T, Pointer>) this.collectionIndexProvider.getClusterIndexManager();
 
         return IteratorUtils.modifyNext(
                 executedQuery,
@@ -81,8 +80,8 @@ public class DefaultCollectionSelectOperation implements CollectionSelectOperati
     }
 
     @Override
-    public <V extends Number & Comparable<V>, T> Iterator<T> execute(Class<T> clazz) {
-        ModelDeserializer<T> modelDeserializer = new ModelDeserializer<>(clazz);
+    public <V> Iterator<V> execute(Class<V> clazz) {
+        ModelDeserializer<V> modelDeserializer = new ModelDeserializer<>(clazz);
         return IteratorUtils.modifyNext(execute(), dbObject -> {
             try {
                 return modelDeserializer.deserialize(dbObject.getData());
