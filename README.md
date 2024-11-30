@@ -69,15 +69,23 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
 - [ ] Insertion verification:
   - [ ] The `insert(byte[])` method of insert operation makes verification more complex, perhaps we should remove it
   - [ ] `primary` index should either have a value or get set as autoincrement
+- [ ] Cache support for cluster index managers
+- [ ] Exception Throwings and Handling
 - [ ] Logging
 
 
 
 
-Open Problems:
+## Open Problems
 
-- Can't perform `query` operation on fields that are not indexed. 
-  Doing so right now will make us use cluster index, load objects into memory to perform comparisons, and the result would be `Iterator<V>` where V is cluster id.
-  This means that these objects may later get loaded into memory again. We need a solution to avoid loading objects twice (once for query, once for the higher level operation such as read/update/delete)
+### Can't perform `query` operation on fields that are not indexed. 
+
+Doing so right now will make us use cluster index, load objects into memory to perform comparisons, and the result would be `Iterator<V>` where V is cluster id.
+This means that these objects may later get loaded into memory again. We need a solution to avoid loading objects twice (once for query, once for the higher level operation such as read/update/delete)
+
+**Additional Note**: from performance point of view things are not as awful as it seems:
+
+1. We have a pool of DBObjects per each `page` that is loaded in Page Buffer. Pages may already be in LRU cache, and DBObject pool prevents recreation of new objects in memory (more of a way to reduce memory consumption than performance improvement)
+2. We shall use LRU cache for Cluster Index Manager, which means re-reading objects from the cluster index should perform quicker than hitting the disk multiple times.
 
 
