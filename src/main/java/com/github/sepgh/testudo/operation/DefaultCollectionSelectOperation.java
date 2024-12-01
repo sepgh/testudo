@@ -103,12 +103,18 @@ public class DefaultCollectionSelectOperation<T extends Number & Comparable<T>> 
 
     @Override
     public long count() {
-        long count = 0;
-        Iterator<?> executedQuery = getExecutedQuery();
-        while (executedQuery.hasNext()) {
-            count++;
-            executedQuery.next();
+        try {
+            readerWriterLock.getReadLock().lock();
+            long count = 0;
+            Iterator<?> executedQuery = getExecutedQuery();
+            while (executedQuery.hasNext()) {
+                count++;
+                executedQuery.next();
+            }
+            return count;
+        } finally {
+            readerWriterLock.getReadLock().unlock();
         }
-        return count;
+
     }
 }

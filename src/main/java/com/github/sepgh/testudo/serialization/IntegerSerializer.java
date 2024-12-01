@@ -58,6 +58,6 @@ public class IntegerSerializer implements Serializer<Integer> {
 
     @Override
     public IndexBinaryObjectFactory<Integer> getIndexBinaryObjectFactory(Scheme.Field field) {
-        return new SerializerIndexBinaryObjectFactory<>(this, field, () -> 0, i -> i + 1);
+        return new SerializerIndexBinaryObjectFactory<>(this, field, () -> 1, i -> i + 1);
     }
 }

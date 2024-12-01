@@ -81,7 +81,7 @@ public class EngineConfig {
     }
 
     public enum IndexStorageManagerStrategy {
-        ORGANIZED, COMPACT
+        ORGANIZED, COMPACT, PAGE_BUFFER
     }
 
     public static class Default {

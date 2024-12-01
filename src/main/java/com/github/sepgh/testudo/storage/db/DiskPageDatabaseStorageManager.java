@@ -119,7 +119,6 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         } finally {
             this.pageBuffer.release(page);
         }
-
     }
 
     private void store(DBObject dbObject, int collectionId, int version, byte[] data) throws IOException, ExecutionException, InterruptedException, VerificationException.InvalidDBObjectWrapper {
@@ -217,9 +216,12 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         //       In such case, releasing the page from buffer should happen after write is completed
         //       Maybe would be a good idea to do that (last line) here now too?  Temp Answer: No, we'd release twice for a single acquire
         //       Call backs could help in that case (CompletableFuture has such functionality)
-        FileUtils.write(fileChannel, (long) page.getPageNumber() * this.engineConfig.getDbPageSize(), page.getData()).get();
+        try {
+            FileUtils.write(fileChannel, (long) page.getPageNumber() * this.engineConfig.getDbPageSize(), page.getData()).get();
+        } finally {
+            this.fileHandlerPool.releaseFileChannel(path, 100, TimeUnit.SECONDS); // Todo
+        }
 
-        this.fileHandlerPool.releaseFileChannel(path, 100, TimeUnit.SECONDS); // Todo
     }
 
     // Factory function to be used only in the buffer

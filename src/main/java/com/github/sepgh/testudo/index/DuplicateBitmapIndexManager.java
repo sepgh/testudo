@@ -305,4 +305,9 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
         }
         return IteratorUtils.getCleanIterator();
     }
+
+    @Override
+    public UniqueTreeIndexManager<K, Pointer> getInnerIndexManager() {
+        return this.indexManager;
+    }
 }

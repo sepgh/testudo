@@ -13,12 +13,14 @@ import com.github.sepgh.testudo.serialization.CollectionSerializationUtil;
 import com.github.sepgh.testudo.serialization.ModelSerializer;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
 
 // Todo: verification (read README.md)
+@Getter
 public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> implements CollectionInsertOperation<T> {
     private final Scheme scheme;
     private final Scheme.Collection collection;
@@ -50,18 +52,14 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
     // Todo: good idea to have this method as public interface? read README.md
     @Override
     public void insert(byte[] bytes) {
-        Pointer pointer;
-
-        try {
-            pointer = this.storeBytes(bytes);
-        } catch (IOException | InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);  // Todo
-        }
 
         try {
             readerWriterLock.getWriteLock().lock();
+            Pointer pointer = this.storeBytes(bytes);
             final T key = this.storeClusterIndex(pointer);
             this.storeFieldIndexes(bytes, key, pointer);
+        } catch (IOException | InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);  // Todo
         } finally {
             readerWriterLock.getWriteLock().unlock();
         }
@@ -69,8 +67,8 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
     }
 
     @SuppressWarnings("unchecked")
-    private void storeFieldIndexes(byte[] bytes, T key, Pointer pointer) {
-        for (Scheme.Field field : collection.getFields().stream().filter(field -> field.isIndexed()).toList()) {
+    private void storeFieldIndexes(byte[] bytes, T clusterId, Pointer pointer) {
+        for (Scheme.Field field : collection.getFields().stream().filter(Scheme.Field::isIndexed).toList()) {
             try {
                 // Todo: add support for auto increment
                 if (field.getIndex().isUnique()) {
@@ -82,7 +80,7 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
                                     field,
                                     bytes
                             ),
-                            key
+                            clusterId
                     );
 
                 } else {
@@ -93,15 +91,15 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
                                     field,
                                     bytes
                             ),
-                            key
+                            clusterId
                     );
                 }
             } catch (IndexExistsException | InternalOperationException | DeserializationException e) {
                 try {
-                    clusterIndexManager.removeIndex(key);
+                    clusterIndexManager.removeIndex(clusterId);
                 } catch (InternalOperationException ex) {
                     // Todo: log e and ex
-                    throw new RuntimeException("Failed to store index, but also failed to rollback cluster key: " + e.getMessage(), ex);
+                    throw new RuntimeException("Failed to store index, but also failed to rollback cluster id: " + e.getMessage(), ex);
                 }
 
                 try {

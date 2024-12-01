@@ -55,11 +55,11 @@ public class UnsignedIntegerSerializer implements Serializer<UnsignedInteger> {
 
     @Override
     public byte[] serializeDefault(String defaultValue, Scheme.Meta meta) throws SerializationException {
-        return new byte[Integer.BYTES];
+        return new byte[Integer.BYTES]; // Todo
     }
 
     @Override
     public IndexBinaryObjectFactory<UnsignedInteger> getIndexBinaryObjectFactory(Scheme.Field field) {
-        return new SerializerIndexBinaryObjectFactory<>(this, field, () -> UnsignedInteger.valueOf(0L), i -> i.plus(UnsignedInteger.ONE));
+        return new SerializerIndexBinaryObjectFactory<>(this, field, () -> UnsignedInteger.valueOf(1), i -> i.plus(UnsignedInteger.ONE));
     }
 }

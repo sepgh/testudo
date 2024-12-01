@@ -1,6 +1,5 @@
 package com.github.sepgh.testudo.scheme;
 
-import com.github.sepgh.testudo.scheme.annotation.Index;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

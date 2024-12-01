@@ -3,27 +3,42 @@ package com.github.sepgh.testudo.index;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
+import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.utils.CacheID;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
-import java.util.Objects;
+import javax.annotation.Nullable;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 public class CachedUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> extends UniqueTreeIndexManagerDecorator<K, V> {
     private final Cache<CacheID<K>, V> cache;
     private final AtomicInteger sizeCache = new AtomicInteger(0);
+    private AtomicReference<K> currentIncrementalKey = null;
+    private final IndexBinaryObjectFactory<K> kIndexBinaryObjectFactory;
+    private final boolean supportsNextKey;
 
     public CachedUniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager, int maxSize) {
-        this(uniqueTreeIndexManager, CacheBuilder.newBuilder().maximumSize(maxSize).initialCapacity(10).build());
+        this(uniqueTreeIndexManager, maxSize, null);
     }
 
     public CachedUniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager, Cache<CacheID<K>, V> cache) {
+        this(uniqueTreeIndexManager, cache, null);
+    }
+
+    public CachedUniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager, int maxSize, @Nullable IndexBinaryObjectFactory<K> kIndexBinaryObjectFactory) {
+        this(uniqueTreeIndexManager, CacheBuilder.newBuilder().maximumSize(maxSize).initialCapacity(10).build(), kIndexBinaryObjectFactory);
+    }
+
+    public CachedUniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager, Cache<CacheID<K>, V> cache, @Nullable IndexBinaryObjectFactory<K> kIndexBinaryObjectFactory) {
         super(uniqueTreeIndexManager);
         this.cache = cache;
+        this.kIndexBinaryObjectFactory = kIndexBinaryObjectFactory;
+        this.supportsNextKey = kIndexBinaryObjectFactory != null;
     }
 
     @Override
@@ -74,4 +89,24 @@ public class CachedUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> e
         return cachedSize;
     }
 
+    @Override
+    public K nextKey() throws InternalOperationException {
+        synchronized (this){
+            if (currentIncrementalKey == null) {
+                this.currentIncrementalKey = new AtomicReference<>();
+                this.currentIncrementalKey.set(super.nextKey());
+                return this.currentIncrementalKey.get();
+            }
+        }
+
+        K next = this.kIndexBinaryObjectFactory.create(this.currentIncrementalKey.get()).getNext();
+        this.currentIncrementalKey.set(next);
+
+        return next;
+    }
+
+    @Override
+    public boolean supportIncrement() {
+        return this.supportsNextKey && super.supportIncrement();
+    }
 }

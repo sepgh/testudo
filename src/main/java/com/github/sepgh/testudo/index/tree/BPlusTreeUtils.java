@@ -43,7 +43,7 @@ public class BPlusTreeUtils {
                 getPathToResponsibleNode(
                         indexIOSession,
                         path,
-                        indexIOSession.read(childPointersList.get(0).getLeft()),
+                        indexIOSession.read(childPointersList.getFirst().getLeft()),
                         identifier,
                         degree
                 );
@@ -137,7 +137,7 @@ public class BPlusTreeUtils {
     }
 
     public static <K extends Comparable<K>, V> Iterator<KeyValue<K, V>> getAscendingIterator(IndexIOSession<K> indexIOSession, AbstractTreeNode<K> root, int degree) throws InternalOperationException {
-        return new Iterator<KeyValue<K, V>>() {
+        return new Iterator<>() {
 
             private int keyIndex = 0;
             AbstractLeafTreeNode<K, V> currentLeaf = getFarLeftLeaf(indexIOSession, root);

@@ -12,9 +12,9 @@ import java.util.concurrent.ExecutionException;
 public class IndexTreeNodeIO {
     public static CompletableFuture<IndexStorageManager.NodeData> write(IndexStorageManager indexStorageManager, int indexId, AbstractTreeNode<?> node) throws IOException, ExecutionException, InterruptedException {
         IndexStorageManager.NodeData nodeData = new IndexStorageManager.NodeData(node.getPointer(), node.getData());
-        if (!node.isModified() && node.getPointer() != null){
+        /*if (!node.isModified() && node.getPointer() != null){
             return CompletableFuture.completedFuture(nodeData);
-        }
+        }*/
         CompletableFuture<IndexStorageManager.NodeData> output = new CompletableFuture<>();
 
         if (node.getPointer() == null){

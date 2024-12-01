@@ -56,7 +56,7 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
             Pointer pointer = pointerOptional.get();
             Optional<DBObject> dbObjectOptional = databaseStorageManager.select(pointer);
             if (dbObjectOptional.isEmpty()) {
-                throw new RuntimeException();   // Todo: it was pointing to somewhere without data
+                throw new RuntimeException("%s points to somewhere with no data.".formatted(pointer.toString()));   // Todo: it was pointing to somewhere without data
             }
             BinaryList<V> binaryList = new BinaryList<>(engineConfig, valueIndexBinaryObjectFactory, dbObjectOptional.get().getData());
 
@@ -226,6 +226,11 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
     @Override
     public int getIndexId() {
         return this.indexManager.getIndexId();
+    }
+
+    @Override
+    public UniqueTreeIndexManager<K, Pointer> getInnerIndexManager() {
+        return this.indexManager;
     }
 
     private Function<Pointer, Iterator<V>> getListIteratorFunction(Order order) {

@@ -19,4 +19,5 @@ public interface DuplicateIndexManager<K extends Comparable<K>, V extends Number
     LockableIterator<KeyValue<K, ListIterator<V>>> getSortedIterator(Order order) throws InternalOperationException;
     void purgeIndex();
     int getIndexId();
+    UniqueTreeIndexManager<K, Pointer> getInnerIndexManager();
 }

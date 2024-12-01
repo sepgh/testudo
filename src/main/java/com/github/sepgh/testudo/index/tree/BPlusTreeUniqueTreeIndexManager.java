@@ -7,7 +7,6 @@ import com.github.sepgh.testudo.index.AbstractUniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.KeyValue;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueQueryableIndex;
-import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
@@ -26,7 +25,6 @@ import com.github.sepgh.testudo.utils.LockableIterator;
 import com.google.common.base.Preconditions;
 import lombok.SneakyThrows;
 
-import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;

@@ -89,11 +89,11 @@ public class Page {
     }
 
     public synchronized Optional<DBObject> getEmptyDBObjectWrapper(int length) throws VerificationException.InvalidDBObjectWrapper {
-        if (getData().length - cursorPosition > length + DBObject.META_BYTES){
-            DBObject dbObject = new DBObject(this, cursorPosition, cursorPosition + length + DBObject.META_BYTES);
+        if (getData().length - cursorPosition > DBObject.getWrappedSize(length)){
+            DBObject dbObject = new DBObject(this, cursorPosition, cursorPosition + DBObject.getWrappedSize(length));
             Optional<DBObject> output = Optional.of(dbObject);
             this.wrapperPool.putIfAbsent(cursorPosition, dbObject);
-            this.setCursorPosition(this.cursorPosition + length + DBObject.META_BYTES);
+            this.setCursorPosition(this.cursorPosition + DBObject.getWrappedSize(length));
             return output;
         }
         return Optional.empty();

@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.utils.BinaryUtils;
+import com.google.common.base.Preconditions;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import lombok.Data;
@@ -30,6 +31,7 @@ public class Pointer implements Comparable<Pointer> {
     }
 
     public static Pointer fromBytes(byte[] bytes, int position){
+        Preconditions.checkArgument(position >= 0);
         return new Pointer(
                 bytes[position],
                 BinaryUtils.bytesToLong(bytes, position + 1),

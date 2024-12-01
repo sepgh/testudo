@@ -8,12 +8,12 @@ import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
 import com.github.sepgh.testudo.storage.pool.LimitedFileHandlerPool;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultIndexStorageManagerFactory extends IndexStorageManagerFactory {
-    private final Map<String, IndexStorageManager> storageManagers = new HashMap<>();
+    private final Map<String, IndexStorageManager> storageManagers = new ConcurrentHashMap<>();
     private FileHandlerPool fileHandlerPool;
 
     public DefaultIndexStorageManagerFactory(EngineConfig engineConfig, IndexHeaderManagerFactory indexHeaderManagerFactory) {
@@ -62,6 +62,8 @@ public class DefaultIndexStorageManagerFactory extends IndexStorageManagerFactor
             EngineConfig.IndexStorageManagerStrategy indexStorageManagerStrategy = engineConfig.getIndexStorageManagerStrategy();
             if (indexStorageManagerStrategy.equals(EngineConfig.IndexStorageManagerStrategy.ORGANIZED)) {
                 return new OrganizedFileIndexStorageManager(customName, indexHeaderManagerFactory, engineConfig, getFileHandlerPool());
+            } else if (indexStorageManagerStrategy.equals(EngineConfig.IndexStorageManagerStrategy.PAGE_BUFFER)) {
+                return new DiskPageFileIndexStorageManager(engineConfig, indexHeaderManagerFactory, getFileHandlerPool());
             } else {
                 return new CompactFileIndexStorageManager(indexHeaderManagerFactory, engineConfig, getFileHandlerPool());
             }

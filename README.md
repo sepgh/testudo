@@ -89,3 +89,12 @@ This means that these objects may later get loaded into memory again. We need a 
 2. We shall use LRU cache for Cluster Index Manager, which means re-reading objects from the cluster index should perform quicker than hitting the disk multiple times.
 
 
+### Storing indexes in same file as DB
+
+The current implementation has a problem with this, since two instances of `DiskPageDatabaseStorage` will be created and `synchronized` blocks wouldn't perform validly.
+
+Even though current tests work, when we work with multiple collections things will break.
+The reason `CollectionSelectInsertOperationMultiThreadedTestCase` can work with Page Buffer is that we lock the collection in `DefaultCollectionInsertOperation`, 
+so even though we have multiple instances of `DiskPageDatabaseStorage` (one for DB and one for index), their `.store()` method won't be called from multiple threads.
+
+

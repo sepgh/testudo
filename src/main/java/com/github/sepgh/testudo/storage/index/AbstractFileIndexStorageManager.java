@@ -1,27 +1,9 @@
 package com.github.sepgh.testudo.storage.index;
 
 import com.github.sepgh.testudo.context.EngineConfig;
-import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
-import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
-import com.github.sepgh.testudo.storage.pool.FileHandler;
-import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
-import com.github.sepgh.testudo.storage.pool.ManagedFileHandler;
-import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
-import com.github.sepgh.testudo.utils.FileUtils;
 import com.github.sepgh.testudo.utils.KVSize;
 
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.nio.channels.AsynchronousFileChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-
-import static com.github.sepgh.testudo.index.tree.node.AbstractTreeNode.TYPE_INTERNAL_NODE_BIT;
-import static com.github.sepgh.testudo.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
 
 public abstract class AbstractFileIndexStorageManager implements IndexStorageManager {
     protected final Path path;

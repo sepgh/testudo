@@ -287,4 +287,14 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
             return this.key.compareTo(o.getKey());
         }
     }
+
+
+    @Override
+    public String toString() {
+        return "InternalTreeNode{" +
+                "Root: " + isRoot() +
+                ", Pointer: " + getPointer() +
+                ", Children: " + getChildrenList() +
+                "}";
+    }
 }

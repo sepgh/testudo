@@ -1,6 +1,5 @@
 package com.github.sepgh.testudo.scheme;
 
-import com.github.sepgh.testudo.scheme.annotation.AutoIncrement;
 import com.github.sepgh.testudo.scheme.annotation.Collection;
 import com.github.sepgh.testudo.scheme.annotation.Field;
 import com.github.sepgh.testudo.scheme.annotation.Index;

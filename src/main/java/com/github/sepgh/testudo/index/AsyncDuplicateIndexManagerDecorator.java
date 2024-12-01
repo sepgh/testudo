@@ -2,8 +2,8 @@ package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.operation.query.Order;
-import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import com.github.sepgh.testudo.utils.LockableIterator;
+import com.github.sepgh.testudo.utils.ReaderWriterLock;
 
 import java.io.IOException;
 import java.util.ListIterator;

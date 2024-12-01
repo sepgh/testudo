@@ -55,4 +55,9 @@ public class DuplicateIndexManagerDecorator<K extends Comparable<K>, V extends N
     public int getIndexId() {
         return this.decorated.getIndexId();
     }
+
+    @Override
+    public UniqueTreeIndexManager<K, Pointer> getInnerIndexManager() {
+        return this.decorated.getInnerIndexManager();
+    }
 }

@@ -58,6 +58,6 @@ public class LongSerializer implements Serializer<Long> {
 
     @Override
     public IndexBinaryObjectFactory<Long> getIndexBinaryObjectFactory(Scheme.Field field) {
-        return new SerializerIndexBinaryObjectFactory<>(this, field, () -> 0L, i -> i + 1L);
+        return new SerializerIndexBinaryObjectFactory<>(this, field, () -> 1L, i -> i + 1L);
     }
 }

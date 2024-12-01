@@ -54,6 +54,7 @@ public class DiskPageFileIndexStorageManager extends AbstractFileIndexStorageMan
         Pointer pointer = optionalRootOfIndex.get().toPointer(Pointer.TYPE_NODE);
         Optional<DBObject> dbObjectOptional = this.diskPageDatabaseStorageManager.select(pointer);
         if (dbObjectOptional.isEmpty()){
+            System.out.println("db object of root node returned by index storage manager is unavailable on disk!");
             output.complete(Optional.empty());
             return output;
         }

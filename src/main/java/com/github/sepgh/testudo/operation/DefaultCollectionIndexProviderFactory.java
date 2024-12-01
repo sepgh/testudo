@@ -89,29 +89,33 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
 
     }
 
-    protected UniqueTreeIndexManager<?, Pointer> buildClusterIndexManager(Scheme.Collection collection) {
+    protected <K extends Comparable<K>> UniqueTreeIndexManager<?, Pointer> buildClusterIndexManager(Scheme.Collection collection) {
         Scheme.Field field = getClusterField();
         int indexId = getIndexId(collection, field).hashCode();
         Serializer<?> serializer = SerializerRegistry.getInstance().getSerializer(field.getType());
 
-        UniqueTreeIndexManager<?, Pointer> clusterIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(
+        @SuppressWarnings("unchecked")
+        IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory = (IndexBinaryObjectFactory<K>) serializer.getIndexBinaryObjectFactory(field);
+
+        UniqueTreeIndexManager<K, Pointer> clusterIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(
                 indexId,
                 engineConfig.getBTreeDegree(),
                 indexStorageManagerFactory.create(collection, field),
-                serializer.getIndexBinaryObjectFactory(field)
+                keyIndexBinaryObjectFactory
         );
 
-        clusterIndexManager = this.decorateClusterWithCache(clusterIndexManager);
+        clusterIndexManager = this.decorateClusterWithCache(clusterIndexManager, keyIndexBinaryObjectFactory);
 
         return clusterIndexManager;
     }
 
-    private <K extends Comparable<K>> UniqueTreeIndexManager<K, Pointer> decorateClusterWithCache(UniqueTreeIndexManager<K, Pointer> clusterIndexManager) {
+    private <K extends Comparable<K>> UniqueTreeIndexManager<K, Pointer> decorateClusterWithCache(UniqueTreeIndexManager<K, Pointer> clusterIndexManager, IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory) {
         if (!this.engineConfig.isIndexCache())
             return clusterIndexManager;
 
+        @SuppressWarnings("unchecked")
         Cache<CacheID<K>, Pointer> clusterIndexCache1 = (Cache<CacheID<K>, Pointer>) this.clusterIndexCache;
-        return new CachedUniqueTreeIndexManagerDecorator<>(clusterIndexManager, clusterIndexCache1);
+        return new CachedUniqueTreeIndexManagerDecorator<>(clusterIndexManager, clusterIndexCache1, keyIndexBinaryObjectFactory);
     }
 
     protected <K extends Comparable<K>, V extends Number & Comparable<V>> DuplicateQueryableIndex<K, V> buildDuplicateIndexManager(Scheme.Collection collection, Scheme.Field field) {

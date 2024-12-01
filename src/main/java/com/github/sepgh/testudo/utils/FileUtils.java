@@ -50,6 +50,7 @@ public class FileUtils {
         return future;
     }
 
+    // todo: if position is above file.size then throw error
     public static CompletableFuture<Long> allocate(AsynchronousFileChannel asynchronousFileChannel, long position, int size) throws IOException {
         CompletableFuture<Long> future = new CompletableFuture<>();
 

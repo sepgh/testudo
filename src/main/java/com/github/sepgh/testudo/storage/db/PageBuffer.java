@@ -100,5 +100,13 @@ public class PageBuffer {
         public static PageTitle of(Page page){
             return new PageTitle(page.getChunk(), page.getPageNumber());
         }
+
+        @Override
+        public String toString() {
+            return "PageTitle{" +
+                    "chunk=" + chunk +
+                    ", pageNumber=" + pageNumber +
+                    '}';
+        }
     }
 }

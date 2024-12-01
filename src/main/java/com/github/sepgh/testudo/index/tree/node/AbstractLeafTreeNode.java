@@ -165,4 +165,12 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V> extends AbstractTr
         }
     }
 
+
+    @Override
+    public String toString() {
+        return "AbstractLeafTreeNode{" +
+                "Root: " + isRoot() +
+                ", Pointer: " + getPointer() +
+                "}";
+    }
 }
