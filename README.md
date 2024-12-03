@@ -73,6 +73,7 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
   - [ ] Delete Operation
 - [ ] Either remove IndexIOSession, or improve it to use for `Transaction` support.
 - [X] Cache support for cluster index managers
+- [ ] Cache support for other indexes. Also find proper usage for `CachedIndexStorageManagerDecorator` or remove it!
 - [ ] Exception Throwing and Handling
 - [ ] Logging
 
