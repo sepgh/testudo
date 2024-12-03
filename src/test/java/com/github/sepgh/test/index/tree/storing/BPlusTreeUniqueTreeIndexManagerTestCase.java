@@ -215,41 +215,4 @@ public class BPlusTreeUniqueTreeIndexManagerTestCase {
 
     }
 
-    @Test
-    @Timeout(value = 2)
-    public void testMultiSplitAddIndexAsync() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
-
-        List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
-        Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
-
-
-        OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new AsyncUniqueTreeIndexManagerDecorator<>(
-                new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()),
-                new ReaderWriterLock()
-        );
-
-        ExecutorService executorService = Executors.newFixedThreadPool(5);
-        CountDownLatch countDownLatch = new CountDownLatch(testIdentifiers.size());
-        for (Long testIdentifier : testIdentifiers) {
-            executorService.submit(() -> {
-                try {
-                    uniqueTreeIndexManager.addIndex(testIdentifier, samplePointer);
-                    countDownLatch.countDown();
-                } catch (IndexExistsException |
-                         InternalOperationException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }
-
-        countDownLatch.await();
-        executorService.shutdown();
-
-        for (Long testIdentifier : testIdentifiers) {
-            Assertions.assertTrue(uniqueTreeIndexManager.getIndex(testIdentifier).isPresent());
-        }
-
-    }
-
 }

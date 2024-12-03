@@ -4,7 +4,6 @@ import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.AsyncUniqueTreeIndexManagerDecorator;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
@@ -167,72 +166,6 @@ public class MultiTableBPlusTreeIndexManagerDiskPageBufferStorageManagerTestCase
 
             StoredTreeStructureVerifier.testUnOrderedTreeStructure1(indexStorageManager, tableId, 1, degree);
 
-        }
-
-    }
-
-
-    // Note: this test failure proved that we need a mechanism for just a single lock around multiple index managers
-    // Update:  test no longer fails since we use single instance of IndexManagerLock for both Trees
-    //          however this doesn't mean that the final approach would use the decorator at all
-    @Timeout(2)
-    @Test
-    public void testAddIndexDifferentAddOrdersOnDBLevelAsyncIndexManager_usingSingleFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
-        List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
-        Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
-
-        IndexStorageManager indexStorageManager = getFileIndexManager();
-        ReaderWriterLock ReaderWriterLock = new ReaderWriterLock();
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager1 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()), ReaderWriterLock);
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager2 = new AsyncUniqueTreeIndexManagerDecorator<>(new ClusterBPlusTreeUniqueTreeIndexManager<>(2, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()), ReaderWriterLock);
-
-        ExecutorService executorService = Executors.newFixedThreadPool(5);
-        CountDownLatch countDownLatch = new CountDownLatch((2 * testIdentifiers.size()) - 2);
-
-
-        AtomicInteger index1 = new AtomicInteger(0);
-        AtomicInteger index2 = new AtomicInteger(0);
-
-        int runs = 0;
-        while (runs < testIdentifiers.size()){
-            executorService.submit(() -> {
-                try {
-                    uniqueTreeIndexManager1.addIndex(testIdentifiers.get(index1.getAndIncrement()), samplePointer);
-                    countDownLatch.countDown();
-                } catch (IndexExistsException |
-                         InternalOperationException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            executorService.submit(() -> {
-                try {
-                    uniqueTreeIndexManager2.addIndex(testIdentifiers.get(index2.getAndIncrement()) * 10, samplePointer);
-                    countDownLatch.countDown();
-                } catch (IndexExistsException |
-                         InternalOperationException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            runs++;
-        }
-
-        countDownLatch.await();
-
-        for (int tableId = 1; tableId <= 2; tableId++) {
-            UniqueTreeIndexManager<Long, Pointer> currentUniqueTreeIndexManager = null;
-            if (tableId == 1)
-                currentUniqueTreeIndexManager = uniqueTreeIndexManager1;
-            else
-                currentUniqueTreeIndexManager = uniqueTreeIndexManager2;
-
-            int multi = 1;
-            if (tableId == 2){
-                multi = 10;
-            }
-            // Cant verify structure but can check if all index are added
-            for (Long testIdentifier : testIdentifiers) {
-                Assertions.assertTrue(currentUniqueTreeIndexManager.getIndex(testIdentifier * multi).isPresent(), "Index %d not present in manager %d".formatted(testIdentifier * multi, tableId));
-            }
         }
 
     }

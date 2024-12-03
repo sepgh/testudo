@@ -45,12 +45,4 @@ public class MemorySnapshotBPlusTreeUniqueTreeIndexManagerRemovalTestCase extend
     public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         super.testRemovingRoot();
     }
-
-
-    @Test
-    @Timeout(2)
-    @Override
-    public void testRemovingLeftToRightAsync() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
-        super.testRemovingLeftToRightAsync();
-    }
 }

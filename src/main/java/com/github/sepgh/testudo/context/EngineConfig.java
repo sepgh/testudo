@@ -35,7 +35,7 @@ public class EngineConfig {
     @Builder.Default
     private IndexIOSessionStrategy indexIOSessionStrategy = IndexIOSessionStrategy.IMMEDIATE;
     @Builder.Default
-    private IndexStorageManagerStrategy indexStorageManagerStrategy = IndexStorageManagerStrategy.COMPACT;
+    private IndexStorageManagerStrategy indexStorageManagerStrategy = IndexStorageManagerStrategy.ORGANIZED;
     @Builder.Default
     private boolean splitIndexPerCollection = false;
     @Builder.Default
