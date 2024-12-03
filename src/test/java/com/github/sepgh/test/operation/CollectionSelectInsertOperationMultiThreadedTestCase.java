@@ -102,7 +102,8 @@ public class CollectionSelectInsertOperationMultiThreadedTestCase {
         Scheme.Collection collection = new ModelToCollectionConverter(TestModel.class).toCollection();
         scheme.getCollections().add(collection);
 
-        DefaultCollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, new ReaderWriterLock(), collectionIndexProviderFactory, storageManager);
+        ReaderWriterLock readerWriterLock = new ReaderWriterLock();
+        DefaultCollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
 
         ExecutorService executorService = Executors.newFixedThreadPool(9);
         CountDownLatch countDownLatch = new CountDownLatch(45);
@@ -120,6 +121,11 @@ public class CollectionSelectInsertOperationMultiThreadedTestCase {
                                          .build()
                          );
 
+                         CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
+                         Assertions.assertTrue(
+                                 collectionSelectOperation.query(new Query().where(new SimpleCondition<>("id", Operation.EQ, i1))).exists()
+                         );
+
                      } catch (SerializationException | RuntimeException e) {
                          e.printStackTrace();
                      } finally {
@@ -130,17 +136,18 @@ public class CollectionSelectInsertOperationMultiThreadedTestCase {
         }
         countDownLatch.await();
 
-        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, new ReaderWriterLock(), collectionIndexProviderFactory, storageManager);
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
         long count = collectionSelectOperation.count();
         Assertions.assertEquals(45L, count);
 
-        collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, new ReaderWriterLock(), collectionIndexProviderFactory, storageManager);
+        collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
         List<TestModel> list = collectionSelectOperation.query(new Query().where(new SimpleCondition<>("id", Operation.EQ, 45))).asList(TestModel.class);
         Assertions.assertFalse(list.isEmpty());
+        Assertions.assertTrue(collectionSelectOperation.exists());
         Assertions.assertEquals(1, list.size());
         Assertions.assertEquals(45, list.getFirst().getId());
 
-        collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, new ReaderWriterLock(), collectionIndexProviderFactory, storageManager);
+        collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
         list = collectionSelectOperation.query(new Query().where(new SimpleCondition<>("id", Operation.GT, 40)).sort(new SortField("id", Order.ASC))).asList(TestModel.class);
         Assertions.assertFalse(list.isEmpty());
         Assertions.assertEquals(5, list.size());

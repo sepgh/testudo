@@ -117,4 +117,14 @@ public class DefaultCollectionSelectOperation<T extends Number & Comparable<T>> 
         }
 
     }
+
+    @Override
+    public boolean exists() {
+        if (query != null) {
+            query.limit(1);
+        } else {
+            query = new Query().limit(1);
+        }
+        return this.execute().hasNext();
+    }
 }

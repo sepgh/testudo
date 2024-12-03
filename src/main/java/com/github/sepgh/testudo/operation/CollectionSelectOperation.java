@@ -14,4 +14,5 @@ public interface CollectionSelectOperation<T extends Number & Comparable<T>> {
     <V> LockableIterator<V> execute(Class<V> clazz);
     <V> List<V> asList(Class<V> clazz);
     long count();
+    boolean exists();
 }
