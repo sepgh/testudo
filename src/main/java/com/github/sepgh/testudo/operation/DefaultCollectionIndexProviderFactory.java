@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public class DefaultCollectionIndexProviderFactory implements CollectionIndexProviderFactory {
+    protected final Scheme scheme;
     protected final Map<Scheme.Collection, CollectionIndexProvider> providers = new HashMap<>();
     protected final Map<String, UniqueQueryableIndex<?, ? extends Number>> uniqueTreeIndexManagers = new HashMap<>();
     protected final Map<String, UniqueTreeIndexManager<?, Pointer>> clusterIndexManagers = new HashMap<>();
@@ -32,7 +33,8 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
     protected final DatabaseStorageManager databaseStorageManager;
     protected final Object clusterIndexCache;
 
-    public DefaultCollectionIndexProviderFactory(EngineConfig engineConfig, IndexStorageManagerFactory indexStorageManagerFactory, DatabaseStorageManager databaseStorageManager) {
+    public DefaultCollectionIndexProviderFactory(Scheme scheme, EngineConfig engineConfig, IndexStorageManagerFactory indexStorageManagerFactory, DatabaseStorageManager databaseStorageManager) {
+        this.scheme = scheme;
         this.engineConfig = engineConfig;
         this.indexStorageManagerFactory = indexStorageManagerFactory;
         this.databaseStorageManager = databaseStorageManager;
@@ -68,6 +70,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         return "%d_%d".formatted(collection.getId(), field.getId());
     }
 
+    @SuppressWarnings("unchecked")
     protected UniqueQueryableIndex<?, ? extends Number> buildUniqueIndexManager(Scheme.Collection collection, Scheme.Field field) {
         Preconditions.checkArgument(field.getIndex().isPrimary() || field.getIndex().isUnique(), "Field should either be primary or unique to build a UniqueIndexManager");
 
@@ -82,7 +85,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         return (UniqueQueryableIndex<?, ? extends Number>) new BPlusTreeUniqueTreeIndexManager<>(
                 indexId,
                 engineConfig.getBTreeDegree(),
-                indexStorageManagerFactory.create(collection, field),
+                indexStorageManagerFactory.create(this.scheme, collection),
                 serializer.getIndexBinaryObjectFactory(field),
                 clusterSerializer.getIndexBinaryObjectFactory(getClusterField())
         );
@@ -100,7 +103,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         UniqueTreeIndexManager<K, Pointer> clusterIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(
                 indexId,
                 engineConfig.getBTreeDegree(),
-                indexStorageManagerFactory.create(collection, field),
+                indexStorageManagerFactory.create(this.scheme, collection),
                 keyIndexBinaryObjectFactory
         );
 
@@ -118,6 +121,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         return new CachedUniqueTreeIndexManagerDecorator<>(clusterIndexManager, clusterIndexCache1, keyIndexBinaryObjectFactory);
     }
 
+    @SuppressWarnings("unchecked")
     protected <K extends Comparable<K>, V extends Number & Comparable<V>> DuplicateQueryableIndex<K, V> buildDuplicateIndexManager(Scheme.Collection collection, Scheme.Field field) {
         int indexId = getIndexId(collection, field).hashCode();
 
@@ -125,7 +129,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         BPlusTreeUniqueTreeIndexManager<?, Pointer> uniqueTreeIndexManager = new BPlusTreeUniqueTreeIndexManager<>(
                 indexId,
                 engineConfig.getBTreeDegree(),
-                indexStorageManagerFactory.create(collection, field),
+                indexStorageManagerFactory.create(this.scheme, collection),
                 fieldSerializer.getIndexBinaryObjectFactory(field),
                 new PointerIndexBinaryObject.Factory()
         );

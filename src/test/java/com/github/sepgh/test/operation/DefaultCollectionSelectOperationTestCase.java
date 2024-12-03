@@ -42,6 +42,10 @@ public class DefaultCollectionSelectOperationTestCase {
 
     private EngineConfig engineConfig;
     private Path dbPath;
+    private final Scheme scheme = Scheme.builder()
+            .dbName("test")
+            .version(1)
+            .build();
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -97,7 +101,7 @@ public class DefaultCollectionSelectOperationTestCase {
     public void test() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         DiskPageDatabaseStorageManager storageManager = getDiskPageDatabaseStorageManager();
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(engineConfig, indexStorageManagerFactory, storageManager);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, storageManager);
 
         Scheme.Collection collection = new ModelToCollectionConverter(TestModel.class).toCollection();
         CollectionIndexProvider collectionIndexProvider = collectionIndexProviderFactory.create(collection);
@@ -161,7 +165,7 @@ public class DefaultCollectionSelectOperationTestCase {
     public void unorderedData() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         DiskPageDatabaseStorageManager storageManager = getDiskPageDatabaseStorageManager();
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(engineConfig, indexStorageManagerFactory, storageManager);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, storageManager);
 
         Scheme.Collection collection = new ModelToCollectionConverter(TestModel.class).toCollection();
         CollectionIndexProvider collectionIndexProvider = collectionIndexProviderFactory.create(collection);

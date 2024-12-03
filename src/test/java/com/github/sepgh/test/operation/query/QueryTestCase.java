@@ -36,6 +36,10 @@ public class QueryTestCase {
     private DatabaseStorageManager databaseStorageManager;
     private Path dbPath;
     private EngineConfig engineConfig;
+    private final Scheme scheme = Scheme.builder()
+            .dbName("test")
+            .version(1)
+            .build();
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -62,7 +66,7 @@ public class QueryTestCase {
     @Timeout(value = 2)
     public void simpleCondition() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")
@@ -237,7 +241,7 @@ public class QueryTestCase {
     @Timeout(value = 2)
     public void simpleCondition_LowCardinality() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")
@@ -323,7 +327,7 @@ public class QueryTestCase {
     @Timeout(2)
     public void compositeQuery_And() {
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")
@@ -446,7 +450,7 @@ public class QueryTestCase {
     @Timeout(2)
     public void compositeQuery_Or() {
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")

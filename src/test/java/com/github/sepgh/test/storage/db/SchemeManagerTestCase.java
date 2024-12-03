@@ -46,6 +46,10 @@ public class SchemeManagerTestCase {
     private DatabaseStorageManager databaseStorageManager;
     private Path dbPath;
     private EngineConfig engineConfig;
+    private final Scheme scheme = Scheme.builder()
+            .dbName("test")
+            .version(1)
+            .build();
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -70,7 +74,7 @@ public class SchemeManagerTestCase {
     @Test
     public void test_SchemeManager() throws IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
         Scheme scheme = Scheme.builder()
                 .dbName("test")
                 .version(1)
@@ -163,9 +167,9 @@ public class SchemeManagerTestCase {
 
     // Todo: test fails now that we are working on cluster index ;)
     @Test
-    public void test_SchemeManager_WithData() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void test_SchemeManager_WithData() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
 
         // --- CREATING BASE SCHEME --- //
         Scheme scheme = Scheme.builder()

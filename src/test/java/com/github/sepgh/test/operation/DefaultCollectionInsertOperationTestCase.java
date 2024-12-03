@@ -44,6 +44,10 @@ public class DefaultCollectionInsertOperationTestCase {
 
     private EngineConfig engineConfig;
     private Path dbPath;
+    private final Scheme scheme = Scheme.builder()
+            .dbName("test")
+            .version(1)
+            .build();
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -98,7 +102,7 @@ public class DefaultCollectionInsertOperationTestCase {
     public void test() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         DiskPageDatabaseStorageManager storageManager = getDiskPageDatabaseStorageManager();
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(engineConfig, indexStorageManagerFactory, storageManager);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, storageManager);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")

@@ -13,5 +13,5 @@ public abstract class IndexStorageManagerFactory {
         this.indexHeaderManagerFactory = indexHeaderManagerFactory;
     }
 
-    public abstract IndexStorageManager create(Scheme.Collection collection, Scheme.Field field);
+    public abstract IndexStorageManager create(Scheme scheme, Scheme.Collection collection);
 }

@@ -44,16 +44,18 @@ public class DefaultIndexStorageManagerFactory extends IndexStorageManagerFactor
 
 
     @Override
-    public IndexStorageManager create(Scheme.Collection collection, Scheme.Field field) {
+    public IndexStorageManager create(Scheme scheme, Scheme.Collection collection) {
         // If only a single index storage manager should be created, reuse if any is already created
-        if (!engineConfig.isSplitIndexPerCollection()) {
-            Set<String> keySet = this.storageManagers.keySet();
-            if (!keySet.isEmpty()) {
-                return this.storageManagers.get(keySet.iterator().next());
+        synchronized (this) {
+            if (!engineConfig.isSplitIndexPerCollection()) {
+                Set<String> keySet = this.storageManagers.keySet();
+                if (!keySet.isEmpty()) {
+                    return this.storageManagers.get(keySet.iterator().next());
+                }
             }
         }
 
-        return this.storageManagers.computeIfAbsent("%d_%d".formatted(collection.getId(), field.getId()), key -> {
+        return this.storageManagers.computeIfAbsent(scheme.getDbName(), key -> {
             String customName = null;
             if (engineConfig.isSplitIndexPerCollection()){
                 customName = "col_" + collection.getId();

@@ -52,6 +52,8 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
             long fileSize = asynchronousFileChannel.size();
 
             // Check if we have an empty space
+            // Todo: in reference to the comment above the method, isnt this if statement a lill dumb?
+            //       After second allocation, its always true
             if (fileSize >= this.getIndexGrowthAllocationSize(kvSize)){
                 long positionToCheck = fileSize - this.getIndexGrowthAllocationSize(kvSize);
 

@@ -47,7 +47,9 @@ public class CollectionSelectInsertOperationMultiThreadedTestCase {
         this.engineConfig = EngineConfig.builder()
 //                .indexCache(true)
 //                .bTreeDegree(100)
-                // Todo: comment and see the problem: changing allocation count affects the caused problem
+                // Todo: comment and see the problem: changing degree affects the caused problem
+                //       possible root cause: read the long-ass comment at CompactFileIndexStorageManager above `getAllocatedSpaceForNewNode`
+                //       update: changing default strategy to "ORGANIZED".
                 .indexStorageManagerStrategy(EngineConfig.IndexStorageManagerStrategy.PAGE_BUFFER)
 
                 .clusterKeyType(EngineConfig.ClusterKeyType.LONG)
@@ -89,14 +91,16 @@ public class CollectionSelectInsertOperationMultiThreadedTestCase {
 
     @Test
     public void test2() throws InternalOperationException, IndexExistsException {
-        DiskPageDatabaseStorageManager storageManager = getDiskPageDatabaseStorageManager();
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new InMemoryIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(engineConfig, indexStorageManagerFactory, storageManager);
-
         Scheme scheme = Scheme.builder()
                 .dbName("test")
                 .version(1)
                 .build();
+
+        DiskPageDatabaseStorageManager storageManager = getDiskPageDatabaseStorageManager();
+        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new InMemoryIndexHeaderManager.Factory());
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, storageManager);
+
+
         Scheme.Collection collection = new ModelToCollectionConverter(TestModel.class).toCollection();
         scheme.getCollections().add(collection);
 
@@ -116,18 +120,18 @@ public class CollectionSelectInsertOperationMultiThreadedTestCase {
 
     @Test
     public void test() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
-        DiskPageDatabaseStorageManager storageManager = getDiskPageDatabaseStorageManager();
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new InMemoryIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(engineConfig, indexStorageManagerFactory, storageManager);
-
         Scheme scheme = Scheme.builder()
                 .dbName("test")
                 .version(1)
                 .build();
+
+        DiskPageDatabaseStorageManager storageManager = getDiskPageDatabaseStorageManager();
+        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new InMemoryIndexHeaderManager.Factory());
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, storageManager);
+
+
         Scheme.Collection collection = new ModelToCollectionConverter(TestModel.class).toCollection();
         scheme.getCollections().add(collection);
-
-
 
         DefaultCollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, new ReaderWriterLock(), collectionIndexProviderFactory, storageManager);
 
