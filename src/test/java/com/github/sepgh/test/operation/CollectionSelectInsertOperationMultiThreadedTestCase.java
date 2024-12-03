@@ -5,9 +5,8 @@ import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.exception.SerializationException;
-import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.operation.*;
+import com.github.sepgh.testudo.operation.query.*;
 import com.github.sepgh.testudo.scheme.ModelToCollectionConverter;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.scheme.annotation.Collection;
@@ -17,7 +16,6 @@ import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
 import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.header.InMemoryIndexHeaderManager;
-import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
@@ -30,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -88,36 +87,6 @@ public class CollectionSelectInsertOperationMultiThreadedTestCase {
         private Integer item;
     }
 
-
-    @Test
-    public void test2() throws InternalOperationException, IndexExistsException {
-        Scheme scheme = Scheme.builder()
-                .dbName("test")
-                .version(1)
-                .build();
-
-        DiskPageDatabaseStorageManager storageManager = getDiskPageDatabaseStorageManager();
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new InMemoryIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, storageManager);
-
-
-        Scheme.Collection collection = new ModelToCollectionConverter(TestModel.class).toCollection();
-        scheme.getCollections().add(collection);
-
-        CollectionIndexProvider collectionIndexProvider = collectionIndexProviderFactory.create(collection);
-        UniqueTreeIndexManager<Long, Pointer> clusterIndexManager = (UniqueTreeIndexManager<Long, Pointer>) collectionIndexProvider.getClusterIndexManager();
-
-        int i = 0;
-
-        while (i < 1000) {
-            Long l = clusterIndexManager.nextKey();
-            clusterIndexManager.addIndex(l, Pointer.empty());
-            i++;
-        }
-
-
-    }
-
     @Test
     public void test() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         Scheme scheme = Scheme.builder()
@@ -140,40 +109,42 @@ public class CollectionSelectInsertOperationMultiThreadedTestCase {
         final AtomicInteger atomicInteger = new AtomicInteger();
 
         for (int i = 0; i < 5; i++) {
-            executorService.submit(new Runnable() {
-                @Override
-                public void run() {
-                     for (int j = 1; j < 10; j++) {
-                         try {
-                             int i1 = atomicInteger.incrementAndGet();
-                             collectionInsertOperation.insert(
-                                     TestModel.builder()
-                                             .id(i1)
-                                             .item(j)
-                                             .build()
-                             );
+            executorService.submit(() -> {
+                 for (int j = 1; j < 10; j++) {
+                     try {
+                         int i1 = atomicInteger.incrementAndGet();
+                         collectionInsertOperation.insert(
+                                 TestModel.builder()
+                                         .id(i1)
+                                         .item(j)
+                                         .build()
+                         );
 
-                             /*UniqueTreeIndexManager<Integer, Pointer> uniqueTreeIndexManager = (UniqueTreeIndexManager<Integer, Pointer>) collectionInsertOperation.getCollectionIndexProvider().getDuplicateIndexManager("item").getInnerIndexManager();
-                             Optional<Pointer> index = uniqueTreeIndexManager.getIndex(j);
-                             Pointer p = index.get();
-                             System.out.println(">> " + p);*/
-                         } catch (SerializationException | RuntimeException e) {
-                             e.printStackTrace();
-                         } finally {
-                             countDownLatch.countDown();
-//                             System.out.println("countdown: " + countDownLatch.getCount());
-                         }
+                     } catch (SerializationException | RuntimeException e) {
+                         e.printStackTrace();
+                     } finally {
+                         countDownLatch.countDown();
                      }
-                }
+                 }
             });
         }
-
         countDownLatch.await();
 
         CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, new ReaderWriterLock(), collectionIndexProviderFactory, storageManager);
         long count = collectionSelectOperation.count();
         Assertions.assertEquals(45L, count);
 
+        collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, new ReaderWriterLock(), collectionIndexProviderFactory, storageManager);
+        List<TestModel> list = collectionSelectOperation.query(new Query().where(new SimpleCondition<>("id", Operation.EQ, 45))).asList(TestModel.class);
+        Assertions.assertFalse(list.isEmpty());
+        Assertions.assertEquals(1, list.size());
+        Assertions.assertEquals(45, list.getFirst().getId());
+
+        collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, new ReaderWriterLock(), collectionIndexProviderFactory, storageManager);
+        list = collectionSelectOperation.query(new Query().where(new SimpleCondition<>("id", Operation.GT, 40)).sort(new SortField("id", Order.ASC))).asList(TestModel.class);
+        Assertions.assertFalse(list.isEmpty());
+        Assertions.assertEquals(5, list.size());
+        Assertions.assertEquals(41, list.getFirst().getId());
     }
 
 
