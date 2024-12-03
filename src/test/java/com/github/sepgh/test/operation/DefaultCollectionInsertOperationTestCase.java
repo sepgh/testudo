@@ -15,11 +15,9 @@ import com.github.sepgh.testudo.operation.query.Query;
 import com.github.sepgh.testudo.operation.query.SimpleCondition;
 import com.github.sepgh.testudo.scheme.ModelToCollectionConverter;
 import com.github.sepgh.testudo.scheme.Scheme;
-import com.github.sepgh.testudo.scheme.annotation.AutoIncrement;
 import com.github.sepgh.testudo.scheme.annotation.Collection;
 import com.github.sepgh.testudo.scheme.annotation.Field;
 import com.github.sepgh.testudo.scheme.annotation.Index;
-import com.github.sepgh.testudo.serialization.ModelSerializer;
 import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
 import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
@@ -81,8 +79,7 @@ public class DefaultCollectionInsertOperationTestCase {
     @AllArgsConstructor
     public static class TestModel {
         @Field(id = 1)
-        @AutoIncrement
-        @Index(primary = true)
+        @Index(primary = true, autoIncrement = true)
         private Integer id;
 
         @Field(id = 2, maxLength = 20)

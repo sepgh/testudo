@@ -2,7 +2,6 @@ package com.github.sepgh.test.scheme;
 
 import com.github.sepgh.testudo.scheme.ModelToCollectionConverter;
 import com.github.sepgh.testudo.scheme.Scheme;
-import com.github.sepgh.testudo.scheme.annotation.AutoIncrement;
 import com.github.sepgh.testudo.scheme.annotation.Collection;
 import com.github.sepgh.testudo.scheme.annotation.Field;
 import com.github.sepgh.testudo.scheme.annotation.Index;
@@ -18,8 +17,7 @@ public class ModelToCollectionConverterTestCase {
     @Collection(id = 1, name = "test")
     public static class TestModel implements Comparable<TestModel> {
         @Field(id = 1)
-        @AutoIncrement
-        @Index(primary = true)
+        @Index(primary = true, autoIncrement = true)
         private Integer id;
 
         @Field(id = 2)
