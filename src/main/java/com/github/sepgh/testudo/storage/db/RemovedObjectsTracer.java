@@ -28,7 +28,7 @@ public interface RemovedObjectsTracer {
         @Override
         public synchronized void add(RemovedObjectLocation removedObjectLocation) {
             int i = Collections.binarySearch(this.removedObjectLocations, removedObjectLocation, Comparator.comparingInt(RemovedObjectLocation::length));
-            if (i > 0){
+            if (i >= 0){
                 removedObjectLocations.add(i, removedObjectLocation);
             } else {
                 i = (i * -1) - 1;

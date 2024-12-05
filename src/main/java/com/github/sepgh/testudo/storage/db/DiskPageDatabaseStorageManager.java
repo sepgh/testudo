@@ -185,15 +185,17 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
             if (optional.isPresent()) {
                 DBObject dbObject = optional.get();
                 dbObject.deactivate();
+                int dbObjectLength = dbObject.getLength();
+                int offset = (int) (pointer.getPosition() % this.engineConfig.getDbPageSize());
+                page.cleanPool(offset, dbObjectLength);
+                this.commitPage(page);
+
                 this.removedObjectsTracer.add(
                         new RemovedObjectsTracer.RemovedObjectLocation(
-                                pointer, dbObject.getLength()
+                                pointer,
+                                dbObjectLength
                         )
                 );
-                int offset = (int) (pointer.getPosition() % this.engineConfig.getDbPageSize());
-
-                page.cleanPool(offset, dbObject.getLength());
-                this.commitPage(page);
             }
         } catch (VerificationException.InvalidDBObjectWrapper e) {
             throw new RuntimeException(e);

@@ -35,7 +35,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class CollectionSelectInsertOperationMultiThreadedTestCase {
+public class CollectionMultiThreadedOperationTestCase {
 
     private EngineConfig engineConfig;
     private Path dbPath;
@@ -87,6 +87,8 @@ public class CollectionSelectInsertOperationMultiThreadedTestCase {
         private Integer item;
     }
 
+
+    // Todo: sometimes delete operation fails :/ multithreading related issue
     @Test
     public void test() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         Scheme scheme = Scheme.builder()
@@ -102,7 +104,7 @@ public class CollectionSelectInsertOperationMultiThreadedTestCase {
         Scheme.Collection collection = new ModelToCollectionConverter(TestModel.class).toCollection();
         scheme.getCollections().add(collection);
 
-        ReaderWriterLock readerWriterLock = new ReaderWriterLock();
+        final ReaderWriterLock readerWriterLock = new ReaderWriterLock();
         DefaultCollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
 
         ExecutorService executorService = Executors.newFixedThreadPool(9);
@@ -152,6 +154,43 @@ public class CollectionSelectInsertOperationMultiThreadedTestCase {
         Assertions.assertFalse(list.isEmpty());
         Assertions.assertEquals(5, list.size());
         Assertions.assertEquals(41, list.getFirst().getId());
+
+        CountDownLatch countDownLatch2 = new CountDownLatch(45);
+        AtomicInteger atomicInteger2 = new AtomicInteger(45);
+        executorService.shutdownNow();
+
+        executorService = Executors.newFixedThreadPool(5);
+
+        for (int i = 0; i < 45; i++) {
+            executorService.submit(() -> {
+                try {
+                    int i1 = atomicInteger2.getAndDecrement();
+                    System.out.println("Deleting " + i1);
+                    CollectionDeleteOperation<Long> collectionDeleteOperation = new DefaultCollectionDeleteOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
+                    CollectionSelectOperation<Long> selectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
+
+                    int deleted = collectionDeleteOperation
+                            .query(new Query().where(new SimpleCondition<>("id", Operation.EQ, i1)))
+                            .execute();
+
+                    System.out.println("A: ["+i1+"] " + (deleted == 1) + ", " + deleted);
+                    System.out.println("B: ["+i1+"] " + (0 == selectOperation.query(new Query().where(new SimpleCondition<>("id", Operation.EQ, i1))).count()));
+                    Assertions.assertEquals(1, deleted);
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
+                } finally {
+                    countDownLatch2.countDown();
+                }
+            });
+        }
+
+        countDownLatch2.await();
+
+        collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
+        Assertions.assertEquals(0, collectionSelectOperation.count());
+
+        executorService.shutdownNow();
+
     }
 
 

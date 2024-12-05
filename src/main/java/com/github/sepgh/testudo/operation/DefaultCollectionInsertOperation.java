@@ -52,7 +52,6 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
     // Todo: good idea to have this method as public interface? read README.md
     @Override
     public void insert(byte[] bytes) {
-
         try {
             readerWriterLock.getWriteLock().lock();
             Pointer pointer = this.storeBytes(bytes);
