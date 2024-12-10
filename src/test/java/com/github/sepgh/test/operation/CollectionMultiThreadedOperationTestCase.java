@@ -89,6 +89,7 @@ public class CollectionMultiThreadedOperationTestCase {
 
 
     // Todo: sometimes delete operation fails :/ multithreading related issue
+    //       never fails with degree=100
     @Test
     public void test() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         Scheme scheme = Scheme.builder()
@@ -165,7 +166,6 @@ public class CollectionMultiThreadedOperationTestCase {
             executorService.submit(() -> {
                 try {
                     int i1 = atomicInteger2.getAndDecrement();
-                    System.out.println("Deleting " + i1);
                     CollectionDeleteOperation<Long> collectionDeleteOperation = new DefaultCollectionDeleteOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
                     CollectionSelectOperation<Long> selectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
 
@@ -173,8 +173,6 @@ public class CollectionMultiThreadedOperationTestCase {
                             .query(new Query().where(new SimpleCondition<>("id", Operation.EQ, i1)))
                             .execute();
 
-                    System.out.println("A: ["+i1+"] " + (deleted == 1) + ", " + deleted);
-                    System.out.println("B: ["+i1+"] " + (0 == selectOperation.query(new Query().where(new SimpleCondition<>("id", Operation.EQ, i1))).count()));
                     Assertions.assertEquals(1, deleted);
                 } catch (RuntimeException e) {
                     e.printStackTrace();

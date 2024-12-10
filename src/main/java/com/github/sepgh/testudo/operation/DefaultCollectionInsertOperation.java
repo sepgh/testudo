@@ -54,6 +54,7 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
     public void insert(byte[] bytes) {
         try {
             readerWriterLock.getWriteLock().lock();
+            // Todo: we better check for unique field values first, before any insertions  read README.md
             Pointer pointer = this.storeBytes(bytes);
             final T key = this.storeClusterIndex(pointer);
             this.storeFieldIndexes(bytes, key, pointer);

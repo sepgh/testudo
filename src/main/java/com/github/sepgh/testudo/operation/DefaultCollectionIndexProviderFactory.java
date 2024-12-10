@@ -18,16 +18,16 @@ import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultCollectionIndexProviderFactory implements CollectionIndexProviderFactory {
     protected final Scheme scheme;
-    protected final Map<Scheme.Collection, CollectionIndexProvider> providers = new HashMap<>();
-    protected final Map<String, UniqueQueryableIndex<?, ? extends Number>> uniqueTreeIndexManagers = new HashMap<>();
-    protected final Map<String, UniqueTreeIndexManager<?, Pointer>> clusterIndexManagers = new HashMap<>();
-    protected final Map<String, DuplicateQueryableIndex<?, ? extends Number>> duplicateIndexManagers = new HashMap<>();
+    protected final Map<Scheme.Collection, CollectionIndexProvider> providers = new ConcurrentHashMap<>();
+    protected final Map<String, UniqueQueryableIndex<?, ? extends Number>> uniqueTreeIndexManagers = new ConcurrentHashMap<>();
+    protected final Map<String, UniqueTreeIndexManager<?, Pointer>> clusterIndexManagers = new ConcurrentHashMap<>();
+    protected final Map<String, DuplicateQueryableIndex<?, ? extends Number>> duplicateIndexManagers = new ConcurrentHashMap<>();
     protected final EngineConfig engineConfig;
     protected final IndexStorageManagerFactory indexStorageManagerFactory;
     protected final DatabaseStorageManager databaseStorageManager;

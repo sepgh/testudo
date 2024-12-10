@@ -5,12 +5,14 @@ import com.github.sepgh.testudo.scheme.annotation.Field;
 import com.github.sepgh.testudo.scheme.annotation.Index;
 import com.github.sepgh.testudo.serialization.SerializerRegistry;
 import com.google.common.base.Preconditions;
+import lombok.Getter;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.stream.Stream;
 
+@Getter
 public class ModelToCollectionConverter {
 
     private final Class<?> modelClass;

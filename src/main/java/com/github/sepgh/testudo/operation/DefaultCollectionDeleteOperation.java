@@ -36,7 +36,6 @@ public class DefaultCollectionDeleteOperation<T extends Number & Comparable<T>> 
     private final UniqueTreeIndexManager<T, Pointer> clusterIndexManager;
     @Getter
     private Query query;
-    private List<String> fields;
 
     @SuppressWarnings("unchecked")
     public DefaultCollectionDeleteOperation(Scheme.Collection collection, ReaderWriterLock readerWriterLock, CollectionIndexProviderFactory collectionIndexProviderFactory, DatabaseStorageManager storageManager) {
@@ -53,7 +52,7 @@ public class DefaultCollectionDeleteOperation<T extends Number & Comparable<T>> 
         return this;
     }
 
-    protected <V extends Number & Comparable<V>> Iterator<V> getExecutedQuery() {
+    protected Iterator<T> getExecutedQuery() {
         if (query == null) {
             this.query = new Query();
         }
@@ -100,7 +99,6 @@ public class DefaultCollectionDeleteOperation<T extends Number & Comparable<T>> 
         } finally {
             this.readerWriterLock.getWriteLock().unlock();
         }
-        System.out.println(">> " + counter.get());
         return counter.get();
     }
 
@@ -109,11 +107,6 @@ public class DefaultCollectionDeleteOperation<T extends Number & Comparable<T>> 
             try {
                 if (field.getIndex().isUnique()) {
                     UniqueQueryableIndex<?, T> uniqueIndexManager = (UniqueQueryableIndex<?, T>) collectionIndexProvider.getUniqueIndexManager(field);
-//                    System.out.println("Removing unique index for field: " + field.getName() + " with val: " + CollectionSerializationUtil.getValueOfFieldAsObject(
-//                            collection,
-//                            field,
-//                            bytes
-//                    ));
                     uniqueIndexManager.removeIndex(
                             CollectionSerializationUtil.getValueOfFieldAsObject(
                                     collection,
@@ -124,11 +117,6 @@ public class DefaultCollectionDeleteOperation<T extends Number & Comparable<T>> 
 
                 } else {
                     DuplicateQueryableIndex<?, T> duplicateIndexManager = (DuplicateQueryableIndex<?, T>) collectionIndexProvider.getDuplicateIndexManager(field);
-//                    System.out.println("Removing duplicate index for field: " + field.getName() + " with val: " + CollectionSerializationUtil.getValueOfFieldAsObject(
-//                            collection,
-//                            field,
-//                            bytes
-//                    ));
 
                     duplicateIndexManager.removeIndex(
                             CollectionSerializationUtil.getValueOfFieldAsObject(

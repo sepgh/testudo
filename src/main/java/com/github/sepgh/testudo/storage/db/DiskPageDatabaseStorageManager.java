@@ -155,6 +155,31 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
 
     }
 
+    @Override
+    public void update(Pointer pointer, byte[] bytes) throws IOException, ExecutionException, InterruptedException, VerificationException.InvalidDBObjectWrapper {
+        PageBuffer.PageTitle pageTitle = new PageBuffer.PageTitle(pointer.getChunk(), (int) (pointer.getPosition() / this.engineConfig.getDbPageSize()));
+        Page page = this.pageBuffer.acquire(pageTitle);
+
+        try {
+            Optional<DBObject> optionalDBObjectWrapper;
+            try {
+                optionalDBObjectWrapper = page.getDBObjectFromPool(
+                        (int) (pointer.getPosition() % this.engineConfig.getDbPageSize())
+                );
+            } catch (VerificationException.InvalidDBObjectWrapper e) {
+                throw new RuntimeException(e);
+            }
+
+            if (optionalDBObjectWrapper.isEmpty()) {}  // Todo
+
+            DBObject dbObject = optionalDBObjectWrapper.get();
+            dbObject.modifyData(bytes);
+            this.commitPage(dbObject.getPage());
+        } finally {
+            this.pageBuffer.release(page);
+        }
+    }
+
     public Optional<DBObject> select(Pointer pointer){
         PageBuffer.PageTitle pageTitle = new PageBuffer.PageTitle(pointer.getChunk(), (int) (pointer.getPosition() / this.engineConfig.getDbPageSize()));
         Page page = this.pageBuffer.acquire(pageTitle);

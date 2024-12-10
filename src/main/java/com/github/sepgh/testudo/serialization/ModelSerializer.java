@@ -11,13 +11,18 @@ public class ModelSerializer {
     private Object model;
     private ModelToCollectionConverter modelToCollection;
 
+    public ModelSerializer() {
+    }
+
     public ModelSerializer(Object model) {
         this.reset(model);
     }
 
-    public synchronized void reset(Object model) {
+    public synchronized ModelSerializer reset(Object model) {
         this.model = model;
-        modelToCollection = new ModelToCollectionConverter(model.getClass());
+        if (this.modelToCollection == null || !this.modelToCollection.getModelClass().equals(model.getClass()))
+            this.modelToCollection = new ModelToCollectionConverter(model.getClass());
+        return this;
     }
 
     public byte[] serialize() throws SerializationException {

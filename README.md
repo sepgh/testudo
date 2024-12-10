@@ -62,9 +62,10 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
 - [ ] Add support for nullable fields and update model serializer logic
 - [ ] Possibly improve `CharArray` serializer to use less space
 - [ ] Support primitive data types (ex: models should be able to have `int` field instead of `Integer`)
-- [ ] Insertion verification:
+- [ ] Insertion (and update) verification:
   - [ ] The `insert(byte[])` method of insert operation makes verification more complex, perhaps we should remove it
   - [ ] `primary` index should either have a value or get set as autoincrement
+  - [ ] Unique indexes should be verified before any update or insertion is performed (after locking) 
 - [ ] Database Operations
   - [X] Reader-Writer Lock support at collection level
   - [X] Select Operation
@@ -75,6 +76,7 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
 - [X] Cache support for cluster index managers
 - [ ] Cache support for other indexes. Also find proper usage for `CachedIndexStorageManagerDecorator` or remove it!
 - [ ] Exception Throwing and Handling
+  - Note: lambdas are going crazy at this point. Use this strategy: https://stackoverflow.com/questions/18198176
 - [ ] Logging
 
 
