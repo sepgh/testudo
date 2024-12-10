@@ -103,4 +103,4 @@ Even though current tests work, when we work with multiple collections things wi
 The reason `CollectionSelectInsertOperationMultiThreadedTestCase` can work with Page Buffer is that we lock the collection in `DefaultCollectionInsertOperation`, 
 so even though we have multiple instances of `DiskPageDatabaseStorage` (one for DB and one for index), their `.store()` method won't be called from multiple threads.
 
-
+Note: just using same instance is not enough. The type of the pointer returned by `store` method would be different then. Maybe we should not let the Database Storage Manager handle pointer types? seems totally unnecessary!
