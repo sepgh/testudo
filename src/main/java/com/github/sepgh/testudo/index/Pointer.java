@@ -20,7 +20,7 @@ public class Pointer implements Comparable<Pointer> {
     public static byte TYPE_NODE = 0x02;
     public static int BYTES = 1 + Long.BYTES + Integer.BYTES;
 
-    private final byte type;
+    private byte type;
     private long position;
     private int chunk;
 

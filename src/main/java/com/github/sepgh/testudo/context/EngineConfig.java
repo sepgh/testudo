@@ -60,6 +60,13 @@ public class EngineConfig {
     private ClusterKeyType clusterKeyType = ClusterKeyType.ULONG;
     @Builder.Default
     private int IMROTMinLengthToSplit = Integer.MAX_VALUE;
+    @Builder.Default
+    public RemovedObjectTrackingStrategy removedObjectTrackingStrategy = RemovedObjectTrackingStrategy.IN_MEMORY;
+
+
+    public enum RemovedObjectTrackingStrategy {
+        IN_MEMORY
+    }
 
     @Getter
     @AllArgsConstructor

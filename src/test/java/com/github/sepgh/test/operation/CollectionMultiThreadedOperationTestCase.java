@@ -12,12 +12,12 @@ import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.scheme.annotation.Collection;
 import com.github.sepgh.testudo.scheme.annotation.Field;
 import com.github.sepgh.testudo.scheme.annotation.Index;
-import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
-import com.github.sepgh.testudo.storage.index.header.InMemoryIndexHeaderManager;
-import com.github.sepgh.testudo.storage.pool.FileHandler;
-import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
+import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
+import com.github.sepgh.testudo.storage.pool.FileHandlerPoolFactory;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import lombok.*;
 import org.junit.jupiter.api.AfterEach;
@@ -39,6 +39,7 @@ public class CollectionMultiThreadedOperationTestCase {
 
     private EngineConfig engineConfig;
     private Path dbPath;
+    private FileHandlerPoolFactory fileHandlerPoolFactory;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -55,15 +56,12 @@ public class CollectionMultiThreadedOperationTestCase {
                 .indexIOSessionStrategy(EngineConfig.IndexIOSessionStrategy.IMMEDIATE)
                 .baseDBPath(this.dbPath.toString())
                 .build();
+
+        this.fileHandlerPoolFactory = new FileHandlerPoolFactory.DefaultFileHandlerPoolFactory(engineConfig);
     }
 
-    private DiskPageDatabaseStorageManager getDiskPageDatabaseStorageManager() {
-        return new DiskPageDatabaseStorageManager(
-                engineConfig,
-                new UnlimitedFileHandlerPool(
-                        FileHandler.SingletonFileHandlerFactory.getInstance()
-                )
-        );
+    private DatabaseStorageManagerFactory getDatabaseStorageManagerFactory() {
+        return new DatabaseStorageManagerFactory.DiskPageDatabaseStorageManagerFactory(engineConfig, fileHandlerPoolFactory);
     }
 
     @AfterEach
@@ -97,8 +95,9 @@ public class CollectionMultiThreadedOperationTestCase {
                 .version(1)
                 .build();
 
-        DiskPageDatabaseStorageManager storageManager = getDiskPageDatabaseStorageManager();
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new InMemoryIndexHeaderManager.Factory());
+        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
+        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
         CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, storageManager);
 
 

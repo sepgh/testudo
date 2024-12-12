@@ -14,12 +14,12 @@ import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.scheme.annotation.Collection;
 import com.github.sepgh.testudo.scheme.annotation.Field;
 import com.github.sepgh.testudo.scheme.annotation.Index;
-import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
-import com.github.sepgh.testudo.storage.pool.FileHandler;
-import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
+import com.github.sepgh.testudo.storage.pool.FileHandlerPoolFactory;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import lombok.*;
 import org.junit.jupiter.api.AfterEach;
@@ -43,6 +43,8 @@ public class DefaultCollectionInsertOperationTestCase {
             .version(1)
             .build();
 
+    private FileHandlerPoolFactory fileHandlerPoolFactory;
+
     @BeforeEach
     public void setUp() throws IOException {
         this.dbPath = Files.createTempDirectory(this.getClass().getSimpleName());
@@ -50,15 +52,11 @@ public class DefaultCollectionInsertOperationTestCase {
                 .clusterKeyType(EngineConfig.ClusterKeyType.LONG)
                 .baseDBPath(this.dbPath.toString())
                 .build();
+        this.fileHandlerPoolFactory = new FileHandlerPoolFactory.DefaultFileHandlerPoolFactory(engineConfig);
     }
 
-    private DiskPageDatabaseStorageManager getDiskPageDatabaseStorageManager() {
-        return new DiskPageDatabaseStorageManager(
-                engineConfig,
-                new UnlimitedFileHandlerPool(
-                        FileHandler.SingletonFileHandlerFactory.getInstance()
-                )
-        );
+    private DatabaseStorageManagerFactory getDatabaseStorageManagerFactory() {
+        return new DatabaseStorageManagerFactory.DiskPageDatabaseStorageManagerFactory(engineConfig, fileHandlerPoolFactory);
     }
 
     @AfterEach
@@ -93,8 +91,9 @@ public class DefaultCollectionInsertOperationTestCase {
 
     @Test
     public void test() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
-        DiskPageDatabaseStorageManager storageManager = getDiskPageDatabaseStorageManager();
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
+        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
+        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
         CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, storageManager);
 
         Scheme scheme = Scheme.builder()

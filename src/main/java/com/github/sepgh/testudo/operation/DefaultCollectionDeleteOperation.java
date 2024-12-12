@@ -1,9 +1,7 @@
 package com.github.sepgh.testudo.operation;
 
 import com.github.sepgh.testudo.exception.DeserializationException;
-import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.index.DuplicateQueryableIndex;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueQueryableIndex;
@@ -11,18 +9,13 @@ import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.operation.query.Query;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.serialization.CollectionSerializationUtil;
-import com.github.sepgh.testudo.serialization.ModelDeserializer;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
-import com.github.sepgh.testudo.utils.IteratorUtils;
-import com.github.sepgh.testudo.utils.LockableIterator;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import lombok.Getter;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;

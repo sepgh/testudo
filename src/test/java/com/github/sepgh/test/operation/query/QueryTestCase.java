@@ -15,12 +15,11 @@ import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.operation.query.*;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
-import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
-import com.github.sepgh.testudo.storage.pool.FileHandler;
-import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
+import com.github.sepgh.testudo.storage.pool.FileHandlerPoolFactory;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.UnsignedInteger;
 import lombok.SneakyThrows;
@@ -33,13 +32,13 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class QueryTestCase {
-    private DatabaseStorageManager databaseStorageManager;
     private Path dbPath;
     private EngineConfig engineConfig;
     private final Scheme scheme = Scheme.builder()
             .dbName("test")
             .version(1)
             .build();
+    private FileHandlerPoolFactory fileHandlerPoolFactory;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -49,12 +48,13 @@ public class QueryTestCase {
                 .clusterKeyType(EngineConfig.ClusterKeyType.UINT)
                 .bTreeDegree(10)
                 .build();
-        this.databaseStorageManager = new DiskPageDatabaseStorageManager(
-                engineConfig,
-                new UnlimitedFileHandlerPool(
-                        FileHandler.SingletonFileHandlerFactory.getInstance()
-                )
-        );
+        
+        this.fileHandlerPoolFactory = new FileHandlerPoolFactory.DefaultFileHandlerPoolFactory(engineConfig);
+    }
+    
+
+    private DatabaseStorageManagerFactory getDatabaseStorageManagerFactory() {
+        return new DatabaseStorageManagerFactory.DiskPageDatabaseStorageManagerFactory(engineConfig, fileHandlerPoolFactory);
     }
 
     @AfterEach
@@ -65,8 +65,11 @@ public class QueryTestCase {
     @Test
     @Timeout(value = 2)
     public void simpleCondition() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
+        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.create();
+
+        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")
@@ -122,7 +125,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x01,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        Pointer pointer = this.databaseStorageManager.store(1, 1, data);
+        Pointer pointer = databaseStorageManager.store(1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(1L), pointer);
         pkIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
@@ -131,7 +134,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x02,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        pointer = this.databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(2L), pointer);
         pkIndexManager.addIndex(2, UnsignedInteger.valueOf(2L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(2L));
@@ -140,7 +143,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x03,    // PK
                 0x00, 0x00, 0x00, 0x03     // AGE  =  3
         };
-        pointer = this.databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(3L), pointer);
         pkIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
         ageIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
@@ -240,8 +243,11 @@ public class QueryTestCase {
     @Test
     @Timeout(value = 2)
     public void simpleCondition_LowCardinality() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
+        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.create();
+
+        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")
@@ -284,7 +290,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x01,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        Pointer pointer = this.databaseStorageManager.store(1, 1, data);
+        Pointer pointer = databaseStorageManager.store(1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(1L), pointer);
         pkIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
@@ -293,7 +299,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x02,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        pointer = this.databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(2L), pointer);
         pkIndexManager.addIndex(2, UnsignedInteger.valueOf(2L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(2L));
@@ -302,7 +308,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x03,    // PK
                 0x00, 0x00, 0x00, 0x03     // AGE  =  3
         };
-        pointer = this.databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(3L), pointer);
         pkIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
         ageIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
@@ -326,8 +332,11 @@ public class QueryTestCase {
     @Test
     @Timeout(2)
     public void compositeQuery_And() {
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
+        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.create();
+
+        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")
@@ -370,7 +379,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x01,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        Pointer pointer = this.databaseStorageManager.store(1, 1, data);
+        Pointer pointer = databaseStorageManager.store(1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(1L), pointer);
         pkIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
@@ -379,7 +388,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x02,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        pointer = this.databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(2L), pointer);
         pkIndexManager.addIndex(2, UnsignedInteger.valueOf(2L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(2L));
@@ -388,7 +397,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x03,    // PK
                 0x00, 0x00, 0x00, 0x03     // AGE  =  3
         };
-        pointer = this.databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(3L), pointer);
         pkIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
         ageIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
@@ -449,8 +458,11 @@ public class QueryTestCase {
     @Test
     @Timeout(2)
     public void compositeQuery_Or() {
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
+        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.create();
+
+        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")
@@ -493,7 +505,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x01,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        Pointer pointer = this.databaseStorageManager.store(1, 1, data);
+        Pointer pointer = databaseStorageManager.store(1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(1L), pointer);
         pkIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
@@ -502,7 +514,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x02,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        pointer = this.databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(2L), pointer);
         pkIndexManager.addIndex(2, UnsignedInteger.valueOf(2L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(2L));
@@ -511,7 +523,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x03,    // PK
                 0x00, 0x00, 0x00, 0x03     // AGE  =  3
         };
-        pointer = this.databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(3L), pointer);
         pkIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
         ageIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));

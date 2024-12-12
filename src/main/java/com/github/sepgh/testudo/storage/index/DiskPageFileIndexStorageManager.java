@@ -4,7 +4,7 @@ import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.storage.db.DBObject;
-import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
@@ -22,23 +22,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class DiskPageFileIndexStorageManager extends AbstractFileIndexStorageManager {
     protected final IndexHeaderManager indexHeaderManager;
     protected final FileHandlerPool fileHandlerPool;
-    protected final DiskPageDatabaseStorageManager diskPageDatabaseStorageManager;
+    protected final DatabaseStorageManager databaseStorageManager;
 
     public static final int VERSION = 1;
 
-    public DiskPageFileIndexStorageManager(EngineConfig engineConfig, IndexHeaderManagerFactory indexHeaderManagerFactory, FileHandlerPool fileHandlerPool) {
+    public DiskPageFileIndexStorageManager(EngineConfig engineConfig, IndexHeaderManagerFactory indexHeaderManagerFactory, FileHandlerPool fileHandlerPool, DatabaseStorageManager databaseStorageManager) {
         super(engineConfig);
         this.indexHeaderManager = indexHeaderManagerFactory.getInstance(this.getHeaderPath());
         this.fileHandlerPool = fileHandlerPool;
-        this.diskPageDatabaseStorageManager = new DiskPageDatabaseStorageManager(engineConfig, fileHandlerPool, Pointer.TYPE_NODE);
+        this.databaseStorageManager = databaseStorageManager;
     }
 
-    public DiskPageFileIndexStorageManager(EngineConfig engineConfig, IndexHeaderManagerFactory indexHeaderManagerFactory) {
-        this(engineConfig, indexHeaderManagerFactory, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(engineConfig.getFileHandlerPoolThreads())));
+    public DiskPageFileIndexStorageManager(EngineConfig engineConfig, IndexHeaderManagerFactory indexHeaderManagerFactory, DatabaseStorageManager databaseStorageManager) {
+        this(engineConfig, indexHeaderManagerFactory, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(engineConfig.getFileHandlerPoolThreads())), databaseStorageManager);
     }
 
-    public DiskPageFileIndexStorageManager(EngineConfig engineConfig) {
-        this(engineConfig, new JsonIndexHeaderManager.Factory());
+    public DiskPageFileIndexStorageManager(EngineConfig engineConfig, DatabaseStorageManager databaseStorageManager) {
+        this(engineConfig, new JsonIndexHeaderManager.Factory(), databaseStorageManager);
     }
 
     @Override
@@ -52,7 +52,7 @@ public class DiskPageFileIndexStorageManager extends AbstractFileIndexStorageMan
         }
 
         Pointer pointer = optionalRootOfIndex.get().toPointer(Pointer.TYPE_NODE);
-        Optional<DBObject> dbObjectOptional = this.diskPageDatabaseStorageManager.select(pointer);
+        Optional<DBObject> dbObjectOptional = this.databaseStorageManager.select(pointer);
         if (dbObjectOptional.isEmpty()){
             output.complete(Optional.empty());
             return output;
@@ -71,7 +71,7 @@ public class DiskPageFileIndexStorageManager extends AbstractFileIndexStorageMan
     public CompletableFuture<NodeData> readNode(int indexId, long position, int chunk, KVSize kvSize) throws InterruptedException, IOException {
         CompletableFuture<NodeData> output = new CompletableFuture<>();
         Pointer pointer = new Pointer(Pointer.TYPE_NODE, position, chunk);
-        Optional<DBObject> dbObjectOptional = this.diskPageDatabaseStorageManager.select(pointer);
+        Optional<DBObject> dbObjectOptional = this.databaseStorageManager.select(pointer);
 
         if (dbObjectOptional.isEmpty()){
             output.completeExceptionally(new Throwable("Could not read node data at " + pointer));
@@ -89,7 +89,8 @@ public class DiskPageFileIndexStorageManager extends AbstractFileIndexStorageMan
     @Override
     public CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data, boolean isRoot, KVSize size) throws IOException, ExecutionException, InterruptedException {
         CompletableFuture<NodeData> output = new CompletableFuture<>();
-        Pointer pointer = this.diskPageDatabaseStorageManager.store(indexId, VERSION, data);
+        Pointer pointer = this.databaseStorageManager.store(indexId, VERSION, data);
+        pointer.setType(Pointer.TYPE_NODE);
         output.complete(new NodeData(
                 pointer,
                 data
@@ -109,7 +110,7 @@ public class DiskPageFileIndexStorageManager extends AbstractFileIndexStorageMan
         CompletableFuture<Void> output = new CompletableFuture<>();
         AtomicBoolean flag = new AtomicBoolean(false);
         try {
-            this.diskPageDatabaseStorageManager.update(pointer, dbObject -> {
+            this.databaseStorageManager.update(pointer, dbObject -> {
                 try {
                     dbObject.modifyData(data);
                     flag.set(true);
@@ -138,7 +139,7 @@ public class DiskPageFileIndexStorageManager extends AbstractFileIndexStorageMan
 
     @Override
     public void close() throws IOException {
-        this.diskPageDatabaseStorageManager.close();
+        this.databaseStorageManager.close();
     }
 
     @Override
@@ -146,7 +147,7 @@ public class DiskPageFileIndexStorageManager extends AbstractFileIndexStorageMan
         CompletableFuture<Void> output = new CompletableFuture<>();
 
         try {
-            this.diskPageDatabaseStorageManager.remove(pointer);
+            this.databaseStorageManager.remove(pointer);
             output.complete(null);
         } catch (IOException | ExecutionException e) {
             output.completeExceptionally(e);

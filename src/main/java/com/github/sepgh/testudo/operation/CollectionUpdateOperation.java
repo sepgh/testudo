@@ -1,7 +1,6 @@
 package com.github.sepgh.testudo.operation;
 
 import com.github.sepgh.testudo.operation.query.Query;
-import com.github.sepgh.testudo.storage.db.DBObject;
 
 import java.util.function.Consumer;
 

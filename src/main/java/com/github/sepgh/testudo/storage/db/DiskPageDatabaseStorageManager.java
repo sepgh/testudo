@@ -24,29 +24,19 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
     private final FileHandlerPool fileHandlerPool;
     private final RemovedObjectsTracer removedObjectsTracer;
     private volatile PageBuffer.PageTitle lastPageTitle;
-    private final byte pointerTypes;
 
-    public DiskPageDatabaseStorageManager(EngineConfig engineConfig, FileHandlerPool fileHandlerPool, RemovedObjectsTracer removedObjectsTracer, byte pointerTypes) {
+    public DiskPageDatabaseStorageManager(EngineConfig engineConfig, FileHandlerPool fileHandlerPool, RemovedObjectsTracer removedObjectsTracer) {
         this.engineConfig = engineConfig;
         this.fileHandlerPool = fileHandlerPool;
         this.removedObjectsTracer = removedObjectsTracer;
-        this.pointerTypes = pointerTypes;
         this.pageBuffer = new PageBuffer(
                 this.engineConfig.getDbPageBufferSize(),
                 this::pageFactory
         );
     }
 
-    public DiskPageDatabaseStorageManager(EngineConfig engineConfig, FileHandlerPool fileHandlerPool, RemovedObjectsTracer removedObjectsTracer) {
-        this(engineConfig, fileHandlerPool, removedObjectsTracer, Pointer.TYPE_DATA);
-    }
-
-    public DiskPageDatabaseStorageManager(EngineConfig engineConfig, FileHandlerPool fileHandlerPool, byte pointerTypes) {
-        this(engineConfig, fileHandlerPool, new RemovedObjectsTracer.InMemoryRemovedObjectsTracer(engineConfig.getIMROTMinLengthToSplit()), pointerTypes);
-    }
-
     public DiskPageDatabaseStorageManager(EngineConfig engineConfig, FileHandlerPool fileHandlerPool) {
-        this(engineConfig, fileHandlerPool, new RemovedObjectsTracer.InMemoryRemovedObjectsTracer(engineConfig.getIMROTMinLengthToSplit()), Pointer.TYPE_DATA);
+        this(engineConfig, fileHandlerPool, new RemovedObjectsTracer.InMemoryRemovedObjectsTracer(engineConfig.getIMROTMinLengthToSplit()));
     }
 
 
@@ -110,7 +100,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         try {
             this.store(dbObject, collectionId, version, data);
             return new Pointer(
-                    pointerTypes,
+                    Pointer.TYPE_DATA,
                     ((long) page.getPageNumber() * this.engineConfig.getDbPageSize()) + dbObject.getBegin(),
                     page.getChunk()
             );

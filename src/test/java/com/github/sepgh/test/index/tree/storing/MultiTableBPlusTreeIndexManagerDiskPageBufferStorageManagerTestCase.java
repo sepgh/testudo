@@ -4,20 +4,24 @@ import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeUniqueTreeIndexManager;
+import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.index.DiskPageFileIndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
+import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,11 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.sepgh.test.TestParams.DEFAULT_INDEX_BINARY_OBJECT_FACTORY;
 import static com.github.sepgh.testudo.storage.index.CompactFileIndexStorageManager.INDEX_FILE_NAME;
@@ -61,10 +61,12 @@ public class MultiTableBPlusTreeIndexManagerDiskPageBufferStorageManagerTestCase
     }
 
     private IndexStorageManager getFileIndexManager() throws IOException, ExecutionException, InterruptedException {
+        FileHandlerPool fileHandlerPool = new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance());
         return new DiskPageFileIndexStorageManager(
                 engineConfig,
                 new JsonIndexHeaderManager.Factory(),
-                new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
+                fileHandlerPool,
+                new DiskPageDatabaseStorageManager(engineConfig, fileHandlerPool)
         );
     }
 

@@ -2,11 +2,9 @@ package com.github.sepgh.testudo.storage.index;
 
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.scheme.Scheme;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
-import com.github.sepgh.testudo.storage.pool.FileHandler;
-import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
-import com.github.sepgh.testudo.storage.pool.LimitedFileHandlerPool;
-import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
+import com.github.sepgh.testudo.storage.pool.FileHandlerPoolFactory;
 
 import java.util.Map;
 import java.util.Set;
@@ -14,34 +12,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultIndexStorageManagerFactory extends IndexStorageManagerFactory {
     private final Map<String, IndexStorageManager> storageManagers = new ConcurrentHashMap<>();
-    private FileHandlerPool fileHandlerPool;
+    private final FileHandlerPoolFactory fileHandlerPoolFactory;
+    private final DatabaseStorageManagerFactory databaseStorageManagerFactory;
 
-    public DefaultIndexStorageManagerFactory(EngineConfig engineConfig, IndexHeaderManagerFactory indexHeaderManagerFactory) {
+    public DefaultIndexStorageManagerFactory(EngineConfig engineConfig, IndexHeaderManagerFactory indexHeaderManagerFactory, FileHandlerPoolFactory fileHandlerPoolFactory, DatabaseStorageManagerFactory databaseStorageManagerFactory) {
         super(engineConfig, indexHeaderManagerFactory);
+        this.fileHandlerPoolFactory = fileHandlerPoolFactory;
+        this.databaseStorageManagerFactory = databaseStorageManagerFactory;
     }
-
-    private synchronized FileHandlerPool getFileHandlerPool() {
-        if (fileHandlerPool != null)
-            return fileHandlerPool;
-
-        if (engineConfig.getFileHandlerStrategy().equals(EngineConfig.FileHandlerStrategy.UNLIMITED)){
-            fileHandlerPool = new UnlimitedFileHandlerPool(
-                    FileHandler.SingletonFileHandlerFactory.getInstance(
-                            this.engineConfig.getFileHandlerPoolThreads()
-                    )
-            );
-        } else {
-            fileHandlerPool = new LimitedFileHandlerPool(
-                    FileHandler.SingletonFileHandlerFactory.getInstance(
-                            this.engineConfig.getFileHandlerPoolThreads()
-                    ),
-                    this.engineConfig.getFileHandlerPoolMaxFiles()
-            );
-        }
-
-        return fileHandlerPool;
-    }
-
 
     @Override
     public IndexStorageManager create(Scheme scheme, Scheme.Collection collection) {
@@ -63,11 +41,11 @@ public class DefaultIndexStorageManagerFactory extends IndexStorageManagerFactor
 
             EngineConfig.IndexStorageManagerStrategy indexStorageManagerStrategy = engineConfig.getIndexStorageManagerStrategy();
             if (indexStorageManagerStrategy.equals(EngineConfig.IndexStorageManagerStrategy.ORGANIZED)) {
-                return new OrganizedFileIndexStorageManager(customName, indexHeaderManagerFactory, engineConfig, getFileHandlerPool());
+                return new OrganizedFileIndexStorageManager(customName, indexHeaderManagerFactory, engineConfig, fileHandlerPoolFactory.create());
             } else if (indexStorageManagerStrategy.equals(EngineConfig.IndexStorageManagerStrategy.PAGE_BUFFER)) {
-                return new DiskPageFileIndexStorageManager(engineConfig, indexHeaderManagerFactory, getFileHandlerPool());
+                return new DiskPageFileIndexStorageManager(engineConfig, indexHeaderManagerFactory, fileHandlerPoolFactory.create(), databaseStorageManagerFactory.create());
             } else {
-                return new CompactFileIndexStorageManager(indexHeaderManagerFactory, engineConfig, getFileHandlerPool());
+                return new CompactFileIndexStorageManager(indexHeaderManagerFactory, engineConfig, fileHandlerPoolFactory.create());
             }
 
         });

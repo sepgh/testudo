@@ -2,7 +2,6 @@ package com.github.sepgh.test.storage.db;
 
 import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.EngineConfig;
-import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
@@ -14,12 +13,11 @@ import com.github.sepgh.testudo.serialization.CollectionSerializationUtil;
 import com.github.sepgh.testudo.serialization.FieldType;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
-import com.github.sepgh.testudo.storage.db.DiskPageDatabaseStorageManager;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
-import com.github.sepgh.testudo.storage.pool.FileHandler;
-import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
+import com.github.sepgh.testudo.storage.pool.FileHandlerPoolFactory;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
@@ -43,27 +41,26 @@ import java.util.concurrent.ExecutionException;
 
 public class SchemeManagerTestCase {
 
-    private DatabaseStorageManager databaseStorageManager;
     private Path dbPath;
     private EngineConfig engineConfig;
     private final Scheme scheme = Scheme.builder()
             .dbName("test")
             .version(1)
             .build();
+    private FileHandlerPoolFactory fileHandlerPoolFactory;
 
     @BeforeEach
     public void setUp() throws IOException {
-        this.dbPath = Files.createTempDirectory("TEST_" + this.getClass().getSimpleName());
+        this.dbPath = Files.createTempDirectory(this.getClass().getSimpleName());
         this.engineConfig = EngineConfig.builder()
+                .clusterKeyType(EngineConfig.ClusterKeyType.LONG)
                 .baseDBPath(this.dbPath.toString())
-                .bTreeDegree(10)
                 .build();
-        this.databaseStorageManager = new DiskPageDatabaseStorageManager(
-                engineConfig,
-                new UnlimitedFileHandlerPool(
-                        FileHandler.SingletonFileHandlerFactory.getInstance()
-                )
-        );
+        this.fileHandlerPoolFactory = new FileHandlerPoolFactory.DefaultFileHandlerPoolFactory(engineConfig);
+    }
+
+    private DatabaseStorageManagerFactory getDatabaseStorageManagerFactory() {
+        return new DatabaseStorageManagerFactory.DiskPageDatabaseStorageManagerFactory(engineConfig, fileHandlerPoolFactory);
     }
 
     @AfterEach
@@ -73,8 +70,11 @@ public class SchemeManagerTestCase {
 
     @Test
     public void test_SchemeManager() throws IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
+        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.create();
+
+        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
         Scheme scheme = Scheme.builder()
                 .dbName("test")
                 .version(1)
@@ -111,7 +111,7 @@ public class SchemeManagerTestCase {
                 engineConfig,
                 scheme,
                 collectionIndexProviderFactory,
-                this.databaseStorageManager
+                databaseStorageManager
         );
         schemeManager.update();
 
@@ -168,8 +168,10 @@ public class SchemeManagerTestCase {
     // Todo: test fails now that we are working on cluster index ;)
     @Test
     public void test_SchemeManager_WithData() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory());
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, this.databaseStorageManager);
+        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.create();
+        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
 
         // --- CREATING BASE SCHEME --- //
         Scheme scheme = Scheme.builder()
@@ -209,7 +211,7 @@ public class SchemeManagerTestCase {
                 engineConfig,
                 scheme,
                 collectionIndexProviderFactory,
-                this.databaseStorageManager
+                databaseStorageManager
         );
         schemeManager.update();
 
@@ -218,10 +220,10 @@ public class SchemeManagerTestCase {
 
         // --- ADD DATA TO THE COLLECTION --- //
         byte[] data = new byte[]{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01};  // We have 2 integer fields defined in scheme above, so our data is also 2 int fields
-        Pointer pointer = this.databaseStorageManager.store(1, schemeManager.getScheme().getVersion(), data);
+        Pointer pointer = databaseStorageManager.store(1, schemeManager.getScheme().getVersion(), data);
 
         // --- READING DATA AND VERIFYING DB CAN RETURN PROPER OBJ --- //
-        DBObject dbObject = this.databaseStorageManager.select(pointer).get();
+        DBObject dbObject = databaseStorageManager.select(pointer).get();
         byte[] valueOfField = CollectionSerializationUtil.getValueOfField(
                 scheme.getCollections().getFirst(),
                 scheme.getCollections().getFirst().getFields().getFirst(),
@@ -254,19 +256,19 @@ public class SchemeManagerTestCase {
                 engineConfig,
                 scheme,
                 collectionIndexProviderFactory,
-                this.databaseStorageManager
+                databaseStorageManager
         );
         schemeManager.update();
 
         // --- SELECTING OBJECT USING OLD POINTER TO MAKE SURE ITS CHANGED AND IS NO LONGER ALIVE --- //
-        dbObject = this.databaseStorageManager.select(pointer).get();
+        dbObject = databaseStorageManager.select(pointer).get();
         Assertions.assertFalse(dbObject.isAlive());
         optionalPointer = uniqueTreeIndexManager.getIndex(UnsignedLong.valueOf(1));
         Assertions.assertNotEquals(pointer, optionalPointer.get());
 
         // --- SELECTING UPDATED OBJECT AND CHECKING IF DEFAULT VALUE OF NEWLY ADDED FIELD IS SET --- //
         pointer = optionalPointer.get();
-        dbObject = this.databaseStorageManager.select(pointer).get();
+        dbObject = databaseStorageManager.select(pointer).get();
 
         valueOfField = CollectionSerializationUtil.getValueOfField(
                 scheme.getCollections().getFirst(),
@@ -284,13 +286,13 @@ public class SchemeManagerTestCase {
                 engineConfig,
                 scheme,
                 collectionIndexProviderFactory,
-                this.databaseStorageManager
+                databaseStorageManager
         );
         schemeManager.update();
 
         optionalPointer = uniqueTreeIndexManager.getIndex(UnsignedLong.valueOf(1));
         Assertions.assertEquals(pointer, optionalPointer.get());
-        dbObject = this.databaseStorageManager.select(pointer).get();
+        dbObject = databaseStorageManager.select(pointer).get();
         Assertions.assertTrue(dbObject.isAlive());
 
         byte[] bytes = dbObject.readData(2 * Integer.BYTES, Integer.BYTES);
@@ -315,7 +317,7 @@ public class SchemeManagerTestCase {
                 engineConfig,
                 scheme,
                 collectionIndexProviderFactory,
-                this.databaseStorageManager
+                databaseStorageManager
         );
         schemeManager.update();
 
