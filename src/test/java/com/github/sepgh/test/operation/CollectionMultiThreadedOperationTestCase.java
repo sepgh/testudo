@@ -116,7 +116,7 @@ public class CollectionMultiThreadedOperationTestCase {
                  for (int j = 1; j < 10; j++) {
                      try {
                          int i1 = atomicInteger.incrementAndGet();
-                         collectionInsertOperation.insert(
+                         collectionInsertOperation.execute(
                                  TestModel.builder()
                                          .id(i1)
                                          .item(j)

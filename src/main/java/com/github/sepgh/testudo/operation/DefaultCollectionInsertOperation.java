@@ -40,9 +40,9 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
     }
 
     @Override
-    public <V> void insert(V v) throws SerializationException {
+    public <V> void execute(V v) throws SerializationException {
         ModelSerializer modelSerializer = new ModelSerializer(v);
-        this.insert(modelSerializer.serialize());
+        this.execute(modelSerializer.serialize());
     }
 
     protected Pointer storeBytes(byte[] bytes) throws IOException, InterruptedException, ExecutionException {
@@ -51,7 +51,7 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
 
     // Todo: good idea to have this method as public interface? read README.md
     @Override
-    public void insert(byte[] bytes) {
+    public void execute(byte[] bytes) {
         try {
             readerWriterLock.getWriteLock().lock();
             // Todo: we better check for unique field values first, before any insertions  read README.md

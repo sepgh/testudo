@@ -20,6 +20,7 @@ public abstract class DatabaseContextConfigurator {
     private DatabaseStorageManagerFactory databaseStorageManagerFactory;
     private CollectionIndexProviderFactory collectionIndexProviderFactory;
     private Scheme scheme;
+    private DatabaseContext databaseContext;
 
     public EngineConfig engineConfig() {
         return EngineConfig.builder().build();
@@ -27,7 +28,7 @@ public abstract class DatabaseContextConfigurator {
 
     protected EngineConfig getEngineConfig() {
         if (engineConfig == null) {
-            this.engineConfig = getEngineConfig();
+            this.engineConfig = engineConfig();
         }
         return engineConfig;
     }
@@ -103,6 +104,12 @@ public abstract class DatabaseContextConfigurator {
 
     public CollectionOperationFactory collectionOperationFactory(Scheme.Collection collection) {
         return new CollectionOperationFactory(getScheme(), collection, getCollectionIndexProviderFactory(), getDatabaseStorageManagerFactory());
+    }
+
+    public DatabaseContext databaseContext() {
+        if (databaseContext == null)
+            this.databaseContext = new DefaultDatabaseContext();
+        return this.databaseContext;
     }
 
     public class DefaultDatabaseContext implements DatabaseContext {

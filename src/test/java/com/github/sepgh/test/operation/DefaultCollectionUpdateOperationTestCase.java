@@ -112,7 +112,7 @@ public class DefaultCollectionUpdateOperationTestCase {
         CollectionDeleteOperation<Long> collectionDeleteOperation = new DefaultCollectionDeleteOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
 
         for (TestModel testModel : Arrays.asList(testModel1, testModel2, testModel3, testModel4)) {
-            collectionInsertOperation.insert(testModel);
+            collectionInsertOperation.execute(testModel);
         }
 
         CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);

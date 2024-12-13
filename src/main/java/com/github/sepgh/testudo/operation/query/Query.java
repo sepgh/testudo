@@ -15,6 +15,21 @@ public class Query {
     private int offset = 0;
     private int limit = Integer.MAX_VALUE;
 
+    public Query() {
+    }
+
+    public Query(Condition condition) {
+        this.where(condition);
+    }
+
+    public <T extends Comparable<T>> Query(String field, Operation operation, T value) {
+        this.where(field, operation, value);
+    }
+
+    public <T extends Comparable<T>> Query where(String field, Operation operation, T value) {
+        return this.where(new SimpleCondition<>(field, operation, value));
+    }
+
     public Query where(Condition condition) {
         if (rootCondition == null) {
             rootCondition = condition;
