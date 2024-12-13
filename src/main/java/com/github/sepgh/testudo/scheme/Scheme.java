@@ -21,6 +21,10 @@ public class Scheme {
     @Builder.Default
     private List<Collection> collections = new ArrayList<>();
 
+    public Optional<Collection> getCollection(String name) {
+        return collections.stream().filter(c -> Objects.equals(c.getName(), name)).findFirst();
+    }
+
     @Builder
     @Data
     public static class Collection {

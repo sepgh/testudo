@@ -108,14 +108,14 @@ public class DefaultCollectionUpdateOperationTestCase {
         TestModel testModel4 = TestModel.builder().id(4).age(40L).country("GB").name("Foo").build();
 
         ReaderWriterLock readerWriterLock = new ReaderWriterLock();
-        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
-        CollectionDeleteOperation<Long> collectionDeleteOperation = new DefaultCollectionDeleteOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
+        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
+        CollectionDeleteOperation<Long> collectionDeleteOperation = new DefaultCollectionDeleteOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
 
         for (TestModel testModel : Arrays.asList(testModel1, testModel2, testModel3, testModel4)) {
             collectionInsertOperation.insert(testModel);
         }
 
-        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
         long count = collectionSelectOperation.count();
         Assertions.assertEquals(4L, count);
         Iterator<TestModel> execute = collectionSelectOperation.execute(TestModel.class);
@@ -141,7 +141,7 @@ public class DefaultCollectionUpdateOperationTestCase {
         Assertions.assertFalse(execute.hasNext());
 
 
-        CollectionUpdateOperation<Long> collectionUpdateOperation = new DefaultCollectionUpdateOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
+        CollectionUpdateOperation<Long> collectionUpdateOperation = new DefaultCollectionUpdateOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
         collectionUpdateOperation.query(query);
         int updates = collectionUpdateOperation.execute((testModel) -> {
             testModel.setAge(testModel.getAge() + 100);

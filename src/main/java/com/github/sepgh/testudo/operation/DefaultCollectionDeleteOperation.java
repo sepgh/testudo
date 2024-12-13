@@ -31,10 +31,10 @@ public class DefaultCollectionDeleteOperation<T extends Number & Comparable<T>> 
     private Query query;
 
     @SuppressWarnings("unchecked")
-    public DefaultCollectionDeleteOperation(Scheme.Collection collection, ReaderWriterLock readerWriterLock, CollectionIndexProviderFactory collectionIndexProviderFactory, DatabaseStorageManager storageManager) {
+    public DefaultCollectionDeleteOperation(Scheme.Collection collection, ReaderWriterLock readerWriterLock, CollectionIndexProvider collectionIndexProvider, DatabaseStorageManager storageManager) {
         this.collection = collection;
         this.readerWriterLock = readerWriterLock;
-        this.collectionIndexProvider = collectionIndexProviderFactory.create(collection);
+        this.collectionIndexProvider = collectionIndexProvider;
         this.storageManager = storageManager;
         this.clusterIndexManager = (UniqueTreeIndexManager<T, Pointer>) this.collectionIndexProvider.getClusterIndexManager();
     }

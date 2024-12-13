@@ -32,10 +32,10 @@ public class DefaultCollectionSelectOperation<T extends Number & Comparable<T>> 
     private List<String> fields;
 
     @SuppressWarnings("unchecked")
-    public DefaultCollectionSelectOperation(Scheme.Collection collection, ReaderWriterLock readerWriterLock, CollectionIndexProviderFactory collectionIndexProviderFactory, DatabaseStorageManager storageManager) {
+    public DefaultCollectionSelectOperation(Scheme.Collection collection, ReaderWriterLock readerWriterLock, CollectionIndexProvider collectionIndexProvider, DatabaseStorageManager storageManager) {
         this.collection = collection;
         this.readerWriterLock = readerWriterLock;
-        this.collectionIndexProvider = collectionIndexProviderFactory.create(collection);
+        this.collectionIndexProvider = collectionIndexProvider;
         this.storageManager = storageManager;
         this.clusterIndexManager = (UniqueTreeIndexManager<T, Pointer>) this.collectionIndexProvider.getClusterIndexManager();
     }

@@ -105,7 +105,7 @@ public class CollectionMultiThreadedOperationTestCase {
         scheme.getCollections().add(collection);
 
         final ReaderWriterLock readerWriterLock = new ReaderWriterLock();
-        DefaultCollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
+        DefaultCollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
 
         ExecutorService executorService = Executors.newFixedThreadPool(9);
         CountDownLatch countDownLatch = new CountDownLatch(45);
@@ -123,7 +123,7 @@ public class CollectionMultiThreadedOperationTestCase {
                                          .build()
                          );
 
-                         CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
+                         CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
                          Assertions.assertTrue(
                                  collectionSelectOperation.query(new Query().where(new SimpleCondition<>("id", Operation.EQ, i1))).exists()
                          );
@@ -138,18 +138,18 @@ public class CollectionMultiThreadedOperationTestCase {
         }
         countDownLatch.await();
 
-        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
         long count = collectionSelectOperation.count();
         Assertions.assertEquals(45L, count);
 
-        collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
+        collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
         List<TestModel> list = collectionSelectOperation.query(new Query().where(new SimpleCondition<>("id", Operation.EQ, 45))).asList(TestModel.class);
         Assertions.assertFalse(list.isEmpty());
         Assertions.assertTrue(collectionSelectOperation.exists());
         Assertions.assertEquals(1, list.size());
         Assertions.assertEquals(45, list.getFirst().getId());
 
-        collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
+        collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
         list = collectionSelectOperation.query(new Query().where(new SimpleCondition<>("id", Operation.GT, 40)).sort(new SortField("id", Order.ASC))).asList(TestModel.class);
         Assertions.assertFalse(list.isEmpty());
         Assertions.assertEquals(5, list.size());
@@ -165,8 +165,8 @@ public class CollectionMultiThreadedOperationTestCase {
             executorService.submit(() -> {
                 try {
                     int i1 = atomicInteger2.getAndDecrement();
-                    CollectionDeleteOperation<Long> collectionDeleteOperation = new DefaultCollectionDeleteOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
-                    CollectionSelectOperation<Long> selectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
+                    CollectionDeleteOperation<Long> collectionDeleteOperation = new DefaultCollectionDeleteOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
+                    CollectionSelectOperation<Long> selectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
 
                     int deleted = collectionDeleteOperation
                             .query(new Query().where(new SimpleCondition<>("id", Operation.EQ, i1)))
@@ -183,7 +183,7 @@ public class CollectionMultiThreadedOperationTestCase {
 
         countDownLatch2.await();
 
-        collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory, storageManager);
+        collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
         Assertions.assertEquals(0, collectionSelectOperation.count());
 
         executorService.shutdownNow();
