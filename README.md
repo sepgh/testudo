@@ -66,12 +66,12 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
   - [ ] The `insert(byte[])` method of insert operation makes verification more complex, perhaps we should remove it
   - [ ] `primary` index should either have a value or get set as autoincrement
   - [ ] Unique indexes should be verified before any update or insertion is performed (after locking) 
-- [ ] Database Operations
+- [X] Database Operations
   - [X] Reader-Writer Lock support at collection level
   - [X] Select Operation
   - [X] Insert Operation
-  - [ ] Update Operation
-  - [ ] Delete Operation
+  - [X] Update Operation
+  - [X] Delete Operation
 - [ ] Either remove IndexIOSession, or improve it to use for `Transaction` support.
 - [X] Cache support for cluster index managers
 - [ ] Cache support for other indexes. Also find proper usage for `CachedIndexStorageManagerDecorator` or remove it!
