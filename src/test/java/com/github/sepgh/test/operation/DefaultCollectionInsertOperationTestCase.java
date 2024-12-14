@@ -143,7 +143,7 @@ public class DefaultCollectionInsertOperationTestCase {
         Assertions.assertFalse(execute.hasNext());
 
 
-        int deleted = collectionDeleteOperation.execute();
+        long deleted = collectionDeleteOperation.execute();
         Assertions.assertEquals(4, deleted);
 
     }

@@ -104,7 +104,7 @@ public class DatabaseContextConfiguratorTestCase {
         Assertions.assertEquals(1L, list.size());
         Assertions.assertEquals(sample, list.getFirst());
 
-        int updateCount = collectionOperation.update().query(query).execute(model -> {
+        long updateCount = collectionOperation.update().query(query).execute(model -> {
             model.setCountry("FR");
         }, TestModel.class);
         Assertions.assertEquals(1L, updateCount);
@@ -113,7 +113,7 @@ public class DatabaseContextConfiguratorTestCase {
         count = collectionOperation.select().query(query).count();
         Assertions.assertEquals(1L, count);
 
-        int deletedCount = collectionOperation.delete().query(query).execute();
+        long deletedCount = collectionOperation.delete().query(query).execute();
         Assertions.assertEquals(1, deletedCount);
     }
 

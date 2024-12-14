@@ -143,7 +143,7 @@ public class DefaultCollectionUpdateOperationTestCase {
 
         CollectionUpdateOperation<Long> collectionUpdateOperation = new DefaultCollectionUpdateOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
         collectionUpdateOperation.query(query);
-        int updates = collectionUpdateOperation.execute((testModel) -> {
+        long updates = collectionUpdateOperation.execute((testModel) -> {
             testModel.setAge(testModel.getAge() + 100);
         }, TestModel.class);
 
@@ -161,7 +161,7 @@ public class DefaultCollectionUpdateOperationTestCase {
         long countryCount = collectionSelectOperation.query(query).count();
         Assertions.assertEquals(countryCount, 4L);
 
-        int deleted = collectionDeleteOperation.execute();
+        long deleted = collectionDeleteOperation.execute();
         Assertions.assertEquals(4, deleted);
     }
 

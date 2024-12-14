@@ -168,7 +168,7 @@ public class CollectionMultiThreadedOperationTestCase {
                     CollectionDeleteOperation<Long> collectionDeleteOperation = new DefaultCollectionDeleteOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
                     CollectionSelectOperation<Long> selectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
 
-                    int deleted = collectionDeleteOperation
+                    long deleted = collectionDeleteOperation
                             .query(new Query().where(new SimpleCondition<>("id", Operation.EQ, i1)))
                             .execute();
 
