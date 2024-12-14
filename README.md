@@ -78,7 +78,9 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
 - [ ] Exception Throwing and Handling
   - Note: lambdas are going crazy at this point. Use this strategy: https://stackoverflow.com/questions/18198176
 - [ ] Logging
-
+- [ ] Performance Improvement Ideas
+  - Update process can be distributed into multiple threads for the `databaseStorage.update()` part
+  - There are bunch of places that we can benefit from Binary Search that have Todos on them.
 
 
 
@@ -95,7 +97,7 @@ This means that these objects may later get loaded into memory again. We need a 
 2. We shall use LRU cache for Cluster Index Manager, which means re-reading objects from the cluster index should perform quicker than hitting the disk multiple times.
 
 
-### Storing indexes in same file as DB
+### Storing indexes in same file as DB   (DONE | NOT TESTED)
 
 The current implementation has a problem with this, since two instances of `DiskPageDatabaseStorage` will be created and `synchronized` blocks wouldn't perform validly.
 

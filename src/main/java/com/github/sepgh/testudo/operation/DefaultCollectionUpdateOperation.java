@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -68,8 +68,8 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
         return md.digest(bytes);
     }
 
-    protected int handleExecution(Function<DBObject, byte[]> dbObjectConsumer) {
-        AtomicInteger atomicInteger = new AtomicInteger();
+    protected long handleExecution(Function<DBObject, byte[]> dbObjectConsumer) {
+        AtomicLong atomicLong = new AtomicLong();
 
         try {
             this.readerWriterLock.getWriteLock().lock();
@@ -101,7 +101,7 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
                     continue;
 
                 this.update(pointer, updatedData, dbObject.getData(), clusterId);
-                atomicInteger.incrementAndGet();
+                atomicLong.incrementAndGet();
 
             }
 
@@ -113,8 +113,7 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
             this.readerWriterLock.getWriteLock().unlock();
         }
 
-
-        return atomicInteger.get();
+        return atomicLong.get();
     }
 
     @SuppressWarnings("unchecked")
@@ -154,7 +153,7 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
     }
 
     @Override
-    public <M> int execute(Consumer<M> mConsumer, Class<M> mClass) {
+    public <M> long execute(Consumer<M> mConsumer, Class<M> mClass) {
         ModelDeserializer<M> modelDeserializer = new ModelDeserializer<>(mClass);
         ModelSerializer modelSerializer = new ModelSerializer();
 
@@ -179,7 +178,7 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
     }
 
     @Override
-    public int execute(Consumer<byte[]> byteArrayConsumer) {
+    public long execute(Consumer<byte[]> byteArrayConsumer) {
         return this.handleExecution(dbObject -> {
             byte[] data = dbObject.getData();
             byteArrayConsumer.accept(data);

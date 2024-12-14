@@ -7,6 +7,6 @@ import java.util.function.Consumer;
 public interface CollectionUpdateOperation<T extends Number & Comparable<T>> {
     CollectionUpdateOperation<T> query(Query query);
     Query getQuery();
-    <M> int execute(Consumer<M> mConsumer, Class<M> mClass);
-    int execute(Consumer<byte[]> byteArrayConsumer);
+    <M> long execute(Consumer<M> mConsumer, Class<M> mClass);
+    long execute(Consumer<byte[]> byteArrayConsumer);
 }

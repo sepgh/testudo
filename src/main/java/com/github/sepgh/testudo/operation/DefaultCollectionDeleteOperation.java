@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class DefaultCollectionDeleteOperation<T extends Number & Comparable<T>> implements CollectionDeleteOperation<T> {
 
@@ -53,8 +53,8 @@ public class DefaultCollectionDeleteOperation<T extends Number & Comparable<T>> 
     }
 
     @Override
-    public int execute() {
-        AtomicInteger counter = new AtomicInteger();
+    public long execute() {
+        AtomicLong counter = new AtomicLong();
         try {
             this.readerWriterLock.getWriteLock().lock();
             Iterator<T> executedQuery = getExecutedQuery();
