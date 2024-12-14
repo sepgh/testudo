@@ -97,6 +97,12 @@ This means that these objects may later get loaded into memory again. We need a 
 2. We shall use LRU cache for Cluster Index Manager, which means re-reading objects from the cluster index should perform quicker than hitting the disk multiple times.
 
 
+### Bitmap Max Size
+
+While cluster IDs are set to support `Unsigned Long`, 
+current implementation and usage of Bitmap in indexes can't support any value larger than an integer.
+This is because a `byte[]` is used and the index passed to an array in java can only be an integer.
+
 ### Storing indexes in same file as DB   (DONE | NOT TESTED)
 
 The current implementation has a problem with this, since two instances of `DiskPageDatabaseStorage` will be created and `synchronized` blocks wouldn't perform validly.
