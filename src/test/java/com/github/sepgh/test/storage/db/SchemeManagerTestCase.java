@@ -220,7 +220,7 @@ public class SchemeManagerTestCase {
 
         // --- ADD DATA TO THE COLLECTION --- //
         byte[] data = new byte[]{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01};  // We have 2 integer fields defined in scheme above, so our data is also 2 int fields
-        Pointer pointer = databaseStorageManager.store(1, schemeManager.getScheme().getVersion(), data);
+        Pointer pointer = databaseStorageManager.store(scheme.getId(), 1, schemeManager.getScheme().getVersion(), data);
 
         // --- READING DATA AND VERIFYING DB CAN RETURN PROPER OBJ --- //
         DBObject dbObject = databaseStorageManager.select(pointer).get();

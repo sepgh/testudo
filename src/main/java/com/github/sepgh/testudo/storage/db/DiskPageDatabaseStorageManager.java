@@ -40,7 +40,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
     }
 
 
-    public Pointer store(int collectionId, int version, byte[] data) throws IOException, InterruptedException, ExecutionException {
+    public Pointer store(int schemeId, int collectionId, int version, byte[] data) throws IOException, InterruptedException, ExecutionException {
         Optional<RemovedObjectsTracer.RemovedObjectLocation> optionalRemovedObjectLocation = this.removedObjectsTracer.getRemovedObjectLocation(DBObject.getWrappedSize(data.length));
 
         if (optionalRemovedObjectLocation.isPresent()) {
@@ -59,7 +59,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
                 Optional<DBObject> optionalDBObjectWrapper = page.getDBObjectFromPool(offset, data.length);
                 if (optionalDBObjectWrapper.isPresent()) {
                     try {
-                        this.store(optionalDBObjectWrapper.get(), collectionId, version, data);
+                        this.store(optionalDBObjectWrapper.get(), schemeId, collectionId, version, data);
                         return removedObjectLocation.pointer();
                     } finally {
                         this.pageBuffer.release(page);
@@ -98,7 +98,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         }
 
         try {
-            this.store(dbObject, collectionId, version, data);
+            this.store(dbObject, schemeId, collectionId, version, data);
             return new Pointer(
                     Pointer.TYPE_DATA,
                     ((long) page.getPageNumber() * this.engineConfig.getDbPageSize()) + dbObject.getBegin(),
@@ -111,8 +111,9 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         }
     }
 
-    private void store(DBObject dbObject, int collectionId, int version, byte[] data) throws IOException, ExecutionException, InterruptedException, VerificationException.InvalidDBObjectWrapper {
+    private void store(DBObject dbObject, int schemeId, int collectionId, int version, byte[] data) throws IOException, ExecutionException, InterruptedException, VerificationException.InvalidDBObjectWrapper {
         dbObject.activate();
+        dbObject.setSchemeId(schemeId);
         dbObject.modifyData(data);
         dbObject.setCollectionId(collectionId);
         dbObject.setVersion(version);

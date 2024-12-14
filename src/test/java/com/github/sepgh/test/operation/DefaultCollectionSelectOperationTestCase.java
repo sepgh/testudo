@@ -113,7 +113,7 @@ public class DefaultCollectionSelectOperationTestCase {
             ModelSerializer modelSerializer = new ModelSerializer(testModel);
             byte[] serialize = modelSerializer.serialize();
 
-            Pointer pointer = storageManager.store(collection.getId(), 1, serialize);
+            Pointer pointer = storageManager.store(scheme.getId(), collection.getId(), 1, serialize);
 
             UniqueTreeIndexManager<Long, Pointer> clusterIndexManager = (UniqueTreeIndexManager<Long, Pointer>) collectionIndexProvider.getClusterIndexManager();
             clusterIndexManager.addIndex(i, pointer);
@@ -179,7 +179,7 @@ public class DefaultCollectionSelectOperationTestCase {
             ModelSerializer modelSerializer = new ModelSerializer(testModel);
             byte[] serialize = modelSerializer.serialize();
 
-            Pointer pointer = storageManager.store(collection.getId(), 1, serialize);
+            Pointer pointer = storageManager.store(scheme.getId(), collection.getId(), 1, serialize);
 
             UniqueTreeIndexManager<Long, Pointer> clusterIndexManager = (UniqueTreeIndexManager<Long, Pointer>) collectionIndexProvider.getClusterIndexManager();
             clusterIndexManager.addIndex(i, pointer);

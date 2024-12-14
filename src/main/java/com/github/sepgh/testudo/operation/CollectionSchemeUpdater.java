@@ -23,6 +23,7 @@ public class CollectionSchemeUpdater {
     private SchemeManager.CollectionFieldsUpdate collectionFieldsUpdate;
     private DatabaseStorageManager databaseStorageManager;
     private SchemeManager schemeManager;
+    private static final int SCHEME_ID = -1;
 
     public CollectionSchemeUpdater(
             DatabaseStorageManager databaseStorageManager,
@@ -96,6 +97,7 @@ public class CollectionSchemeUpdater {
                     try {
                         bytes = createNew(dbObject);
                         Pointer newPointer = this.databaseStorageManager.store(
+                                SCHEME_ID,
                                 this.collectionFieldsUpdate.getAfter().getId(),
                                 this.collectionFieldsUpdate.getVersion(),
                                 bytes

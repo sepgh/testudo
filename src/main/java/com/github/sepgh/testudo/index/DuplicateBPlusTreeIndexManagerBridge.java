@@ -24,6 +24,7 @@ import java.util.function.Function;
 
 
 public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V extends Number & Comparable<V>> implements DuplicateQueryableIndex<K, V> {
+    private static final int SCHEME_ID = -1;
     private final int collectionId;
     private final UniqueQueryableIndex<K, Pointer> indexManager;
     private final IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory;
@@ -74,7 +75,7 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
                     }
                 });
             } else {
-                Pointer pointerNew = databaseStorageManager.store(collectionId, -1, binaryList.getData());
+                Pointer pointerNew = databaseStorageManager.store(SCHEME_ID, collectionId, -1, binaryList.getData());
                 try {
                     indexManager.updateIndex(identifier, pointerNew);
                 } catch (IndexMissingException e) {
@@ -95,7 +96,7 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
         binaryList.addNew(value);
 
         // Insert to DB
-        Pointer pointer = databaseStorageManager.store(collectionId, -1, binaryList.getData());
+        Pointer pointer = databaseStorageManager.store(SCHEME_ID, collectionId, -1, binaryList.getData());
         try {
             this.indexManager.addIndex(identifier, pointer);
             return true;

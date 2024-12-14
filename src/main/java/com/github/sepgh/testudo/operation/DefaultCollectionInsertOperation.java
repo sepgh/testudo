@@ -46,7 +46,7 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
     }
 
     protected Pointer storeBytes(byte[] bytes) throws IOException, InterruptedException, ExecutionException {
-        return storageManager.store(this.collection.getId(), scheme.getVersion(), bytes);
+        return storageManager.store(this.scheme.getId(), this.collection.getId(), scheme.getVersion(), bytes);
     }
 
     // Todo: good idea to have this method as public interface? read README.md

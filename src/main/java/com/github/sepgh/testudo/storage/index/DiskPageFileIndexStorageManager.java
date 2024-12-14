@@ -23,6 +23,7 @@ public class DiskPageFileIndexStorageManager extends AbstractFileIndexStorageMan
     protected final IndexHeaderManager indexHeaderManager;
     protected final FileHandlerPool fileHandlerPool;
     protected final DatabaseStorageManager databaseStorageManager;
+    private final int INDEX_SCHEME_ID = -1;
 
     public static final int VERSION = 1;
 
@@ -89,7 +90,7 @@ public class DiskPageFileIndexStorageManager extends AbstractFileIndexStorageMan
     @Override
     public CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data, boolean isRoot, KVSize size) throws IOException, ExecutionException, InterruptedException {
         CompletableFuture<NodeData> output = new CompletableFuture<>();
-        Pointer pointer = this.databaseStorageManager.store(indexId, VERSION, data);
+        Pointer pointer = this.databaseStorageManager.store(INDEX_SCHEME_ID, indexId, VERSION, data);
         pointer.setType(Pointer.TYPE_NODE);
         output.complete(new NodeData(
                 pointer,

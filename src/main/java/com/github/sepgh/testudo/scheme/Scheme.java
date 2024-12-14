@@ -16,6 +16,8 @@ import java.util.Optional;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Scheme {
+    @Builder.Default
+    private int id = 1;
     private String dbName;
     private Integer version;
     @Builder.Default

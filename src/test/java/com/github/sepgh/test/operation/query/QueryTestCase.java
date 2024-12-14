@@ -125,7 +125,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x01,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        Pointer pointer = databaseStorageManager.store(1, 1, data);
+        Pointer pointer = databaseStorageManager.store(-1, 1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(1L), pointer);
         pkIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
@@ -134,7 +134,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x02,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        pointer = databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(-1, 1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(2L), pointer);
         pkIndexManager.addIndex(2, UnsignedInteger.valueOf(2L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(2L));
@@ -143,7 +143,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x03,    // PK
                 0x00, 0x00, 0x00, 0x03     // AGE  =  3
         };
-        pointer = databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(-1, 1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(3L), pointer);
         pkIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
         ageIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
@@ -290,7 +290,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x01,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        Pointer pointer = databaseStorageManager.store(1, 1, data);
+        Pointer pointer = databaseStorageManager.store(-1, 1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(1L), pointer);
         pkIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
@@ -299,7 +299,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x02,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        pointer = databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(-1, 1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(2L), pointer);
         pkIndexManager.addIndex(2, UnsignedInteger.valueOf(2L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(2L));
@@ -308,7 +308,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x03,    // PK
                 0x00, 0x00, 0x00, 0x03     // AGE  =  3
         };
-        pointer = databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(-1, 1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(3L), pointer);
         pkIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
         ageIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
@@ -379,7 +379,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x01,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        Pointer pointer = databaseStorageManager.store(1, 1, data);
+        Pointer pointer = databaseStorageManager.store(-1, 1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(1L), pointer);
         pkIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
@@ -388,7 +388,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x02,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        pointer = databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(-1, 1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(2L), pointer);
         pkIndexManager.addIndex(2, UnsignedInteger.valueOf(2L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(2L));
@@ -397,7 +397,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x03,    // PK
                 0x00, 0x00, 0x00, 0x03     // AGE  =  3
         };
-        pointer = databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(-1, 1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(3L), pointer);
         pkIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
         ageIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
@@ -505,7 +505,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x01,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        Pointer pointer = databaseStorageManager.store(1, 1, data);
+        Pointer pointer = databaseStorageManager.store(-1, 1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(1L), pointer);
         pkIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(1L));
@@ -514,7 +514,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x02,    // PK
                 0x00, 0x00, 0x00, 0x01     // AGE  = 1
         };
-        pointer = databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(-1, 1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(2L), pointer);
         pkIndexManager.addIndex(2, UnsignedInteger.valueOf(2L));
         ageIndexManager.addIndex(1, UnsignedInteger.valueOf(2L));
@@ -523,7 +523,7 @@ public class QueryTestCase {
                 0x00, 0x00, 0x00, 0x03,    // PK
                 0x00, 0x00, 0x00, 0x03     // AGE  =  3
         };
-        pointer = databaseStorageManager.store(1, 1, data);
+        pointer = databaseStorageManager.store(-1, 1, 1, data);
         clusterIndexManager.addIndex(UnsignedInteger.valueOf(3L), pointer);
         pkIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));
         ageIndexManager.addIndex(3, UnsignedInteger.valueOf(3L));

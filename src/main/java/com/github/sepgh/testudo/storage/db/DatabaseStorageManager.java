@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 
 
 public interface DatabaseStorageManager {
-    Pointer store(int collectionId, int version, byte[] data) throws IOException, InterruptedException, ExecutionException;
+    Pointer store(int scheme, int collectionId, int version, byte[] data) throws IOException, InterruptedException, ExecutionException;
     void update(Pointer pointer, Consumer<DBObject> dbObjectConsumer) throws IOException, ExecutionException, InterruptedException;
     void update(Pointer pointer, byte[] bytes) throws IOException, ExecutionException, InterruptedException, VerificationException.InvalidDBObjectWrapper;
     Optional<DBObject> select(Pointer pointer);

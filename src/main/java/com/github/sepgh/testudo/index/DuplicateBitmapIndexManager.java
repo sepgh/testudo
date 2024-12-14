@@ -25,6 +25,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
     private final UniqueQueryableIndex<K, Pointer> indexManager;
     private final IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory;
     private final DatabaseStorageManager databaseStorageManager;
+    private static final int SCHEME_ID = -1;
 
     public DuplicateBitmapIndexManager(int collectionId, UniqueQueryableIndex<K, Pointer> indexManager, IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory, DatabaseStorageManager databaseStorageManager) {
         this.collectionId = collectionId;
@@ -59,7 +60,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
                         }
                     });
                 } else {
-                    Pointer pointer1 = databaseStorageManager.store(collectionId, 1, vBitmap.getData());
+                    Pointer pointer1 = databaseStorageManager.store(SCHEME_ID, collectionId, 1, vBitmap.getData());
                     try {
                         this.indexManager.updateIndex(identifier, pointer1);
                         databaseStorageManager.remove(pointer);
@@ -73,7 +74,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
         } else {
             Bitmap<V> vBitmap = new Bitmap<>(valueIndexBinaryObjectFactory.getType(), new byte[1]);
             vBitmap.on(value);
-            Pointer pointer = databaseStorageManager.store(collectionId, 1, vBitmap.getData());
+            Pointer pointer = databaseStorageManager.store(SCHEME_ID, collectionId, 1, vBitmap.getData());
             try {
                 this.indexManager.addIndex(identifier, pointer);
                 return true;

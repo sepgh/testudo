@@ -51,7 +51,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
         DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
         
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
-        Pointer pointer = storageManager.store(17, 1, data);
+        Pointer pointer = storageManager.store(-1, 17, 1, data);
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
@@ -71,19 +71,19 @@ public class DiskPageDatabaseStorageManagerTestCase {
         DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
 
         byte[] data = new byte[60];
-        Pointer pointer = storageManager.store(17, 1, data);
+        Pointer pointer = storageManager.store(-1, 17, 1, data);
         Assertions.assertNotNull(pointer);
 
-        pointer = storageManager.store(17, 1, data);
+        pointer = storageManager.store(-1, 17, 1, data);
         Assertions.assertNotNull(pointer);
 
-        pointer = storageManager.store(17, 1, data);
+        pointer = storageManager.store(-1, 17, 1, data);
         Assertions.assertNotNull(pointer);
 
-        pointer = storageManager.store(17, 1, data);
+        pointer = storageManager.store(-1, 17, 1, data);
         Assertions.assertNotNull(pointer);
 
-        pointer = storageManager.store(17, 1, data);
+        pointer = storageManager.store(-1, 17, 1, data);
         Assertions.assertNotNull(pointer);
     }
 
@@ -94,7 +94,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
         DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
 
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
-        Pointer pointer = storageManager.store(17,1, data);
+        Pointer pointer = storageManager.store(-1, 17,1, data);
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
@@ -115,7 +115,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
         DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
 
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
-        Pointer pointer = storageManager.store(17,1, data);
+        Pointer pointer = storageManager.store(-1, 17,1, data);
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
@@ -144,13 +144,13 @@ public class DiskPageDatabaseStorageManagerTestCase {
         DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
 
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
-        Pointer pointer = storageManager.store(17, 1, data);
+        Pointer pointer = storageManager.store(-1, 17, 1, data);
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
 
         storageManager.remove(pointer);
-        pointer = storageManager.store(17, 1, data);
+        pointer = storageManager.store(-1, 17, 1, data);
         Assertions.assertNotNull(pointer);
         Assertions.assertEquals(0, pointer.getChunk());
         Assertions.assertEquals(Page.META_BYTES, pointer.getPosition());
@@ -166,7 +166,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
 
         for (int i = 0; i < inputs.size(); i++) {
             byte[] data = inputs.get(i).getBytes(StandardCharsets.UTF_8);
-            Pointer pointer = storageManager.store(17, 1, data);
+            Pointer pointer = storageManager.store(-1, 17, 1, data);
             Assertions.assertNotNull(pointer);
             pointers.add(i, pointer);
         }
@@ -189,7 +189,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
 
         for (int i = 0; i < inputs.size(); i++) {
             byte[] data = inputs.get(i).getBytes(StandardCharsets.UTF_8);
-            Pointer pointer = storageManager.store(17, 1, data);
+            Pointer pointer = storageManager.store(-1, 17, 1, data);
             Assertions.assertEquals(pointers.get(i), pointer);
         }
 
@@ -203,24 +203,24 @@ public class DiskPageDatabaseStorageManagerTestCase {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
         DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
 
-        Pointer pointer1 = storageManager.store(1, 1, new byte[1000]);
-        Pointer pointer2 = storageManager.store(1, 1, new byte[1000]);
-        Pointer pointer3 = storageManager.store(1, 1, new byte[1000]);
+        Pointer pointer1 = storageManager.store(-1, 1, 1, new byte[1000]);
+        Pointer pointer2 = storageManager.store(-1, 1, 1, new byte[1000]);
+        Pointer pointer3 = storageManager.store(-1, 1, 1, new byte[1000]);
 
         storageManager.remove(pointer2);
-        Pointer pointer4 = storageManager.store(1, 1, new byte[1000]);
+        Pointer pointer4 = storageManager.store(-1, 1, 1, new byte[1000]);
 
         Assertions.assertEquals(pointer2, pointer4);
         storageManager.remove(pointer4);
 
-        pointer4 = storageManager.store(1, 1, new byte[100]);
+        pointer4 = storageManager.store(-1, 1, 1, new byte[100]);
         Assertions.assertEquals(pointer2, pointer4);
 
         List<RemovedObjectsTracer.RemovedObjectLocation> removedObjectLocations = ((DiskPageDatabaseStorageManager) storageManager).getRemovedObjectsTracer().getRemovedObjectLocations();
         Assertions.assertEquals(1, removedObjectLocations.size());
         
 
-        Pointer pointer5 = storageManager.store(1, 1, new byte[100]);
+        Pointer pointer5 = storageManager.store(-1, 1, 1, new byte[100]);
         Assertions.assertEquals(
                 pointer4.getPosition() + DBObject.getWrappedSize(100),
                 pointer5.getPosition()
@@ -249,7 +249,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
                 String generatedString = new String(array, StandardCharsets.UTF_8);
                 try {
                     byte[] generatedStringBytes = generatedString.getBytes(StandardCharsets.UTF_8);
-                    Pointer pointer = storageManager.store(1, 1, generatedStringBytes);
+                    Pointer pointer = storageManager.store(-1, 1, 1, generatedStringBytes);
                     keyValues.add(new KeyValue<>(generatedString, pointer));
                 } catch (IOException | InterruptedException | ExecutionException e) {
                     throw new RuntimeException(e);
