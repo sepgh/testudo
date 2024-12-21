@@ -1,5 +1,8 @@
 package com.github.sepgh.testudo.index;
 
+import com.github.sepgh.testudo.ds.Bitmap;
+import com.github.sepgh.testudo.ds.KeyValue;
+import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;

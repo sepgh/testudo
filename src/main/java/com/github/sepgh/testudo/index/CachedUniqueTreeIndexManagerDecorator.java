@@ -5,7 +5,7 @@ import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
-import com.github.sepgh.testudo.utils.CacheID;
+import com.github.sepgh.testudo.ds.CacheID;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 

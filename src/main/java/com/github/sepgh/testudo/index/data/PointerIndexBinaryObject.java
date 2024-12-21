@@ -1,6 +1,6 @@
 package com.github.sepgh.testudo.index.data;
 
-import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.ds.Pointer;
 import lombok.Getter;
 
 @Getter

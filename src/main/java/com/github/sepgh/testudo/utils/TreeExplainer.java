@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.utils;
 
-import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.ds.KVSize;
+import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;

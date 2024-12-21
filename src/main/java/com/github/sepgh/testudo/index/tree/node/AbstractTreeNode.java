@@ -1,11 +1,11 @@
 package com.github.sepgh.testudo.index.tree.node;
 
-import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.TreeNodeUtils;
-import com.github.sepgh.testudo.utils.KVSize;
+import com.github.sepgh.testudo.ds.KVSize;
 import com.google.common.collect.ImmutableList;
 import lombok.Getter;
 import lombok.Setter;

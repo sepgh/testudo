@@ -1,6 +1,6 @@
 package com.github.sepgh.testudo.storage.index;
 
-import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import lombok.AllArgsConstructor;
 

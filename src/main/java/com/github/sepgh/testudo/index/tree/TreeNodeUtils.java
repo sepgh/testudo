@@ -1,6 +1,6 @@
 package com.github.sepgh.testudo.index.tree;
 
-import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;

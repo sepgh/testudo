@@ -1,5 +1,7 @@
 package com.github.sepgh.testudo.index;
 
+import com.github.sepgh.testudo.ds.KeyValue;
+import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.utils.LockableIterator;

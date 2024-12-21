@@ -1,5 +1,7 @@
 package com.github.sepgh.testudo.index;
 
+import com.github.sepgh.testudo.ds.BinaryList;
+
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 

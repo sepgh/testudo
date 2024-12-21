@@ -1,4 +1,4 @@
-package com.github.sepgh.testudo.index;
+package com.github.sepgh.testudo.ds;
 
 import com.github.sepgh.testudo.utils.BinaryUtils;
 import com.google.common.base.Preconditions;

@@ -5,7 +5,7 @@ import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.serialization.LongSerializer;
 import com.github.sepgh.testudo.serialization.UnsignedLongSerializer;
-import com.github.sepgh.testudo.utils.KVSize;
+import com.github.sepgh.testudo.ds.KVSize;
 import com.google.common.primitives.UnsignedLong;
 
 import java.util.function.Supplier;

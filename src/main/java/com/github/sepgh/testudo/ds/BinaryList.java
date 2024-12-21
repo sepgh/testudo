@@ -1,6 +1,8 @@
-package com.github.sepgh.testudo.index;
+package com.github.sepgh.testudo.ds;
 
 import com.github.sepgh.testudo.context.EngineConfig;
+import com.github.sepgh.testudo.index.AscendingBinaryListIterator;
+import com.github.sepgh.testudo.index.DescendingBinaryListIterator;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.operation.query.Order;

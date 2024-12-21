@@ -1,8 +1,8 @@
 package com.github.sepgh.testudo.scheme;
 
 import com.github.sepgh.testudo.context.EngineConfig;
-import com.github.sepgh.testudo.index.KeyValue;
-import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.ds.KeyValue;
+import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.operation.CollectionIndexProviderFactory;
 import com.github.sepgh.testudo.operation.CollectionSchemeUpdater;

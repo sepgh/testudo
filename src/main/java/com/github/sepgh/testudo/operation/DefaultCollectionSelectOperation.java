@@ -3,7 +3,7 @@ package com.github.sepgh.testudo.operation;
 import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.exception.SerializationException;
-import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.operation.query.Query;
 import com.github.sepgh.testudo.scheme.Scheme;

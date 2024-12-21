@@ -2,7 +2,7 @@ package com.github.sepgh.testudo.storage.index;
 
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.exception.VerificationException;
-import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
@@ -11,7 +11,7 @@ import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
-import com.github.sepgh.testudo.utils.KVSize;
+import com.github.sepgh.testudo.ds.KVSize;
 
 import java.io.IOException;
 import java.util.Optional;

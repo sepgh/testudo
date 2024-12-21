@@ -1,7 +1,7 @@
 package com.github.sepgh.testudo.storage.index;
 
 import com.github.sepgh.testudo.context.EngineConfig;
-import com.github.sepgh.testudo.utils.KVSize;
+import com.github.sepgh.testudo.ds.KVSize;
 
 import java.nio.file.Path;
 

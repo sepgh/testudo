@@ -3,7 +3,7 @@ package com.github.sepgh.testudo.operation;
 import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.DuplicateQueryableIndex;
-import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.UniqueQueryableIndex;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.operation.query.Query;

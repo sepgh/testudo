@@ -1,6 +1,6 @@
 package com.github.sepgh.testudo.storage.index.header;
 
-import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.ds.Pointer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

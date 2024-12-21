@@ -1,7 +1,7 @@
 package com.github.sepgh.testudo.storage.index;
 
-import com.github.sepgh.testudo.index.Pointer;
-import com.github.sepgh.testudo.utils.KVSize;
+import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.ds.KVSize;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 

@@ -1,4 +1,4 @@
-package com.github.sepgh.testudo.index;
+package com.github.sepgh.testudo.ds;
 
 public record KeyValue<K extends Comparable<K>, V>(K key, V value) implements Comparable<KeyValue<K, V>> {
 

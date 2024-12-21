@@ -1,7 +1,7 @@
 package com.github.sepgh.test.index.tree;
 
-import com.github.sepgh.testudo.index.KeyValue;
-import com.github.sepgh.testudo.index.Pointer;
+import com.github.sepgh.testudo.ds.KeyValue;
+import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.tree.TreeNodeUtils;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
