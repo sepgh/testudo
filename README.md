@@ -45,7 +45,7 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
 - [X] LRU Cache implementation for `UniqueTreeIndexManager` decorator. **(More tests required)**
 - [X] Providing solution for differentiating `zero` (number) and `null` in a byte array. **(Flag byte is used, which is not the best solution, bitmaps can help here)**
 - [X] Non-unique Index Manager
-  - [X] B+Tree and `LinkedList` (binary) implementation
+  - [X] B+Tree and `ArrayList` (binary) implementation
   - [X] Bitmap implementation
 - [ ] Database Storage Manager
   - [X] Disk Database Storage Manager Basics (Page Buffer)
