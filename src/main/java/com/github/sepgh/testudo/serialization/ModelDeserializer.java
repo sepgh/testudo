@@ -7,6 +7,7 @@ import com.github.sepgh.testudo.scheme.Scheme;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Map;
 
 public class ModelDeserializer<T> {
     private final Class<T> tClass;
@@ -17,7 +18,8 @@ public class ModelDeserializer<T> {
 
     public T deserialize(byte[] bytes) throws SerializationException, DeserializationException {
         Scheme.Collection collection = new ModelToCollectionConverter(tClass).toCollection();
-
+        CollectionDeserializer deserializer = new CollectionDeserializer(collection);
+        Map<String, Object> fieldValueMap = deserializer.deserialize(bytes);
         T t;
         try {
             t = tClass.getConstructor().newInstance();
@@ -26,9 +28,13 @@ public class ModelDeserializer<T> {
         }
 
         for (Scheme.Field field : collection.getFields()) {
-            Object fieldValue = CollectionSerializationUtil.getValueOfFieldAsObject(collection, field, bytes);
-
             Method method;
+            Object fieldValue = fieldValueMap.get(field.getName());
+
+            if (fieldValue == null) {
+                continue;
+            }
+
             try {
                 method = tClass.getMethod("set" + field.getObjectFieldName().substring(0, 1).toUpperCase() + field.getObjectFieldName().substring(1), fieldValue.getClass());
             } catch (NoSuchMethodException e) {

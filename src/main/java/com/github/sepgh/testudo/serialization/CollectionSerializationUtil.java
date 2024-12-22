@@ -54,9 +54,9 @@ public class CollectionSerializationUtil {
         return output;
     }
 
-    public static <V extends Comparable<V>> V getValueOfFieldAsObject(Scheme.Collection collection, Scheme.Field field, byte[] obj) throws DeserializationException {
+    public static <V extends Comparable<V>> V getValueOfFieldAsObject(Scheme.Collection collection, Scheme.Field field, byte[] bytes) throws DeserializationException {
         Serializer<V> serializer = (Serializer<V>) SerializerRegistry.getInstance().getSerializer(field.getType());
-        byte[] output = getValueOfField(collection, field, obj);
+        byte[] output = getValueOfField(collection, field, bytes);
         return serializer.deserialize(output, field.getMeta());
     }
 

@@ -1,10 +1,14 @@
 package com.github.sepgh.testudo.serialization;
 
+import com.github.sepgh.testudo.ds.Bitmap;
 import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.scheme.ModelToCollectionConverter;
 import com.github.sepgh.testudo.scheme.Scheme;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 
 public class ModelSerializer {
 
@@ -27,17 +31,43 @@ public class ModelSerializer {
 
     public byte[] serialize() throws SerializationException {
         Scheme.Collection collection = modelToCollection.toCollection();
-        byte[] bytes = new byte[CollectionSerializationUtil.getSizeOfCollection(collection)];
+        List<Scheme.Field> fields = collection.getFields();
+        fields.sort(Comparator.comparingInt(Scheme.Field::getId));
 
-        for (Scheme.Field field : collection.getFields()) {
-            CollectionSerializationUtil.setValueOfField(collection, field, bytes, getFieldValue(field));
+        int nullsBitmapSize = (int) Math.ceil((double) fields.size() / 8);
+        byte[] bytes = new byte[CollectionSerializationUtil.getSizeOfCollection(collection)];
+        byte[] nulls = new byte[nullsBitmapSize];
+        Bitmap<Integer> nullsBitmap = new Bitmap<>(Integer.class, nulls);
+
+        int fieldIndex = 0;
+        for (Scheme.Field field : fields) {
+            Optional<byte[]> optionalFieldValue = getFieldValue(field);
+
+            if (optionalFieldValue.isPresent()) {
+                CollectionSerializationUtil.setValueOfField(collection, field, bytes, optionalFieldValue.get());
+            } else {
+                if (field.isNullable()) {
+                    nullsBitmap.on(fieldIndex);
+                } else {
+                    throw new SerializationException("Field " + field.getName() + " is not nullable");
+                }
+            }
+
+            fieldIndex++;
         }
 
-        return bytes;
+        return this.mergeDataAndNulls(bytes, nullsBitmap.getData());
+    }
+
+    private byte[] mergeDataAndNulls(byte[] bytes, byte[] nulls) {
+        byte[] newBytes = new byte[bytes.length + nulls.length];
+        System.arraycopy(bytes, 0, newBytes, 0, bytes.length);
+        System.arraycopy(nulls, 0, newBytes, bytes.length, nulls.length);
+        return newBytes;
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends Comparable<T>> byte[] getFieldValue(Scheme.Field field) throws SerializationException {
+    private <T extends Comparable<T>> Optional<byte[]> getFieldValue(Scheme.Field field) throws SerializationException {
         Object invoked = null;
         try {
             invoked = this.model.getClass().getMethod(
@@ -47,8 +77,13 @@ public class ModelSerializer {
             throw new SerializationException(e);
         }
 
+        if (invoked == null)
+            return Optional.empty();
+
         Serializer<T> serializer = (Serializer<T>) SerializerRegistry.getInstance().getSerializer(field.getType());
-        return serializer.serialize((T) invoked, field.getMeta());
+        return Optional.of(
+                serializer.serialize((T) invoked, field.getMeta())
+        );
     }
 
 }

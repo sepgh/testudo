@@ -44,6 +44,25 @@ public class ModelSerializerTestCase {
     }
 
 
+    @Data
+    @Collection(id = 1, name = "test")
+    @Builder
+    @EqualsAndHashCode
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class NullTestModel {
+        @Field(id = 1)
+        @Index(primary = true, autoIncrement = true)
+        private Integer id;
+
+        @Field(id = 2, maxLength = 10)
+        private String name;
+
+        @Field(id = 4, name = "country_code", nullable = true, maxLength = 8)
+        private String country;
+    }
+
+
     @Test
     public void serialize() throws SerializationException, DeserializationException {
         ModelSerializerTestCase.TestModel model = TestModel.builder()
@@ -97,6 +116,46 @@ public class ModelSerializerTestCase {
         Assertions.assertEquals(model.getAge(), deserialize.getAge());
         Assertions.assertEquals(model.getCountry(), deserialize.getCountry());
         Assertions.assertEquals(model, deserialize);
+    }
+
+
+    @Test
+    public void serializeAndDeserializeNull() throws SerializationException, DeserializationException {
+        NullTestModel model = NullTestModel.builder()
+                .id(1)
+                .name("test")
+                .country("DE")
+                .build();
+
+        ModelSerializer modelSerializer = new ModelSerializer(model);
+        byte[] serialized = modelSerializer.serialize();
+        ModelDeserializer<NullTestModel> modelDeserializer = new ModelDeserializer<>(NullTestModel.class);
+        NullTestModel deserialize = modelDeserializer.deserialize(serialized);
+        Assertions.assertEquals(model.getId(), deserialize.getId());
+
+        Assertions.assertThrowsExactly(SerializationException.class, () -> {
+            NullTestModel model2 = NullTestModel.builder()
+                    .id(1)
+                    .country("DE")
+                    .build();
+
+            ModelSerializer modelSerializer2 = new ModelSerializer(model2);
+            modelSerializer2.serialize();
+        });
+
+
+
+        model = NullTestModel.builder()
+                .id(1)
+                .name("test")
+                .build();
+
+        modelSerializer = new ModelSerializer(model);
+        serialized = modelSerializer.serialize();
+
+        deserialize = modelDeserializer.deserialize(serialized);
+        Assertions.assertNull(deserialize.getCountry());
+
     }
 
 }
