@@ -57,6 +57,12 @@ public class JsonIndexHeaderManager extends InMemoryIndexHeaderManager {
         this.write();
     }
 
+    @Override
+    public synchronized void setNullBitmapLocation(int indexId, Location location) throws IOException {
+        super.setNullBitmapLocation(indexId, location);
+        this.write();
+    }
+
     public static class Factory implements IndexHeaderManagerFactory {
 
         @Override

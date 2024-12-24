@@ -37,6 +37,17 @@ public class Bitmap<K extends Number> {
         return true;
     }
 
+    public boolean isOn(K k) {
+        BigInteger bitIndex = convertKeyToBigInteger(k);  // Convert to BigInteger for safety
+        ensureCapacity(bitIndex);  // Resize if necessary
+
+        // Calculate the byte and bit position
+        int byteIndex = bitIndex.divide(BigInteger.valueOf(Byte.SIZE)).intValue();
+        int bitPosition = bitIndex.mod(BigInteger.valueOf(Byte.SIZE)).intValue();
+
+        return ((data[byteIndex] & (1 << bitPosition)) != 0);
+    }
+
     public boolean off(K k) {
         BigInteger bitIndex = convertKeyToBigInteger(k);  // Convert to BigInteger for safety
 

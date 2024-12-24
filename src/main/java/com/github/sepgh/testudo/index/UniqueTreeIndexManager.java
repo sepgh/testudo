@@ -8,6 +8,7 @@ import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
+import java.util.Iterator;
 import java.util.Optional;
 
 public interface UniqueTreeIndexManager<K extends Comparable<K>, V> {
@@ -21,4 +22,25 @@ public interface UniqueTreeIndexManager<K extends Comparable<K>, V> {
     int getIndexId();
     boolean supportIncrement();
     K nextKey() throws InternalOperationException;
+
+    default boolean isNull(V value) {
+        throw new UnsupportedOperationException();
+    }
+
+    default void addNull(V value) {
+        throw new UnsupportedOperationException();
+    }
+
+    default void removeNull(V value) {
+        throw new UnsupportedOperationException();
+    }
+
+    default Iterator<V> getNulls(Order order) {
+        throw new UnsupportedOperationException();
+    }
+
+    default Iterator<V> getNotNulls(Order order) {
+        throw new UnsupportedOperationException();
+    }
+
 }

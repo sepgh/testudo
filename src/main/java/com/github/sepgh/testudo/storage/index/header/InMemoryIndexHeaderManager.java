@@ -91,6 +91,16 @@ public class InMemoryIndexHeaderManager implements IndexHeaderManager {
         return chunks;
     }
 
+    @Override
+    public synchronized Optional<Location> getNullBitmapLocation(int indexId) {
+        Map<Integer, Location> nullBitmaps = this.header.getNullBitmaps();
+        return Optional.ofNullable(nullBitmaps.get(indexId));
+    }
+
+    @Override
+    public synchronized void setNullBitmapLocation(int indexId, Location location) throws IOException {
+        this.header.getNullBitmaps().put(indexId, location);
+    }
 
     public static class Factory implements IndexHeaderManagerFactory {
 

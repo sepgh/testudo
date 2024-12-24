@@ -8,6 +8,7 @@ import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
+import java.util.Iterator;
 import java.util.Optional;
 
 public class UniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> implements UniqueTreeIndexManager<K, V> {
@@ -62,5 +63,30 @@ public class UniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> impleme
     @Override
     public K nextKey() throws InternalOperationException {
         return this.uniqueTreeIndexManager.nextKey();
+    }
+
+    @Override
+    public boolean isNull(V value) {
+        return this.uniqueTreeIndexManager.isNull(value);
+    }
+
+    @Override
+    public void addNull(V value) {
+        this.uniqueTreeIndexManager.addNull(value);
+    }
+
+    @Override
+    public void removeNull(V value) {
+        this.uniqueTreeIndexManager.removeNull(value);
+    }
+
+    @Override
+    public Iterator<V> getNulls(Order order) {
+        return this.uniqueTreeIndexManager.getNulls(order);
+    }
+
+    @Override
+    public Iterator<V> getNotNulls(Order order) {
+        return this.uniqueTreeIndexManager.getNotNulls(order);
     }
 }

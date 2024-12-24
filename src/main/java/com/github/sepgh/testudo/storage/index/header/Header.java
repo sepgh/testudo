@@ -12,6 +12,7 @@ import java.util.*;
 public class Header {
     Map<Integer, IndexHeaderManager.Location> roots = new HashMap<>();
     Map<Integer, List<Header.IndexOffset>> chunkIndexOffset = new HashMap<>();
+    Map<Integer, IndexHeaderManager.Location> nullBitmaps = new HashMap<>();
 
     @Data
     @AllArgsConstructor

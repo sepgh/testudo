@@ -26,6 +26,9 @@ public interface IndexHeaderManager {
 
     List<Integer> getChunksOfIndex(int indexId);
 
+    Optional<Location> getNullBitmapLocation(int indexId);
+    void setNullBitmapLocation(int indexId, Location location) throws IOException;
+
     @Data
     @AllArgsConstructor
     class Location {
