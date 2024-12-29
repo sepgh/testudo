@@ -31,12 +31,7 @@ public class NullableUniqueTreeIndexManager<K extends Comparable<K>, V extends N
     }
 
     @Override
-    public Iterator<V> getNulls(Order order) {
+    public Iterator<V> getNullIndexes(Order order) {
         return this.nullableIndexManager.getNulls(order);
-    }
-
-    @Override
-    public Iterator<V> getNotNulls(Order order) {
-        return this.nullableIndexManager.getNotNulls(order);
     }
 }

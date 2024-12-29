@@ -310,4 +310,9 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
         }
         return IteratorUtils.getCleanIterator();
     }
+
+    @Override
+    public Iterator<V> getNulls(Order order) {
+        return this.getNullIndexes(order);
+    }
 }

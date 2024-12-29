@@ -298,6 +298,11 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
         return IteratorUtils.getCleanIterator();
     }
 
+    @Override
+    public Iterator<V> getNulls(Order order) {
+        return this.getNullIndexes(order);
+    }
+
 
     private class QueryIterator implements Iterator<V> {
         private final Order order;

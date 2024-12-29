@@ -17,11 +17,7 @@ public interface NullableIndex<V> {
         throw new UnsupportedOperationException();
     }
 
-    default Iterator<V> getNulls(Order order) {
-        throw new UnsupportedOperationException();
-    }
-
-    default Iterator<V> getNotNulls(Order order) {
+    default Iterator<V> getNullIndexes(Order order) {
         throw new UnsupportedOperationException();
     }
 

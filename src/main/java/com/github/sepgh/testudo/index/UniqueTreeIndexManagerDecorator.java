@@ -81,12 +81,7 @@ public class UniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> impleme
     }
 
     @Override
-    public Iterator<V> getNulls(Order order) {
-        return this.uniqueTreeIndexManager.getNulls(order);
-    }
-
-    @Override
-    public Iterator<V> getNotNulls(Order order) {
-        return this.uniqueTreeIndexManager.getNotNulls(order);
+    public Iterator<V> getNullIndexes(Order order) {
+        return this.uniqueTreeIndexManager.getNullIndexes(order);
     }
 }

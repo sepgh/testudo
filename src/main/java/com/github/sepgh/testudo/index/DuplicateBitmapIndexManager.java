@@ -311,6 +311,11 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
     }
 
     @Override
+    public Iterator<V> getNulls(Order order) {
+        return this.getNullIndexes(order);
+    }
+
+    @Override
     public UniqueTreeIndexManager<K, Pointer> getInnerIndexManager() {
         return this.indexManager;
     }

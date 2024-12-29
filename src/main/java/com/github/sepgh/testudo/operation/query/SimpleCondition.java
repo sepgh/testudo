@@ -33,6 +33,7 @@ public class SimpleCondition<K extends Comparable<K>> implements Condition {
             case GTE -> kvQueryable.getGreaterThanEqual(this.value, order);
             case LT -> kvQueryable.getLessThan(this.value, order);
             case LTE -> kvQueryable.getLessThanEqual(this.value, order);
+            case IS_NULL -> kvQueryable.getNulls(order);
         };
     }
 

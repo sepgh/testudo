@@ -7,6 +7,7 @@ import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -61,5 +62,25 @@ public class DuplicateIndexManagerDecorator<K extends Comparable<K>, V extends N
     @Override
     public UniqueTreeIndexManager<K, Pointer> getInnerIndexManager() {
         return this.decorated.getInnerIndexManager();
+    }
+
+    @Override
+    public boolean isNull(V value) {
+        return this.decorated.isNull(value);
+    }
+
+    @Override
+    public void addNull(V value) {
+        this.decorated.addNull(value);
+    }
+
+    @Override
+    public void removeNull(V value) {
+        this.decorated.removeNull(value);
+    }
+
+    @Override
+    public Iterator<V> getNullIndexes(Order order) {
+        return this.decorated.getNullIndexes(order);
     }
 }

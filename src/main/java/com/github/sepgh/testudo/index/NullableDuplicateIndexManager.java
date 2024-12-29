@@ -1,8 +1,5 @@
-package com.github.sepgh.testudo.index.tree;
+package com.github.sepgh.testudo.index;
 
-import com.github.sepgh.testudo.index.DuplicateIndexManager;
-import com.github.sepgh.testudo.index.DuplicateIndexManagerDecorator;
-import com.github.sepgh.testudo.index.NullableIndexManager;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
@@ -35,13 +32,8 @@ public class NullableDuplicateIndexManager<K extends Comparable<K>, V extends Nu
     }
 
     @Override
-    public Iterator<V> getNulls(Order order) {
+    public Iterator<V> getNullIndexes(Order order) {
         return this.nullableIndexManager.getNulls(order);
-    }
-
-    @Override
-    public Iterator<V> getNotNulls(Order order) {
-        return this.nullableIndexManager.getNotNulls(order);
     }
 
 }
