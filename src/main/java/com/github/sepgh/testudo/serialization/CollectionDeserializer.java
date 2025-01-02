@@ -17,10 +17,7 @@ public class CollectionDeserializer {
     public Map<String, Object> deserialize(byte[] bytes) throws DeserializationException {
         Map<String, Object> result = new HashMap<>();
 
-        int nullsLen = bytes.length - CollectionSerializationUtil.getSizeOfCollection(collection);
-        byte[] nulls = new byte[nullsLen];
-        System.arraycopy(bytes, bytes.length - nullsLen, nulls, 0, nullsLen);
-        Bitmap<Integer> nullsBitmap = new Bitmap<>(Integer.class, nulls);
+        Bitmap<Integer> nullsBitmap = CollectionSerializationUtil.getNullsBitmap(collection, bytes);
         ArrayList<Integer> nullFieldIds = Lists.newArrayList(nullsBitmap.getOnIterator(Order.ASC));
 
         List<Scheme.Field> fields = collection.getFields();
@@ -29,7 +26,6 @@ public class CollectionDeserializer {
         int fieldIndex = 0;
         for (Scheme.Field field : fields) {
             if (nullFieldIds.contains(fieldIndex)) {
-                System.out.println("[DeSerializer] Null field: " + field.getName());
                 result.put(field.getName(), null);
             } else {
                 result.put(

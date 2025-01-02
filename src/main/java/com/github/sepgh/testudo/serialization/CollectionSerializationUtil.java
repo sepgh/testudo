@@ -1,5 +1,6 @@
 package com.github.sepgh.testudo.serialization;
 
+import com.github.sepgh.testudo.ds.Bitmap;
 import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.scheme.Scheme;
@@ -11,6 +12,12 @@ import java.util.List;
 
 public class CollectionSerializationUtil {
 
+    public static Bitmap<Integer> getNullsBitmap(Scheme.Collection collection, byte[] bytes) {
+        int nullsLen = bytes.length - CollectionSerializationUtil.getSizeOfCollection(collection);
+        byte[] nulls = new byte[nullsLen];
+        System.arraycopy(bytes, bytes.length - nullsLen, nulls, 0, nullsLen);
+        return new Bitmap<>(Integer.class, nulls);
+    }
 
     public static boolean areTypesCompatible(String t1, String t2) {
         Serializer<?> serializer = SerializerRegistry.getInstance().getSerializer(t1);

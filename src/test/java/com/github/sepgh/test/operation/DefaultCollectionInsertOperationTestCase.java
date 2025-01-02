@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class DefaultCollectionInsertOperationTestCase {
@@ -88,6 +89,31 @@ public class DefaultCollectionInsertOperationTestCase {
         private String country;
 
     }
+
+    @Data
+    @Collection(id = 1, name = "test")
+    @Builder
+    @EqualsAndHashCode
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class NullableTestModel {
+        @Field(id = 1)
+        @Index(primary = true, autoIncrement = true)
+        private Integer id;
+
+        @Field(id = 2, maxLength = 20)
+        private String name;
+
+        @Field(id = 3, nullable = true)
+        @Index()
+        private Long age;
+
+        @Field(id = 4, name = "country_code", nullable = true)
+        @Index(lowCardinality = true)
+        private String country;
+    }
+
+
 
     @Test
     public void test() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
@@ -148,5 +174,53 @@ public class DefaultCollectionInsertOperationTestCase {
 
     }
 
+
+    @Test
+    public void test_nullable() throws SerializationException {
+        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
+        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
+
+        Scheme scheme = Scheme.builder()
+                .dbName("test")
+                .version(1)
+                .build();
+        Scheme.Collection collection = new ModelToCollectionConverter(NullableTestModel.class).toCollection();
+        scheme.getCollections().add(collection);
+
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, storageManager);
+
+        NullableTestModel m1 = NullableTestModel.builder()
+                .id(1)
+                .name("John")
+                .age(null)
+                .country("DE")
+                .build();
+        NullableTestModel m2 = NullableTestModel.builder()
+                .id(2)
+                .name("Rose")
+                .age(20L)
+                .build();
+
+
+        ReaderWriterLock readerWriterLock = new ReaderWriterLock();
+        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
+
+        for (NullableTestModel testModel : Arrays.asList(m1, m2)) {
+            collectionInsertOperation.execute(testModel);
+        }
+
+        List<NullableTestModel> nullCountries = collectionSelectOperation.query(new Query("country_code", Operation.IS_NULL)).asList(NullableTestModel.class);
+        Assertions.assertEquals(1, nullCountries.size());
+        Assertions.assertEquals(m2, nullCountries.getFirst());
+        Assertions.assertNull(m2.country);
+
+
+        List<NullableTestModel> nullAges = collectionSelectOperation.query(new Query("age", Operation.IS_NULL)).asList(NullableTestModel.class);
+        Assertions.assertEquals(1, nullAges.size());
+        Assertions.assertEquals(m1, nullAges.getFirst());
+        Assertions.assertNull(m1.age);
+    }
 
 }

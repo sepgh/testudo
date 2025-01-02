@@ -36,4 +36,8 @@ public class NullableDuplicateQueryableIndex<K extends Comparable<K>, V extends 
         return this.nullableIndexManager.getNulls(order);
     }
 
+    @Override
+    public Iterator<V> getNulls(Order order) {
+        return this.getNullIndexes(order);
+    }
 }

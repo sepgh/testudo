@@ -1,5 +1,6 @@
 package com.github.sepgh.testudo.operation;
 
+import com.github.sepgh.testudo.ds.Bitmap;
 import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
@@ -8,14 +9,19 @@ import com.github.sepgh.testudo.index.DuplicateQueryableIndex;
 import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.UniqueQueryableIndex;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
+import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.serialization.CollectionSerializationUtil;
 import com.github.sepgh.testudo.serialization.ModelSerializer;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
+import com.google.common.collect.Lists;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 
@@ -68,31 +74,49 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
 
     @SuppressWarnings("unchecked")
     private void storeFieldIndexes(byte[] bytes, T clusterId, Pointer pointer) {
-        for (Scheme.Field field : collection.getFields().stream().filter(Scheme.Field::isIndexed).toList()) {
+        Bitmap<Integer> nullsBitmap = CollectionSerializationUtil.getNullsBitmap(collection, bytes);
+
+        int fieldIndex = -1;
+        List<Scheme.Field> fields = collection.getFields();
+        fields.sort(Comparator.comparingInt(Scheme.Field::getId));
+
+        for (Scheme.Field field : fields) {
+            fieldIndex++;
+            if (!field.isIndexed())
+                continue;
+
             try {
                 // Todo: add support for auto increment
                 if (field.getIndex().isUnique()) {
                     UniqueQueryableIndex<?, T> uniqueIndexManager = (UniqueQueryableIndex<?, T>) collectionIndexProvider.getUniqueIndexManager(field);
-
-                    uniqueIndexManager.addIndex(
-                            CollectionSerializationUtil.getValueOfFieldAsObject(
-                                    collection,
-                                    field,
-                                    bytes
-                            ),
-                            clusterId
-                    );
+                    if (field.isNullable() && nullsBitmap.isOn(fieldIndex)) {
+                        uniqueIndexManager.addNull(clusterId);
+                    } else {
+                        uniqueIndexManager.addIndex(
+                                CollectionSerializationUtil.getValueOfFieldAsObject(
+                                        collection,
+                                        field,
+                                        bytes
+                                ),
+                                clusterId
+                        );
+                    }
 
                 } else {
                     DuplicateQueryableIndex<?, T> duplicateIndexManager = (DuplicateQueryableIndex<?, T>) collectionIndexProvider.getDuplicateIndexManager(field);
-                    duplicateIndexManager.addIndex(
-                            CollectionSerializationUtil.getValueOfFieldAsObject(
-                                    collection,
-                                    field,
-                                    bytes
-                            ),
-                            clusterId
-                    );
+
+                    if (field.isNullable() && nullsBitmap.isOn(fieldIndex)) {
+                        duplicateIndexManager.addNull(clusterId);
+                    } else {
+                        duplicateIndexManager.addIndex(
+                                CollectionSerializationUtil.getValueOfFieldAsObject(
+                                        collection,
+                                        field,
+                                        bytes
+                                ),
+                                clusterId
+                        );
+                    }
                 }
             } catch (IndexExistsException | InternalOperationException | DeserializationException e) {
                 try {
