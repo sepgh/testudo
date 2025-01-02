@@ -32,7 +32,6 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
     private final CollectionIndexProvider collectionIndexProvider;
     private final DatabaseStorageManager storageManager;
     private final UniqueTreeIndexManager<T, Pointer> clusterIndexManager;
-    @Getter
     private Query query;
 
     @SuppressWarnings("unchecked")

@@ -9,15 +9,20 @@ import java.util.Iterator;
 public class SimpleCondition<K extends Comparable<K>> implements Condition {
     private final String field;
     private final Operation operation;
-    private final K value;
+    private K value;
 
     public SimpleCondition(String field, Operation operation, K value) {
         Preconditions.checkNotNull(field);
         Preconditions.checkNotNull(operation);
-        Preconditions.checkNotNull(value);
+        if (operation.isRequiresValue())
+            Preconditions.checkNotNull(value);
         this.field = field;
         this.operation = operation;
         this.value = value;
+    }
+
+    public SimpleCondition(String field, Operation operation) {
+        this(field, operation, null);
     }
 
     // Todo: support more operations

@@ -2,6 +2,7 @@ package com.github.sepgh.testudo.storage.index;
 
 import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.ds.KVSize;
+import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -55,6 +56,11 @@ public class IndexStorageManagerDecorator implements IndexStorageManager {
     @Override
     public boolean exists(int indexId) {
         return this.decorated.exists(indexId);
+    }
+
+    @Override
+    public IndexHeaderManager getIndexHeaderManager() {
+        return decorated.getIndexHeaderManager();
     }
 
     @Override

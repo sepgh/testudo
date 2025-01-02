@@ -2,6 +2,7 @@ package com.github.sepgh.testudo.storage.index;
 
 import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.ds.KVSize;
+import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -31,6 +32,8 @@ public interface IndexStorageManager {
     CompletableFuture<Void> removeNode(int indexId, Pointer pointer, KVSize size) throws InterruptedException;
 
     boolean exists(int indexId);
+
+    IndexHeaderManager getIndexHeaderManager();
 
     default boolean supportsPurge(){return false;}
     default void purgeIndex(int indexId){}

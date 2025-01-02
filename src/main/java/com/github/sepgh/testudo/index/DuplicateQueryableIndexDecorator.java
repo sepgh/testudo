@@ -12,10 +12,10 @@ import java.util.ListIterator;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-public class DuplicateIndexManagerDecorator<K extends Comparable<K>, V extends Number & Comparable<V>> implements DuplicateIndexManager<K, V> {
-    protected final DuplicateIndexManager<K, V> decorated;
+public class DuplicateQueryableIndexDecorator<K extends Comparable<K>, V extends Number & Comparable<V>> implements DuplicateQueryableIndex<K, V> {
+    protected final DuplicateQueryableIndex<K, V> decorated;
 
-    public DuplicateIndexManagerDecorator(DuplicateIndexManager<K, V> decorated) {
+    public DuplicateQueryableIndexDecorator(DuplicateQueryableIndex<K, V> decorated) {
         this.decorated = decorated;
     }
 
@@ -82,5 +82,40 @@ public class DuplicateIndexManagerDecorator<K extends Comparable<K>, V extends N
     @Override
     public Iterator<V> getNullIndexes(Order order) {
         return this.decorated.getNullIndexes(order);
+    }
+
+    @Override
+    public Iterator<KeyValue<K, V>> getSortedKeyValueIterator(Order order) throws InternalOperationException {
+        return this.decorated.getSortedKeyValueIterator(order);
+    }
+
+    @Override
+    public Iterator<V> getGreaterThan(K k, Order order) throws InternalOperationException {
+        return this.decorated.getGreaterThan(k, order);
+    }
+
+    @Override
+    public Iterator<V> getGreaterThanEqual(K k, Order order) throws InternalOperationException {
+        return this.decorated.getGreaterThanEqual(k, order);
+    }
+
+    @Override
+    public Iterator<V> getLessThan(K k, Order order) throws InternalOperationException {
+        return this.decorated.getLessThan(k, order);
+    }
+
+    @Override
+    public Iterator<V> getLessThanEqual(K k, Order order) throws InternalOperationException {
+        return this.decorated.getLessThanEqual(k, order);
+    }
+
+    @Override
+    public Iterator<V> getEqual(K k, Order order) throws InternalOperationException {
+        return this.decorated.getEqual(k, order);
+    }
+
+    @Override
+    public Iterator<V> getNulls(Order order) {
+        return this.decorated.getNulls(order);
     }
 }

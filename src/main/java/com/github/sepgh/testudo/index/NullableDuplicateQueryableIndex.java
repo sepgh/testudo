@@ -7,10 +7,10 @@ import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
 
 import java.util.Iterator;
 
-public class NullableDuplicateIndexManager<K extends Comparable<K>, V extends Number & Comparable<V>> extends DuplicateIndexManagerDecorator<K, V> {
+public class NullableDuplicateQueryableIndex<K extends Comparable<K>, V extends Number & Comparable<V>> extends DuplicateQueryableIndexDecorator<K, V> {
     private final NullableIndexManager<V> nullableIndexManager;
 
-    public NullableDuplicateIndexManager(DuplicateIndexManager<K, V> decorated, DatabaseStorageManager storageManager, IndexHeaderManager indexHeaderManager, IndexBinaryObjectFactory<V> vIndexBinaryObjectFactory) {
+    public NullableDuplicateQueryableIndex(DuplicateQueryableIndex<K, V> decorated, DatabaseStorageManager storageManager, IndexHeaderManager indexHeaderManager, IndexBinaryObjectFactory<V> vIndexBinaryObjectFactory) {
         super(decorated);
         this.nullableIndexManager = new NullableIndexManager<>(storageManager, indexHeaderManager, vIndexBinaryObjectFactory, getIndexId());
     }

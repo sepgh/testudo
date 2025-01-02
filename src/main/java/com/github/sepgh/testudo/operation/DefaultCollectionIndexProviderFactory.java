@@ -13,6 +13,7 @@ import com.github.sepgh.testudo.serialization.Serializer;
 import com.github.sepgh.testudo.serialization.SerializerRegistry;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
+import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
 import com.github.sepgh.testudo.ds.CacheID;
 import com.google.common.base.Preconditions;
@@ -72,8 +73,10 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
     }
 
     @SuppressWarnings("unchecked")
-    protected UniqueQueryableIndex<?, ? extends Number> buildUniqueIndexManager(Scheme.Collection collection, Scheme.Field field) {
+    protected <K extends Comparable<K>, V extends Number & Comparable<V>> UniqueQueryableIndex<K, V> buildUniqueIndexManager(Scheme.Collection collection, Scheme.Field field) {
         Preconditions.checkArgument(field.getIndex().isPrimary() || field.getIndex().isUnique(), "Field should either be primary or unique to build a UniqueIndexManager");
+
+        IndexStorageManager indexStorageManager = indexStorageManagerFactory.create(this.scheme, collection);
 
         // Raw use of field.id as indexId would force the scheme designer to use unique field ids per whole DB
         // However, using hash code of pool id (which is combination of collection.id and field.id) forces the scheme designer
@@ -83,14 +86,20 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         Serializer<?> serializer = SerializerRegistry.getInstance().getSerializer(field.getType());
         Serializer<?> clusterSerializer = SerializerRegistry.getInstance().getSerializer(engineConfig.getClusterKeyType().getFieldType());
 
-        return (UniqueQueryableIndex<?, ? extends Number>) new BPlusTreeUniqueTreeIndexManager<>(
+        IndexBinaryObjectFactory<V> clusterBinaryObjectFactory = (IndexBinaryObjectFactory<V>) clusterSerializer.getIndexBinaryObjectFactory(getClusterField());
+        UniqueQueryableIndex<K, V> uniqueQueryableIndex = (UniqueQueryableIndex<K, V>) new BPlusTreeUniqueTreeIndexManager<>(
                 indexId,
                 engineConfig.getBTreeDegree(),
-                indexStorageManagerFactory.create(this.scheme, collection),
+                indexStorageManager,
                 serializer.getIndexBinaryObjectFactory(field),
-                clusterSerializer.getIndexBinaryObjectFactory(getClusterField())
+                clusterBinaryObjectFactory
         );
 
+        if (field.isNullable()) {
+            return new NullableUniqueQueryableIndex<>(uniqueQueryableIndex, databaseStorageManager, indexStorageManager.getIndexHeaderManager(), clusterBinaryObjectFactory);
+        }
+
+        return uniqueQueryableIndex;
     }
 
     protected <K extends Comparable<K>> UniqueTreeIndexManager<?, Pointer> buildClusterIndexManager(Scheme.Collection collection) {
@@ -101,7 +110,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         @SuppressWarnings("unchecked")
         IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory = (IndexBinaryObjectFactory<K>) serializer.getIndexBinaryObjectFactory(field);
 
-        UniqueTreeIndexManager<K, Pointer> clusterIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(
+        UniqueQueryableIndex<K, Pointer> clusterIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(
                 indexId,
                 engineConfig.getBTreeDegree(),
                 indexStorageManagerFactory.create(this.scheme, collection),
@@ -113,13 +122,13 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         return clusterIndexManager;
     }
 
-    private <K extends Comparable<K>> UniqueTreeIndexManager<K, Pointer> decorateClusterWithCache(UniqueTreeIndexManager<K, Pointer> clusterIndexManager, IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory) {
+    private <K extends Comparable<K>> UniqueQueryableIndex<K, Pointer> decorateClusterWithCache(UniqueQueryableIndex<K, Pointer> clusterIndexManager, IndexBinaryObjectFactory<K> keyIndexBinaryObjectFactory) {
         if (!this.engineConfig.isIndexCache())
             return clusterIndexManager;
 
         @SuppressWarnings("unchecked")
         Cache<CacheID<K>, Pointer> clusterIndexCache1 = (Cache<CacheID<K>, Pointer>) this.clusterIndexCache;
-        return new CachedUniqueTreeIndexManagerDecorator<>(clusterIndexManager, clusterIndexCache1, keyIndexBinaryObjectFactory);
+        return new CachedUniqueQueryableIndexDecorator<>(clusterIndexManager, clusterIndexCache1, keyIndexBinaryObjectFactory);
     }
 
     @SuppressWarnings("unchecked")
@@ -127,32 +136,42 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         int indexId = getIndexId(collection, field).hashCode();
 
         Serializer<?> fieldSerializer = SerializerRegistry.getInstance().getSerializer(field.getType());
+        IndexStorageManager indexStorageManager = indexStorageManagerFactory.create(this.scheme, collection);
         BPlusTreeUniqueTreeIndexManager<?, Pointer> uniqueTreeIndexManager = new BPlusTreeUniqueTreeIndexManager<>(
                 indexId,
                 engineConfig.getBTreeDegree(),
-                indexStorageManagerFactory.create(this.scheme, collection),
+                indexStorageManager,
                 fieldSerializer.getIndexBinaryObjectFactory(field),
                 new PointerIndexBinaryObject.Factory()
         );
 
         Serializer<?> clusterSerializer = SerializerRegistry.getInstance().getSerializer(engineConfig.getClusterKeyType().getFieldType());
+        IndexBinaryObjectFactory<V> clusterBinaryObjectFactory = (IndexBinaryObjectFactory<V>) clusterSerializer.getIndexBinaryObjectFactory(getClusterField());
 
         // Bitmap or B+Tree?
+        DuplicateQueryableIndex<K, V> duplicateQueryableIndex;
         if (field.getIndex().isLowCardinality()){
-            return new DuplicateBitmapIndexManager<>(
+            duplicateQueryableIndex = new DuplicateBitmapIndexManager<>(
                     collection.getId(),
                     (UniqueQueryableIndex<K, Pointer>) uniqueTreeIndexManager,
-                    (IndexBinaryObjectFactory<V>) clusterSerializer.getIndexBinaryObjectFactory(getClusterField()),
+                    clusterBinaryObjectFactory,
+                    databaseStorageManager
+            );
+        } else {
+            duplicateQueryableIndex = new DuplicateBPlusTreeIndexManagerBridge<>(
+                    collection.getId(),
+                    engineConfig,
+                    (UniqueQueryableIndex<K, Pointer>) uniqueTreeIndexManager,
+                    clusterBinaryObjectFactory,
                     databaseStorageManager
             );
         }
-        return new DuplicateBPlusTreeIndexManagerBridge<>(
-                collection.getId(),
-                engineConfig,
-                (UniqueQueryableIndex<K, Pointer>) uniqueTreeIndexManager,
-                (IndexBinaryObjectFactory<V>) clusterSerializer.getIndexBinaryObjectFactory(getClusterField()),
-                databaseStorageManager
-        );
+
+        if (field.isNullable()) {
+            duplicateQueryableIndex = new NullableDuplicateQueryableIndex<>(duplicateQueryableIndex, databaseStorageManager, indexStorageManager.getIndexHeaderManager(), clusterBinaryObjectFactory);
+        }
+
+        return duplicateQueryableIndex;
     }
 
     protected CollectionIndexProvider getProvider(Scheme.Collection collection) {

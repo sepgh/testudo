@@ -15,27 +15,27 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 
-public class CachedUniqueTreeIndexManagerDecorator<K extends Comparable<K>, V> extends UniqueTreeIndexManagerDecorator<K, V> {
+public class CachedUniqueQueryableIndexDecorator<K extends Comparable<K>, V> extends UniqueQueryableIndexDecorator<K, V> {
     private final Cache<CacheID<K>, V> cache;
     private final AtomicInteger sizeCache = new AtomicInteger(0);
     private AtomicReference<K> currentIncrementalKey = null;
     private final IndexBinaryObjectFactory<K> kIndexBinaryObjectFactory;
     private final boolean supportsNextKey;
 
-    public CachedUniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager, int maxSize) {
-        this(uniqueTreeIndexManager, maxSize, null);
+    public CachedUniqueQueryableIndexDecorator(UniqueQueryableIndex<K, V> decorated, int maxSize) {
+        this(decorated, maxSize, null);
     }
 
-    public CachedUniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager, Cache<CacheID<K>, V> cache) {
-        this(uniqueTreeIndexManager, cache, null);
+    public CachedUniqueQueryableIndexDecorator(UniqueQueryableIndex<K, V> decorated, Cache<CacheID<K>, V> cache) {
+        this(decorated, cache, null);
     }
 
-    public CachedUniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager, int maxSize, @Nullable IndexBinaryObjectFactory<K> kIndexBinaryObjectFactory) {
-        this(uniqueTreeIndexManager, CacheBuilder.newBuilder().maximumSize(maxSize).initialCapacity(10).build(), kIndexBinaryObjectFactory);
+    public CachedUniqueQueryableIndexDecorator(UniqueQueryableIndex<K, V> decorated, int maxSize, @Nullable IndexBinaryObjectFactory<K> kIndexBinaryObjectFactory) {
+        this(decorated, CacheBuilder.newBuilder().maximumSize(maxSize).initialCapacity(10).build(), kIndexBinaryObjectFactory);
     }
 
-    public CachedUniqueTreeIndexManagerDecorator(UniqueTreeIndexManager<K, V> uniqueTreeIndexManager, Cache<CacheID<K>, V> cache, @Nullable IndexBinaryObjectFactory<K> kIndexBinaryObjectFactory) {
-        super(uniqueTreeIndexManager);
+    public CachedUniqueQueryableIndexDecorator(UniqueQueryableIndex<K, V> decorated, Cache<CacheID<K>, V> cache, @Nullable IndexBinaryObjectFactory<K> kIndexBinaryObjectFactory) {
+        super(decorated);
         this.cache = cache;
         this.kIndexBinaryObjectFactory = kIndexBinaryObjectFactory;
         this.supportsNextKey = kIndexBinaryObjectFactory != null;

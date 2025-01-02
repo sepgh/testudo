@@ -10,6 +10,7 @@ import com.github.sepgh.testudo.storage.pool.ManagedFileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 import com.github.sepgh.testudo.utils.FileUtils;
 import com.github.sepgh.testudo.ds.KVSize;
+import lombok.Getter;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -24,6 +25,7 @@ import static com.github.sepgh.testudo.index.tree.node.AbstractTreeNode.TYPE_INT
 import static com.github.sepgh.testudo.index.tree.node.AbstractTreeNode.TYPE_LEAF_NODE_BIT;
 
 public abstract class BaseFileIndexStorageManager extends AbstractFileIndexStorageManager {
+    @Getter
     protected final IndexHeaderManager indexHeaderManager;
     protected final FileHandlerPool fileHandlerPool;
     public static final String INDEX_FILE_NAME = "index";

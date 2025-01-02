@@ -12,6 +12,7 @@ import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 import com.github.sepgh.testudo.ds.KVSize;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -20,6 +21,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DiskPageFileIndexStorageManager extends AbstractFileIndexStorageManager {
+    @Getter
     protected final IndexHeaderManager indexHeaderManager;
     protected final FileHandlerPool fileHandlerPool;
     protected final DatabaseStorageManager databaseStorageManager;

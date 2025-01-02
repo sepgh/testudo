@@ -7,10 +7,10 @@ import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
 
 import java.util.Iterator;
 
-public class NullableUniqueTreeIndexManager<K extends Comparable<K>, V extends Number & Comparable<V>> extends UniqueTreeIndexManagerDecorator<K,V> {
+public class NullableUniqueQueryableIndex<K extends Comparable<K>, V extends Number & Comparable<V>> extends UniqueQueryableIndexDecorator<K,V> {
     private final NullableIndexManager<V> nullableIndexManager;
 
-    public NullableUniqueTreeIndexManager(UniqueTreeIndexManager<K, V> decorated, DatabaseStorageManager storageManager, IndexHeaderManager indexHeaderManager, IndexBinaryObjectFactory<V> vIndexBinaryObjectFactory) {
+    public NullableUniqueQueryableIndex(UniqueQueryableIndex<K, V> decorated, DatabaseStorageManager storageManager, IndexHeaderManager indexHeaderManager, IndexBinaryObjectFactory<V> vIndexBinaryObjectFactory) {
         super(decorated);
         this.nullableIndexManager = new NullableIndexManager<>(storageManager, indexHeaderManager, vIndexBinaryObjectFactory, getIndexId());
     }

@@ -2,6 +2,7 @@ package com.github.sepgh.testudo.operation.query;
 
 import com.github.sepgh.testudo.operation.CollectionIndexProvider;
 import com.github.sepgh.testudo.utils.IteratorUtils;
+import com.google.common.base.Preconditions;
 import lombok.SneakyThrows;
 
 import java.util.Collections;
@@ -23,11 +24,23 @@ public class Query {
     }
 
     public <T extends Comparable<T>> Query(String field, Operation operation, T value) {
+        if (operation.isRequiresValue())
+            Preconditions.checkNotNull(value);
         this.where(field, operation, value);
+    }
+
+    public <T extends Comparable<T>> Query(String field, Operation operation) {
+        if (operation.isRequiresValue())
+            throw new UnsupportedOperationException("Operation ('%s') requires a value".formatted(operation.name()));
+        this.where(field, operation);
     }
 
     public <T extends Comparable<T>> Query where(String field, Operation operation, T value) {
         return this.where(new SimpleCondition<>(field, operation, value));
+    }
+
+    public <T extends Comparable<T>> Query where(String field, Operation operation) {
+        return this.where(new SimpleCondition<>(field, operation));
     }
 
     public Query where(Condition condition) {

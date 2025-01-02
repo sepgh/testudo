@@ -4,7 +4,7 @@ import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.index.CachedUniqueTreeIndexManagerDecorator;
+import com.github.sepgh.testudo.index.CachedUniqueQueryableIndexDecorator;
 import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.tree.node.cluster.ClusterBPlusTreeUniqueTreeIndexManager;
@@ -129,7 +129,7 @@ public class CacheBPlusTreeUniqueTreeIndexManagerReadingTestCase {
     public void findIndexSuccessfully_cachedIndexManager() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         IndexStorageManager indexStorageManager = getStorageManager();
 
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new CachedUniqueTreeIndexManagerDecorator<>(
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new CachedUniqueQueryableIndexDecorator<>(
                 new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()),
                 20
         );
@@ -155,7 +155,7 @@ public class CacheBPlusTreeUniqueTreeIndexManagerReadingTestCase {
     @Timeout(value = 2)
     public void findIndexFailure_cachedIndexManager() throws IOException, ExecutionException, InterruptedException, InternalOperationException, IndexExistsException {
         IndexStorageManager indexStorageManager = getStorageManager();
-        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new CachedUniqueTreeIndexManagerDecorator<>(
+        UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new CachedUniqueQueryableIndexDecorator<>(
                 new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()),
                 20
         );
