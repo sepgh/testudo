@@ -1,10 +1,12 @@
 package com.github.sepgh.testudo.operation;
 
+import com.github.sepgh.testudo.ds.Bitmap;
 import com.github.sepgh.testudo.exception.*;
 import com.github.sepgh.testudo.index.DuplicateQueryableIndex;
 import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.UniqueQueryableIndex;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
+import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.operation.query.Query;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.serialization.CollectionSerializationUtil;
@@ -13,14 +15,13 @@ import com.github.sepgh.testudo.serialization.ModelSerializer;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
+import com.google.common.collect.Lists;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.security.MessageDigest;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -121,7 +122,19 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
 
         this.storageManager.update(pointer, update);
 
-        for (Scheme.Field field : collection.getFields()) {
+        Bitmap<Integer> newNulls = CollectionSerializationUtil.getNullsBitmap(collection, update);
+        Bitmap<Integer> oldNulls = CollectionSerializationUtil.getNullsBitmap(collection, old);
+
+        int fieldIndex = -1;
+        List<Scheme.Field> fields = collection.getFields();
+        fields.sort(Comparator.comparingInt(Scheme.Field::getId));
+
+        for (Scheme.Field field : fields) {
+            fieldIndex++;
+
+            if (!field.isIndexed())
+                continue;
+
             Object oldObject = CollectionSerializationUtil.getValueOfFieldAsObject(
                     collection,
                     field,
@@ -137,15 +150,39 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
                 continue;
             }
 
+            if (field.getIndex().isPrimary() && field.getIndex().isAutoIncrement()) {
+                continue; // Auto Increment field doesnt need to get updated
+            }
+
+            if (field.getIndex().isPrimary() && newNulls.isOn(fieldIndex)){
+                // Todo: raise error: primary field cant be null
+            }
+
             // Todo: primary fields cant get updated. Verify this at a valid point
             if (field.getIndex().isUnique()) {
                 UniqueQueryableIndex<F, T> uniqueIndexManager = (UniqueQueryableIndex<F, T>) collectionIndexProvider.getUniqueIndexManager(field);
-                uniqueIndexManager.removeIndex((F) oldObject);
-                uniqueIndexManager.addIndex((F) newObject, clusterId);
+                if (oldNulls.isOn(fieldIndex) && !newNulls.isOn(fieldIndex)) {
+                    uniqueIndexManager.removeNull(clusterId);
+                } else {
+                    uniqueIndexManager.removeIndex((F) oldObject);
+                }
+                if (newNulls.isOn(fieldIndex)) {
+                    uniqueIndexManager.addNull(clusterId);
+                } else {
+                    uniqueIndexManager.addIndex((F) newObject, clusterId);
+                }
             } else {
                 DuplicateQueryableIndex<F, T> duplicateIndexManager = (DuplicateQueryableIndex<F, T>) collectionIndexProvider.getDuplicateIndexManager(field);
-                duplicateIndexManager.removeIndex((F) oldObject, clusterId);
-                duplicateIndexManager.addIndex((F) newObject, clusterId);
+                if (oldNulls.isOn(fieldIndex) && !newNulls.isOn(fieldIndex)) {
+                    duplicateIndexManager.removeNull(clusterId);
+                } else {
+                    duplicateIndexManager.removeIndex((F) oldObject, clusterId);
+                }
+                if (newNulls.isOn(fieldIndex)) {
+                    duplicateIndexManager.addNull(clusterId);
+                } else {
+                    duplicateIndexManager.addIndex((F) newObject, clusterId);
+                }
             }
         }
 

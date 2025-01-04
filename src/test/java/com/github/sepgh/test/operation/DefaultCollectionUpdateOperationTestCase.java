@@ -75,14 +75,14 @@ public class DefaultCollectionUpdateOperationTestCase {
         @Index(primary = true, autoIncrement = true)
         private Integer id;
 
-        @Field(id = 2, maxLength = 20)
+        @Field(id = 2, maxLength = 20, nullable = true)
         private String name;
 
         @Field(id = 3)
         @Index()
         private Long age;
 
-        @Field(id = 4, name = "country_code")
+        @Field(id = 4, name = "country_code", nullable = true)
         @Index(lowCardinality = true)
         private String country;
 
@@ -163,6 +163,59 @@ public class DefaultCollectionUpdateOperationTestCase {
 
         long deleted = collectionDeleteOperation.execute();
         Assertions.assertEquals(4, deleted);
+    }
+
+    @Test
+    public void testWithNull() throws SerializationException {
+        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
+        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, storageManager);
+
+        Scheme scheme = Scheme.builder()
+                .dbName("test")
+                .version(1)
+                .build();
+        Scheme.Collection collection = new ModelToCollectionConverter(TestModel.class).toCollection();
+        scheme.getCollections().add(collection);
+
+        TestModel testModel1 = TestModel.builder().id(1).age(10L).name("John").build();
+        TestModel testModel2 = TestModel.builder().id(2).age(20L).name("Rose").build();
+        ReaderWriterLock readerWriterLock = new ReaderWriterLock();
+
+        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
+        CollectionUpdateOperation<Long> collectionUpdateOperation = new DefaultCollectionUpdateOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
+
+
+        for (TestModel testModel : Arrays.asList(testModel1, testModel2)) {
+            collectionInsertOperation.execute(testModel);
+        }
+
+        long count = collectionSelectOperation.query(new Query().where("country_code", Operation.IS_NULL)).count();
+        Assertions.assertEquals(2L, count);
+
+        long updated = collectionUpdateOperation.query(new Query().where("country_code", Operation.IS_NULL)).execute((testModel) -> {
+            testModel.setCountry("FR");
+        }, TestModel.class);
+        Assertions.assertEquals(2L, updated);
+
+        count = collectionSelectOperation.query(new Query().where("country_code", Operation.EQ, "FR")).count();
+        Assertions.assertEquals(2L, count);
+
+        count = collectionSelectOperation.query(new Query().where("country_code", Operation.IS_NULL)).count();
+        Assertions.assertEquals(0L, count);
+
+        // Nothing really gets updated
+        updated = collectionUpdateOperation.query(new Query().where("country_code", Operation.EQ, "FR")).execute((testModel) -> {
+            testModel.setCountry("FR");
+        }, TestModel.class);
+        Assertions.assertEquals(0L, updated);
+
+        updated = collectionUpdateOperation.query(new Query().where("country_code", Operation.EQ, "FR")).execute((testModel) -> {
+            testModel.setCountry(null);
+        }, TestModel.class);
+        Assertions.assertEquals(2L, updated);
     }
 
 

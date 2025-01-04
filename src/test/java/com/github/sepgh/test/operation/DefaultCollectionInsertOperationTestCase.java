@@ -39,10 +39,6 @@ public class DefaultCollectionInsertOperationTestCase {
 
     private EngineConfig engineConfig;
     private Path dbPath;
-    private final Scheme scheme = Scheme.builder()
-            .dbName("test")
-            .version(1)
-            .build();
 
     private FileHandlerPoolFactory fileHandlerPoolFactory;
 
