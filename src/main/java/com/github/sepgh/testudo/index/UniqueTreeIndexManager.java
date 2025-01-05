@@ -8,7 +8,6 @@ import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
-import java.util.Iterator;
 import java.util.Optional;
 
 public interface UniqueTreeIndexManager<K extends Comparable<K>, V> extends NullableIndex<V> {

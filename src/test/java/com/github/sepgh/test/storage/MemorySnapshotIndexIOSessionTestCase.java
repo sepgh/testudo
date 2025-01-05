@@ -1,9 +1,10 @@
 package com.github.sepgh.test.storage;
 
 import com.github.sepgh.testudo.context.EngineConfig;
+import com.github.sepgh.testudo.ds.KVSize;
+import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
@@ -17,7 +18,6 @@ import com.github.sepgh.testudo.storage.index.session.IndexIOSessionFactory;
 import com.github.sepgh.testudo.storage.index.session.MemorySnapshotIndexIOSession;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
-import com.github.sepgh.testudo.ds.KVSize;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;

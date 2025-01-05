@@ -1,7 +1,7 @@
 package com.github.sepgh.testudo.storage.index;
 
-import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.ds.KVSize;
+import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
 
 import java.io.IOException;

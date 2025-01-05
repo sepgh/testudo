@@ -1,9 +1,9 @@
 package com.github.sepgh.testudo.storage.index;
 
+import com.github.sepgh.testudo.ds.KVSize;
 import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
-import com.github.sepgh.testudo.ds.KVSize;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;

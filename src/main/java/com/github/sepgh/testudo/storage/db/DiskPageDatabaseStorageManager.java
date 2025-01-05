@@ -1,8 +1,8 @@
 package com.github.sepgh.testudo.storage.db;
 
 import com.github.sepgh.testudo.context.EngineConfig;
-import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
 import com.github.sepgh.testudo.utils.FileUtils;
 import lombok.Getter;

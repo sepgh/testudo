@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.operation;
 
 import com.github.sepgh.testudo.context.EngineConfig;
+import com.github.sepgh.testudo.ds.CacheID;
 import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.*;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
@@ -15,7 +16,6 @@ import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
-import com.github.sepgh.testudo.ds.CacheID;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;

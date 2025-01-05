@@ -1,25 +1,22 @@
 package com.github.sepgh.testudo.operation;
 
 import com.github.sepgh.testudo.ds.Bitmap;
+import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.index.DuplicateQueryableIndex;
-import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.UniqueQueryableIndex;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
-import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.serialization.CollectionSerializationUtil;
 import com.github.sepgh.testudo.serialization.ModelSerializer;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
-import com.google.common.collect.Lists;
 import lombok.Getter;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;

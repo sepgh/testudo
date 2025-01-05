@@ -77,11 +77,13 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
 - [ ] Cache support for other indexes. Also find proper usage for `CachedIndexStorageManagerDecorator` or remove it!
 - [ ] Exception Throwing and Handling
   - Note: lambdas are going crazy at this point. Use this strategy: https://stackoverflow.com/questions/18198176
+- [ ] Shutdown mechanism (gracefully)
 - [ ] Logging
 - [ ] Performance and Overall Improvements Ideas
   - Update process can be distributed into multiple threads for the `databaseStorage.update()` part
   - There are a bunch of places that we can benefit from Binary Search that have Todos on them.
   - If index ids have a better way of generation, we can use them in index storage managers such as `DiskPageFileIndexStorageManager` to determine the scheme an object belongs to! This also works for storing bitmaps and array lists in db file for `DuplicateIndexManagers`.
+  - **Bitmap Space**: use compression or sparse bitmaps
 
 
 ## Open Problems

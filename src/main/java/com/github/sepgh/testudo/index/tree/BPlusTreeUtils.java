@@ -1,7 +1,7 @@
 package com.github.sepgh.testudo.index.tree;
 
-import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.ds.KeyValue;
+import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;

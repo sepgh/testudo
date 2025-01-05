@@ -2,9 +2,9 @@ package com.github.sepgh.test.index.tree.storing;
 
 import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.EngineConfig;
+import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;

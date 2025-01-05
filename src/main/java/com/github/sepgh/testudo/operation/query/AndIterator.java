@@ -2,7 +2,6 @@ package com.github.sepgh.testudo.operation.query;
 
 import com.github.sepgh.testudo.ds.Bitmap;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 
 import java.util.*;
 

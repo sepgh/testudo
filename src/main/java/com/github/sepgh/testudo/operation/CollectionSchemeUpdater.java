@@ -1,9 +1,9 @@
 package com.github.sepgh.testudo.operation;
 
-import com.github.sepgh.testudo.exception.*;
-import com.github.sepgh.testudo.index.DuplicateIndexManager;
 import com.github.sepgh.testudo.ds.KeyValue;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.*;
+import com.github.sepgh.testudo.index.DuplicateIndexManager;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.scheme.Scheme;
