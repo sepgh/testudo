@@ -4,14 +4,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 
-public class CompositeConditionIterator<T extends Comparable<T>> implements Iterator<T> {
-    private final CompositeCondition.CompositeOperator operator;
+public class OrIterator<T extends Comparable<T>> implements Iterator<T> {
     private final PriorityQueue<PeekableIterator<T>> iterators;
     private final boolean ascending;
     private T nextItem;
 
-    CompositeConditionIterator(CompositeCondition.CompositeOperator operator, List<Iterator<T>> iterators, Order order) {
-        this.operator = operator;
+    OrIterator(List<Iterator<T>> iterators, Order order) {
         this.ascending = order == Order.ASC;
         this.iterators = new PriorityQueue<>((a, b) -> order.equals(Order.ASC) ?
                 a.peek().compareTo(b.peek()) : b.peek().compareTo(a.peek()));
@@ -26,56 +24,6 @@ public class CompositeConditionIterator<T extends Comparable<T>> implements Iter
     }
 
     private void advance() {
-        if (operator == CompositeCondition.CompositeOperator.AND) {
-            advanceForAnd();
-        } else {
-            advanceForOr();
-        }
-    }
-
-    private void advanceForAnd() {
-        while (!iterators.isEmpty()) {
-            // Find the maximum value among the current head of each iterator
-            T maxCandidate = null;
-            for (PeekableIterator<T> it : iterators) {
-                if (it.hasNext()) {
-                    T peeked = it.peek();
-                    if (maxCandidate == null || (ascending ? peeked.compareTo(maxCandidate) > 0 : peeked.compareTo(maxCandidate) < 0)) {
-                        maxCandidate = peeked;
-                    }
-                }
-            }
-
-            if (maxCandidate == null) {  // No more items in any iterator
-                nextItem = null;
-                return;
-            }
-
-            // Check if all iterators are at the maxCandidate
-            boolean allMatch = true;
-            for (PeekableIterator<T> it : iterators) {
-                while (it.hasNext() && (ascending ? it.peek().compareTo(maxCandidate) < 0 : it.peek().compareTo(maxCandidate) > 0)) {
-                    it.next();  // Advance to match the maxCandidate
-                }
-                if (!it.hasNext() || !it.peek().equals(maxCandidate)) {
-                    allMatch = false;
-                    break;
-                }
-            }
-
-            if (allMatch) {
-                nextItem = maxCandidate;
-                // Move all iterators to the next element
-                for (PeekableIterator<T> it : iterators) {
-                    it.next();
-                }
-                return;
-            }
-        }
-        nextItem = null;  // No more matches
-    }
-
-    private void advanceForOr() {
         if (iterators.isEmpty()) {
             nextItem = null;
             return;
@@ -122,7 +70,6 @@ public class CompositeConditionIterator<T extends Comparable<T>> implements Iter
         return result;
     }
 
-
     // PeekableIterator class for reference
     private static class PeekableIterator<T> implements Iterator<T> {
         private final Iterator<T> iterator;
@@ -149,4 +96,5 @@ public class CompositeConditionIterator<T extends Comparable<T>> implements Iter
             return current;
         }
     }
+
 }

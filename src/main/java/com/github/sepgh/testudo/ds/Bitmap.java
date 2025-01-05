@@ -21,6 +21,28 @@ public class Bitmap<K extends Number> {
         this.width = data.length * Byte.SIZE;
     }
 
+    @SuppressWarnings("unchecked")
+    public static <K extends Number> Bitmap<K> getGenericInstance(K on) {
+        Bitmap<K> output = null;
+        if (on instanceof Integer) {
+            output = (Bitmap<K>) new Bitmap<>(Integer.class, new byte[10]);
+        }
+        if (on instanceof Long) {
+            output = (Bitmap<K>) new Bitmap<>(Long.class, new byte[10]);
+        }
+        if (on instanceof UnsignedInteger) {
+            output = (Bitmap<K>) new Bitmap<>(UnsignedInteger.class, new byte[10]);
+        }
+        if (on instanceof UnsignedLong) {
+            output = (Bitmap<K>) new Bitmap<>(UnsignedLong.class, new byte[10]);
+        }
+        if (output != null){
+            output.on(on);
+            return output;
+        }
+        throw new UnsupportedOperationException(); // Todo
+    }
+
     public boolean on(K k) {
         BigInteger bitIndex = convertKeyToBigInteger(k);  // Convert to BigInteger for safety
         ensureCapacity(bitIndex);  // Resize if necessary
