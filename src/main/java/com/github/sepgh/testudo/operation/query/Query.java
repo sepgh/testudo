@@ -60,12 +60,28 @@ public class Query {
         return this;
     }
 
+    public Query and(String field, Operation operation) {
+        return and(new SimpleCondition<>(field, operation));
+    }
+
+    public Query and(String field, Operation operation, String value) {
+        return and(new SimpleCondition<>(field, operation, value));
+    }
+
     public Query or(Condition condition) {
         if (rootCondition == null) {
             throw new IllegalStateException("Root condition is null");
         }
         rootCondition = new CompositeCondition(CompositeCondition.CompositeOperator.OR, rootCondition, condition);
         return this;
+    }
+
+    public Query or(String field, Operation operation) {
+        return or(new SimpleCondition<>(field, operation));
+    }
+
+    public Query or(String field, Operation operation, String value) {
+        return or(new SimpleCondition<>(field, operation, value));
     }
 
     public Query sort(SortField sortField) {

@@ -1,6 +1,7 @@
 package com.github.sepgh.test.operation.query;
 
 import com.github.sepgh.testudo.operation.query.AndIterator;
+import com.github.sepgh.testudo.operation.query.BitmapIterationCacheFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +19,12 @@ public class AndIteratorTestCase {
                 Arrays.asList(l1.iterator(), l2.iterator())
         );
         Assertions.assertFalse(ai.hasNext());
+
+        ai = new AndIterator<>(
+                Arrays.asList(l1.iterator(), l2.iterator()),
+                new BitmapIterationCacheFactory()
+        );
+        Assertions.assertFalse(ai.hasNext());
     }
 
     @Test
@@ -27,6 +34,16 @@ public class AndIteratorTestCase {
 
         AndIterator<Integer> ai = new AndIterator<>(
                 Arrays.asList(l1.iterator(), l2.iterator())
+        );
+        Assertions.assertTrue(ai.hasNext());
+        Assertions.assertEquals(ai.next(), 5);
+        Assertions.assertTrue(ai.hasNext());
+        Assertions.assertEquals(ai.next(), 10);
+
+
+        ai = new AndIterator<>(
+                Arrays.asList(l1.iterator(), l2.iterator()),
+                new BitmapIterationCacheFactory()
         );
         Assertions.assertTrue(ai.hasNext());
         Assertions.assertEquals(ai.next(), 5);
@@ -42,6 +59,17 @@ public class AndIteratorTestCase {
 
         AndIterator<Integer> ai = new AndIterator<>(
                 Arrays.asList(l1.iterator(), l2.iterator(), l3.iterator())
+        );
+        Assertions.assertTrue(ai.hasNext());
+        Assertions.assertEquals(ai.next(), 5);
+        Assertions.assertTrue(ai.hasNext());
+        Assertions.assertEquals(ai.next(), 10);
+        Assertions.assertTrue(ai.hasNext());
+        Assertions.assertEquals(ai.next(), 19);
+
+        ai = new AndIterator<>(
+                Arrays.asList(l1.iterator(), l2.iterator(), l3.iterator()),
+                new BitmapIterationCacheFactory()
         );
         Assertions.assertTrue(ai.hasNext());
         Assertions.assertEquals(ai.next(), 5);

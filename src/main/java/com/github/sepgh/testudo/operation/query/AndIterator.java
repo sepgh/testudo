@@ -1,17 +1,21 @@
 package com.github.sepgh.testudo.operation.query;
 
-import com.github.sepgh.testudo.ds.Bitmap;
 import com.google.common.base.Preconditions;
 
 import java.util.*;
 
 public class AndIterator<T extends Number> implements Iterator<T> {
     private T current;
-    private final Map<Integer, Bitmap<T>> cache = new HashMap<>();
+    private final IterationCache<T> iterationCache;
     private final List<Iterator<T>> iterators;
 
     public AndIterator(List<Iterator<T>> iterators) {
+        this(iterators, new HashsetIterationCacheFactory());
+    }
+
+    public AndIterator(List<Iterator<T>> iterators, IterationCacheFactory iterationCacheFactory) {
         this.iterators = iterators;
+        this.iterationCache = iterationCacheFactory.create();
         Preconditions.checkArgument(iterators.size() > 1, "Need at least 2 iterators to perform AND operation");
     }
 
@@ -50,21 +54,15 @@ public class AndIterator<T extends Number> implements Iterator<T> {
     }
 
     private boolean containsCandidate(int i, Iterator<T> tIterator, T candidate) {
-        Bitmap<T> tBitmap = cache.get(i);
-        if (tBitmap != null) {
-            if (tBitmap.isOn(candidate)){
-                return true;
-            }
+        boolean cacheInitialized = iterationCache.cacheInitialized(i);
+
+        if (cacheInitialized && iterationCache.contains(i, candidate)) {
+            return true;
         }
 
         while (tIterator.hasNext()) {
             T next = tIterator.next();
-            if (tBitmap == null) {
-                tBitmap = Bitmap.getGenericInstance(next);
-                cache.put(i, tBitmap);
-            } else {
-                tBitmap.on(next);
-            }
+            iterationCache.add(i, next);
 
             if (next.equals(candidate)) {
                 return true;
