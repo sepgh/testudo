@@ -34,6 +34,7 @@ public class SimpleCondition<K extends Comparable<K>> implements Condition {
 
         return switch (operation) {
             case EQ -> kvQueryable.getEqual(this.value, order);
+            case NEQ -> kvQueryable.getNotEqual(this.value, order);
             case GT -> kvQueryable.getGreaterThan(this.value, order);
             case GTE -> kvQueryable.getGreaterThanEqual(this.value, order);
             case LT -> kvQueryable.getLessThan(this.value, order);

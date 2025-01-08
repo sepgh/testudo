@@ -19,5 +19,6 @@ public interface Queryable<K extends Comparable<K>, V> {
     Iterator<V> getLessThan(K k, Order order) throws InternalOperationException;
     Iterator<V> getLessThanEqual(K k, Order order) throws InternalOperationException;
     Iterator<V> getEqual(K k, Order order) throws InternalOperationException;
+    Iterator<V> getNotEqual(K k, Order order) throws InternalOperationException;
     Iterator<V> getNulls(Order order);
 }

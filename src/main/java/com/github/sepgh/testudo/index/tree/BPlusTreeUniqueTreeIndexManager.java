@@ -299,6 +299,14 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
     }
 
     @Override
+    public Iterator<V> getNotEqual(K k, Order order) throws InternalOperationException {
+        return IteratorUtils.getNotEqualIterator(
+                getSortedKeyValueIterator(order),
+                k
+        );
+    }
+
+    @Override
     public Iterator<V> getNulls(Order order) {
         return this.getNullIndexes(order);
     }

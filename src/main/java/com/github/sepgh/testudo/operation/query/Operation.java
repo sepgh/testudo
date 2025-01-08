@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 public enum Operation {
-    EQ(true), GT(true), LT(true), GTE(true), LTE(true), IS_NULL(false);
+    EQ(true), NEQ(true), GT(true), LT(true), GTE(true), LTE(true), IS_NULL(false);
     private final boolean requiresValue;
 
     Operation(boolean requiresValue) {

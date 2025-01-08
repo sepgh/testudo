@@ -116,6 +116,11 @@ public class UniqueQueryableIndexDecorator<K extends Comparable<K>, V> implement
     }
 
     @Override
+    public Iterator<V> getNotEqual(K k, Order order) throws InternalOperationException {
+        return this.decorated.getNotEqual(k, order);
+    }
+
+    @Override
     public Iterator<V> getNulls(Order order) {
         return this.decorated.getNulls(order);
     }

@@ -17,12 +17,14 @@ import com.github.sepgh.testudo.scheme.annotation.Collection;
 import com.github.sepgh.testudo.scheme.annotation.Field;
 import com.github.sepgh.testudo.scheme.annotation.Index;
 import com.github.sepgh.testudo.serialization.ModelSerializer;
+import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPoolFactory;
+import com.github.sepgh.testudo.utils.LockableIterator;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import lombok.*;
 import org.junit.jupiter.api.AfterEach;
@@ -35,6 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class DefaultCollectionSelectOperationTestCase {
@@ -243,5 +246,36 @@ public class DefaultCollectionSelectOperationTestCase {
 
     }
 
+    @Test
+    public void notEqualQuery() throws SerializationException {
+        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
+        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
+
+        Scheme.Collection collection = new ModelToCollectionConverter(TestModel.class).toCollection();
+
+        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, storageManager);
+        CollectionIndexProvider collectionIndexProvider = collectionIndexProviderFactory.create(collection);
+
+        TestModel testModel1 = TestModel.builder().id(1).age(30L).country("DE").name("John").build();
+        TestModel testModel2 = TestModel.builder().id(2).age(40L).country("FR").name("Rose").build();
+
+        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, new ReaderWriterLock(), collectionIndexProviderFactory.create(collection), storageManager);
+        collectionInsertOperation.execute(testModel1);
+        collectionInsertOperation.execute(testModel2);
+
+
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, new ReaderWriterLock(), collectionIndexProviderFactory.create(collection), storageManager);
+
+
+        List<TestModel> list = collectionSelectOperation.query(new Query("country_code", Operation.NEQ, "DE")).asList(TestModel.class);
+        Assertions.assertEquals(1, list.size());
+        Assertions.assertEquals(testModel2, list.getFirst());
+
+        list = collectionSelectOperation.query(new Query("country_code", Operation.NEQ, "FR")).asList(TestModel.class);
+        Assertions.assertEquals(1, list.size());
+        Assertions.assertEquals(testModel1, list.getFirst());
+
+    }
 
 }
