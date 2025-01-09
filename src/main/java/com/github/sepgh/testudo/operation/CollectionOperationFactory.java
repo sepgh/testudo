@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.operation;
 
 import com.github.sepgh.testudo.scheme.Scheme;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerFactory;
 
 public class CollectionOperationFactory {
@@ -19,13 +20,17 @@ public class CollectionOperationFactory {
 
     public CollectionOperation create() {
         return new CollectionOperation(collection) {
+            private final CollectionIndexProvider collectionIndexProvider = collectionIndexProviderFactory.create(collection);
+            private final DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
+
+
             @Override
             public CollectionSelectOperation<?> select() {
                 return new DefaultCollectionSelectOperation<>(
                         collection,
                         readerWriterLockPool.getReaderWriterLock(scheme, collection),
-                        collectionIndexProviderFactory.create(collection),
-                        databaseStorageManagerFactory.create()
+                        collectionIndexProvider,
+                        databaseStorageManager
                 );
             }
 
@@ -34,8 +39,8 @@ public class CollectionOperationFactory {
                 return new DefaultCollectionUpdateOperation<>(
                         collection,
                         readerWriterLockPool.getReaderWriterLock(scheme, collection),
-                        collectionIndexProviderFactory.create(collection),
-                        databaseStorageManagerFactory.create()
+                        collectionIndexProvider,
+                        databaseStorageManager
                 );
             }
 
@@ -44,8 +49,8 @@ public class CollectionOperationFactory {
                 return new DefaultCollectionDeleteOperation<>(
                         collection,
                         readerWriterLockPool.getReaderWriterLock(scheme, collection),
-                        collectionIndexProviderFactory.create(collection),
-                        databaseStorageManagerFactory.create()
+                        collectionIndexProvider,
+                        databaseStorageManager
                 );
             }
 
@@ -55,8 +60,8 @@ public class CollectionOperationFactory {
                         scheme,
                         collection,
                         readerWriterLockPool.getReaderWriterLock(scheme, collection),
-                        collectionIndexProviderFactory.create(collection),
-                        databaseStorageManagerFactory.create()
+                        collectionIndexProvider,
+                        databaseStorageManager
                 );
             }
         };

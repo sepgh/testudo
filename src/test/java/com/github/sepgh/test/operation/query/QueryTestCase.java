@@ -66,7 +66,7 @@ public class QueryTestCase {
     @Timeout(value = 2)
     public void simpleCondition() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.create();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
 
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
         CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
@@ -244,7 +244,7 @@ public class QueryTestCase {
     @Timeout(value = 2)
     public void simpleCondition_LowCardinality() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.create();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
 
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
         CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
@@ -333,7 +333,7 @@ public class QueryTestCase {
     @Timeout(2)
     public void compositeQuery_And() {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.create();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
 
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
         CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
@@ -459,7 +459,7 @@ public class QueryTestCase {
     @Timeout(2)
     public void compositeQuery_Or() {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.create();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
 
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
         CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);

@@ -10,7 +10,7 @@ public abstract class DatabaseStorageManagerFactory {
         this.engineConfig = engineConfig;
     }
 
-    public abstract DatabaseStorageManager create();
+    public abstract DatabaseStorageManager getInstance();
 
     public static class DiskPageDatabaseStorageManagerFactory extends DatabaseStorageManagerFactory {
         private final FileHandlerPoolFactory fileHandlerPoolFactory;
@@ -22,21 +22,21 @@ public abstract class DatabaseStorageManagerFactory {
         }
 
         @Override
-        public synchronized DatabaseStorageManager create() {
+        public synchronized DatabaseStorageManager getInstance() {
             if (databaseStorageManager != null)
                 return databaseStorageManager;
 
             if (engineConfig.getRemovedObjectTrackingStrategy().equals(EngineConfig.RemovedObjectTrackingStrategy.IN_MEMORY)) {
                 this.databaseStorageManager = new DiskPageDatabaseStorageManager(
                         engineConfig,
-                        fileHandlerPoolFactory.create(),
+                        fileHandlerPoolFactory.getInstance(),
                         new RemovedObjectsTracer.InMemoryRemovedObjectsTracer(engineConfig.getIMROTMinLengthToSplit())
                 );
             } else {
                 // Note: no difference than above line for now, does the same thing! Todo: update if new implementations of Removed Object Tracker has been added
                 this.databaseStorageManager = new DiskPageDatabaseStorageManager(
                         engineConfig,
-                        fileHandlerPoolFactory.create()
+                        fileHandlerPoolFactory.getInstance()
                 );
             }
 

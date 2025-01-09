@@ -71,7 +71,7 @@ public class SchemeManagerTestCase {
     @Test
     public void test_SchemeManager() throws IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.create();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
 
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
         CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
@@ -169,7 +169,7 @@ public class SchemeManagerTestCase {
     @Test
     public void test_SchemeManager_WithData() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.create();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
         CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
 

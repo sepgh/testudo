@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 @Getter
 public class FileHandler {
     private final AsynchronousFileChannel fileChannel;
+    private ExecutorService executor;
     private int usageCount = 0;
     private volatile boolean closed = Boolean.FALSE;
 
@@ -27,6 +28,7 @@ public class FileHandler {
                 ),
                 executorService
         );
+        this.executor = executorService;
     }
 
     public FileHandler(String filePath) throws IOException {
@@ -56,6 +58,7 @@ public class FileHandler {
             try {
                 while (usageCount > 0){
                     try {
+                        System.out.println("Waiting for " + usageCount + " usages");
                         wait(timeUnit.toMillis(timeout));
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
@@ -65,6 +68,11 @@ public class FileHandler {
             } finally {
                 usageCount = 0;
                 fileChannel.close();
+            }
+
+
+            if (executor != null) {
+                executor.shutdownNow();
             }
         }
     }

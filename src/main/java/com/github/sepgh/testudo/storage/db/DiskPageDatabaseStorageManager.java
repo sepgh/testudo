@@ -351,4 +351,8 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         }
     }
 
+    @Override
+    public void close() {
+        this.pageBuffer.releaseAll();
+    }
 }

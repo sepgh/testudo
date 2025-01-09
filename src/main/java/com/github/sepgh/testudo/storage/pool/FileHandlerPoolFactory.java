@@ -7,7 +7,7 @@ import lombok.AllArgsConstructor;
 public abstract class FileHandlerPoolFactory {
     protected final EngineConfig engineConfig;
 
-    public abstract FileHandlerPool create();
+    public abstract FileHandlerPool getInstance();
 
     public static class DefaultFileHandlerPoolFactory extends FileHandlerPoolFactory {
         private FileHandlerPool fileHandlerPool;
@@ -17,7 +17,11 @@ public abstract class FileHandlerPoolFactory {
         }
 
         @Override
-        public synchronized FileHandlerPool create() {
+        public synchronized FileHandlerPool getInstance() {
+            if (fileHandlerPool != null){
+                return fileHandlerPool;
+            }
+
             if (engineConfig.getFileHandlerStrategy().equals(EngineConfig.FileHandlerStrategy.UNLIMITED)){
                 fileHandlerPool = new UnlimitedFileHandlerPool(
                         FileHandler.SingletonFileHandlerFactory.getInstance(

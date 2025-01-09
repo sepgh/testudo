@@ -14,9 +14,9 @@ public class AndIterator<T extends Number> implements Iterator<T> {
     }
 
     public AndIterator(List<Iterator<T>> iterators, IterationCacheFactory iterationCacheFactory) {
+        Preconditions.checkArgument(iterators.size() > 1, "Need at least 2 iterators to perform AND operation");
         this.iterators = iterators;
         this.iterationCache = iterationCacheFactory.create();
-        Preconditions.checkArgument(iterators.size() > 1, "Need at least 2 iterators to perform AND operation");
     }
 
     @Override

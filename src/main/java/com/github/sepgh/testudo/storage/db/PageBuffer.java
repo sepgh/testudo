@@ -61,6 +61,12 @@ public class PageBuffer {
         this.release(PageTitle.of(page));
     }
 
+    public void releaseAll() {
+        this.referencedWrappers.forEach((cacheKey, pageWrapper) -> {
+            release(cacheKey);
+        });
+    }
+
     public static class PageWrapper {
         @Getter
         private final Page page;

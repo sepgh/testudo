@@ -1,9 +1,6 @@
 package com.github.sepgh.testudo.context;
 
-import com.github.sepgh.testudo.operation.CollectionIndexProviderFactory;
-import com.github.sepgh.testudo.operation.CollectionOperation;
-import com.github.sepgh.testudo.operation.CollectionOperationFactory;
-import com.github.sepgh.testudo.operation.DefaultCollectionIndexProviderFactory;
+import com.github.sepgh.testudo.operation.*;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerFactory;
@@ -11,6 +8,8 @@ import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPoolFactory;
+
+import java.util.concurrent.TimeUnit;
 
 public abstract class DatabaseContextConfigurator {
     private FileHandlerPoolFactory fileHandlerPoolFactory;
@@ -92,7 +91,7 @@ public abstract class DatabaseContextConfigurator {
     }
 
     public CollectionIndexProviderFactory collectionIndexProviderFactory() {
-        return new DefaultCollectionIndexProviderFactory(this.getScheme(), this.getEngineConfig(), this.getIndexStorageManagerFactory(), this.getDatabaseStorageManagerFactory().create());
+        return new DefaultCollectionIndexProviderFactory(this.getScheme(), this.getEngineConfig(), this.getIndexStorageManagerFactory(), this.getDatabaseStorageManagerFactory().getInstance());
     }
 
     public CollectionIndexProviderFactory getCollectionIndexProviderFactory() {
@@ -108,11 +107,22 @@ public abstract class DatabaseContextConfigurator {
 
     public DatabaseContext databaseContext() {
         if (databaseContext == null)
-            this.databaseContext = new DefaultDatabaseContext();
+            this.databaseContext = new DefaultDatabaseContext(getScheme());
         return this.databaseContext;
     }
 
     public class DefaultDatabaseContext implements DatabaseContext {
+
+        private final Scheme scheme;
+
+        public DefaultDatabaseContext(Scheme scheme) {
+            this.scheme = scheme;
+        }
+
+        @Override
+        public Scheme getScheme() {
+            return scheme;
+        }
 
         @Override
         public CollectionOperation getOperation(Scheme.Collection collection) {
@@ -125,6 +135,15 @@ public abstract class DatabaseContextConfigurator {
                     // Todo: err instead of orElse
                     getScheme().getCollection(collection).orElse(null)
             ).create();
+        }
+
+        @Override
+        public void shutdownGracefully() {
+            for (Scheme.Collection collection : getScheme().getCollections()) {
+                ReaderWriterLockPool.getInstance().getReaderWriterLock(getScheme(), collection).getWriteLock().lock();
+            }
+            getFileHandlerPoolFactory().getInstance().closeAll(1, TimeUnit.DAYS);  // Todo
+            getDatabaseStorageManagerFactory().getInstance().close();
         }
     }
 

@@ -41,11 +41,11 @@ public class DefaultIndexStorageManagerFactory extends IndexStorageManagerFactor
 
             EngineConfig.IndexStorageManagerStrategy indexStorageManagerStrategy = engineConfig.getIndexStorageManagerStrategy();
             if (indexStorageManagerStrategy.equals(EngineConfig.IndexStorageManagerStrategy.ORGANIZED)) {
-                return new OrganizedFileIndexStorageManager(customName, indexHeaderManagerFactory, engineConfig, fileHandlerPoolFactory.create());
+                return new OrganizedFileIndexStorageManager(customName, indexHeaderManagerFactory, engineConfig, fileHandlerPoolFactory.getInstance());
             } else if (indexStorageManagerStrategy.equals(EngineConfig.IndexStorageManagerStrategy.PAGE_BUFFER)) {
-                return new DiskPageFileIndexStorageManager(engineConfig, indexHeaderManagerFactory, fileHandlerPoolFactory.create(), databaseStorageManagerFactory.create());
+                return new DiskPageFileIndexStorageManager(engineConfig, indexHeaderManagerFactory, fileHandlerPoolFactory.getInstance(), databaseStorageManagerFactory.getInstance());
             } else {
-                return new CompactFileIndexStorageManager(indexHeaderManagerFactory, engineConfig, fileHandlerPoolFactory.create());
+                return new CompactFileIndexStorageManager(indexHeaderManagerFactory, engineConfig, fileHandlerPoolFactory.getInstance());
             }
 
         });

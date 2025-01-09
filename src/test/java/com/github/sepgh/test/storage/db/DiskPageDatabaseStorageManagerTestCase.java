@@ -48,7 +48,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
     @Test
     public void test_canStoreObject() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
+        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
         
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
         Pointer pointer = storageManager.store(-1, 17, 1, data);
@@ -68,7 +68,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
     public void test_canChangePages() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
         this.engineConfig.setDbPageSize(100);
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
+        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
 
         byte[] data = new byte[60];
         Pointer pointer = storageManager.store(-1, 17, 1, data);
@@ -91,7 +91,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
     @Test
     public void test_canStoreAndReadObject() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
+        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
 
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
         Pointer pointer = storageManager.store(-1, 17,1, data);
@@ -112,7 +112,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
     @Test
     public void test_canStoreUpdateAndReadObject() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
+        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
 
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
         Pointer pointer = storageManager.store(-1, 17,1, data);
@@ -141,7 +141,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
     @Test
     public void test_canStoreDeleteAndReuseObject() throws IOException, ExecutionException, InterruptedException {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
+        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
 
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
         Pointer pointer = storageManager.store(-1, 17, 1, data);
@@ -159,7 +159,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
     @Test
     public void test_canStoreDeleteAndReuseMultipleObjects() throws IOException, ExecutionException, InterruptedException {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
+        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
 
         List<String> inputs = Arrays.asList("10", "100", "1000", "10000");
         List<Pointer> pointers = new ArrayList<>();
@@ -201,7 +201,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
         this.engineConfig.setDbPageSize(100000);
 
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
+        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
 
         Pointer pointer1 = storageManager.store(-1, 1, 1, new byte[1000]);
         Pointer pointer2 = storageManager.store(-1, 1, 1, new byte[1000]);
@@ -232,7 +232,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
     @Test
     public void test_multiThreadedInsertAndSelect() throws IOException, ExecutionException, InterruptedException {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.create();
+        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
 
         int cases = 20;
 
