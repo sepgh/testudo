@@ -3,6 +3,7 @@ package com.github.sepgh.test.operation.query;
 import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.DuplicateQueryableIndex;
@@ -64,7 +65,7 @@ public class QueryTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void simpleCondition() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void simpleCondition() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, DeserializationException {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
         DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
 
@@ -242,7 +243,7 @@ public class QueryTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void simpleCondition_LowCardinality() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void simpleCondition_LowCardinality() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, DeserializationException {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
         DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
 

@@ -2,6 +2,7 @@ package com.github.sepgh.test.operation;
 
 import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.EngineConfig;
+import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.exception.SerializationException;
@@ -130,6 +131,8 @@ public class CollectionMultiThreadedOperationTestCase {
 
                      } catch (SerializationException | RuntimeException e) {
                          e.printStackTrace();
+                     } catch (InternalOperationException | DeserializationException e) {
+                         throw new RuntimeException(e);
                      } finally {
                          countDownLatch.countDown();
                      }
@@ -173,8 +176,10 @@ public class CollectionMultiThreadedOperationTestCase {
                             .execute();
 
                     Assertions.assertEquals(1, deleted);
-                } catch (RuntimeException e) {
+                } catch (InternalOperationException | RuntimeException e) {
                     e.printStackTrace();
+                } catch (DeserializationException e) {
+                    throw new RuntimeException(e);
                 } finally {
                     countDownLatch2.countDown();
                 }

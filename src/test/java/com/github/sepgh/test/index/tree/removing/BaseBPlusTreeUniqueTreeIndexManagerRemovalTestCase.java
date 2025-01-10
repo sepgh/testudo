@@ -545,8 +545,7 @@ public class BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
             executorService.submit(() -> {
                 try {
                     uniqueTreeIndexManager.addIndex(testIdentifier, samplePointer);
-                } catch (IndexExistsException |
-                         InternalOperationException e) {
+                } catch (InternalOperationException e) {
                     throw new RuntimeException(e);
                 } finally {
                     countDownLatch.countDown();

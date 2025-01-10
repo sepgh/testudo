@@ -4,6 +4,9 @@ import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.DatabaseContext;
 import com.github.sepgh.testudo.context.DatabaseContextConfigurator;
 import com.github.sepgh.testudo.context.EngineConfig;
+import com.github.sepgh.testudo.exception.BaseSerializationException;
+import com.github.sepgh.testudo.exception.DeserializationException;
+import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.operation.CollectionOperation;
 import com.github.sepgh.testudo.operation.query.Operation;
@@ -82,7 +85,7 @@ public class DatabaseContextConfiguratorTestCase {
 
 
     @Test
-    public void operationsFromContext() throws SerializationException {
+    public void operationsFromContext() throws BaseSerializationException, InternalOperationException {
         DatabaseContext databaseContext = this.configurator.databaseContext();
 
         CollectionOperation collectionOperation = databaseContext.getOperation("test");

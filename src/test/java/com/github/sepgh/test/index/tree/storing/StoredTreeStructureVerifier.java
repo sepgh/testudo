@@ -2,6 +2,7 @@ package com.github.sepgh.test.index.tree.storing;
 
 import com.github.sepgh.testudo.ds.KVSize;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.InternalTreeNode;
@@ -42,7 +43,7 @@ public class StoredTreeStructureVerifier {
      *     ├── 011
      *     └── 012
      */
-    public static void testUnOrderedTreeStructure1(IndexStorageManager indexStorageManager, int table, long multi, int degree) throws ExecutionException, InterruptedException, IOException {
+    public static void testUnOrderedTreeStructure1(IndexStorageManager indexStorageManager, int table, long multi, int degree) throws ExecutionException, InterruptedException, IOException, InternalOperationException {
         Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table, KV_SIZE).get();
         Assertions.assertTrue(optional.isPresent());
         NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
@@ -170,7 +171,7 @@ public class StoredTreeStructureVerifier {
      *     ├── 011
      *     └── 012
      */
-    public static void testOrderedTreeStructure(IndexStorageManager indexStorageManager, int table, long multi, int degree) throws ExecutionException, InterruptedException, IOException {
+    public static void testOrderedTreeStructure(IndexStorageManager indexStorageManager, int table, long multi, int degree) throws ExecutionException, InterruptedException, IOException, InternalOperationException {
         Optional<IndexStorageManager.NodeData> optional = indexStorageManager.getRoot(table, new KVSize(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get().size(), PointerIndexBinaryObject.BYTES)).get();
         Assertions.assertTrue(optional.isPresent());
         NodeFactory.ClusterNodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());

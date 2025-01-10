@@ -4,6 +4,7 @@ import com.github.sepgh.test.TestParams;
 import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.DuplicateBPlusTreeIndexManagerBridge;
 import com.github.sepgh.testudo.index.DuplicateBitmapIndexManager;
@@ -69,7 +70,7 @@ public class DuplicateQueryableIndexTestCase {
     
     @Test
     @Timeout(value = 2)
-    public void testGreaterThan_Bitmap() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
+    public void testGreaterThan_Bitmap() throws IOException, ExecutionException, InterruptedException, InternalOperationException, DeserializationException {
         UniqueQueryableIndex<Integer, Pointer> uniqueTreeIndexManager = getIntegerPointerUniqueTreeIndexManager();
 
         DuplicateQueryableIndex<Integer, Integer> duplicateQueryableIndex = new DuplicateBitmapIndexManager<>(
@@ -85,7 +86,7 @@ public class DuplicateQueryableIndexTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void testLessThan_Bitmap() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
+    public void testLessThan_Bitmap() throws IOException, ExecutionException, InterruptedException, InternalOperationException, DeserializationException {
         UniqueQueryableIndex<Integer, Pointer> uniqueTreeIndexManager = getIntegerPointerUniqueTreeIndexManager();
 
         DuplicateQueryableIndex<Integer, Integer> duplicateQueryableIndex = new DuplicateBitmapIndexManager<>(
@@ -101,7 +102,7 @@ public class DuplicateQueryableIndexTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void testGreaterThan_BPlusTreeBridge() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
+    public void testGreaterThan_BPlusTreeBridge() throws IOException, ExecutionException, InterruptedException, InternalOperationException, DeserializationException {
         UniqueQueryableIndex<Integer, Pointer> uniqueTreeIndexManager = getIntegerPointerUniqueTreeIndexManager();
 
         DuplicateQueryableIndex<Integer, Integer> duplicateQueryableIndex = new DuplicateBPlusTreeIndexManagerBridge<>(
@@ -118,7 +119,7 @@ public class DuplicateQueryableIndexTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void testLessThan_BPlusTreeBridge() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
+    public void testLessThan_BPlusTreeBridge() throws IOException, ExecutionException, InterruptedException, InternalOperationException, DeserializationException {
         UniqueQueryableIndex<Integer, Pointer> uniqueTreeIndexManager = getIntegerPointerUniqueTreeIndexManager();
 
         DuplicateQueryableIndex<Integer, Integer> duplicateQueryableIndex = new DuplicateBPlusTreeIndexManagerBridge<>(
@@ -134,7 +135,7 @@ public class DuplicateQueryableIndexTestCase {
     }
 
 
-    private void runLargerThanTest(DuplicateQueryableIndex<Integer, Integer> duplicateQueryableIndex) throws InternalOperationException, IOException, ExecutionException, InterruptedException {
+    private void runLargerThanTest(DuplicateQueryableIndex<Integer, Integer> duplicateQueryableIndex) throws InternalOperationException, IOException, ExecutionException, InterruptedException, DeserializationException {
         for (int i = 1; i < 4; i++) {
             for (int j = 0; j < 3; j++) {
                 int add = (int) (i * Math.pow(10, j));
@@ -188,7 +189,7 @@ public class DuplicateQueryableIndexTestCase {
 
     }
 
-    private void runLessThanTest(DuplicateQueryableIndex<Integer, Integer> duplicateQueryableIndex) throws InternalOperationException, IOException, ExecutionException, InterruptedException {
+    private void runLessThanTest(DuplicateQueryableIndex<Integer, Integer> duplicateQueryableIndex) throws InternalOperationException, IOException, ExecutionException, InterruptedException, DeserializationException {
         for (int i = 1; i < 4; i++) {
             for (int j = 0; j < 3; j++) {
                 int add = (int) (i * Math.pow(10, j));

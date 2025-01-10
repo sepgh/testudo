@@ -2,9 +2,7 @@ package com.github.sepgh.test.operation;
 
 import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.EngineConfig;
-import com.github.sepgh.testudo.exception.IndexExistsException;
-import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.exception.SerializationException;
+import com.github.sepgh.testudo.exception.*;
 import com.github.sepgh.testudo.operation.*;
 import com.github.sepgh.testudo.operation.query.Operation;
 import com.github.sepgh.testudo.operation.query.Query;
@@ -89,7 +87,7 @@ public class DefaultCollectionUpdateOperationTestCase {
     }
 
     @Test
-    public void test() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void test() throws IOException, BaseSerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
         DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
@@ -166,7 +164,7 @@ public class DefaultCollectionUpdateOperationTestCase {
     }
 
     @Test
-    public void testWithNull() throws SerializationException {
+    public void testWithNull() throws BaseSerializationException, InternalOperationException {
         DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
         DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
         IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
