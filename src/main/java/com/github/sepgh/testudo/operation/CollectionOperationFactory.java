@@ -2,26 +2,26 @@ package com.github.sepgh.testudo.operation;
 
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
-import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerFactory;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerSingletonFactory;
 
 public class CollectionOperationFactory {
     protected final Scheme scheme;
     protected final Scheme.Collection collection;
     protected final ReaderWriterLockPool readerWriterLockPool = ReaderWriterLockPool.getInstance();
-    protected final CollectionIndexProviderFactory collectionIndexProviderFactory;
-    protected final DatabaseStorageManagerFactory databaseStorageManagerFactory;
+    protected final CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory;
+    protected final DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory;
 
-    public CollectionOperationFactory(Scheme scheme, Scheme.Collection collection, CollectionIndexProviderFactory collectionIndexProviderFactory, DatabaseStorageManagerFactory databaseStorageManagerFactory) {
+    public CollectionOperationFactory(Scheme scheme, Scheme.Collection collection, CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory, DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory) {
         this.scheme = scheme;
         this.collection = collection;
-        this.collectionIndexProviderFactory = collectionIndexProviderFactory;
-        this.databaseStorageManagerFactory = databaseStorageManagerFactory;
+        this.collectionIndexProviderSingletonFactory = collectionIndexProviderSingletonFactory;
+        this.databaseStorageManagerSingletonFactory = databaseStorageManagerSingletonFactory;
     }
 
     public CollectionOperation create() {
         return new CollectionOperation(collection) {
-            private final CollectionIndexProvider collectionIndexProvider = collectionIndexProviderFactory.create(collection);
-            private final DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
+            private final CollectionIndexProvider collectionIndexProvider = collectionIndexProviderSingletonFactory.getInstance(collection);
+            private final DatabaseStorageManager databaseStorageManager = databaseStorageManagerSingletonFactory.getInstance();
 
 
             @Override

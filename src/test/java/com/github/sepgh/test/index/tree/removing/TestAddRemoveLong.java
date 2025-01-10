@@ -21,7 +21,7 @@ public class TestAddRemoveLong extends BaseBPlusTreeUniqueTreeIndexManagerRemova
     protected IndexStorageManager getIndexStorageManager() {
         return new OrganizedFileIndexStorageManager(
                 "test",
-                new JsonIndexHeaderManager.Factory(),
+                new JsonIndexHeaderManager.SingletonFactory(),
                 engineConfig,
                 new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
         );

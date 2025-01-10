@@ -3,24 +3,24 @@ package com.github.sepgh.testudo.context;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.operation.*;
 import com.github.sepgh.testudo.scheme.Scheme;
-import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerFactory;
-import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerFactory;
-import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
-import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerSingletonFactory;
+import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerSingletonFactory;
+import com.github.sepgh.testudo.storage.index.IndexStorageManagerSingletonFactory;
+import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerSingletonFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
-import com.github.sepgh.testudo.storage.pool.FileHandlerPoolFactory;
+import com.github.sepgh.testudo.storage.pool.FileHandlerPoolSingletonFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
 public abstract class DatabaseContextConfigurator {
-    private FileHandlerPoolFactory fileHandlerPoolFactory;
-    private IndexHeaderManagerFactory indexHeaderManagerFactory;
+    private FileHandlerPoolSingletonFactory fileHandlerPoolSingletonFactory;
+    private IndexHeaderManagerSingletonFactory indexHeaderManagerSingletonFactory;
     private EngineConfig engineConfig;
-    private IndexStorageManagerFactory indexStorageManagerFactory;
-    private DatabaseStorageManagerFactory databaseStorageManagerFactory;
-    private CollectionIndexProviderFactory collectionIndexProviderFactory;
+    private IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory;
+    private DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory;
+    private CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory;
     private Scheme scheme;
     private DatabaseContext databaseContext;
 
@@ -44,30 +44,30 @@ public abstract class DatabaseContextConfigurator {
         return scheme;
     }
 
-    public IndexHeaderManagerFactory indexHeaderManagerFactory() {
-        return new JsonIndexHeaderManager.Factory();
+    protected IndexHeaderManagerSingletonFactory indexHeaderManagerFactory() {
+        return new JsonIndexHeaderManager.SingletonFactory();
     }
 
-    protected IndexHeaderManagerFactory getIndexHeaderManagerFactory() {
-        if (indexHeaderManagerFactory == null) {
-            indexHeaderManagerFactory = indexHeaderManagerFactory();
+    public IndexHeaderManagerSingletonFactory getIndexHeaderManagerFactory() {
+        if (indexHeaderManagerSingletonFactory == null) {
+            indexHeaderManagerSingletonFactory = indexHeaderManagerFactory();
         }
-        return indexHeaderManagerFactory;
+        return indexHeaderManagerSingletonFactory;
     }
 
-    public FileHandlerPoolFactory fileHandlerPoolFactory() {
-        return new FileHandlerPoolFactory.DefaultFileHandlerPoolFactory(getEngineConfig());
+    protected FileHandlerPoolSingletonFactory fileHandlerPoolFactory() {
+        return new FileHandlerPoolSingletonFactory.DefaultFileHandlerPoolSingletonFactory(getEngineConfig());
     }
 
-    protected FileHandlerPoolFactory getFileHandlerPoolFactory() {
-        if (fileHandlerPoolFactory == null) {
-            this.fileHandlerPoolFactory = fileHandlerPoolFactory();
+    public FileHandlerPoolSingletonFactory getFileHandlerPoolFactory() {
+        if (fileHandlerPoolSingletonFactory == null) {
+            this.fileHandlerPoolSingletonFactory = fileHandlerPoolFactory();
         }
-        return fileHandlerPoolFactory;
+        return fileHandlerPoolSingletonFactory;
     }
 
-    public IndexStorageManagerFactory indexStorageManagerFactory() {
-        return new DefaultIndexStorageManagerFactory(
+    protected IndexStorageManagerSingletonFactory indexStorageManagerFactory() {
+        return new DefaultIndexStorageManagerSingletonFactory(
                 getEngineConfig(),
                 getIndexHeaderManagerFactory(),
                 getFileHandlerPoolFactory(),
@@ -75,36 +75,36 @@ public abstract class DatabaseContextConfigurator {
         );
     }
 
-    protected IndexStorageManagerFactory getIndexStorageManagerFactory() {
-        if (indexStorageManagerFactory == null) {
-            this.indexStorageManagerFactory = indexStorageManagerFactory();
+    public IndexStorageManagerSingletonFactory getIndexStorageManagerFactory() {
+        if (indexStorageManagerSingletonFactory == null) {
+            this.indexStorageManagerSingletonFactory = indexStorageManagerFactory();
         }
-        return indexStorageManagerFactory;
+        return indexStorageManagerSingletonFactory;
     }
 
-    public DatabaseStorageManagerFactory databaseStorageManagerFactory() {
-        return new DatabaseStorageManagerFactory.DiskPageDatabaseStorageManagerFactory(getEngineConfig(), getFileHandlerPoolFactory());
+    protected DatabaseStorageManagerSingletonFactory databaseStorageManagerFactory() {
+        return new DatabaseStorageManagerSingletonFactory.DiskPageDatabaseStorageManagerSingletonFactory(getEngineConfig(), getFileHandlerPoolFactory());
     }
 
-    protected DatabaseStorageManagerFactory getDatabaseStorageManagerFactory() {
-        if (databaseStorageManagerFactory == null) {
-            this.databaseStorageManagerFactory = databaseStorageManagerFactory();
+    public DatabaseStorageManagerSingletonFactory getDatabaseStorageManagerFactory() {
+        if (databaseStorageManagerSingletonFactory == null) {
+            this.databaseStorageManagerSingletonFactory = databaseStorageManagerFactory();
         }
-        return databaseStorageManagerFactory;
+        return databaseStorageManagerSingletonFactory;
     }
 
-    public CollectionIndexProviderFactory collectionIndexProviderFactory() {
-        return new DefaultCollectionIndexProviderFactory(this.getScheme(), this.getEngineConfig(), this.getIndexStorageManagerFactory(), this.getDatabaseStorageManagerFactory().getInstance());
+    protected CollectionIndexProviderSingletonFactory collectionIndexProviderFactory() {
+        return new DefaultCollectionIndexProviderSingletonFactory(this.getScheme(), this.getEngineConfig(), this.getIndexStorageManagerFactory(), this.getDatabaseStorageManagerFactory().getInstance());
     }
 
-    public CollectionIndexProviderFactory getCollectionIndexProviderFactory() {
-        if (this.collectionIndexProviderFactory == null) {
-            this.collectionIndexProviderFactory = collectionIndexProviderFactory();
+    public CollectionIndexProviderSingletonFactory getCollectionIndexProviderFactory() {
+        if (this.collectionIndexProviderSingletonFactory == null) {
+            this.collectionIndexProviderSingletonFactory = collectionIndexProviderFactory();
         }
-        return collectionIndexProviderFactory;
+        return collectionIndexProviderSingletonFactory;
     }
 
-    public CollectionOperationFactory collectionOperationFactory(Scheme.Collection collection) {
+    protected CollectionOperationFactory collectionOperationFactory(Scheme.Collection collection) {
         return new CollectionOperationFactory(getScheme(), collection, getCollectionIndexProviderFactory(), getDatabaseStorageManagerFactory());
     }
 

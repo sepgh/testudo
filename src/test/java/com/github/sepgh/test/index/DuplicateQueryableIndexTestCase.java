@@ -57,7 +57,7 @@ public class DuplicateQueryableIndexTestCase {
     }
 
     private UniqueQueryableIndex<Integer, Pointer> getIntegerPointerUniqueTreeIndexManager() {
-        IndexStorageManager indexStorageManager = new OrganizedFileIndexStorageManager(new JsonIndexHeaderManager.Factory(), engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()));
+        IndexStorageManager indexStorageManager = new OrganizedFileIndexStorageManager(new JsonIndexHeaderManager.SingletonFactory(), engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()));
 
         return new BPlusTreeUniqueTreeIndexManager<>(
                 1,

@@ -6,7 +6,7 @@ import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.ErrorMessage;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
-import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
+import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerSingletonFactory;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
 import com.github.sepgh.testudo.storage.pool.ManagedFileHandler;
 import com.github.sepgh.testudo.utils.FileUtils;
@@ -27,12 +27,12 @@ Todo: when a node is removed, depending on it's index and chunk we can keep a re
 
 public class OrganizedFileIndexStorageManager extends BaseFileIndexStorageManager {
 
-    public OrganizedFileIndexStorageManager(@Nullable String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) {
-        super(customName, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
+    public OrganizedFileIndexStorageManager(@Nullable String customName, IndexHeaderManagerSingletonFactory indexHeaderManagerSingletonFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) {
+        super(customName, indexHeaderManagerSingletonFactory, engineConfig, fileHandlerPool);
     }
 
-    public OrganizedFileIndexStorageManager(IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) {
-        super(indexHeaderManagerFactory, engineConfig, fileHandlerPool);
+    public OrganizedFileIndexStorageManager(IndexHeaderManagerSingletonFactory indexHeaderManagerSingletonFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) {
+        super(indexHeaderManagerSingletonFactory, engineConfig, fileHandlerPool);
     }
 
     protected Path getIndexFilePath(int indexId, int chunk) {

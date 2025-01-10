@@ -16,11 +16,11 @@ import com.github.sepgh.testudo.scheme.annotation.Collection;
 import com.github.sepgh.testudo.scheme.annotation.Field;
 import com.github.sepgh.testudo.scheme.annotation.Index;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
-import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerFactory;
-import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerFactory;
-import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerSingletonFactory;
+import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerSingletonFactory;
+import com.github.sepgh.testudo.storage.index.IndexStorageManagerSingletonFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
-import com.github.sepgh.testudo.storage.pool.FileHandlerPoolFactory;
+import com.github.sepgh.testudo.storage.pool.FileHandlerPoolSingletonFactory;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import lombok.*;
 import org.junit.jupiter.api.AfterEach;
@@ -41,7 +41,7 @@ public class DefaultCollectionInsertOperationTestCase {
     private EngineConfig engineConfig;
     private Path dbPath;
 
-    private FileHandlerPoolFactory fileHandlerPoolFactory;
+    private FileHandlerPoolSingletonFactory fileHandlerPoolSingletonFactory;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -50,11 +50,11 @@ public class DefaultCollectionInsertOperationTestCase {
                 .clusterKeyType(EngineConfig.ClusterKeyType.LONG)
                 .baseDBPath(this.dbPath.toString())
                 .build();
-        this.fileHandlerPoolFactory = new FileHandlerPoolFactory.DefaultFileHandlerPoolFactory(engineConfig);
+        this.fileHandlerPoolSingletonFactory = new FileHandlerPoolSingletonFactory.DefaultFileHandlerPoolSingletonFactory(engineConfig);
     }
 
-    private DatabaseStorageManagerFactory getDatabaseStorageManagerFactory() {
-        return new DatabaseStorageManagerFactory.DiskPageDatabaseStorageManagerFactory(engineConfig, fileHandlerPoolFactory);
+    private DatabaseStorageManagerSingletonFactory getDatabaseStorageManagerFactory() {
+        return new DatabaseStorageManagerSingletonFactory.DiskPageDatabaseStorageManagerSingletonFactory(engineConfig, fileHandlerPoolSingletonFactory);
     }
 
     @AfterEach
@@ -114,9 +114,9 @@ public class DefaultCollectionInsertOperationTestCase {
 
     @Test
     public void test() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, DeserializationException {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
+        IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")
@@ -125,7 +125,7 @@ public class DefaultCollectionInsertOperationTestCase {
         Scheme.Collection collection = new ModelToCollectionConverter(TestModel.class).toCollection();
         scheme.getCollections().add(collection);
 
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, storageManager);
+        CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory = new DefaultCollectionIndexProviderSingletonFactory(scheme, engineConfig, indexStorageManagerSingletonFactory, storageManager);
 
         TestModel testModel1 = TestModel.builder().id(1).age(10L).country("DE").name("John").build();
         TestModel testModel2 = TestModel.builder().id(2).age(20L).country("FR").name("Rose").build();
@@ -133,14 +133,14 @@ public class DefaultCollectionInsertOperationTestCase {
         TestModel testModel4 = TestModel.builder().id(4).age(40L).country("GB").name("Foo").build();
 
         ReaderWriterLock readerWriterLock = new ReaderWriterLock();
-        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
-        CollectionDeleteOperation<Long> collectionDeleteOperation = new DefaultCollectionDeleteOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
+        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
+        CollectionDeleteOperation<Long> collectionDeleteOperation = new DefaultCollectionDeleteOperation<>(collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
 
         for (TestModel testModel : Arrays.asList(testModel1, testModel2, testModel3, testModel4)) {
             collectionInsertOperation.execute(testModel);
         }
 
-        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
         long count = collectionSelectOperation.count();
         Assertions.assertEquals(4L, count);
         Iterator<TestModel> execute = collectionSelectOperation.execute(TestModel.class);
@@ -174,9 +174,9 @@ public class DefaultCollectionInsertOperationTestCase {
 
     @Test
     public void test_nullable() throws SerializationException, InternalOperationException, DeserializationException {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
+        IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")
@@ -185,7 +185,7 @@ public class DefaultCollectionInsertOperationTestCase {
         Scheme.Collection collection = new ModelToCollectionConverter(NullableTestModel.class).toCollection();
         scheme.getCollections().add(collection);
 
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, storageManager);
+        CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory = new DefaultCollectionIndexProviderSingletonFactory(scheme, engineConfig, indexStorageManagerSingletonFactory, storageManager);
 
         NullableTestModel m1 = NullableTestModel.builder()
                 .id(1)
@@ -201,8 +201,8 @@ public class DefaultCollectionInsertOperationTestCase {
 
 
         ReaderWriterLock readerWriterLock = new ReaderWriterLock();
-        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
-        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
+        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
 
         for (NullableTestModel testModel : Arrays.asList(m1, m2)) {
             collectionInsertOperation.execute(testModel);

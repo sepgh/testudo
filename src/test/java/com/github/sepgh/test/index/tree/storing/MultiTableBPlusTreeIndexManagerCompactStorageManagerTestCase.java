@@ -58,7 +58,7 @@ public class MultiTableBPlusTreeIndexManagerCompactStorageManagerTestCase {
 
     private CompactFileIndexStorageManager getSingleFileIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
         return new CompactFileIndexStorageManager(
-                new JsonIndexHeaderManager.Factory(),
+                new JsonIndexHeaderManager.SingletonFactory(),
                 engineConfig,
                 new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
         );

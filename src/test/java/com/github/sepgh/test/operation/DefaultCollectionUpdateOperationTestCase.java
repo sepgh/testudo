@@ -13,11 +13,11 @@ import com.github.sepgh.testudo.scheme.annotation.Collection;
 import com.github.sepgh.testudo.scheme.annotation.Field;
 import com.github.sepgh.testudo.scheme.annotation.Index;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
-import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerFactory;
-import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerFactory;
-import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerSingletonFactory;
+import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerSingletonFactory;
+import com.github.sepgh.testudo.storage.index.IndexStorageManagerSingletonFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
-import com.github.sepgh.testudo.storage.pool.FileHandlerPoolFactory;
+import com.github.sepgh.testudo.storage.pool.FileHandlerPoolSingletonFactory;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import lombok.*;
 import org.junit.jupiter.api.AfterEach;
@@ -40,7 +40,7 @@ public class DefaultCollectionUpdateOperationTestCase {
             .dbName("test")
             .version(1)
             .build();
-    private FileHandlerPoolFactory fileHandlerPoolFactory;
+    private FileHandlerPoolSingletonFactory fileHandlerPoolSingletonFactory;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -49,11 +49,11 @@ public class DefaultCollectionUpdateOperationTestCase {
                 .clusterKeyType(EngineConfig.ClusterKeyType.LONG)
                 .baseDBPath(this.dbPath.toString())
                 .build();
-        this.fileHandlerPoolFactory = new FileHandlerPoolFactory.DefaultFileHandlerPoolFactory(engineConfig);
+        this.fileHandlerPoolSingletonFactory = new FileHandlerPoolSingletonFactory.DefaultFileHandlerPoolSingletonFactory(engineConfig);
     }
 
-    private DatabaseStorageManagerFactory getDatabaseStorageManagerFactory() {
-        return new DatabaseStorageManagerFactory.DiskPageDatabaseStorageManagerFactory(engineConfig, fileHandlerPoolFactory);
+    private DatabaseStorageManagerSingletonFactory getDatabaseStorageManagerFactory() {
+        return new DatabaseStorageManagerSingletonFactory.DiskPageDatabaseStorageManagerSingletonFactory(engineConfig, fileHandlerPoolSingletonFactory);
     }
 
     @AfterEach
@@ -88,10 +88,10 @@ public class DefaultCollectionUpdateOperationTestCase {
 
     @Test
     public void test() throws IOException, BaseSerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, storageManager);
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
+        IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);
+        CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory = new DefaultCollectionIndexProviderSingletonFactory(scheme, engineConfig, indexStorageManagerSingletonFactory, storageManager);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")
@@ -106,14 +106,14 @@ public class DefaultCollectionUpdateOperationTestCase {
         TestModel testModel4 = TestModel.builder().id(4).age(40L).country("GB").name("Foo").build();
 
         ReaderWriterLock readerWriterLock = new ReaderWriterLock();
-        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
-        CollectionDeleteOperation<Long> collectionDeleteOperation = new DefaultCollectionDeleteOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
+        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
+        CollectionDeleteOperation<Long> collectionDeleteOperation = new DefaultCollectionDeleteOperation<>(collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
 
         for (TestModel testModel : Arrays.asList(testModel1, testModel2, testModel3, testModel4)) {
             collectionInsertOperation.execute(testModel);
         }
 
-        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
         long count = collectionSelectOperation.count();
         Assertions.assertEquals(4L, count);
         Iterator<TestModel> execute = collectionSelectOperation.execute(TestModel.class);
@@ -139,7 +139,7 @@ public class DefaultCollectionUpdateOperationTestCase {
         Assertions.assertFalse(execute.hasNext());
 
 
-        CollectionUpdateOperation<Long> collectionUpdateOperation = new DefaultCollectionUpdateOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
+        CollectionUpdateOperation<Long> collectionUpdateOperation = new DefaultCollectionUpdateOperation<>(collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
         collectionUpdateOperation.query(query);
         long updates = collectionUpdateOperation.execute((testModel) -> {
             testModel.setAge(testModel.getAge() + 100);
@@ -165,10 +165,10 @@ public class DefaultCollectionUpdateOperationTestCase {
 
     @Test
     public void testWithNull() throws BaseSerializationException, InternalOperationException {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, storageManager);
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
+        IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);
+        CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory = new DefaultCollectionIndexProviderSingletonFactory(scheme, engineConfig, indexStorageManagerSingletonFactory, storageManager);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")
@@ -181,9 +181,9 @@ public class DefaultCollectionUpdateOperationTestCase {
         TestModel testModel2 = TestModel.builder().id(2).age(20L).name("Rose").build();
         ReaderWriterLock readerWriterLock = new ReaderWriterLock();
 
-        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
-        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
-        CollectionUpdateOperation<Long> collectionUpdateOperation = new DefaultCollectionUpdateOperation<>(collection, readerWriterLock, collectionIndexProviderFactory.create(collection), storageManager);
+        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
+        CollectionUpdateOperation<Long> collectionUpdateOperation = new DefaultCollectionUpdateOperation<>(collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
 
 
         for (TestModel testModel : Arrays.asList(testModel1, testModel2)) {

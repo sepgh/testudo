@@ -5,7 +5,7 @@ import com.github.sepgh.testudo.ds.KVSize;
 import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
-import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
+import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerSingletonFactory;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
 import com.github.sepgh.testudo.storage.pool.ManagedFileHandler;
@@ -35,30 +35,30 @@ public abstract class BaseFileIndexStorageManager extends AbstractFileIndexStora
 
     public BaseFileIndexStorageManager(
             @Nullable String customName,
-            IndexHeaderManagerFactory indexHeaderManagerFactory,
+            IndexHeaderManagerSingletonFactory indexHeaderManagerSingletonFactory,
             EngineConfig engineConfig,
             FileHandlerPool fileHandlerPool
     ) {
         super(engineConfig);
         this.customName = customName;
-        this.indexHeaderManager = indexHeaderManagerFactory.getInstance(this.getHeaderPath());
+        this.indexHeaderManager = indexHeaderManagerSingletonFactory.getInstance(this.getHeaderPath());
         this.fileHandlerPool = fileHandlerPool;
     }
 
     public BaseFileIndexStorageManager(
-            IndexHeaderManagerFactory indexHeaderManagerFactory,
+            IndexHeaderManagerSingletonFactory indexHeaderManagerSingletonFactory,
             EngineConfig engineConfig,
             FileHandlerPool fileHandlerPool
     ) {
-        this(null, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
+        this(null, indexHeaderManagerSingletonFactory, engineConfig, fileHandlerPool);
     }
 
-    public BaseFileIndexStorageManager(IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig) {
-        this(null, indexHeaderManagerFactory, engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()));
+    public BaseFileIndexStorageManager(IndexHeaderManagerSingletonFactory indexHeaderManagerSingletonFactory, EngineConfig engineConfig) {
+        this(null, indexHeaderManagerSingletonFactory, engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()));
     }
 
-    public BaseFileIndexStorageManager(String customName, IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig) {
-        this(customName, indexHeaderManagerFactory, engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()));
+    public BaseFileIndexStorageManager(String customName, IndexHeaderManagerSingletonFactory indexHeaderManagerSingletonFactory, EngineConfig engineConfig) {
+        this(customName, indexHeaderManagerSingletonFactory, engineConfig, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance()));
     }
 
     protected abstract Path getIndexFilePath(int indexId, int chunk);

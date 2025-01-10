@@ -10,17 +10,17 @@ import com.github.sepgh.testudo.index.DuplicateQueryableIndex;
 import com.github.sepgh.testudo.index.UniqueQueryableIndex;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.operation.CollectionIndexProvider;
-import com.github.sepgh.testudo.operation.CollectionIndexProviderFactory;
-import com.github.sepgh.testudo.operation.DefaultCollectionIndexProviderFactory;
+import com.github.sepgh.testudo.operation.CollectionIndexProviderSingletonFactory;
+import com.github.sepgh.testudo.operation.DefaultCollectionIndexProviderSingletonFactory;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.operation.query.*;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
-import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerFactory;
-import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerFactory;
-import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerSingletonFactory;
+import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerSingletonFactory;
+import com.github.sepgh.testudo.storage.index.IndexStorageManagerSingletonFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
-import com.github.sepgh.testudo.storage.pool.FileHandlerPoolFactory;
+import com.github.sepgh.testudo.storage.pool.FileHandlerPoolSingletonFactory;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.UnsignedInteger;
 import lombok.SneakyThrows;
@@ -39,7 +39,7 @@ public class QueryTestCase {
             .dbName("test")
             .version(1)
             .build();
-    private FileHandlerPoolFactory fileHandlerPoolFactory;
+    private FileHandlerPoolSingletonFactory fileHandlerPoolSingletonFactory;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -50,12 +50,12 @@ public class QueryTestCase {
                 .bTreeDegree(10)
                 .build();
         
-        this.fileHandlerPoolFactory = new FileHandlerPoolFactory.DefaultFileHandlerPoolFactory(engineConfig);
+        this.fileHandlerPoolSingletonFactory = new FileHandlerPoolSingletonFactory.DefaultFileHandlerPoolSingletonFactory(engineConfig);
     }
     
 
-    private DatabaseStorageManagerFactory getDatabaseStorageManagerFactory() {
-        return new DatabaseStorageManagerFactory.DiskPageDatabaseStorageManagerFactory(engineConfig, fileHandlerPoolFactory);
+    private DatabaseStorageManagerSingletonFactory getDatabaseStorageManagerFactory() {
+        return new DatabaseStorageManagerSingletonFactory.DiskPageDatabaseStorageManagerSingletonFactory(engineConfig, fileHandlerPoolSingletonFactory);
     }
 
     @AfterEach
@@ -66,11 +66,11 @@ public class QueryTestCase {
     @Test
     @Timeout(value = 2)
     public void simpleCondition() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, DeserializationException {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerSingletonFactory.getInstance();
 
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
+        IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);
+        CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory = new DefaultCollectionIndexProviderSingletonFactory(scheme, engineConfig, indexStorageManagerSingletonFactory, databaseStorageManager);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")
@@ -101,7 +101,7 @@ public class QueryTestCase {
                 )
                 .build();
         Scheme.Collection collection = scheme.getCollections().getFirst();
-        CollectionIndexProvider collectionIndexProvider = collectionIndexProviderFactory.create(collection);
+        CollectionIndexProvider collectionIndexProvider = collectionIndexProviderSingletonFactory.getInstance(collection);
 
 
         Query query = new Query();
@@ -244,11 +244,11 @@ public class QueryTestCase {
     @Test
     @Timeout(value = 2)
     public void simpleCondition_LowCardinality() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, DeserializationException {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerSingletonFactory.getInstance();
 
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
+        IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);
+        CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory = new DefaultCollectionIndexProviderSingletonFactory(scheme, engineConfig, indexStorageManagerSingletonFactory, databaseStorageManager);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")
@@ -279,7 +279,7 @@ public class QueryTestCase {
                 )
                 .build();
         Scheme.Collection collection = scheme.getCollections().getFirst();
-        CollectionIndexProvider collectionIndexProvider = collectionIndexProviderFactory.create(collection);
+        CollectionIndexProvider collectionIndexProvider = collectionIndexProviderSingletonFactory.getInstance(collection);
 
 
         // --- ADD DATA TO THE COLLECTION --- //
@@ -333,11 +333,11 @@ public class QueryTestCase {
     @Test
     @Timeout(2)
     public void compositeQuery_And() {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerSingletonFactory.getInstance();
 
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
+        IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);
+        CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory = new DefaultCollectionIndexProviderSingletonFactory(scheme, engineConfig, indexStorageManagerSingletonFactory, databaseStorageManager);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")
@@ -368,7 +368,7 @@ public class QueryTestCase {
                 )
                 .build();
         Scheme.Collection collection = scheme.getCollections().getFirst();
-        CollectionIndexProvider collectionIndexProvider = collectionIndexProviderFactory.create(collection);
+        CollectionIndexProvider collectionIndexProvider = collectionIndexProviderSingletonFactory.getInstance(collection);
 
 
         // --- ADD DATA TO THE COLLECTION --- //
@@ -459,11 +459,11 @@ public class QueryTestCase {
     @Test
     @Timeout(2)
     public void compositeQuery_Or() {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerSingletonFactory.getInstance();
 
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
+        IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);
+        CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory = new DefaultCollectionIndexProviderSingletonFactory(scheme, engineConfig, indexStorageManagerSingletonFactory, databaseStorageManager);
 
         Scheme scheme = Scheme.builder()
                 .dbName("test")
@@ -494,7 +494,7 @@ public class QueryTestCase {
                 )
                 .build();
         Scheme.Collection collection = scheme.getCollections().getFirst();
-        CollectionIndexProvider collectionIndexProvider = collectionIndexProviderFactory.create(collection);
+        CollectionIndexProvider collectionIndexProvider = collectionIndexProviderSingletonFactory.getInstance(collection);
 
 
         // --- ADD DATA TO THE COLLECTION --- //

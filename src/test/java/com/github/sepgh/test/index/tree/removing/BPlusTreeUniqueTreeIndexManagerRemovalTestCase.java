@@ -22,7 +22,7 @@ public class BPlusTreeUniqueTreeIndexManagerRemovalTestCase extends BaseBPlusTre
     protected IndexStorageManager getIndexStorageManager() throws IOException, ExecutionException, InterruptedException {
         return new OrganizedFileIndexStorageManager(
                 "test",
-                new JsonIndexHeaderManager.Factory(),
+                new JsonIndexHeaderManager.SingletonFactory(),
                 engineConfig,
                 new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
         );

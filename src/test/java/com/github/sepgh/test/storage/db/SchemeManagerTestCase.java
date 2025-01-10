@@ -5,19 +5,19 @@ import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
-import com.github.sepgh.testudo.operation.CollectionIndexProviderFactory;
-import com.github.sepgh.testudo.operation.DefaultCollectionIndexProviderFactory;
+import com.github.sepgh.testudo.operation.CollectionIndexProviderSingletonFactory;
+import com.github.sepgh.testudo.operation.DefaultCollectionIndexProviderSingletonFactory;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.scheme.SchemeManager;
 import com.github.sepgh.testudo.serialization.CollectionSerializationUtil;
 import com.github.sepgh.testudo.serialization.FieldType;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
-import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerFactory;
-import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerFactory;
-import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
+import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerSingletonFactory;
+import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerSingletonFactory;
+import com.github.sepgh.testudo.storage.index.IndexStorageManagerSingletonFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
-import com.github.sepgh.testudo.storage.pool.FileHandlerPoolFactory;
+import com.github.sepgh.testudo.storage.pool.FileHandlerPoolSingletonFactory;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
@@ -47,7 +47,7 @@ public class SchemeManagerTestCase {
             .dbName("test")
             .version(1)
             .build();
-    private FileHandlerPoolFactory fileHandlerPoolFactory;
+    private FileHandlerPoolSingletonFactory fileHandlerPoolSingletonFactory;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -56,11 +56,11 @@ public class SchemeManagerTestCase {
                 .clusterKeyType(EngineConfig.ClusterKeyType.LONG)
                 .baseDBPath(this.dbPath.toString())
                 .build();
-        this.fileHandlerPoolFactory = new FileHandlerPoolFactory.DefaultFileHandlerPoolFactory(engineConfig);
+        this.fileHandlerPoolSingletonFactory = new FileHandlerPoolSingletonFactory.DefaultFileHandlerPoolSingletonFactory(engineConfig);
     }
 
-    private DatabaseStorageManagerFactory getDatabaseStorageManagerFactory() {
-        return new DatabaseStorageManagerFactory.DiskPageDatabaseStorageManagerFactory(engineConfig, fileHandlerPoolFactory);
+    private DatabaseStorageManagerSingletonFactory getDatabaseStorageManagerFactory() {
+        return new DatabaseStorageManagerSingletonFactory.DiskPageDatabaseStorageManagerSingletonFactory(engineConfig, fileHandlerPoolSingletonFactory);
     }
 
     @AfterEach
@@ -70,11 +70,11 @@ public class SchemeManagerTestCase {
 
     @Test
     public void test_SchemeManager() throws IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerSingletonFactory.getInstance();
 
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
+        IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);
+        CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory = new DefaultCollectionIndexProviderSingletonFactory(scheme, engineConfig, indexStorageManagerSingletonFactory, databaseStorageManager);
         Scheme scheme = Scheme.builder()
                 .dbName("test")
                 .version(1)
@@ -110,7 +110,7 @@ public class SchemeManagerTestCase {
         SchemeManager schemeManager = new SchemeManager(
                 engineConfig,
                 scheme,
-                collectionIndexProviderFactory,
+                collectionIndexProviderSingletonFactory,
                 databaseStorageManager
         );
         schemeManager.update();
@@ -137,13 +137,13 @@ public class SchemeManagerTestCase {
 
         Assertions.assertEquals(scheme, newScheme2);
 
-        UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = collectionIndexProviderFactory.create(scheme.getCollections().getFirst()).getUniqueIndexManager(
+        UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = collectionIndexProviderSingletonFactory.getInstance(scheme.getCollections().getFirst()).getUniqueIndexManager(
                 scheme.getCollections().getFirst().getFields().getFirst()
         );
 
-        Method method = DefaultCollectionIndexProviderFactory.class.getDeclaredMethod("getIndexId", Scheme.Collection.class, Scheme.Field.class);
+        Method method = DefaultCollectionIndexProviderSingletonFactory.class.getDeclaredMethod("getIndexId", Scheme.Collection.class, Scheme.Field.class);
         method.setAccessible(true);
-        Object invoked = method.invoke(collectionIndexProviderFactory, scheme.getCollections().getFirst(), scheme.getCollections().getFirst().getFields().getFirst());
+        Object invoked = method.invoke(collectionIndexProviderSingletonFactory, scheme.getCollections().getFirst(), scheme.getCollections().getFirst().getFields().getFirst());
 
         Assertions.assertEquals(
                 invoked.hashCode(),
@@ -168,10 +168,10 @@ public class SchemeManagerTestCase {
     // Todo: test fails now that we are working on cluster index ;)
     @Test
     public void test_SchemeManager_WithData() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager databaseStorageManager = databaseStorageManagerFactory.getInstance();
-        IndexStorageManagerFactory indexStorageManagerFactory = new DefaultIndexStorageManagerFactory(this.engineConfig, new JsonIndexHeaderManager.Factory(), fileHandlerPoolFactory, databaseStorageManagerFactory);
-        CollectionIndexProviderFactory collectionIndexProviderFactory = new DefaultCollectionIndexProviderFactory(scheme, engineConfig, indexStorageManagerFactory, databaseStorageManager);
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager databaseStorageManager = databaseStorageManagerSingletonFactory.getInstance();
+        IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);
+        CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory = new DefaultCollectionIndexProviderSingletonFactory(scheme, engineConfig, indexStorageManagerSingletonFactory, databaseStorageManager);
 
         // --- CREATING BASE SCHEME --- //
         Scheme scheme = Scheme.builder()
@@ -210,7 +210,7 @@ public class SchemeManagerTestCase {
         SchemeManager schemeManager = new SchemeManager(
                 engineConfig,
                 scheme,
-                collectionIndexProviderFactory,
+                collectionIndexProviderSingletonFactory,
                 databaseStorageManager
         );
         schemeManager.update();
@@ -234,7 +234,7 @@ public class SchemeManagerTestCase {
         Assertions.assertEquals(1, dbObject.getVersion());
 
         // --- ADDING THE DATA TO INDEX, WHICH IS CLUSTER INDEX AND IS AVAILABLE TO MANAGER TOO --- //
-        UniqueTreeIndexManager<UnsignedLong, Pointer> uniqueTreeIndexManager = (UniqueTreeIndexManager<UnsignedLong, Pointer>) collectionIndexProviderFactory.create(scheme.getCollections().getFirst()).getClusterIndexManager();
+        UniqueTreeIndexManager<UnsignedLong, Pointer> uniqueTreeIndexManager = (UniqueTreeIndexManager<UnsignedLong, Pointer>) collectionIndexProviderSingletonFactory.getInstance(scheme.getCollections().getFirst()).getClusterIndexManager();
         Optional<Pointer> optionalPointer = uniqueTreeIndexManager.getIndex(UnsignedLong.valueOf(1));
         Assertions.assertTrue(optionalPointer.isPresent());
         Assertions.assertEquals(pointer, optionalPointer.get());
@@ -255,7 +255,7 @@ public class SchemeManagerTestCase {
         schemeManager = new SchemeManager(
                 engineConfig,
                 scheme,
-                collectionIndexProviderFactory,
+                collectionIndexProviderSingletonFactory,
                 databaseStorageManager
         );
         schemeManager.update();
@@ -285,7 +285,7 @@ public class SchemeManagerTestCase {
         schemeManager = new SchemeManager(
                 engineConfig,
                 scheme,
-                collectionIndexProviderFactory,
+                collectionIndexProviderSingletonFactory,
                 databaseStorageManager
         );
         schemeManager.update();
@@ -316,13 +316,13 @@ public class SchemeManagerTestCase {
         schemeManager = new SchemeManager(
                 engineConfig,
                 scheme,
-                collectionIndexProviderFactory,
+                collectionIndexProviderSingletonFactory,
                 databaseStorageManager
         );
         schemeManager.update();
 
 
-        UniqueTreeIndexManager<Integer, UnsignedLong> newFieldUniqueTreeIndexManager = (UniqueTreeIndexManager<Integer, UnsignedLong>) collectionIndexProviderFactory.create(scheme.getCollections().getFirst()).getUniqueIndexManager(newField);
+        UniqueTreeIndexManager<Integer, UnsignedLong> newFieldUniqueTreeIndexManager = (UniqueTreeIndexManager<Integer, UnsignedLong>) collectionIndexProviderSingletonFactory.getInstance(scheme.getCollections().getFirst()).getUniqueIndexManager(newField);
         Assertions.assertEquals(1, newFieldUniqueTreeIndexManager.size());
         Optional<UnsignedLong> optionalIndexValue = newFieldUniqueTreeIndexManager.getIndex(defaultValue);
         Assertions.assertTrue(optionalIndexValue.isPresent());

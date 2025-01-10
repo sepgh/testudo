@@ -8,7 +8,7 @@ import com.github.sepgh.testudo.exception.InvalidDBObjectWrapper;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
-import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
+import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerSingletonFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandler;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
@@ -29,19 +29,19 @@ public class DiskPageFileIndexStorageManager extends AbstractFileIndexStorageMan
 
     public static final int VERSION = 1;
 
-    public DiskPageFileIndexStorageManager(EngineConfig engineConfig, IndexHeaderManagerFactory indexHeaderManagerFactory, FileHandlerPool fileHandlerPool, DatabaseStorageManager databaseStorageManager) {
+    public DiskPageFileIndexStorageManager(EngineConfig engineConfig, IndexHeaderManagerSingletonFactory indexHeaderManagerSingletonFactory, FileHandlerPool fileHandlerPool, DatabaseStorageManager databaseStorageManager) {
         super(engineConfig);
-        this.indexHeaderManager = indexHeaderManagerFactory.getInstance(this.getHeaderPath());
+        this.indexHeaderManager = indexHeaderManagerSingletonFactory.getInstance(this.getHeaderPath());
         this.fileHandlerPool = fileHandlerPool;
         this.databaseStorageManager = databaseStorageManager;
     }
 
-    public DiskPageFileIndexStorageManager(EngineConfig engineConfig, IndexHeaderManagerFactory indexHeaderManagerFactory, DatabaseStorageManager databaseStorageManager) {
-        this(engineConfig, indexHeaderManagerFactory, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(engineConfig.getFileHandlerPoolThreads())), databaseStorageManager);
+    public DiskPageFileIndexStorageManager(EngineConfig engineConfig, IndexHeaderManagerSingletonFactory indexHeaderManagerSingletonFactory, DatabaseStorageManager databaseStorageManager) {
+        this(engineConfig, indexHeaderManagerSingletonFactory, new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance(engineConfig.getFileHandlerPoolThreads())), databaseStorageManager);
     }
 
     public DiskPageFileIndexStorageManager(EngineConfig engineConfig, DatabaseStorageManager databaseStorageManager) {
-        this(engineConfig, new JsonIndexHeaderManager.Factory(), databaseStorageManager);
+        this(engineConfig, new JsonIndexHeaderManager.SingletonFactory(), databaseStorageManager);
     }
 
     @Override

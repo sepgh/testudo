@@ -102,11 +102,11 @@ public class InMemoryIndexHeaderManager implements IndexHeaderManager {
         this.header.getNullBitmaps().put(indexId, location);
     }
 
-    public static class Factory implements IndexHeaderManagerFactory {
+    public static class SingletonFactory extends IndexHeaderManagerSingletonFactory {
 
         @Override
         @SneakyThrows
-        public IndexHeaderManager getInstance(Path path) {
+        public IndexHeaderManager create(Path path) {
             return new InMemoryIndexHeaderManager();
         }
     }

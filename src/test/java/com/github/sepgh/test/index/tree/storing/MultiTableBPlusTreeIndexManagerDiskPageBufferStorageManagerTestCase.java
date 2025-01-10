@@ -64,7 +64,7 @@ public class MultiTableBPlusTreeIndexManagerDiskPageBufferStorageManagerTestCase
         FileHandlerPool fileHandlerPool = new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance());
         return new DiskPageFileIndexStorageManager(
                 engineConfig,
-                new JsonIndexHeaderManager.Factory(),
+                new JsonIndexHeaderManager.SingletonFactory(),
                 fileHandlerPool,
                 new DiskPageDatabaseStorageManager(engineConfig, fileHandlerPool)
         );

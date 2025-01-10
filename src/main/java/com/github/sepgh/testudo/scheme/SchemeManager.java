@@ -5,7 +5,7 @@ import com.github.sepgh.testudo.ds.KeyValue;
 import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
-import com.github.sepgh.testudo.operation.CollectionIndexProviderFactory;
+import com.github.sepgh.testudo.operation.CollectionIndexProviderSingletonFactory;
 import com.github.sepgh.testudo.operation.CollectionSchemeUpdater;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
@@ -41,16 +41,16 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
     private final EngineConfig engineConfig;
     private final Gson gson = new GsonBuilder().serializeNulls().create();
     @Getter
-    private final CollectionIndexProviderFactory collectionIndexProviderFactory;
+    private final CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory;
     @Getter
     private final DatabaseStorageManager databaseStorageManager;
     private final List<CollectionFieldsUpdate> collectionFieldsUpdateQueue = new LinkedList<>();
     private final Map<Integer, CollectionFieldsUpdate> collectionFieldTypeUpdateMap = new HashMap<>();
 
-    public SchemeManager(EngineConfig engineConfig, Scheme scheme, CollectionIndexProviderFactory collectionIndexProviderFactory, DatabaseStorageManager databaseStorageManager) {
+    public SchemeManager(EngineConfig engineConfig, Scheme scheme, CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory, DatabaseStorageManager databaseStorageManager) {
         this.scheme = scheme;
         this.engineConfig = engineConfig;
-        this.collectionIndexProviderFactory = collectionIndexProviderFactory;
+        this.collectionIndexProviderSingletonFactory = collectionIndexProviderSingletonFactory;
         this.databaseStorageManager = databaseStorageManager;
         loadOldScheme();
         init();
@@ -130,7 +130,7 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
     }
 
     public UniqueTreeIndexManager<?, Pointer> getClusterIndexManager(Scheme.Collection collection) {
-        return this.collectionIndexProviderFactory.create(collection).getClusterIndexManager();
+        return this.collectionIndexProviderSingletonFactory.getInstance(collection).getClusterIndexManager();
     }
 
     @SneakyThrows
@@ -150,7 +150,7 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
 
         collection.getFields().forEach(field -> {
             if (field.isIndexed()) {
-                UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.collectionIndexProviderFactory.create(collection).getUniqueIndexManager(field);
+                UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.collectionIndexProviderSingletonFactory.getInstance(collection).getUniqueIndexManager(field);
                 try {
                     uniqueTreeIndexManager.purgeIndex();
                 } catch (InternalOperationException e) {

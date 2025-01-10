@@ -15,7 +15,7 @@ import com.github.sepgh.testudo.serialization.SerializerRegistry;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.storage.index.BTreeSizeCalculator;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
-import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
+import com.github.sepgh.testudo.storage.index.IndexStorageManagerSingletonFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -24,21 +24,21 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DefaultCollectionIndexProviderFactory implements CollectionIndexProviderFactory {
+public class DefaultCollectionIndexProviderSingletonFactory extends CollectionIndexProviderSingletonFactory {
     protected final Scheme scheme;
     protected final Map<Scheme.Collection, CollectionIndexProvider> providers = new ConcurrentHashMap<>();
     protected final Map<String, UniqueQueryableIndex<?, ? extends Number>> uniqueTreeIndexManagers = new ConcurrentHashMap<>();
     protected final Map<String, UniqueTreeIndexManager<?, Pointer>> clusterIndexManagers = new ConcurrentHashMap<>();
     protected final Map<String, DuplicateQueryableIndex<?, ? extends Number>> duplicateIndexManagers = new ConcurrentHashMap<>();
     protected final EngineConfig engineConfig;
-    protected final IndexStorageManagerFactory indexStorageManagerFactory;
+    protected final IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory;
     protected final DatabaseStorageManager databaseStorageManager;
     protected final Object clusterIndexCache;
 
-    public DefaultCollectionIndexProviderFactory(Scheme scheme, EngineConfig engineConfig, IndexStorageManagerFactory indexStorageManagerFactory, DatabaseStorageManager databaseStorageManager) {
+    public DefaultCollectionIndexProviderSingletonFactory(Scheme scheme, EngineConfig engineConfig, IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory, DatabaseStorageManager databaseStorageManager) {
         this.scheme = scheme;
         this.engineConfig = engineConfig;
-        this.indexStorageManagerFactory = indexStorageManagerFactory;
+        this.indexStorageManagerSingletonFactory = indexStorageManagerSingletonFactory;
         this.databaseStorageManager = databaseStorageManager;
         this.clusterIndexCache = this.generateClusterCache();
     }
@@ -76,7 +76,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
     protected <K extends Comparable<K>, V extends Number & Comparable<V>> UniqueQueryableIndex<K, V> buildUniqueIndexManager(Scheme.Collection collection, Scheme.Field field) {
         Preconditions.checkArgument(field.getIndex().isPrimary() || field.getIndex().isUnique(), "Field should either be primary or unique to build a UniqueIndexManager");
 
-        IndexStorageManager indexStorageManager = indexStorageManagerFactory.create(this.scheme, collection);
+        IndexStorageManager indexStorageManager = indexStorageManagerSingletonFactory.create(this.scheme, collection);
 
         // Raw use of field.id as indexId would force the scheme designer to use unique field ids per whole DB
         // However, using hash code of pool id (which is combination of collection.id and field.id) forces the scheme designer
@@ -113,7 +113,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         UniqueQueryableIndex<K, Pointer> clusterIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(
                 indexId,
                 engineConfig.getBTreeDegree(),
-                indexStorageManagerFactory.create(this.scheme, collection),
+                indexStorageManagerSingletonFactory.create(this.scheme, collection),
                 keyIndexBinaryObjectFactory
         );
 
@@ -136,7 +136,7 @@ public class DefaultCollectionIndexProviderFactory implements CollectionIndexPro
         int indexId = getIndexId(collection, field).hashCode();
 
         Serializer<?> fieldSerializer = SerializerRegistry.getInstance().getSerializer(field.getType());
-        IndexStorageManager indexStorageManager = indexStorageManagerFactory.create(this.scheme, collection);
+        IndexStorageManager indexStorageManager = indexStorageManagerSingletonFactory.create(this.scheme, collection);
         BPlusTreeUniqueTreeIndexManager<?, Pointer> uniqueTreeIndexManager = new BPlusTreeUniqueTreeIndexManager<>(
                 indexId,
                 engineConfig.getBTreeDegree(),

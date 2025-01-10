@@ -18,7 +18,7 @@ public class CompactFileIndexStorageManagerPurgeTestCase extends BaseBPlusTreeUn
 
     private IndexStorageManager getIndexStorageManager() {
         return new CompactFileIndexStorageManager(
-                new JsonIndexHeaderManager.Factory(),
+                new JsonIndexHeaderManager.SingletonFactory(),
                 engineConfig,
                 new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
         );

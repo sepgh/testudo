@@ -72,7 +72,7 @@ public class IndexBinaryObjectTestCase {
     private OrganizedFileIndexStorageManager getStorageManager() throws IOException, ExecutionException, InterruptedException {
         return new OrganizedFileIndexStorageManager(
                 "test",
-                new JsonIndexHeaderManager.Factory(),
+                new JsonIndexHeaderManager.SingletonFactory(),
                 engineConfig,
                 new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
         );
@@ -108,7 +108,7 @@ public class IndexBinaryObjectTestCase {
     public void test_CustomBinaryObjectWrapper() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = new OrganizedFileIndexStorageManager(
                 "Test",
-                new JsonIndexHeaderManager.Factory(),
+                new JsonIndexHeaderManager.SingletonFactory(),
                 engineConfig,
                 new UnlimitedFileHandlerPool(FileHandler.SingletonFileHandlerFactory.getInstance())
         );

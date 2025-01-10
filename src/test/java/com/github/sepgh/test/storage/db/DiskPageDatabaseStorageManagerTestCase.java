@@ -7,7 +7,7 @@ import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.exception.InvalidDBObjectWrapper;
 import com.github.sepgh.testudo.storage.db.*;
-import com.github.sepgh.testudo.storage.pool.FileHandlerPoolFactory;
+import com.github.sepgh.testudo.storage.pool.FileHandlerPoolSingletonFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +25,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
 
     private EngineConfig engineConfig;
     private Path dbPath;
-    private FileHandlerPoolFactory fileHandlerPoolFactory;
+    private FileHandlerPoolSingletonFactory fileHandlerPoolSingletonFactory;
 
 
     @BeforeEach
@@ -34,11 +34,11 @@ public class DiskPageDatabaseStorageManagerTestCase {
         this.engineConfig = EngineConfig.builder()
                 .baseDBPath(this.dbPath.toString())
                 .build();
-        this.fileHandlerPoolFactory = new FileHandlerPoolFactory.DefaultFileHandlerPoolFactory(engineConfig);
+        this.fileHandlerPoolSingletonFactory = new FileHandlerPoolSingletonFactory.DefaultFileHandlerPoolSingletonFactory(engineConfig);
     }
 
-    private DatabaseStorageManagerFactory getDatabaseStorageManagerFactory() {
-        return new DatabaseStorageManagerFactory.DiskPageDatabaseStorageManagerFactory(engineConfig, fileHandlerPoolFactory);
+    private DatabaseStorageManagerSingletonFactory getDatabaseStorageManagerFactory() {
+        return new DatabaseStorageManagerSingletonFactory.DiskPageDatabaseStorageManagerSingletonFactory(engineConfig, fileHandlerPoolSingletonFactory);
     }
 
     @AfterEach
@@ -48,8 +48,8 @@ public class DiskPageDatabaseStorageManagerTestCase {
 
     @Test
     public void test_canStoreObject() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException, InternalOperationException {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
         
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
         Pointer pointer = storageManager.store(-1, 17, 1, data);
@@ -68,8 +68,8 @@ public class DiskPageDatabaseStorageManagerTestCase {
     @Test
     public void test_canChangePages() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException, InternalOperationException {
         this.engineConfig.setDbPageSize(100);
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
 
         byte[] data = new byte[60];
         Pointer pointer = storageManager.store(-1, 17, 1, data);
@@ -91,8 +91,8 @@ public class DiskPageDatabaseStorageManagerTestCase {
 
     @Test
     public void test_canStoreAndReadObject() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException, InternalOperationException {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
 
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
         Pointer pointer = storageManager.store(-1, 17,1, data);
@@ -112,8 +112,8 @@ public class DiskPageDatabaseStorageManagerTestCase {
 
     @Test
     public void test_canStoreUpdateAndReadObject() throws IOException, ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException, InternalOperationException {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
 
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
         Pointer pointer = storageManager.store(-1, 17,1, data);
@@ -141,8 +141,8 @@ public class DiskPageDatabaseStorageManagerTestCase {
 
     @Test
     public void test_canStoreDeleteAndReuseObject() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
 
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
         Pointer pointer = storageManager.store(-1, 17, 1, data);
@@ -159,8 +159,8 @@ public class DiskPageDatabaseStorageManagerTestCase {
 
     @Test
     public void test_canStoreDeleteAndReuseMultipleObjects() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
 
         List<String> inputs = Arrays.asList("10", "100", "1000", "10000");
         List<Pointer> pointers = new ArrayList<>();
@@ -201,8 +201,8 @@ public class DiskPageDatabaseStorageManagerTestCase {
         this.engineConfig.setIMROTMinLengthToSplit(100);
         this.engineConfig.setDbPageSize(100000);
 
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
 
         Pointer pointer1 = storageManager.store(-1, 1, 1, new byte[1000]);
         Pointer pointer2 = storageManager.store(-1, 1, 1, new byte[1000]);
@@ -232,8 +232,8 @@ public class DiskPageDatabaseStorageManagerTestCase {
 
     @Test
     public void test_multiThreadedInsertAndSelect() throws InternalOperationException, InterruptedException {
-        DatabaseStorageManagerFactory databaseStorageManagerFactory = getDatabaseStorageManagerFactory();
-        DatabaseStorageManager storageManager = databaseStorageManagerFactory.getInstance();
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
 
         int cases = 20;
 

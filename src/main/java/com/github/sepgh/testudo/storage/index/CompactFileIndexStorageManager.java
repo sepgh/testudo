@@ -6,7 +6,7 @@ import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.ErrorMessage;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
-import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
+import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerSingletonFactory;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
 import com.github.sepgh.testudo.storage.pool.ManagedFileHandler;
 import com.github.sepgh.testudo.utils.FileUtils;
@@ -19,12 +19,12 @@ import java.util.concurrent.ExecutionException;
 
 public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager {
 
-    public CompactFileIndexStorageManager(IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) {
-        super(null, indexHeaderManagerFactory, engineConfig, fileHandlerPool);
+    public CompactFileIndexStorageManager(IndexHeaderManagerSingletonFactory indexHeaderManagerSingletonFactory, EngineConfig engineConfig, FileHandlerPool fileHandlerPool) {
+        super(null, indexHeaderManagerSingletonFactory, engineConfig, fileHandlerPool);
     }
 
-    public CompactFileIndexStorageManager(IndexHeaderManagerFactory indexHeaderManagerFactory, EngineConfig engineConfig) {
-        super(indexHeaderManagerFactory, engineConfig);
+    public CompactFileIndexStorageManager(IndexHeaderManagerSingletonFactory indexHeaderManagerSingletonFactory, EngineConfig engineConfig) {
+        super(indexHeaderManagerSingletonFactory, engineConfig);
     }
 
     protected Path getIndexFilePath(int indexId, int chunk) {
