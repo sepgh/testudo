@@ -3,7 +3,6 @@ package com.github.sepgh.testudo.storage.index;
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.ds.KVSize;
 import com.github.sepgh.testudo.ds.Pointer;
-import com.github.sepgh.testudo.exception.ErrorMessage;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
@@ -13,6 +12,7 @@ import com.github.sepgh.testudo.storage.pool.ManagedFileHandler;
 import com.github.sepgh.testudo.storage.pool.UnlimitedFileHandlerPool;
 import com.github.sepgh.testudo.utils.FileUtils;
 import lombok.Getter;
+import lombok.SneakyThrows;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -65,14 +65,10 @@ public abstract class BaseFileIndexStorageManager extends AbstractFileIndexStora
 
     protected AsynchronousFileChannel acquireFileChannel(int indexId, int chunk) throws InternalOperationException {
         Path indexFilePath = getIndexFilePath(indexId, chunk);
-        try {
-            return this.fileHandlerPool.getFileChannel(indexFilePath, engineConfig.getFileAcquireTimeout(), engineConfig.getFileAcquireUnit());
-        } catch (IOException | InterruptedException e) {
-            throw new InternalOperationException(ErrorMessage.EM_FILEHANDLER_POOL, e);
-        }
-
+        return this.fileHandlerPool.getFileChannel(indexFilePath, engineConfig.getFileAcquireTimeout(), engineConfig.getFileAcquireUnit());
     }
 
+    @SneakyThrows  // We could not release file channel, but nothing the callers can really do about it! things probably got ruined at this point already
     protected void releaseFileChannel(int indexId, int chunk) {
         Path indexFilePath = getIndexFilePath(indexId, chunk);
         this.fileHandlerPool.releaseFileChannel(indexFilePath, engineConfig.getFileCloseTimeout(), engineConfig.getFileCloseUnit());
@@ -266,7 +262,7 @@ public abstract class BaseFileIndexStorageManager extends AbstractFileIndexStora
     }
 
     @Override
-    public void close() {
+    public void close() throws InternalOperationException {
         this.fileHandlerPool.closeAll(engineConfig.getFileCloseTimeout(), engineConfig.getFileCloseUnit());
     }
 

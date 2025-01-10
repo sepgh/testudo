@@ -3,6 +3,7 @@ package com.github.sepgh.testudo.index.tree.node;
 import com.github.sepgh.testudo.ds.KVSize;
 import com.github.sepgh.testudo.ds.KeyValue;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.IndexBinaryObjectCreationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.tree.TreeNodeUtils;
 import com.github.sepgh.testudo.utils.CollectionUtils;
@@ -65,7 +66,7 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V> extends AbstractTr
         return ImmutableList.copyOf(getKeyValues(degree));
     }
 
-    public void setKeyValues(List<KeyValue<K, V>> keyValueList, int degree) {
+    public void setKeyValues(List<KeyValue<K, V>> keyValueList, int degree) throws IndexBinaryObjectCreationException {
         modified();
         for (int i = 0; i < keyValueList.size(); i++){
             KeyValue<K, V> keyValue = keyValueList.get(i);
@@ -76,11 +77,11 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V> extends AbstractTr
         }
     }
 
-    public void setKeyValue(int index, KeyValue<K, V> keyValue) {
+    public void setKeyValue(int index, KeyValue<K, V> keyValue) throws IndexBinaryObjectCreationException {
         TreeNodeUtils.setKeyValueAtIndex(this, index, kIndexBinaryObjectFactory.create(keyValue.key()), valueIndexBinaryObjectFactory.create(keyValue.value()));
     }
 
-    public List<KeyValue<K, V>> addAndSplit(K identifier, V v, int degree) {
+    public List<KeyValue<K, V>> addAndSplit(K identifier, V v, int degree) throws IndexBinaryObjectCreationException {
         int mid = (degree - 1) / 2;
 
         List<KeyValue<K, V>> allKeyValues = new ArrayList<>(getKeyValueList(degree));
@@ -93,13 +94,13 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V> extends AbstractTr
         return allKeyValues.subList(mid + 1, allKeyValues.size());
     }
 
-    public int addKeyValue(K identifier, V v, int degree) {
+    public int addKeyValue(K identifier, V v, int degree) throws IndexBinaryObjectCreationException {
         int i = CollectionUtils.indexToInsert(getKeyList(degree), identifier);
         TreeNodeUtils.addKeyValue(this, degree, kIndexBinaryObjectFactory, identifier, valueIndexBinaryObjectFactory, v, i);
         return i;
     }
 
-    public int addKeyValue(KeyValue<K, V> keyValue, int degree) {
+    public int addKeyValue(KeyValue<K, V> keyValue, int degree) throws IndexBinaryObjectCreationException {
         return this.addKeyValue(keyValue.key(), keyValue.value(), degree);
     }
 
@@ -107,7 +108,7 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V> extends AbstractTr
         TreeNodeUtils.removeKeyValueAtIndex(this, index, kIndexBinaryObjectFactory.size(), valueIndexBinaryObjectFactory.size());
     }
 
-    public boolean removeKeyValue(K key, int degree) {
+    public boolean removeKeyValue(K key, int degree) throws IndexBinaryObjectCreationException {
         List<KeyValue<K, V>> keyValueList = new ArrayList<>(this.getKeyValueList(degree));
         int i = Collections.binarySearch(getKeyList(degree), key);
         if (i >= 0){
@@ -118,7 +119,7 @@ public class AbstractLeafTreeNode<K extends Comparable<K>, V> extends AbstractTr
         return false;
     }
 
-    public boolean removeKeyValue(K key, V value, int degree) {
+    public boolean removeKeyValue(K key, V value, int degree) throws IndexBinaryObjectCreationException {
         List<KeyValue<K, V>> keyValueList = new ArrayList<>(this.getKeyValueList(degree));
         int i = Collections.binarySearch(getKeyList(degree), key);
         if (i >= 0 && keyValueList.get(i).key().equals(key)){

@@ -75,7 +75,7 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
 - [ ] Either remove IndexIOSession, or improve it to use for `Transaction` support.
 - [X] Cache support for cluster index managers
 - [ ] Cache support for other indexes. Also find proper usage for `CachedIndexStorageManagerDecorator` or remove it!
-- [ ] Exception Throwing and Handling
+- [X] Exception Throwing and Handling
   - Note: lambdas are going crazy at this point. Use this strategy: https://stackoverflow.com/questions/18198176
 - [X] Shutdown mechanism (gracefully)
 - [ ] Logging

@@ -127,7 +127,7 @@ public class CollectionSchemeUpdater {
 
     }
 
-    private void purgeIndexesOfRemovedFields() {
+    private void purgeIndexesOfRemovedFields() throws InternalOperationException {
         for (Scheme.Field field : collectionFieldsUpdate.getRemovedFields()) {
             if (field.isIndexed()){
                 if (field.getIndex().isUnique()){

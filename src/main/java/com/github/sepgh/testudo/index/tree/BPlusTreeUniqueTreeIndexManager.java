@@ -3,6 +3,7 @@ package com.github.sepgh.testudo.index.tree;
 import com.github.sepgh.testudo.ds.KVSize;
 import com.github.sepgh.testudo.ds.KeyValue;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.AbstractUniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.UniqueQueryableIndex;
@@ -175,7 +176,7 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
     }
 
     @Override
-    public synchronized void purgeIndex() {
+    public synchronized void purgeIndex() throws InternalOperationException {
         if (this.indexStorageManager.supportsPurge()) {
             this.indexStorageManager.purgeIndex(indexId);
         }
@@ -184,30 +185,25 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
         int maxPerIteration = this.degree * PURGE_ITERATION_MULTIPLIER;
 
         do {
+            LockableIterator<KeyValue<K, V>> sortedIterator = getSortedIterator(Order.DEFAULT);
+            List<K> toRemove = new ArrayList<>();
+            int i = 0;
+
             try {
-                LockableIterator<KeyValue<K, V>> sortedIterator = getSortedIterator(Order.DEFAULT);
-                List<K> toRemove = new ArrayList<>();
-                int i = 0;
-
-                try {
-                    sortedIterator.lock();
-                    while (sortedIterator.hasNext() && i < maxPerIteration){
-                        KeyValue<K, V> next = sortedIterator.next();
-                        toRemove.add(next.key());
-                        i++;
-                    }
-                } finally {
-                    sortedIterator.unlock();
+                sortedIterator.lock();
+                while (sortedIterator.hasNext() && i < maxPerIteration){
+                    KeyValue<K, V> next = sortedIterator.next();
+                    toRemove.add(next.key());
+                    i++;
                 }
+            } finally {
+                sortedIterator.unlock();
+            }
 
-                removed = !toRemove.isEmpty();
+            removed = !toRemove.isEmpty();
 
-                for (K k : toRemove) {
-                    this.removeIndex(k);
-                }
-
-            } catch (InternalOperationException e) {
-                throw new RuntimeException(e);  // Todo
+            for (K k : toRemove) {
+                this.removeIndex(k);
             }
         } while (removed);
 
@@ -222,7 +218,7 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
     // - What if we reach max?
     // - IndexBinaryObjects can provide "T first()" and "T next(T current)" methods
     @Override
-    public K nextKey() throws InternalOperationException {
+    public K nextKey() throws InternalOperationException, DeserializationException {
         if (supportIncrement()) {
             Iterator<K> sortedKeyIterator = this.getSortedKeyIterator(Order.DESC);
             if (sortedKeyIterator.hasNext()) {

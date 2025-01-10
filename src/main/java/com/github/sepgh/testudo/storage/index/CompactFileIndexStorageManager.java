@@ -75,7 +75,7 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
                 return new Pointer(Pointer.TYPE_NODE, position, chunk);
             }
         } catch (IOException | ExecutionException | InterruptedException e) {
-            throw new RuntimeException(ErrorMessage.EM_FILE_ALLOCATION, e);
+            throw new InternalOperationException(ErrorMessage.EM_FILE_ALLOCATION, e);
         }
 
 

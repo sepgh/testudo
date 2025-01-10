@@ -62,16 +62,14 @@ public class DefaultCollectionDeleteOperation<T extends Number & Comparable<T>> 
                 Optional<Pointer> optionalPointer = clusterIndexManager.getIndex(clusterId);
 
                 if (optionalPointer.isEmpty()) {
-                    // todo: should not be here
-                    throw new RuntimeException("No pointer found for clusterId: " + clusterId);
+                    throw new InternalOperationException("No pointer found for clusterId: " + clusterId);
                 }
 
                 Pointer pointer = optionalPointer.get();
                 Optional<DBObject> optionalDBObject = this.storageManager.select(pointer);
 
                 if (optionalDBObject.isEmpty()) {
-                    // Todo: should not get here
-                    throw new RuntimeException("No such object: " + pointer);
+                    throw new InternalOperationException("No object present at: " + pointer);
                 }
 
 

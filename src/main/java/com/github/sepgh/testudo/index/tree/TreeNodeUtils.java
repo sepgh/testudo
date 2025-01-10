@@ -1,6 +1,8 @@
 package com.github.sepgh.testudo.index.tree;
 
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.DeserializationException;
+import com.github.sepgh.testudo.exception.IndexBinaryObjectCreationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
@@ -141,7 +143,7 @@ public class TreeNodeUtils {
             int index,
             IndexBinaryObjectFactory<K> kIndexBinaryObjectFactory,
             IndexBinaryObjectFactory<V> vIndexBinaryObjectFactory
-    ){
+    ) throws DeserializationException {
         int keyStartIndex = getKeyStartOffset(treeNode, index, kIndexBinaryObjectFactory.size(), vIndexBinaryObjectFactory.size());
         return new AbstractMap.SimpleImmutableEntry<>(
                 kIndexBinaryObjectFactory.create(treeNode.getData(), keyStartIndex).asObject(),
@@ -177,7 +179,7 @@ public class TreeNodeUtils {
             IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory,
             V value,
             int indexToFill
-    ) {
+    ) throws IndexBinaryObjectCreationException {
         int keySize = indexBinaryObjectFactory.size();
         int valueSize = valueIndexBinaryObjectFactory.size();
         int max = degree - 1;
@@ -207,48 +209,6 @@ public class TreeNodeUtils {
                 temp.length
         );
 
-    }
-
-
-    /**
-     * Todo: performance improvements may be possible
-     *       linear search is used to sort the keys
-     *       binary search could be used
-     *       {Skipping since not used!}
-     */
-    public static <K extends Comparable<K>, V> int addKeyValueAndGetIndex(
-            AbstractTreeNode<?> treeNode,
-            int degree,
-            IndexBinaryObjectFactory<K> indexBinaryObjectFactory,
-            K key,
-            IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory,
-            V value
-    ) {
-        int indexToFill = -1;
-        IndexBinaryObject<K> keyAtIndex;
-        int valueSize = valueIndexBinaryObjectFactory.size();
-
-        // Linearly looking for key position
-        for (int i = 0; i < degree - 1; i++){
-            if (!hasKeyAtIndex(treeNode, i, degree, indexBinaryObjectFactory, valueSize)){
-                indexToFill = i;
-                break;
-            }
-            keyAtIndex = getKeyAtIndex(treeNode, i, indexBinaryObjectFactory, valueSize);
-            K data = keyAtIndex.asObject();
-            if (data.compareTo(key) > 0){
-                indexToFill = i;
-                break;
-            }
-        }
-
-        if (indexToFill == -1){
-            throw new RuntimeException("Logical chaos! Couldn't find the index to fill ...");
-        }
-
-        addKeyValue(treeNode, degree, indexBinaryObjectFactory, key, valueIndexBinaryObjectFactory, value, indexToFill);
-
-        return indexToFill;
     }
 
     public static void removeKeyValueAtIndex(AbstractTreeNode<?> treeNode, int index, int keySize, int valueSize) {

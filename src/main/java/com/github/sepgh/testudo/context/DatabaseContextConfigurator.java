@@ -1,5 +1,6 @@
 package com.github.sepgh.testudo.context;
 
+import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.operation.*;
 import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerFactory;
@@ -8,6 +9,8 @@ import com.github.sepgh.testudo.storage.index.IndexStorageManagerFactory;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
 import com.github.sepgh.testudo.storage.index.header.JsonIndexHeaderManager;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPoolFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
@@ -114,6 +117,8 @@ public abstract class DatabaseContextConfigurator {
     public class DefaultDatabaseContext implements DatabaseContext {
 
         private final Scheme scheme;
+        private static final Logger logger = LoggerFactory.getLogger(DefaultDatabaseContext.class);
+
 
         public DefaultDatabaseContext(Scheme scheme) {
             this.scheme = scheme;
@@ -142,7 +147,11 @@ public abstract class DatabaseContextConfigurator {
             for (Scheme.Collection collection : getScheme().getCollections()) {
                 ReaderWriterLockPool.getInstance().getReaderWriterLock(getScheme(), collection).getWriteLock().lock();
             }
-            getFileHandlerPoolFactory().getInstance().closeAll(1, TimeUnit.DAYS);  // Todo
+            try {
+                getFileHandlerPoolFactory().getInstance().closeAll(1, TimeUnit.DAYS);  // Todo
+            } catch (InternalOperationException e) {
+                logger.error("failed to close file handler instance", e);
+            }
             getDatabaseStorageManagerFactory().getInstance().close();
         }
     }

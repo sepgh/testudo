@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.storage.pool;
 
 import com.github.sepgh.testudo.context.EngineConfig;
+import com.github.sepgh.testudo.exception.InternalOperationException;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
@@ -18,12 +19,12 @@ public class ManagedFileHandler implements AutoCloseable {
         this.engineConfig = engineConfig;
     }
 
-    public AsynchronousFileChannel getAsynchronousFileChannel() throws InterruptedException, IOException {
+    public AsynchronousFileChannel getAsynchronousFileChannel() throws InterruptedException, IOException, InternalOperationException {
         return this.fileHandlerPool.getFileChannel(path, engineConfig.getFileAcquireTimeout(), engineConfig.getFileAcquireUnit());
     }
 
     @Override
-    public void close() {
+    public void close() throws InternalOperationException {
         this.fileHandlerPool.releaseFileChannel(path, engineConfig.getFileCloseTimeout(), engineConfig.getFileCloseUnit());
     }
 }

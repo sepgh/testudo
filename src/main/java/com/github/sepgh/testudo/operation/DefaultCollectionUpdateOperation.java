@@ -2,10 +2,10 @@ package com.github.sepgh.testudo.operation;
 
 import com.github.sepgh.testudo.ds.Bitmap;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.BaseSerializationException;
 import com.github.sepgh.testudo.exception.DeserializationException;
-import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.exception.SerializationException;
+import com.github.sepgh.testudo.functional.CheckedFunction;
 import com.github.sepgh.testudo.index.DuplicateQueryableIndex;
 import com.github.sepgh.testudo.index.UniqueQueryableIndex;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
@@ -18,15 +18,14 @@ import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
 import java.security.MessageDigest;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
+@Slf4j
 public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> implements CollectionUpdateOperation<T> {
     private final Scheme.Collection collection;
     private final ReaderWriterLock readerWriterLock;
@@ -68,7 +67,7 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
         return md.digest(bytes);
     }
 
-    protected long handleExecution(Function<DBObject, byte[]> dbObjectConsumer) {
+    protected long handleExecution(CheckedFunction<DBObject, byte[], BaseSerializationException> dbObjectConsumer) throws InternalOperationException, BaseSerializationException {
         AtomicLong atomicLong = new AtomicLong();
 
         try {
@@ -80,16 +79,16 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
                 Optional<Pointer> optionalPointer = clusterIndexManager.getIndex(clusterId);
 
                 if (optionalPointer.isEmpty()) {
-                    // Todo: can just use `continue` as well
-                    throw new RuntimeException("Pointer not found: " + clusterId);
+                    log.error("cluster id {} has no pointer!", clusterId);
+                    continue;
                 }
 
                 Pointer pointer = optionalPointer.get();
 
                 Optional<DBObject> dbObjectOptional = this.storageManager.select(pointer);
                 if (dbObjectOptional.isEmpty()) {
-                    // Todo
-                    throw new RuntimeException("Object not found: " + pointer);
+                    log.error("Object not found for cluster id {} and pointer {}", clusterId, pointer);
+                    continue;
                 }
 
                 DBObject dbObject = dbObjectOptional.get();
@@ -105,10 +104,6 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
 
             }
 
-        } catch (InternalOperationException | IOException |
-                 ExecutionException | InterruptedException | DeserializationException e) {
-            // Todo
-            throw new RuntimeException(e);
         } finally {
             this.readerWriterLock.getWriteLock().unlock();
         }
@@ -117,7 +112,7 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
     }
 
     @SuppressWarnings("unchecked")
-    private <F extends Comparable<F>> void update(Pointer pointer, byte[] update, byte[] old, T clusterId) throws IOException, ExecutionException, InterruptedException, DeserializationException, InternalOperationException, IndexExistsException {
+    private <F extends Comparable<F>> void update(Pointer pointer, byte[] update, byte[] old, T clusterId) throws DeserializationException, InternalOperationException {
         // Todo: if a field has been updated, we better first check if its unique, and it already existed or not.  read README.md
 
         this.storageManager.update(pointer, update);
@@ -189,32 +184,19 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
     }
 
     @Override
-    public <M> long execute(Consumer<M> mConsumer, Class<M> mClass) {
+    public <M> long execute(Consumer<M> mConsumer, Class<M> mClass) throws InternalOperationException, BaseSerializationException {
         ModelDeserializer<M> modelDeserializer = new ModelDeserializer<>(mClass);
         ModelSerializer modelSerializer = new ModelSerializer();
 
         return this.handleExecution(dbObject -> {
-            M model;
-            try {
-                model = modelDeserializer.deserialize(dbObject.getData());
-            } catch (SerializationException | DeserializationException e) {
-                // todo: + how to know which err happened really?  (https://stackoverflow.com/questions/18198176)
-                throw new RuntimeException(e);
-            }
-
-
+            M model = modelDeserializer.deserialize(dbObject.getData());
             mConsumer.accept(model);
-            try {
-                return modelSerializer.reset(model).serialize();
-            } catch (SerializationException e) {
-                // todo: + how to know which err happened really?  (https://stackoverflow.com/questions/18198176)
-                throw new RuntimeException(e);
-            }
+            return modelSerializer.reset(model).serialize();
         });
     }
 
     @Override
-    public long execute(Consumer<byte[]> byteArrayConsumer) {
+    public long execute(Consumer<byte[]> byteArrayConsumer) throws InternalOperationException, BaseSerializationException {
         return this.handleExecution(dbObject -> {
             byte[] data = dbObject.getData();
             byteArrayConsumer.accept(data);

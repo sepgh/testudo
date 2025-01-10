@@ -1,6 +1,10 @@
 package com.github.sepgh.testudo.storage.pool;
 
+import com.github.sepgh.testudo.exception.ErrorMessage;
+import com.github.sepgh.testudo.exception.InternalOperationException;
 import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -14,6 +18,8 @@ import java.util.concurrent.TimeUnit;
 
 @Getter
 public class FileHandler {
+    private static final Logger logger = LoggerFactory.getLogger(FileHandler.class);
+
     private final AsynchronousFileChannel fileChannel;
     private ExecutorService executor;
     private int usageCount = 0;
@@ -52,22 +58,25 @@ public class FileHandler {
         }
     }
 
-    public void close(long timeout, TimeUnit timeUnit) throws IOException {
+    public void close(long timeout, TimeUnit timeUnit) throws InternalOperationException {
         this.closed = Boolean.TRUE;
         synchronized (this){
             try {
                 while (usageCount > 0){
                     try {
-                        System.out.println("Waiting for " + usageCount + " usages");
                         wait(timeUnit.toMillis(timeout));
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
-                        throw new RuntimeException(e);
+                        throw new InternalOperationException(ErrorMessage.EM_FILEHANDLER_CLOSE, e);
                     }
                 }
             } finally {
                 usageCount = 0;
-                fileChannel.close();
+                try {
+                    fileChannel.close();
+                } catch (IOException e){
+                    logger.error("Failed to close file channel", e);
+                }
             }
 
 

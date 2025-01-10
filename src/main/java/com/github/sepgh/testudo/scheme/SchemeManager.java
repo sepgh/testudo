@@ -3,6 +3,7 @@ package com.github.sepgh.testudo.scheme;
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.ds.KeyValue;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.operation.CollectionIndexProviderFactory;
 import com.github.sepgh.testudo.operation.CollectionSchemeUpdater;
@@ -16,6 +17,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.SneakyThrows;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.FileNotFoundException;
@@ -29,6 +32,7 @@ import java.util.*;
 
 // Todo: index updating
 public class SchemeManager implements SchemeComparator.SchemeComparisonListener {
+    private static final Logger logger = LoggerFactory.getLogger(SchemeManager.class);
 
     @Getter
     private final Scheme scheme;
@@ -147,7 +151,11 @@ public class SchemeManager implements SchemeComparator.SchemeComparisonListener 
         collection.getFields().forEach(field -> {
             if (field.isIndexed()) {
                 UniqueTreeIndexManager<?, ?> uniqueTreeIndexManager = this.collectionIndexProviderFactory.create(collection).getUniqueIndexManager(field);
-                uniqueTreeIndexManager.purgeIndex();
+                try {
+                    uniqueTreeIndexManager.purgeIndex();
+                } catch (InternalOperationException e) {
+                    logger.error(e.getMessage(), e);
+                }
             }
         });
     }

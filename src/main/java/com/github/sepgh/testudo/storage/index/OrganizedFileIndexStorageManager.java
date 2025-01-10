@@ -55,7 +55,7 @@ public class OrganizedFileIndexStorageManager extends BaseFileIndexStorageManage
             try {
                 location = new IndexHeaderManager.Location(chunk, asynchronousFileChannel.size());
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new InternalOperationException(e);
             }
             this.releaseFileChannel(indexId, chunk);
         }
@@ -63,7 +63,7 @@ public class OrganizedFileIndexStorageManager extends BaseFileIndexStorageManage
         try {
             this.indexHeaderManager.setIndexBeginningInChunk(indexId, location);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new InternalOperationException(e);
         }
         return location;
     }

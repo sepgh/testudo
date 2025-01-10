@@ -94,7 +94,7 @@ public class ModelToCollectionConverter {
             if (optional.isPresent()) {
                 return optional.get();
             }
-            throw new RuntimeException("Can't find a default field type for class " + field.getType().getTypeName()); // todo
+            throw new RuntimeException("Can't find a default field type for class " + field.getType().getTypeName()); // OK
         }
 
         final String annotatedType = fieldAnnotation.type();
@@ -103,7 +103,7 @@ public class ModelToCollectionConverter {
         if (type.equals(field.getType())) {
             return annotatedType;
         } else {
-            throw new RuntimeException("Annotated type '%s' is not compatible with field type '%s'".formatted(annotatedType, field.getType().getTypeName()));  // Todo
+            throw new RuntimeException("Annotated type '%s' is not compatible with field type '%s'".formatted(annotatedType, field.getType().getTypeName()));  // OK
         }
     }
 

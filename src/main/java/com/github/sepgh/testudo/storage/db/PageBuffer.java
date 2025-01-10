@@ -1,5 +1,7 @@
 package com.github.sepgh.testudo.storage.db;
 
+import com.github.sepgh.testudo.exception.InternalOperationException;
+import com.github.sepgh.testudo.functional.PageFactory;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
@@ -9,14 +11,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class PageBuffer {
     private final Cache<PageTitle, PageWrapper> buffer;
-    private final Function<PageTitle, Page> factory;
+    private final PageFactory factory;
     private final Map<PageTitle, PageWrapper> referencedWrappers = new ConcurrentHashMap<>();
 
-    public PageBuffer(int limit, Function<PageTitle, Page> factory) {
+    public PageBuffer(int limit, PageFactory factory) {
         this.factory = factory;
         this.buffer = CacheBuilder
                 .newBuilder()
@@ -30,18 +32,31 @@ public class PageBuffer {
                 .build();
     }
 
-    public synchronized Page acquire(PageTitle title) {
+    public synchronized Page acquire(PageTitle title) throws InternalOperationException {
+        AtomicReference<InternalOperationException> exception = new AtomicReference<>();
+
         PageWrapper pageWrapper1 = this.referencedWrappers.computeIfAbsent(title, pageTitle -> {
             PageWrapper pageWrapper;
             pageWrapper = buffer.getIfPresent(title);
             if (pageWrapper == null) {
-                Page page = factory.apply(title);
+                Page page = null;
+                try {
+                    page = factory.apply(title);
+                } catch (InternalOperationException e) {
+                    exception.set(e);
+                    return null;
+                }
                 pageWrapper = new PageWrapper(page);
                 buffer.put(title, pageWrapper);
             }
             return pageWrapper;
         });
 
+        if (exception.get() != null) {
+            throw exception.get();
+        }
+
+        assert pageWrapper1 != null;
         pageWrapper1.incrementRefCount();
         return pageWrapper1.getPage();
     }

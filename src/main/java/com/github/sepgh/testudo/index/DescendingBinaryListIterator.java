@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.ds.BinaryList;
+import lombok.SneakyThrows;
 
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
@@ -19,6 +20,7 @@ public class DescendingBinaryListIterator<V extends Comparable<V>> implements Li
         return cursor >= 0;
     }
 
+    @SneakyThrows
     @Override
     public synchronized V next() {
         if (!hasNext()) {
@@ -34,6 +36,7 @@ public class DescendingBinaryListIterator<V extends Comparable<V>> implements Li
         return cursor < binaryList.getLastItemIndex();
     }
 
+    @SneakyThrows
     @Override
     public synchronized V previous() {
         if (!hasPrevious()) {

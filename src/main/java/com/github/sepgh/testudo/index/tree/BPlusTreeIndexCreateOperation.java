@@ -30,7 +30,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V> {
         this.kvSize = kvSize;
     }
 
-    public AbstractTreeNode<K> addIndex(AbstractTreeNode<K> root, K identifier, V value) throws InternalOperationException, IndexExistsException {
+    public AbstractTreeNode<K> addIndex(AbstractTreeNode<K> root, K identifier, V value) throws InternalOperationException {
         List<AbstractTreeNode<K>> path = new LinkedList<>();
         BPlusTreeUtils.getPathToResponsibleNode(indexIOSession, path, root, identifier, degree);
 
@@ -144,7 +144,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V> {
             }
         }
 
-        throw new RuntimeException("Logic error: probably failed to store index?");
+        throw new InternalOperationException("Logic error: probably failed to store index?");
     }
 
     private void fixSiblingPointers(AbstractLeafTreeNode<K, V> currentNode, AbstractLeafTreeNode<K, V> newLeafTreeNode) throws InternalOperationException {

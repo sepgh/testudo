@@ -4,6 +4,7 @@ import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.ds.BinaryList;
 import com.github.sepgh.testudo.ds.KeyValue;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
@@ -14,6 +15,8 @@ import com.github.sepgh.testudo.utils.IteratorUtils;
 import com.github.sepgh.testudo.utils.LazyFlattenIterator;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import lombok.SneakyThrows;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.ListIterator;
@@ -23,6 +26,9 @@ import java.util.function.Function;
 
 
 public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V extends Number & Comparable<V>> implements DuplicateQueryableIndex<K, V> {
+    private static final Logger logger = LoggerFactory.getLogger(DuplicateBPlusTreeIndexManagerBridge.class);
+    private static final String EM_POINTER_POINTS_TO_NO_DATA = "While adding index key {} and value {} to index the pointer offered by index manager points to somewhere with no data";
+
     private static final int SCHEME_ID = -1;
     private final int collectionId;
     private final UniqueQueryableIndex<K, Pointer> indexManager;
@@ -50,20 +56,20 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
     }
 
     @Override
-    public boolean addIndex(K identifier, V value) throws InternalOperationException {
+    public boolean addIndex(K identifier, V value) throws InternalOperationException, DeserializationException {
         Optional<Pointer> pointerOptional = this.indexManager.getIndex(identifier);
         if (pointerOptional.isPresent()) {
             Pointer pointer = pointerOptional.get();
             Optional<DBObject> dbObjectOptional = databaseStorageManager.select(pointer);
             if (dbObjectOptional.isEmpty()) {
-                throw new RuntimeException("%s points to somewhere with no data.".formatted(pointer.toString()));   // Todo: it was pointing to somewhere without data
+                logger.error(EM_POINTER_POINTS_TO_NO_DATA, identifier, value);
+                throw new InternalOperationException("%s points to somewhere with no data. Database may be corrupted".formatted(pointer.toString()));   // Todo: it was pointing to somewhere without data
             }
             BinaryList<V> binaryList = new BinaryList<>(engineConfig, valueIndexBinaryObjectFactory, dbObjectOptional.get().getData());
 
             int prevSize = binaryList.getData().length;
             binaryList.addNew(value);
             int afterSize = binaryList.getData().length;
-
 
             if (afterSize == prevSize) {
                 databaseStorageManager.update(pointer, dbObject -> {
@@ -119,7 +125,7 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
     }
 
     @Override
-    public synchronized boolean removeIndex(K identifier, V value) throws InternalOperationException {
+    public synchronized boolean removeIndex(K identifier, V value) throws InternalOperationException, DeserializationException {
         Optional<Pointer> pointerOptional = this.indexManager.getIndex(identifier);
         if (pointerOptional.isEmpty()) {
             return false;
@@ -187,25 +193,20 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
     }
 
     @Override
-    public void purgeIndex() {
+    public void purgeIndex() throws InternalOperationException {
+        LockableIterator<KeyValue<K, Pointer>> lockableIterator = this.indexManager.getSortedIterator(Order.DEFAULT);
+
         try {
-            LockableIterator<KeyValue<K, Pointer>> lockableIterator = this.indexManager.getSortedIterator(Order.DEFAULT);
-
-            try {
-                lockableIterator.lock();
-                while (lockableIterator.hasNext()) {
-                    Pointer pointer = lockableIterator.next().value();
-                    databaseStorageManager.remove(pointer);
-                }
-            } finally {
-                lockableIterator.unlock();
+            lockableIterator.lock();
+            while (lockableIterator.hasNext()) {
+                Pointer pointer = lockableIterator.next().value();
+                databaseStorageManager.remove(pointer);
             }
-
-
-            this.indexManager.purgeIndex();
-        } catch (InternalOperationException e) {
-            throw new RuntimeException(e);
+        } finally {
+            lockableIterator.unlock();
         }
+
+        this.indexManager.purgeIndex();
 
     }
 
@@ -221,7 +222,13 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
 
     private Function<Pointer, Iterator<V>> getListIteratorFunction(Order order) {
         return pointer -> {
-            Optional<DBObject> dbObjectOptional = databaseStorageManager.select(pointer);
+            Optional<DBObject> dbObjectOptional = null;
+            try {
+                dbObjectOptional = databaseStorageManager.select(pointer);
+            } catch (InternalOperationException e) {
+                logger.error(e.getMessage(), e);
+                return null;
+            }
             if (dbObjectOptional.isPresent()) {
                 DBObject dbObject = dbObjectOptional.get();
                 return new BinaryList<>(engineConfig, valueIndexBinaryObjectFactory, dbObject.getData()).getIterator(order);
@@ -232,7 +239,13 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
 
     private Function<KeyValue<K, Pointer>, Iterator<KeyValue<K, V>>> getKPListIteratorFunction(Order order) {
         return kPointer -> {
-            Optional<DBObject> dbObjectOptional = databaseStorageManager.select(kPointer.value());
+            Optional<DBObject> dbObjectOptional = null;
+            try {
+                dbObjectOptional = databaseStorageManager.select(kPointer.value());
+            } catch (InternalOperationException e) {
+                logger.error(e.getMessage(), e);
+                return null;
+            }
             if (dbObjectOptional.isPresent()) {
                 DBObject dbObject = dbObjectOptional.get();
                 return IteratorUtils.modifyNext(

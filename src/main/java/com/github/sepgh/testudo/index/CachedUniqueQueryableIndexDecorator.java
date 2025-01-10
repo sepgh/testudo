@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.ds.CacheID;
+import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
@@ -89,7 +90,7 @@ public class CachedUniqueQueryableIndexDecorator<K extends Comparable<K>, V> ext
     }
 
     @Override
-    public K nextKey() throws InternalOperationException {
+    public K nextKey() throws InternalOperationException, DeserializationException {
         synchronized (this){
             if (currentIncrementalKey == null) {
                 this.currentIncrementalKey = new AtomicReference<>();

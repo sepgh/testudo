@@ -1,6 +1,9 @@
 package com.github.sepgh.testudo.ds;
 
 import com.github.sepgh.testudo.context.EngineConfig;
+import com.github.sepgh.testudo.exception.DeserializationException;
+import com.github.sepgh.testudo.exception.IndexBinaryObjectCreationException;
+import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.AscendingBinaryListIterator;
 import com.github.sepgh.testudo.index.DescendingBinaryListIterator;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
@@ -57,7 +60,7 @@ public class BinaryList<V extends Comparable<V>> {
     }
 
 
-    public boolean remove(V value) {
+    public boolean remove(V value) throws DeserializationException {
         int i = binarySearchMatching(value);
 
         if (i == -1)
@@ -78,7 +81,7 @@ public class BinaryList<V extends Comparable<V>> {
     }
 
 
-    public boolean addNew(V v) {
+    public boolean addNew(V v) throws InternalOperationException, DeserializationException {
         // GROW BYTE[] IF POSSIBLE
         int lastItemIndex = getLastItemIndex();
         if (lastItemIndex == this.getNumberOfElements() - 1) {
@@ -94,7 +97,7 @@ public class BinaryList<V extends Comparable<V>> {
                 this.data = newData;
             } else {
                 // Todo: throw better exception
-                throw new RuntimeException("No space left to add item. This will exceed the limit of DB Page size.");
+                throw new InternalOperationException("No space left to add item. This will exceed the limit of DB Page size.");
             }
         }
 
@@ -115,7 +118,7 @@ public class BinaryList<V extends Comparable<V>> {
         return true;
     }
 
-    public V getObjectAt(int index) {
+    public V getObjectAt(int index) throws DeserializationException {
         int offset = META_SIZE + index * valueIndexBinaryObjectFactory.size();
         IndexBinaryObject<V> vIndexBinaryObject = valueIndexBinaryObjectFactory.create(this.data, offset);
         return vIndexBinaryObject.asObject();
@@ -143,14 +146,14 @@ public class BinaryList<V extends Comparable<V>> {
         System.arraycopy(bytes, 0, this.data, offset, bytes.length);
     }
 
-    public void setObjectAt(int index, V v) {
+    public void setObjectAt(int index, V v) throws IndexBinaryObjectCreationException {
         int offset = META_SIZE + index * valueIndexBinaryObjectFactory.size();
         IndexBinaryObject<V> vIndexBinaryObject = valueIndexBinaryObjectFactory.create(v);
         byte[] bytes = vIndexBinaryObject.getBytes();
         System.arraycopy(bytes, 0, this.data, offset, bytes.length);
     }
 
-    public int binarySearchPosition(V v){
+    public int binarySearchPosition(V v) throws DeserializationException {
         int low = 0;
         int high = getLastItemIndex();
         int mid;
@@ -178,7 +181,7 @@ public class BinaryList<V extends Comparable<V>> {
         return -(low + 1);
     }
 
-    public int binarySearchMatching(V v) {
+    public int binarySearchMatching(V v) throws DeserializationException {
         int low = 0;
         int high = getLastItemIndex();
 

@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.index.tree.node;
 
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.IndexBinaryObjectCreationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
@@ -28,7 +29,7 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
         return ImmutableList.copyOf(getChildPointers(degree));
     }
 
-    public void setChildPointers(List<ChildPointers<K>> childPointers, int degree, boolean cleanRest) {
+    public void setChildPointers(List<ChildPointers<K>> childPointers, int degree, boolean cleanRest) throws IndexBinaryObjectCreationException {
         modified();
         if (cleanRest)
             TreeNodeUtils.cleanChildrenPointers(this, degree, kIndexBinaryObjectFactory.size());
@@ -142,7 +143,7 @@ public class InternalTreeNode<K extends Comparable<K>> extends AbstractTreeNode<
      *
      *   The returned list first node should be passed to parent and the remaining should be stored in a new node
      */
-    public List<ChildPointers<K>> addAndSplit(K identifier, Pointer pointer, int degree) {
+    public List<ChildPointers<K>> addAndSplit(K identifier, Pointer pointer, int degree) throws IndexBinaryObjectCreationException {
         modified();
         int mid = (degree - 1) / 2;
 

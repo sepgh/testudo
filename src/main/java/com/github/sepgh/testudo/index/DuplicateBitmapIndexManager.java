@@ -6,6 +6,7 @@ import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
+import com.github.sepgh.testudo.operation.DefaultCollectionInsertOperation;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
@@ -13,6 +14,8 @@ import com.github.sepgh.testudo.utils.IteratorUtils;
 import com.github.sepgh.testudo.utils.LazyFlattenIterator;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import lombok.SneakyThrows;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.ListIterator;
@@ -20,6 +23,8 @@ import java.util.Optional;
 import java.util.function.Function;
 
 public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Number & Comparable<V>> implements DuplicateQueryableIndex<K, V> {
+    private static final Logger logger = LoggerFactory.getLogger(DefaultCollectionInsertOperation.class);
+
     private final int collectionId;
     private final UniqueQueryableIndex<K, Pointer> indexManager;
     private final IndexBinaryObjectFactory<V> valueIndexBinaryObjectFactory;
@@ -188,7 +193,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
                         }
                     }));
                 } catch (InternalOperationException e) {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException(e);   // ok, cant do anything about it
                 }
             }
 
@@ -223,7 +228,13 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
 
     private Function<Pointer, Iterator<V>> getBitmapIteratorFunction(Order order) {
         return pointer -> {
-            Optional<DBObject> dbObjectOptional = databaseStorageManager.select(pointer);
+            Optional<DBObject> dbObjectOptional = null;
+            try {
+                dbObjectOptional = databaseStorageManager.select(pointer);
+            } catch (InternalOperationException e) {
+                logger.error(e.getMessage(), e);
+                return null;
+            }
             if (dbObjectOptional.isPresent()) {
                 DBObject dbObject = dbObjectOptional.get();
                 return new Bitmap<>(valueIndexBinaryObjectFactory.getType(), dbObject.getData()).getOnIterator(order);
@@ -234,7 +245,13 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
 
     private Function<KeyValue<K, Pointer>, Iterator<KeyValue<K, V>>> getKPBitmapIteratorFunction(Order order) {
         return kPointer -> {
-            Optional<DBObject> dbObjectOptional = databaseStorageManager.select(kPointer.value());
+            Optional<DBObject> dbObjectOptional = null;
+            try {
+                dbObjectOptional = databaseStorageManager.select(kPointer.value());
+            } catch (InternalOperationException e) {
+                logger.error(e.getMessage(), e);
+                return null;
+            }
             if (dbObjectOptional.isPresent()) {
                 DBObject dbObject = dbObjectOptional.get();
                 return IteratorUtils.modifyNext(

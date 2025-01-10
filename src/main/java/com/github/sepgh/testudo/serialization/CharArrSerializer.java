@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.serialization;
 
 import com.github.sepgh.testudo.exception.DeserializationException;
+import com.github.sepgh.testudo.exception.IndexBinaryObjectCreationException;
 import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
@@ -107,10 +108,13 @@ public class CharArrSerializer implements Serializer<String> {
         }
 
         @Override
-        public IndexBinaryObject<String> create(String s) {
+        public IndexBinaryObject<String> create(String s) throws IndexBinaryObjectCreationException {
             byte[] temp = s.getBytes(StandardCharsets.UTF_8);
             if (temp.length > size) {
-                throw new RuntimeException("Fuck");  // Todo: proper exception to be thrown here. currently impossible
+                throw new IndexBinaryObjectCreationException("Byte size of the string %s is longer than %d".formatted(
+                        "\""+s.substring(0, 5) + "...\"",
+                        size
+                ));
             }
 
             byte[] result = new byte[size];

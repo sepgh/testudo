@@ -2,6 +2,7 @@ package com.github.sepgh.testudo.index.tree.node;
 
 import com.github.sepgh.testudo.ds.KVSize;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.IndexBinaryObjectCreationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.data.PointerIndexBinaryObject;
@@ -87,7 +88,7 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
         return ImmutableList.copyOf(getKeys(degree, valueSize));
     }
 
-    public void setKey(int index, K key, int valueSize) {
+    public void setKey(int index, K key, int valueSize) throws IndexBinaryObjectCreationException {
         TreeNodeUtils.setKeyAtIndex(this, index, kIndexBinaryObjectFactory.create(key), valueSize);
     }
 

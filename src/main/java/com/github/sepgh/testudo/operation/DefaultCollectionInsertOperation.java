@@ -143,7 +143,7 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
                 key = clusterIndexManager.nextKey();
                 clusterIndexManager.addIndex(key, pointer);
                 stored = true;
-            } catch (IndexExistsException ignored){}
+            } catch (IndexExistsException | DeserializationException ignored){}
         }
         return key;
     }

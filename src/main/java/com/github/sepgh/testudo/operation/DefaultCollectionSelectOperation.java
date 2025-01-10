@@ -75,9 +75,9 @@ public class DefaultCollectionSelectOperation<T extends Number & Comparable<T>> 
                                 return dbObjectOptional.get();
                             }
                         }
-                        throw new RuntimeException("Could not read object");  // Todo
+                        throw new InternalOperationException("Could not read object");
                     } catch (InternalOperationException e) {
-                        throw new RuntimeException(e); // Todo
+                        throw new RuntimeException(e);  // Ok
                     }
                 }
         ), readerWriterLock);
@@ -91,7 +91,7 @@ public class DefaultCollectionSelectOperation<T extends Number & Comparable<T>> 
             try {
                 return modelDeserializer.deserialize(dbObject.getData());
             } catch (SerializationException | DeserializationException e) {
-                throw new RuntimeException(e); // Todo
+                throw new RuntimeException(e); // Ok
             }
         }), readerWriterLock);
     }

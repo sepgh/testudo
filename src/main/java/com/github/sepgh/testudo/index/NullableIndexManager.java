@@ -11,6 +11,8 @@ import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
 import com.github.sepgh.testudo.utils.IteratorUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -21,6 +23,8 @@ import static com.github.sepgh.testudo.exception.ErrorMessage.EM_INDEX_HEADER_MA
 
 @AllArgsConstructor
 public class NullableIndexManager<V extends Number & Comparable<V>> {
+    private static final Logger logger = LoggerFactory.getLogger(NullableIndexManager.class);
+
     private final DatabaseStorageManager storageManager;
     private final IndexHeaderManager indexHeaderManager;
     private final IndexBinaryObjectFactory<V> vIndexBinaryObjectFactory;
@@ -124,7 +128,13 @@ public class NullableIndexManager<V extends Number & Comparable<V>> {
         }
 
         Pointer pointer = optionalLocation.get().toPointer(Pointer.TYPE_DATA);
-        Optional<DBObject> dbObjectOptional = this.storageManager.select(pointer);
+        Optional<DBObject> dbObjectOptional = null;
+        try {
+            dbObjectOptional = this.storageManager.select(pointer);
+        } catch (InternalOperationException e) {
+            logger.error(e.getMessage(), e);
+            return Optional.empty();
+        }
         if (dbObjectOptional.isEmpty()) {
             return Optional.empty();
         }

@@ -2,6 +2,7 @@ package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.ds.KeyValue;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.utils.LockableIterator;
@@ -18,7 +19,7 @@ public class DuplicateQueryableIndexDecorator<K extends Comparable<K>, V extends
     }
 
     @Override
-    public boolean addIndex(K identifier, V value) throws InternalOperationException {
+    public boolean addIndex(K identifier, V value) throws InternalOperationException, DeserializationException {
         return this.decorated.addIndex(identifier, value);
     }
 
@@ -33,7 +34,7 @@ public class DuplicateQueryableIndexDecorator<K extends Comparable<K>, V extends
     }
 
     @Override
-    public boolean removeIndex(K identifier, V value) throws InternalOperationException {
+    public boolean removeIndex(K identifier, V value) throws InternalOperationException, DeserializationException {
         return this.decorated.removeIndex(identifier, value);
     }
 
@@ -48,7 +49,7 @@ public class DuplicateQueryableIndexDecorator<K extends Comparable<K>, V extends
     }
 
     @Override
-    public void purgeIndex() {
+    public void purgeIndex() throws InternalOperationException {
         this.decorated.purgeIndex();
     }
 

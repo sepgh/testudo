@@ -1,6 +1,7 @@
 package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.ds.KeyValue;
+import com.github.sepgh.testudo.exception.DeserializationException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.operation.query.Order;
@@ -44,7 +45,7 @@ public class UniqueQueryableIndexDecorator<K extends Comparable<K>, V> implement
     }
 
     @Override
-    public void purgeIndex() {
+    public void purgeIndex() throws InternalOperationException {
         this.decorated.purgeIndex();
     }
 
@@ -59,7 +60,7 @@ public class UniqueQueryableIndexDecorator<K extends Comparable<K>, V> implement
     }
 
     @Override
-    public K nextKey() throws InternalOperationException {
+    public K nextKey() throws InternalOperationException, DeserializationException {
         return this.decorated.nextKey();
     }
 

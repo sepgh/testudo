@@ -40,14 +40,10 @@ public class SerializerIndexBinaryObject<T extends Comparable<T>> implements Ind
     }
 
     @Override
-    public T asObject() {
+    public T asObject() throws DeserializationException {
         if (object != null)
             return object;
-        try {
-            return serializer.deserialize(this.bytes);
-        } catch (DeserializationException e) {
-            throw new RuntimeException(e);  // Todo
-        }
+        return serializer.deserialize(this.bytes);
     }
 
     @Override
@@ -72,7 +68,7 @@ public class SerializerIndexBinaryObject<T extends Comparable<T>> implements Ind
         return this.getNext.apply(current);
     }
 
-    public T getNext() {
+    public T getNext() throws DeserializationException {
         return getNext(asObject());
     }
 
