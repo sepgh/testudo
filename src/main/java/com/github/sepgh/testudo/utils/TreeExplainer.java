@@ -2,6 +2,7 @@ package com.github.sepgh.testudo.utils;
 
 import com.github.sepgh.testudo.ds.KVSize;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.tree.node.AbstractLeafTreeNode;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
@@ -10,7 +11,6 @@ import com.github.sepgh.testudo.index.tree.node.NodeFactory;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.google.common.hash.HashCode;
 
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -36,7 +36,7 @@ public class TreeExplainer<K extends Comparable<K>, V extends Comparable<V>> {
         this.nodeFactory = new NodeFactory.DefaultNodeFactory<>(keyIndexBinaryObjectFactory, valueIndexBinaryObjectFactory);
     }
 
-    public void explain() throws InterruptedException, IOException, ExecutionException {
+    public void explain() throws InternalOperationException, ExecutionException, InterruptedException {
         Queue<AbstractTreeNode<K>> queue = new LinkedList<>();
 
         queue.add(getRoot());
@@ -84,7 +84,7 @@ public class TreeExplainer<K extends Comparable<K>, V extends Comparable<V>> {
         System.out.println();
     }
 
-    private AbstractTreeNode<K> getRoot() throws InterruptedException, ExecutionException {
+    private AbstractTreeNode<K> getRoot() throws InternalOperationException, ExecutionException, InterruptedException {
         IndexStorageManager.NodeData nodeDataRoot = indexStorageManager.getRoot(1, kvSize).get().get();
         return nodeFactory.fromNodeData(nodeDataRoot);
     }

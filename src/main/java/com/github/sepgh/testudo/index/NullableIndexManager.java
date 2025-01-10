@@ -2,7 +2,7 @@ package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.ds.Bitmap;
 import com.github.sepgh.testudo.ds.Pointer;
-import com.github.sepgh.testudo.exception.VerificationException;
+import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.storage.db.DBObject;
@@ -15,7 +15,8 @@ import lombok.Getter;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
+
+import static com.github.sepgh.testudo.exception.ErrorMessage.EM_INDEX_HEADER_MANAGEMENT;
 
 
 @AllArgsConstructor
@@ -26,7 +27,7 @@ public class NullableIndexManager<V extends Number & Comparable<V>> {
     @Getter
     private final int indexId;
 
-    public void addNull(V value) {
+    public void addNull(V value) throws InternalOperationException {
         Optional<IndexHeaderManager.Location> optionalLocation = this.indexHeaderManager.getNullBitmapLocation(this.getIndexId());
 
         Pointer pointer = null;
@@ -62,28 +63,23 @@ public class NullableIndexManager<V extends Number & Comparable<V>> {
                         getIndexId(),
                         IndexHeaderManager.Location.fromPointer(storedPointer)
                 );
-            } catch (IOException | InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e); // Todo
+            } catch (IOException e) {
+                throw new InternalOperationException(EM_INDEX_HEADER_MANAGEMENT, e); // Todo
             }
 
             if (pointer != null) {
                 try {
                     this.storageManager.remove(pointer);
-                } catch (IOException | ExecutionException | InterruptedException ignored) {
+                } catch (InternalOperationException ignored) {
                     // ignoring errors, remove failure is not important in this case (todo: good idea?)
                 }
             }
         } else {
-            try {
-                this.storageManager.update(pointer, data);
-            } catch (IOException | ExecutionException | InterruptedException |
-                     VerificationException.InvalidDBObjectWrapper e) {
-                throw new RuntimeException(e);
-            }
+            this.storageManager.update(pointer, data);
         }
     }
 
-    public void removeNull(V value) {
+    public void removeNull(V value) throws InternalOperationException {
         Optional<IndexHeaderManager.Location> optionalLocation = this.indexHeaderManager.getNullBitmapLocation(this.getIndexId());
         if (optionalLocation.isEmpty()){
             return;
@@ -106,22 +102,17 @@ public class NullableIndexManager<V extends Number & Comparable<V>> {
                         getIndexId(),
                         IndexHeaderManager.Location.fromPointer(storedPointer)
                 );
-            } catch (IOException | InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e); // Todo
+            } catch (IOException e) {
+                throw new InternalOperationException(EM_INDEX_HEADER_MANAGEMENT, e); // Todo
             } finally {
                 try {
                     this.storageManager.remove(pointer);
-                } catch (IOException | ExecutionException | InterruptedException ignored) {
+                } catch (InternalOperationException ignored) {
                     // ignoring errors, remove failure is not important in this case (todo: good idea?)
                 }
             }
         } else {
-            try {
-                this.storageManager.update(pointer, bitmap.getData());
-            } catch (IOException | ExecutionException | InterruptedException |
-                     VerificationException.InvalidDBObjectWrapper e) {
-                throw new RuntimeException(e);
-            }
+            this.storageManager.update(pointer, bitmap.getData());
         }
 
     }

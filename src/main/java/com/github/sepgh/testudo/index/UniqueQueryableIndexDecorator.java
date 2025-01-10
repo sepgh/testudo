@@ -1,8 +1,6 @@
 package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.ds.KeyValue;
-import com.github.sepgh.testudo.exception.IndexExistsException;
-import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.operation.query.Order;
@@ -18,13 +16,13 @@ public class UniqueQueryableIndexDecorator<K extends Comparable<K>, V> implement
         this.decorated = decorated;
     }
 
-    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, IndexExistsException {
+    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException {
         return this.decorated.addIndex(identifier, value);
     }
 
     @Override
-    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexMissingException {
-        return this.decorated.updateIndex(identifier, value);
+    public AbstractTreeNode<K> addOrUpdateIndex(K identifier, V value) throws InternalOperationException {
+        return this.decorated.addOrUpdateIndex(identifier, value);
     }
 
     public Optional<V> getIndex(K identifier) throws InternalOperationException {
@@ -71,12 +69,12 @@ public class UniqueQueryableIndexDecorator<K extends Comparable<K>, V> implement
     }
 
     @Override
-    public void addNull(V value) {
+    public void addNull(V value) throws InternalOperationException {
         this.decorated.addNull(value);
     }
 
     @Override
-    public void removeNull(V value) {
+    public void removeNull(V value) throws InternalOperationException {
         this.decorated.removeNull(value);
     }
 

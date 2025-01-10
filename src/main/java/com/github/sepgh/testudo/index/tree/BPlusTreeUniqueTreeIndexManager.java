@@ -3,8 +3,6 @@ package com.github.sepgh.testudo.index.tree;
 import com.github.sepgh.testudo.ds.KVSize;
 import com.github.sepgh.testudo.ds.KeyValue;
 import com.github.sepgh.testudo.ds.Pointer;
-import com.github.sepgh.testudo.exception.IndexExistsException;
-import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.AbstractUniqueTreeIndexManager;
 import com.github.sepgh.testudo.index.UniqueQueryableIndex;
@@ -67,20 +65,20 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
     }
 
     @Override
-    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, IndexExistsException {
+    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException {
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
         AbstractTreeNode<K> root = getRoot(indexIOSession);
         return new BPlusTreeIndexCreateOperation<>(degree, indexIOSession, keyIndexBinaryObjectFactory, valueIndexBinaryObjectFactory, this.kvSize).addIndex(root, identifier, value);
     }
 
     @Override
-    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexMissingException {
+    public AbstractTreeNode<K> addOrUpdateIndex(K identifier, V value) throws InternalOperationException {
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
 
         AbstractLeafTreeNode<K, V> node = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory);
         List<K> keyList = node.getKeyList(degree);
         if (!keyList.contains(identifier)) {
-            throw new IndexMissingException();
+            return this.addIndex(identifier, value);
         }
 
         node.setKeyValue(keyList.indexOf(identifier), new KeyValue<>(identifier, value));

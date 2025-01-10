@@ -5,9 +5,7 @@ import com.github.sepgh.testudo.ds.BinaryList;
 import com.github.sepgh.testudo.ds.KeyValue;
 import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.IndexExistsException;
-import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.storage.db.DBObject;
@@ -17,12 +15,10 @@ import com.github.sepgh.testudo.utils.LazyFlattenIterator;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import lombok.SneakyThrows;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 
@@ -54,7 +50,7 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
     }
 
     @Override
-    public boolean addIndex(K identifier, V value) throws InternalOperationException, IOException, ExecutionException, InterruptedException {
+    public boolean addIndex(K identifier, V value) throws InternalOperationException {
         Optional<Pointer> pointerOptional = this.indexManager.getIndex(identifier);
         if (pointerOptional.isPresent()) {
             Pointer pointer = pointerOptional.get();
@@ -71,19 +67,11 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
 
             if (afterSize == prevSize) {
                 databaseStorageManager.update(pointer, dbObject -> {
-                    try {
-                        dbObject.modifyData(binaryList.getData());
-                    } catch (VerificationException.InvalidDBObjectWrapper e) {
-                        throw new RuntimeException(e);  // Todo
-                    }
+                    dbObject.modifyData(binaryList.getData());
                 });
             } else {
                 Pointer pointerNew = databaseStorageManager.store(SCHEME_ID, collectionId, -1, binaryList.getData());
-                try {
-                    indexManager.updateIndex(identifier, pointerNew);
-                } catch (IndexMissingException e) {
-                    throw new RuntimeException(e);  // Todo
-                }
+                indexManager.addOrUpdateIndex(identifier, pointerNew);
                 databaseStorageManager.remove(pointer);
             }
 
@@ -131,7 +119,7 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
     }
 
     @Override
-    public synchronized boolean removeIndex(K identifier, V value) throws InternalOperationException, IOException, ExecutionException, InterruptedException {
+    public synchronized boolean removeIndex(K identifier, V value) throws InternalOperationException {
         Optional<Pointer> pointerOptional = this.indexManager.getIndex(identifier);
         if (pointerOptional.isEmpty()) {
             return false;
@@ -147,11 +135,7 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
 
         if (result) {
             databaseStorageManager.update(pointer, dbObject -> {
-                try {
-                    dbObject.modifyData(binaryList.getData());
-                } catch (VerificationException.InvalidDBObjectWrapper e) {
-                    throw new RuntimeException(e);
-                }
+                dbObject.modifyData(binaryList.getData());
             });
         }
 
@@ -213,8 +197,6 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
                     Pointer pointer = lockableIterator.next().value();
                     databaseStorageManager.remove(pointer);
                 }
-            } catch (IOException | ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);
             } finally {
                 lockableIterator.unlock();
             }

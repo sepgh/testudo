@@ -3,6 +3,8 @@ package com.github.sepgh.testudo.storage.index;
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.ds.KVSize;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.ErrorMessage;
+import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
@@ -30,7 +32,7 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
     }
 
     @Override
-    protected IndexHeaderManager.Location getIndexBeginningInChunk(int indexId, int chunk) throws InterruptedException {
+    protected IndexHeaderManager.Location getIndexBeginningInChunk(int indexId, int chunk) {
         return new IndexHeaderManager.Location(0,0);
     }
 
@@ -44,33 +46,38 @@ public class CompactFileIndexStorageManager extends BaseFileIndexStorageManager 
     *       and a space that is already used by another node (but may be empty for now) may be returned!
     *           Possible workaround is either to track last node position and size, or to change implementation and use PageBuffer
     */
-    protected Pointer getAllocatedSpaceForNewNode(int indexId, int chunk, KVSize kvSize) throws IOException, ExecutionException, InterruptedException {
+    protected Pointer getAllocatedSpaceForNewNode(int indexId, int chunk, KVSize kvSize) throws InternalOperationException {
         ManagedFileHandler managedFileHandler = this.getManagedFileHandler(indexId, 0);
-        AsynchronousFileChannel asynchronousFileChannel = managedFileHandler.getAsynchronousFileChannel();
+        try {
+            AsynchronousFileChannel asynchronousFileChannel = managedFileHandler.getAsynchronousFileChannel();
 
-        synchronized (this){
-            long fileSize = asynchronousFileChannel.size();
+            synchronized (this){
+                long fileSize = asynchronousFileChannel.size();
 
-            // Check if we have an empty space
-            // Todo: in reference to the comment above the method, isnt this if statement a lill dumb?
-            //       After second allocation, its always true
-            if (fileSize >= this.getIndexGrowthAllocationSize(kvSize)){
-                long positionToCheck = fileSize - this.getIndexGrowthAllocationSize(kvSize);
+                // Check if we have an empty space
+                // Todo: in reference to the comment above the method, isnt this if statement a lill dumb?
+                //       After second allocation, its always true
+                if (fileSize >= this.getIndexGrowthAllocationSize(kvSize)){
+                    long positionToCheck = fileSize - this.getIndexGrowthAllocationSize(kvSize);
 
-                byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, this.getIndexGrowthAllocationSize(kvSize)).get();
-                Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes, kvSize);
-                if (optionalAdditionalPosition.isPresent()){
-                    long finalPosition = positionToCheck + optionalAdditionalPosition.get();
-                    managedFileHandler.close();
-                    return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
+                    byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, this.getIndexGrowthAllocationSize(kvSize)).get();
+                    Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes, kvSize);
+                    if (optionalAdditionalPosition.isPresent()){
+                        long finalPosition = positionToCheck + optionalAdditionalPosition.get();
+                        managedFileHandler.close();
+                        return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
+                    }
+
                 }
 
+                Long position = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize(kvSize)).get();
+                managedFileHandler.close();
+                return new Pointer(Pointer.TYPE_NODE, position, chunk);
             }
-
-            Long position = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize(kvSize)).get();
-            managedFileHandler.close();
-            return new Pointer(Pointer.TYPE_NODE, position, chunk);
+        } catch (IOException | ExecutionException | InterruptedException e) {
+            throw new RuntimeException(ErrorMessage.EM_FILE_ALLOCATION, e);
         }
+
 
     }
 

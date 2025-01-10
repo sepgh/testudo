@@ -3,6 +3,8 @@ package com.github.sepgh.testudo.storage.index;
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.ds.KVSize;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.ErrorMessage;
+import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManagerFactory;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
@@ -38,7 +40,7 @@ public class OrganizedFileIndexStorageManager extends BaseFileIndexStorageManage
     }
 
     @Override
-    protected IndexHeaderManager.Location getIndexBeginningInChunk(int indexId, int chunk) throws InterruptedException {
+    protected IndexHeaderManager.Location getIndexBeginningInChunk(int indexId, int chunk) throws InternalOperationException {
         Optional<IndexHeaderManager.Location> optional = this.indexHeaderManager.getIndexBeginningInChunk(indexId, chunk);
         if (optional.isPresent()) {
             return optional.get();
@@ -66,72 +68,77 @@ public class OrganizedFileIndexStorageManager extends BaseFileIndexStorageManage
         return location;
     }
 
-    protected synchronized Pointer getAllocatedSpaceForNewNode(int indexId, int chunk, KVSize size) throws IOException, ExecutionException, InterruptedException {
-        Optional<IndexHeaderManager.Location> optionalIndexBeginningLocation = this.indexHeaderManager.getIndexBeginningInChunk(indexId, chunk);
-        boolean createNewChunk = optionalIndexBeginningLocation.isEmpty();
+    protected synchronized Pointer getAllocatedSpaceForNewNode(int indexId, int chunk, KVSize size) throws InternalOperationException {
+        try {
 
-        // Despite if it's a new chunk for this index or not, go to next chunk if file is already full
-        AsynchronousFileChannel asynchronousFileChannel = this.acquireFileChannel(indexId, chunk);
-        if (
-                this.engineConfig.getBTreeMaxFileSize() != EngineConfig.UNLIMITED_FILE_SIZE &&
-                        asynchronousFileChannel.size() >= this.engineConfig.getBTreeMaxFileSize()
-        ) {
-            this.releaseFileChannel(indexId, chunk);
-            return this.getAllocatedSpaceForNewNode(indexId, chunk + 1, size);
-        }
+            Optional<IndexHeaderManager.Location> optionalIndexBeginningLocation = this.indexHeaderManager.getIndexBeginningInChunk(indexId, chunk);
+            boolean createNewChunk = optionalIndexBeginningLocation.isEmpty();
 
-        // If it's a new chunk for this index, allocate at the end of the file!
-        if (createNewChunk){
-            this.indexHeaderManager.setIndexBeginningInChunk(indexId, new IndexHeaderManager.Location(chunk, asynchronousFileChannel.size()));
-            Long position = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize(size)).get();
-            this.releaseFileChannel(indexId, chunk);
-            return new Pointer(Pointer.TYPE_NODE, position, chunk);
-        }
-
-
-        // If it's not a new chunk for this index, see if other indexes exist or not
-
-        Optional<IndexHeaderManager.Location> nextIndexBeginningInChunk = this.indexHeaderManager.getNextIndexBeginningInChunk(indexId, chunk);
-        long positionToCheck;
-        if (nextIndexBeginningInChunk.isPresent()){
-            // Another index exists, so lets check if we have a space left before the next index
-            positionToCheck = nextIndexBeginningInChunk.get().getOffset() - this.getIndexGrowthAllocationSize(size);
-        } else {
-            // Another index doesn't exist, so lets check if we have a space left in the end of the file
-            positionToCheck = asynchronousFileChannel.size() - this.getIndexGrowthAllocationSize(size);
-        }
-
-        if (positionToCheck >= 0){
-            // Check if we have an empty space
-            byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, this.getIndexGrowthAllocationSize(size)).get();
-            Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes, size);
-            if (optionalAdditionalPosition.isPresent()){
-                long finalPosition = positionToCheck + optionalAdditionalPosition.get();
+            // Despite if it's a new chunk for this index or not, go to next chunk if file is already full
+            AsynchronousFileChannel asynchronousFileChannel = this.acquireFileChannel(indexId, chunk);
+            if (
+                    this.engineConfig.getBTreeMaxFileSize() != EngineConfig.UNLIMITED_FILE_SIZE &&
+                            asynchronousFileChannel.size() >= this.engineConfig.getBTreeMaxFileSize()
+            ) {
                 this.releaseFileChannel(indexId, chunk);
-                return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
+                return this.getAllocatedSpaceForNewNode(indexId, chunk + 1, size);
             }
+
+            // If it's a new chunk for this index, allocate at the end of the file!
+            if (createNewChunk){
+                this.indexHeaderManager.setIndexBeginningInChunk(indexId, new IndexHeaderManager.Location(chunk, asynchronousFileChannel.size()));
+                Long position = FileUtils.allocate(asynchronousFileChannel, this.getIndexGrowthAllocationSize(size)).get();
+                this.releaseFileChannel(indexId, chunk);
+                return new Pointer(Pointer.TYPE_NODE, position, chunk);
+            }
+
+
+            // If it's not a new chunk for this index, see if other indexes exist or not
+
+            Optional<IndexHeaderManager.Location> nextIndexBeginningInChunk = this.indexHeaderManager.getNextIndexBeginningInChunk(indexId, chunk);
+            long positionToCheck;
+            if (nextIndexBeginningInChunk.isPresent()){
+                // Another index exists, so lets check if we have a space left before the next index
+                positionToCheck = nextIndexBeginningInChunk.get().getOffset() - this.getIndexGrowthAllocationSize(size);
+            } else {
+                // Another index doesn't exist, so lets check if we have a space left in the end of the file
+                positionToCheck = asynchronousFileChannel.size() - this.getIndexGrowthAllocationSize(size);
+            }
+
+            if (positionToCheck >= 0){
+                // Check if we have an empty space
+                byte[] bytes = FileUtils.readBytes(asynchronousFileChannel, positionToCheck, this.getIndexGrowthAllocationSize(size)).get();
+                Optional<Integer> optionalAdditionalPosition = getPossibleAllocationLocation(bytes, size);
+                if (optionalAdditionalPosition.isPresent()){
+                    long finalPosition = positionToCheck + optionalAdditionalPosition.get();
+                    this.releaseFileChannel(indexId, chunk);
+                    return new Pointer(Pointer.TYPE_NODE, finalPosition, chunk);
+                }
+            }
+
+            // Empty space not found, allocate in the end or before next index
+            long allocatedOffset;
+            if (nextIndexBeginningInChunk.isPresent()){
+                allocatedOffset = FileUtils.allocate(
+                        asynchronousFileChannel,
+                        nextIndexBeginningInChunk.get().getOffset(),
+                        this.getIndexGrowthAllocationSize(size)
+                ).get();
+                Integer nextIndex = this.indexHeaderManager.getNextIndexIdInChunk(indexId, chunk).get();
+                this.indexHeaderManager.setIndexBeginningInChunk(nextIndex, new IndexHeaderManager.Location(chunk, nextIndexBeginningInChunk.get().getOffset() + this.getIndexGrowthAllocationSize(size)));
+            } else {
+                allocatedOffset = FileUtils.allocate(
+                        asynchronousFileChannel,
+                        this.getIndexGrowthAllocationSize(size)
+                ).get();
+            }
+
+            this.releaseFileChannel(indexId, chunk);
+
+            return new Pointer(Pointer.TYPE_NODE, allocatedOffset, chunk);
+        } catch (IOException | ExecutionException | InterruptedException e) {
+            throw new InternalOperationException(ErrorMessage.EM_FILE_ALLOCATION, e);
         }
-
-        // Empty space not found, allocate in the end or before next index
-        long allocatedOffset;
-        if (nextIndexBeginningInChunk.isPresent()){
-            allocatedOffset = FileUtils.allocate(
-                    asynchronousFileChannel,
-                    nextIndexBeginningInChunk.get().getOffset(),
-                    this.getIndexGrowthAllocationSize(size)
-            ).get();
-            Integer nextIndex = this.indexHeaderManager.getNextIndexIdInChunk(indexId, chunk).get();
-            this.indexHeaderManager.setIndexBeginningInChunk(nextIndex, new IndexHeaderManager.Location(chunk, nextIndexBeginningInChunk.get().getOffset() + this.getIndexGrowthAllocationSize(size)));
-        } else {
-            allocatedOffset = FileUtils.allocate(
-                    asynchronousFileChannel,
-                    this.getIndexGrowthAllocationSize(size)
-            ).get();
-        }
-
-        this.releaseFileChannel(indexId, chunk);
-
-        return new Pointer(Pointer.TYPE_NODE, allocatedOffset, chunk);
     }
 
     @Override

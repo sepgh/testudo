@@ -14,10 +14,8 @@ import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import lombok.Getter;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class DefaultCollectionDeleteOperation<T extends Number & Comparable<T>> implements CollectionDeleteOperation<T> {
@@ -53,41 +51,36 @@ public class DefaultCollectionDeleteOperation<T extends Number & Comparable<T>> 
     }
 
     @Override
-    public long execute() {
+    public long execute() throws InternalOperationException, DeserializationException {
         AtomicLong counter = new AtomicLong();
         try {
             this.readerWriterLock.getWriteLock().lock();
             Iterator<T> executedQuery = getExecutedQuery();
 
             while (executedQuery.hasNext()) {
-                try {
-                    T clusterId = executedQuery.next();
-                    Optional<Pointer> optionalPointer = clusterIndexManager.getIndex(clusterId);
+                T clusterId = executedQuery.next();
+                Optional<Pointer> optionalPointer = clusterIndexManager.getIndex(clusterId);
 
-                    if (optionalPointer.isEmpty()) {
-                        // todo: should not be here
-                        throw new RuntimeException("No pointer found for clusterId: " + clusterId);
-                    }
-
-                    Pointer pointer = optionalPointer.get();
-                    Optional<DBObject> optionalDBObject = this.storageManager.select(pointer);
-
-                    if (optionalDBObject.isEmpty()) {
-                        // Todo: should not get here
-                        throw new RuntimeException("No such object: " + pointer);
-                    }
-
-
-                    this.removeFieldIndexes(clusterId, optionalDBObject.get().getData());
-
-                    this.storageManager.remove(pointer);
-                    this.clusterIndexManager.removeIndex(clusterId);
-
-                    counter.incrementAndGet();
-
-                } catch (IOException | ExecutionException | InterruptedException | InternalOperationException e) {
-                    throw new RuntimeException(e);   // Todo
+                if (optionalPointer.isEmpty()) {
+                    // todo: should not be here
+                    throw new RuntimeException("No pointer found for clusterId: " + clusterId);
                 }
+
+                Pointer pointer = optionalPointer.get();
+                Optional<DBObject> optionalDBObject = this.storageManager.select(pointer);
+
+                if (optionalDBObject.isEmpty()) {
+                    // Todo: should not get here
+                    throw new RuntimeException("No such object: " + pointer);
+                }
+
+
+                this.removeFieldIndexes(clusterId, optionalDBObject.get().getData());
+
+                this.storageManager.remove(pointer);
+                this.clusterIndexManager.removeIndex(clusterId);
+
+                counter.incrementAndGet();
             }
         } finally {
             this.readerWriterLock.getWriteLock().unlock();
@@ -95,34 +88,29 @@ public class DefaultCollectionDeleteOperation<T extends Number & Comparable<T>> 
         return counter.get();
     }
 
-    private void removeFieldIndexes(T clusterId, byte[] bytes) {
+    private void removeFieldIndexes(T clusterId, byte[] bytes) throws DeserializationException, InternalOperationException {
         for (Scheme.Field field : collection.getFields().stream().filter(Scheme.Field::isIndexed).toList()) {
-            try {
-                if (field.getIndex().isUnique()) {
-                    UniqueQueryableIndex<?, T> uniqueIndexManager = (UniqueQueryableIndex<?, T>) collectionIndexProvider.getUniqueIndexManager(field);
-                    uniqueIndexManager.removeIndex(
-                            CollectionSerializationUtil.getValueOfFieldAsObject(
-                                    collection,
-                                    field,
-                                    bytes
-                            )
-                    );
+            if (field.getIndex().isUnique()) {
+                UniqueQueryableIndex<?, T> uniqueIndexManager = (UniqueQueryableIndex<?, T>) collectionIndexProvider.getUniqueIndexManager(field);
+                uniqueIndexManager.removeIndex(
+                        CollectionSerializationUtil.getValueOfFieldAsObject(
+                                collection,
+                                field,
+                                bytes
+                        )
+                );
 
-                } else {
-                    DuplicateQueryableIndex<?, T> duplicateIndexManager = (DuplicateQueryableIndex<?, T>) collectionIndexProvider.getDuplicateIndexManager(field);
+            } else {
+                DuplicateQueryableIndex<?, T> duplicateIndexManager = (DuplicateQueryableIndex<?, T>) collectionIndexProvider.getDuplicateIndexManager(field);
 
-                    duplicateIndexManager.removeIndex(
-                            CollectionSerializationUtil.getValueOfFieldAsObject(
-                                    collection,
-                                    field,
-                                    bytes
-                            ),
-                            clusterId
-                    );
-                }
-            } catch (InternalOperationException | IOException | ExecutionException | InterruptedException |
-                     DeserializationException e) {
-                throw new RuntimeException(e);
+                duplicateIndexManager.removeIndex(
+                        CollectionSerializationUtil.getValueOfFieldAsObject(
+                                collection,
+                                field,
+                                bytes
+                        ),
+                        clusterId
+                );
             }
         }
     }

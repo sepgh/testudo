@@ -2,12 +2,11 @@ package com.github.sepgh.testudo.storage.index;
 
 import com.github.sepgh.testudo.ds.KVSize;
 import com.github.sepgh.testudo.ds.Pointer;
+import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.storage.index.header.IndexHeaderManager;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 public class IndexStorageManagerDecorator implements IndexStorageManager {
     protected final IndexStorageManager decorated;
@@ -16,7 +15,7 @@ public class IndexStorageManagerDecorator implements IndexStorageManager {
         this.decorated = decorated;
     }
 
-    public CompletableFuture<Optional<NodeData>> getRoot(int indexId, KVSize size) throws InterruptedException {
+    public CompletableFuture<Optional<NodeData>> getRoot(int indexId, KVSize size) throws InternalOperationException {
         return this.decorated.getRoot(indexId, size);
     }
 
@@ -24,32 +23,32 @@ public class IndexStorageManagerDecorator implements IndexStorageManager {
         return this.decorated.getEmptyNode(size);
     }
 
-    public CompletableFuture<NodeData> readNode(int indexId, Pointer pointer, KVSize size) throws InterruptedException, IOException {
+    public CompletableFuture<NodeData> readNode(int indexId, Pointer pointer, KVSize size) throws InternalOperationException {
         return this.readNode(indexId, pointer.getPosition(), pointer.getChunk(), size);
     }
-    public CompletableFuture<NodeData> readNode(int indexId, long position, int chunk, KVSize size) throws InterruptedException, IOException {
+    public CompletableFuture<NodeData> readNode(int indexId, long position, int chunk, KVSize size) throws InternalOperationException {
         return this.decorated.readNode(indexId, position, chunk, size);
     }
 
-    public CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data, boolean isRoot, KVSize size) throws IOException, ExecutionException, InterruptedException {
+    public CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data, boolean isRoot, KVSize size) throws InternalOperationException {
         return this.decorated.writeNewNode(indexId, data, isRoot, size);
     }
 
-    public  CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data, KVSize size) throws IOException, ExecutionException, InterruptedException {
+    public  CompletableFuture<NodeData> writeNewNode(int indexId, byte[] data, KVSize size) throws InternalOperationException {
         return this.writeNewNode(indexId, data, false, size);
     }
-    public  CompletableFuture<Void> updateNode(int indexId, byte[] data, Pointer pointer) throws IOException, InterruptedException {
+    public  CompletableFuture<Void> updateNode(int indexId, byte[] data, Pointer pointer) throws InternalOperationException {
         return this.decorated.updateNode(indexId, data, pointer, false);
     }
-    public CompletableFuture<Void> updateNode(int indexId, byte[] data, Pointer pointer, boolean root) throws IOException, InterruptedException {
+    public CompletableFuture<Void> updateNode(int indexId, byte[] data, Pointer pointer, boolean root) throws InternalOperationException {
         return this.decorated.updateNode(indexId, data, pointer, root);
     }
 
-    public void close() throws IOException {
+    public void close() throws InternalOperationException {
         this.decorated.close();
     }
 
-    public CompletableFuture<Void> removeNode(int indexId, Pointer pointer, KVSize size) throws InterruptedException {
+    public CompletableFuture<Void> removeNode(int indexId, Pointer pointer, KVSize size) throws InternalOperationException {
         return this.decorated.removeNode(indexId, pointer, size);
     }
 

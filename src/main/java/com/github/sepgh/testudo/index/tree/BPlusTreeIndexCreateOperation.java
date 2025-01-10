@@ -48,7 +48,7 @@ public class BPlusTreeIndexCreateOperation<K extends Comparable<K>, V> {
 
                 List<K> currentNodeKeyList = currentNode.getKeyList(degree, valueIndexBinaryObjectFactory.size());
                 if (currentNodeKeyList.contains(identifier))
-                    throw new IndexExistsException();
+                    throw new IndexExistsException(identifier.toString());
 
                 /* If current node has space, store and exit */
                 if (currentNodeKeyList.size() < (degree - 1)){

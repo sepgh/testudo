@@ -11,11 +11,9 @@ import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
 import lombok.SneakyThrows;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class BPlusTreeUtils {
 
@@ -70,43 +68,37 @@ public class BPlusTreeUtils {
         List<InternalTreeNode.ChildPointers<K>> childPointersList = ((InternalTreeNode<K>) node).getChildPointersList(degree);
         int i = Collections.binarySearch(childPointersList, InternalTreeNode.ChildPointers.getChildPointerOfKey(identifier));
 
-        try {
-
-            if (i >= 0) {
+        if (i >= 0) {
+            return getResponsibleNode(
+                    indexStorageManager,
+                    IndexTreeNodeIO.read(indexStorageManager, index, childPointersList.get(i).getRight(), nodeFactory, node.getKVSize()),
+                    identifier,
+                    index,
+                    degree,
+                    nodeFactory
+            );
+        } else {
+            i = -(i + 1);
+            if (i == 0) {
                 return getResponsibleNode(
                         indexStorageManager,
-                        IndexTreeNodeIO.read(indexStorageManager, index, childPointersList.get(i).getRight(), nodeFactory, node.getKVSize()),
+                        IndexTreeNodeIO.read(indexStorageManager, index, childPointersList.getFirst().getLeft(), nodeFactory, node.getKVSize()),
                         identifier,
                         index,
                         degree,
                         nodeFactory
                 );
             } else {
-                i = -(i + 1);
-                if (i == 0) {
-                    return getResponsibleNode(
-                            indexStorageManager,
-                            IndexTreeNodeIO.read(indexStorageManager, index, childPointersList.getFirst().getLeft(), nodeFactory, node.getKVSize()),
-                            identifier,
-                            index,
-                            degree,
-                            nodeFactory
-                    );
-                } else {
-                    return getResponsibleNode(
-                            indexStorageManager,
-                            IndexTreeNodeIO.read(indexStorageManager, index, childPointersList.get(i - 1).getRight(), nodeFactory, node.getKVSize()),
-                            identifier,
-                            index,
-                            degree,
-                            nodeFactory
-                    );
-                }
+                return getResponsibleNode(
+                        indexStorageManager,
+                        IndexTreeNodeIO.read(indexStorageManager, index, childPointersList.get(i - 1).getRight(), nodeFactory, node.getKVSize()),
+                        identifier,
+                        index,
+                        degree,
+                        nodeFactory
+                );
             }
-        }  catch (ExecutionException | InterruptedException | IOException e) {
-            throw new InternalOperationException(e);
         }
-
     }
 
     public static <K extends Comparable<K>, V> AbstractLeafTreeNode<K, V> getFarLeftLeaf(IndexIOSession<K> indexIOSession, AbstractTreeNode<K> root) throws InternalOperationException {

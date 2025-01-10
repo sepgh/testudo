@@ -2,7 +2,6 @@ package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.ds.CacheID;
 import com.github.sepgh.testudo.exception.IndexExistsException;
-import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
@@ -51,8 +50,8 @@ public class CachedUniqueQueryableIndexDecorator<K extends Comparable<K>, V> ext
     }
 
     @Override
-    public AbstractTreeNode<K> updateIndex(K identifier, V value) throws InternalOperationException, IndexMissingException {
-        AbstractTreeNode<K> baseClusterTreeNode = super.updateIndex(identifier, value);
+    public AbstractTreeNode<K> addOrUpdateIndex(K identifier, V value) throws InternalOperationException {
+        AbstractTreeNode<K> baseClusterTreeNode = super.addOrUpdateIndex(identifier, value);
         cache.put(new CacheID<>(getIndexId(), identifier), value);
         return baseClusterTreeNode;
     }

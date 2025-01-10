@@ -87,7 +87,7 @@ public class CollectionSchemeUpdater {
                         dbObject1.setVersion(collectionFieldsUpdate.getVersion());
                         try {
                             dbObject1.modifyData(bytes);
-                        } catch (VerificationException.InvalidDBObjectWrapper e) {
+                        } catch (InvalidDBObjectWrapper e) {
                             throw new RuntimeException(e);
                         }
                     });
@@ -102,15 +102,15 @@ public class CollectionSchemeUpdater {
                                 this.collectionFieldsUpdate.getVersion(),
                                 bytes
                         );
-                        clusterIndexManager.updateIndex(keyValue.key(), newPointer);
+                        clusterIndexManager.addOrUpdateIndex(keyValue.key(), newPointer);
                         this.databaseStorageManager.remove(pointer);
-                    } catch (IOException | ExecutionException | InterruptedException | IndexExistsException | InternalOperationException | IndexMissingException | SerializationException  e) {
+                    } catch (IOException | ExecutionException | InterruptedException | InternalOperationException | SerializationException  e) {
                         throw new RuntimeException(e);
                     }
                 }
 
                 updateIndexes(bytes, keyValue.key());
-            } catch (DeserializationException | IndexExistsException | InternalOperationException | IOException | ExecutionException | InterruptedException e) {
+            } catch (DeserializationException | InternalOperationException | IOException | ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -161,7 +161,7 @@ public class CollectionSchemeUpdater {
 
     }
 
-    private <K extends Comparable<K>> byte[] createNew(DBObject dbObject) throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, IndexMissingException, SerializationException {
+    private <K extends Comparable<K>> byte[] createNew(DBObject dbObject) throws IOException, ExecutionException, InterruptedException, InternalOperationException, SerializationException {
         Map<Integer, byte[]> valueMap = new HashMap<>();
 
         collectionFieldsUpdate.getBefore().getFields().forEach(field -> {

@@ -1,7 +1,7 @@
 package com.github.sepgh.testudo.exception;
 
-public class IndexExistsException extends Exception {
-    public IndexExistsException() {
-        super("Index already exists!");
+public class IndexExistsException extends InternalOperationException {
+    public IndexExistsException(String key) {
+        super("Index already exists: " + key);
     }
 }

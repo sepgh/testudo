@@ -2,7 +2,9 @@ package com.github.sepgh.testudo.operation.query;
 
 import com.google.common.base.Preconditions;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 public class AndIterator<T extends Number> implements Iterator<T> {
     private T current;

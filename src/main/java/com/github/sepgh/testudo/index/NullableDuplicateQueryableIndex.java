@@ -1,5 +1,6 @@
 package com.github.sepgh.testudo.index;
 
+import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
@@ -22,12 +23,12 @@ public class NullableDuplicateQueryableIndex<K extends Comparable<K>, V extends 
     }
 
     @Override
-    public void addNull(V value) {
+    public void addNull(V value) throws InternalOperationException {
         this.nullableIndexManager.addNull(value);
     }
 
     @Override
-    public void removeNull(V value) {
+    public void removeNull(V value) throws InternalOperationException {
         this.nullableIndexManager.removeNull(value);
     }
 

@@ -1,7 +1,7 @@
 package com.github.sepgh.testudo.storage.db;
 
 
-import com.github.sepgh.testudo.exception.VerificationException;
+import com.github.sepgh.testudo.exception.InvalidDBObjectWrapper;
 import com.github.sepgh.testudo.utils.BinaryUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
@@ -49,15 +49,15 @@ public class Page {
         }
     }
 
-    public synchronized Optional<DBObject> getDBObjectFromPool(int offset) throws VerificationException.InvalidDBObjectWrapper {
+    public synchronized Optional<DBObject> getDBObjectFromPool(int offset) throws InvalidDBObjectWrapper {
         return this.getDBObjectFromPool(offset, -1, true);
     }
 
-    public synchronized Optional<DBObject> getDBObjectFromPool(int offset, int onCreateSize) throws VerificationException.InvalidDBObjectWrapper {
+    public synchronized Optional<DBObject> getDBObjectFromPool(int offset, int onCreateSize) throws InvalidDBObjectWrapper {
         return this.getDBObjectFromPool(offset, onCreateSize, false);
     }
 
-    public synchronized Optional<DBObject> getDBObjectFromPool(int offset, int onCreateSize, boolean emptyOnNull) throws VerificationException.InvalidDBObjectWrapper {
+    public synchronized Optional<DBObject> getDBObjectFromPool(int offset, int onCreateSize, boolean emptyOnNull) throws InvalidDBObjectWrapper {
         if (wrapperPool.containsKey(offset)) {
             return Optional.of(wrapperPool.get(offset));
         }
@@ -88,7 +88,7 @@ public class Page {
         System.arraycopy(Ints.toByteArray(cursorPosition), 0, this.data, 0, Integer.BYTES);
     }
 
-    public synchronized Optional<DBObject> getEmptyDBObjectWrapper(int length) throws VerificationException.InvalidDBObjectWrapper {
+    public synchronized Optional<DBObject> getEmptyDBObjectWrapper(int length) throws InvalidDBObjectWrapper {
         if (getData().length - cursorPosition > DBObject.getWrappedSize(length)){
             DBObject dbObject = new DBObject(this, cursorPosition, cursorPosition + DBObject.getWrappedSize(length));
             Optional<DBObject> output = Optional.of(dbObject);

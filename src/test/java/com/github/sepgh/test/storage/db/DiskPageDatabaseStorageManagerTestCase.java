@@ -4,7 +4,6 @@ import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.ds.KeyValue;
 import com.github.sepgh.testudo.ds.Pointer;
-import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.storage.db.*;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPoolFactory;
 import org.junit.jupiter.api.AfterEach;
@@ -123,7 +122,7 @@ public class DiskPageDatabaseStorageManagerTestCase {
         storageManager.update(pointer, dbObject -> {
             try {
                 dbObject.modifyData("Nest".getBytes(StandardCharsets.UTF_8));
-            } catch (VerificationException.InvalidDBObjectWrapper e) {
+            } catch (InvalidDBObjectWrapper e) {
                 throw new RuntimeException(e);
             }
         });

@@ -1,6 +1,6 @@
 package com.github.sepgh.testudo.storage.db;
 
-import com.github.sepgh.testudo.exception.VerificationException;
+import com.github.sepgh.testudo.exception.InvalidDBObjectWrapper;
 import com.github.sepgh.testudo.utils.BinaryUtils;
 import com.google.common.primitives.Ints;
 import lombok.Getter;
@@ -37,7 +37,7 @@ public class DBObject {
     @Getter
     private boolean modified;
 
-    public DBObject(Page page, int begin, int end) throws VerificationException.InvalidDBObjectWrapper {
+    public DBObject(Page page, int begin, int end) throws InvalidDBObjectWrapper {
         this.wrappedData = page.getData();
         this.begin = begin;
         this.end = end;
@@ -46,13 +46,13 @@ public class DBObject {
         this.verify();
     }
 
-    private void verify() throws VerificationException.InvalidDBObjectWrapper {
+    private void verify() throws InvalidDBObjectWrapper {
         if (end > this.wrappedData.length - 1)
-            throw new VerificationException.InvalidDBObjectWrapper("The passed value for end (%d) is larger than the data byte array length (%d).".formatted(end, this.wrappedData.length));
+            throw new InvalidDBObjectWrapper("The passed value for end (%d) is larger than the data byte array length (%d).".formatted(end, this.wrappedData.length));
 
         int min = META_BYTES + 1;
         if (this.length < min) {
-            throw new VerificationException.InvalidDBObjectWrapper("Minimum size of byte array should be " + min + ". Passed: " + this.length);
+            throw new InvalidDBObjectWrapper("Minimum size of byte array should be " + min + ". Passed: " + this.length);
         }
     }
 
@@ -91,9 +91,9 @@ public class DBObject {
         return output;
     }
 
-    public void modifyData(byte[] value) throws VerificationException.InvalidDBObjectWrapper {
+    public void modifyData(byte[] value) throws InvalidDBObjectWrapper {
         if (value.length > DBObject.getWrappedSize(value.length)) {
-            throw new VerificationException.InvalidDBObjectWrapper("Can't extend DBObject size. Create a new one."); // Todo
+            throw new InvalidDBObjectWrapper("Can't extend DBObject size. Create a new one."); // Todo
         }
 
         this.setSize(value.length);

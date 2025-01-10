@@ -5,15 +5,19 @@ import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;
 import com.github.sepgh.testudo.index.tree.node.NodeFactory;
+import com.github.sepgh.testudo.operation.DefaultCollectionInsertOperation;
 import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
 import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements IndexIOSession<K> {
+    private static final Logger logger = LoggerFactory.getLogger(DefaultCollectionInsertOperation.class);
+
     @Getter
     protected final IndexStorageManager indexStorageManager;
     protected final int indexId;
@@ -59,7 +63,7 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
         IndexStorageManager.NodeData nodeData = null;
         try {
             nodeData = IndexTreeNodeIO.write(indexStorageManager, indexId, node).get();
-        } catch (InterruptedException | ExecutionException | IOException e) {
+        } catch (InterruptedException | ExecutionException e) {
             throw new InternalOperationException(e);
         }
         this.created.add(nodeData.pointer());
@@ -80,12 +84,8 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
         if (created.contains(pointer))
             return pool.get(pointer);
 
-        AbstractTreeNode<K> baseClusterTreeNode = null;
-        try {
-            baseClusterTreeNode = IndexTreeNodeIO.read(indexStorageManager, indexId, pointer, nodeFactory, kvSize);
-        } catch (ExecutionException | InterruptedException | IOException e) {
-            throw new InternalOperationException(e);
-        }
+        AbstractTreeNode<K> baseClusterTreeNode = IndexTreeNodeIO.read(indexStorageManager, indexId, pointer, nodeFactory, kvSize);
+
         pool.put(pointer, baseClusterTreeNode);
 
         byte[] copy = new byte[baseClusterTreeNode.getData().length];
@@ -117,10 +117,11 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
         for (Pointer pointer : deleted) {
             try {
                 IndexTreeNodeIO.remove(indexStorageManager, indexId, pointer, kvSize);
-            } catch (ExecutionException | InterruptedException e) {
+            } catch (InternalOperationException e) {
                 try {
                     this.rollback();
-                } catch (IOException | InterruptedException | ExecutionException ex) {
+                } catch (InternalOperationException ex) {
+                    logger.error("Tried to rollback snapshot but failed with exception {}", ex.getMessage(), ex);
                     throw new InternalOperationException(ex);
                 }
             }
@@ -128,23 +129,20 @@ public class MemorySnapshotIndexIOSession<K extends Comparable<K>> implements In
 
         try {
             for (Pointer pointer : updated) {
-                try {
-                    IndexTreeNodeIO.update(indexStorageManager, indexId, pool.get(pointer));
-                } catch (ExecutionException e) {
-                    throw new InternalOperationException(e);
-                }
+                IndexTreeNodeIO.update(indexStorageManager, indexId, pool.get(pointer));
             }
-        } catch (InterruptedException | IOException e) {
+        } catch (InternalOperationException e) {
             try {
                 this.rollback();
-            } catch (IOException | InterruptedException | ExecutionException ex) {
-                throw new InternalOperationException(ex);
+            } catch (InternalOperationException ex) {
+                logger.error("Tried to rollback snapshot but failed with exception {}", ex.getMessage(), ex);
+                throw e;
             }
         }
 
     }
 
-    protected void rollback() throws IOException, InterruptedException, ExecutionException {
+    protected void rollback() throws InternalOperationException {
         for (Pointer pointer : deleted) {
             IndexTreeNodeIO.update(indexStorageManager, indexId, original.get(pointer));
         }

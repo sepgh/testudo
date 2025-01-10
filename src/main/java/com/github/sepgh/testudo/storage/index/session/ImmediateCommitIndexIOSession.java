@@ -9,7 +9,6 @@ import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.IndexTreeNodeIO;
 import lombok.Getter;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
@@ -41,27 +40,19 @@ public class ImmediateCommitIndexIOSession<K extends Comparable<K>> implements I
     public IndexStorageManager.NodeData write(AbstractTreeNode<K> node) throws InternalOperationException {
         try {
             return IndexTreeNodeIO.write(indexStorageManager, indexId, node).get();
-        } catch (IOException | ExecutionException | InterruptedException e) {
+        } catch (InterruptedException | ExecutionException e) {
             throw new InternalOperationException(e);
         }
     }
 
     @Override
     public AbstractTreeNode<K> read(Pointer pointer) throws InternalOperationException {
-        try {
-            return IndexTreeNodeIO.read(indexStorageManager, indexId, pointer, nodeFactory, kvSize);
-        } catch (ExecutionException | InterruptedException | IOException e) {
-            throw new InternalOperationException(e);
-        }
+        return IndexTreeNodeIO.read(indexStorageManager, indexId, pointer, nodeFactory, kvSize);
     }
 
     @Override
     public final void update(AbstractTreeNode<K> node) throws InternalOperationException {
-        try {
-            IndexTreeNodeIO.update(indexStorageManager, indexId, node);
-        } catch (InterruptedException | IOException | ExecutionException e) {
-            throw new InternalOperationException(e);
-        }
+        IndexTreeNodeIO.update(indexStorageManager, indexId, node);
     }
 
     @Override

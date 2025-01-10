@@ -1,11 +1,11 @@
 package com.github.sepgh.testudo.storage.db;
 
-import com.github.sepgh.testudo.exception.VerificationException;
 
+import com.github.sepgh.testudo.exception.InvalidDBObjectWrapper;
 
 public class MutableDBObjectDecorator extends DBObject {
 
-    public MutableDBObjectDecorator(DBObject decorated) throws VerificationException.InvalidDBObjectWrapper {
+    public MutableDBObjectDecorator(DBObject decorated) throws InvalidDBObjectWrapper {
         super(decorated.getPage(), decorated.getBegin(), decorated.getEnd());
     }
 

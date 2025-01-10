@@ -2,7 +2,10 @@ package com.github.sepgh.testudo.operation;
 
 import com.github.sepgh.testudo.ds.Bitmap;
 import com.github.sepgh.testudo.ds.Pointer;
-import com.github.sepgh.testudo.exception.*;
+import com.github.sepgh.testudo.exception.DeserializationException;
+import com.github.sepgh.testudo.exception.IndexExistsException;
+import com.github.sepgh.testudo.exception.InternalOperationException;
+import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.index.DuplicateQueryableIndex;
 import com.github.sepgh.testudo.index.UniqueQueryableIndex;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
@@ -102,8 +105,8 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
 
             }
 
-        } catch (InternalOperationException | VerificationException.InvalidDBObjectWrapper | IOException |
-                 ExecutionException | InterruptedException | IndexExistsException | DeserializationException e) {
+        } catch (InternalOperationException | IOException |
+                 ExecutionException | InterruptedException | DeserializationException e) {
             // Todo
             throw new RuntimeException(e);
         } finally {
@@ -114,7 +117,7 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
     }
 
     @SuppressWarnings("unchecked")
-    private <F extends Comparable<F>> void update(Pointer pointer, byte[] update, byte[] old, T clusterId) throws IOException, ExecutionException, InterruptedException, VerificationException.InvalidDBObjectWrapper, DeserializationException, InternalOperationException, IndexExistsException {
+    private <F extends Comparable<F>> void update(Pointer pointer, byte[] update, byte[] old, T clusterId) throws IOException, ExecutionException, InterruptedException, DeserializationException, InternalOperationException, IndexExistsException {
         // Todo: if a field has been updated, we better first check if its unique, and it already existed or not.  read README.md
 
         this.storageManager.update(pointer, update);

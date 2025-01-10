@@ -2,7 +2,9 @@ package com.github.sepgh.testudo.storage.db;
 
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.ds.Pointer;
-import com.github.sepgh.testudo.exception.VerificationException;
+import com.github.sepgh.testudo.exception.InternalOperationException;
+import com.github.sepgh.testudo.exception.InvalidDBObjectWrapper;
+import com.github.sepgh.testudo.functional.DBObjectUpdateConsumer;
 import com.github.sepgh.testudo.storage.pool.FileHandlerPool;
 import com.github.sepgh.testudo.utils.FileUtils;
 import lombok.Getter;
@@ -14,7 +16,8 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
+
+import static com.github.sepgh.testudo.exception.ErrorMessage.*;
 
 
 @Getter
@@ -40,7 +43,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
     }
 
 
-    public Pointer store(int schemeId, int collectionId, int version, byte[] data) throws IOException, InterruptedException, ExecutionException {
+    public Pointer store(int schemeId, int collectionId, int version, byte[] data) throws InternalOperationException {
         Optional<RemovedObjectsTracer.RemovedObjectLocation> optionalRemovedObjectLocation = this.removedObjectsTracer.getRemovedObjectLocation(DBObject.getWrappedSize(data.length));
 
         if (optionalRemovedObjectLocation.isPresent()) {
@@ -65,7 +68,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
                         this.pageBuffer.release(page);
                     }
                 }
-            } catch (VerificationException.InvalidDBObjectWrapper e) {
+            } catch (InvalidDBObjectWrapper e) {
                 throw new RuntimeException(e);
             }
         }
@@ -81,7 +84,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
                 if (optionalDBObjectWrapper.isPresent()) {
                     dbObject = optionalDBObjectWrapper.get();
                 }
-            } catch (VerificationException.InvalidDBObjectWrapper e) {
+            } catch (InvalidDBObjectWrapper e) {
                 this.pageBuffer.release(page);
                 throw new RuntimeException(e);
             }
@@ -91,7 +94,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
             page = this.getBufferedNewPage();
             try {
                 dbObject = page.getEmptyDBObjectWrapper(data.length).get();
-            } catch (VerificationException.InvalidDBObjectWrapper e) {
+            } catch (InvalidDBObjectWrapper e) {
                 this.pageBuffer.release(page);
                 throw new RuntimeException(e);
             }
@@ -104,14 +107,14 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
                     ((long) page.getPageNumber() * this.engineConfig.getDbPageSize()) + dbObject.getBegin(),
                     page.getChunk()
             );
-        } catch (VerificationException.InvalidDBObjectWrapper e) {
+        } catch (InvalidDBObjectWrapper e) {
             throw new RuntimeException(e);
         } finally {
             this.pageBuffer.release(page);
         }
     }
 
-    private void store(DBObject dbObject, int schemeId, int collectionId, int version, byte[] data) throws IOException, ExecutionException, InterruptedException, VerificationException.InvalidDBObjectWrapper {
+    private void store(DBObject dbObject, int schemeId, int collectionId, int version, byte[] data) throws InternalOperationException {
         dbObject.activate();
         dbObject.setSchemeId(schemeId);
         dbObject.modifyData(data);
@@ -120,7 +123,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         this.commitPage(dbObject.getPage());
     }
 
-    public void update(Pointer pointer, Consumer<DBObject> dbObjectConsumer) throws IOException, ExecutionException, InterruptedException {
+    public void update(Pointer pointer, DBObjectUpdateConsumer<DBObject> dbObjectConsumer) throws InternalOperationException {
         PageBuffer.PageTitle pageTitle = new PageBuffer.PageTitle(pointer.getChunk(), (int) (pointer.getPosition() / this.engineConfig.getDbPageSize()));
         Page page = this.pageBuffer.acquire(pageTitle);
 
@@ -130,7 +133,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
                 optionalDBObjectWrapper = page.getDBObjectFromPool(
                         (int) (pointer.getPosition() % this.engineConfig.getDbPageSize())
                 );
-            } catch (VerificationException.InvalidDBObjectWrapper e) {
+            } catch (InvalidDBObjectWrapper e) {
                 throw new RuntimeException(e);
             }
 
@@ -147,19 +150,16 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
     }
 
     @Override
-    public void update(Pointer pointer, byte[] bytes) throws IOException, ExecutionException, InterruptedException, VerificationException.InvalidDBObjectWrapper {
+    public void update(Pointer pointer, byte[] bytes) throws InternalOperationException {
         PageBuffer.PageTitle pageTitle = new PageBuffer.PageTitle(pointer.getChunk(), (int) (pointer.getPosition() / this.engineConfig.getDbPageSize()));
         Page page = this.pageBuffer.acquire(pageTitle);
 
         try {
             Optional<DBObject> optionalDBObjectWrapper;
-            try {
-                optionalDBObjectWrapper = page.getDBObjectFromPool(
-                        (int) (pointer.getPosition() % this.engineConfig.getDbPageSize())
-                );
-            } catch (VerificationException.InvalidDBObjectWrapper e) {
-                throw new RuntimeException(e);
-            }
+
+            optionalDBObjectWrapper = page.getDBObjectFromPool(
+                    (int) (pointer.getPosition() % this.engineConfig.getDbPageSize())
+            );
 
             if (optionalDBObjectWrapper.isEmpty()) {}  // Todo
 
@@ -183,14 +183,14 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
                 return Optional.of(new MutableDBObjectDecorator(optional.get()));
             }
             return Optional.empty();
-        } catch (VerificationException.InvalidDBObjectWrapper e) {
+        } catch (InvalidDBObjectWrapper e) {
             throw new RuntimeException(e);
         } finally {
             this.pageBuffer.release(page);
         }
     }
 
-    public void remove(Pointer pointer) throws IOException, ExecutionException, InterruptedException {
+    public void remove(Pointer pointer) throws InternalOperationException {
         PageBuffer.PageTitle pageTitle = new PageBuffer.PageTitle(pointer.getChunk(), (int) (pointer.getPosition() / this.engineConfig.getDbPageSize()));
         Page page = this.pageBuffer.acquire(pageTitle);
 
@@ -213,7 +213,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
                         )
                 );
             }
-        } catch (VerificationException.InvalidDBObjectWrapper e) {
+        } catch (InvalidDBObjectWrapper e) {
             throw new RuntimeException(e);
         } finally {
             this.pageBuffer.release(page);
@@ -225,9 +225,14 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
     /****** Helpers ******/
 
 
-    private void commitPage(Page page) throws IOException, InterruptedException, ExecutionException {
+    private void commitPage(Page page) throws InternalOperationException {
         Path path = getDBFileName(page.getChunk());
-        AsynchronousFileChannel fileChannel = this.fileHandlerPool.getFileChannel(path, 100, TimeUnit.SECONDS);// Todo
+        AsynchronousFileChannel fileChannel = null;// Todo
+        try {
+            fileChannel = this.fileHandlerPool.getFileChannel(path, 100, TimeUnit.SECONDS);
+        } catch (InterruptedException | IOException e) {
+            throw new InternalOperationException(EM_FILEHANDLER_POOL, e);
+        }
 
         // Todo: could return future instead maybe? Or just queue for submission?
         //       For transactions we'd need something similar to FileSessionIO!
@@ -236,6 +241,8 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         //       Call backs could help in that case (CompletableFuture has such functionality)
         try {
             FileUtils.write(fileChannel, (long) page.getPageNumber() * this.engineConfig.getDbPageSize(), page.getData()).get();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new InternalOperationException(EM_FILE_WRITE, e);
         } finally {
             this.fileHandlerPool.releaseFileChannel(path, 100, TimeUnit.SECONDS); // Todo
         }
@@ -288,7 +295,7 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         return this.pageBuffer.acquire(pageTitle);
     }
 
-    private synchronized Page getBufferedNewPage() throws IOException, ExecutionException, InterruptedException {
+    private synchronized Page getBufferedNewPage() throws InternalOperationException {
         PageBuffer.PageTitle lastPageTitle = this.lastPageTitle;  // This surely exists since getBufferedLastPage was called first
 
         int chunk = 0;
@@ -308,18 +315,25 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         return this.pageBuffer.acquire(this.lastPageTitle);
     }
 
-    private synchronized void generateNewEmptyPage(int chunk) throws IOException, InterruptedException, ExecutionException {
+    private synchronized void generateNewEmptyPage(int chunk) throws InternalOperationException {
         int size = this.engineConfig.getDbPageSize();
         Path path = getDBFileName(chunk);
-        AsynchronousFileChannel fileChannel = this.fileHandlerPool.getFileChannel(path, 100, TimeUnit.SECONDS);// Todo
+        AsynchronousFileChannel fileChannel;
+        try {
+            fileChannel = this.fileHandlerPool.getFileChannel(path, 100, TimeUnit.SECONDS);// Todo
+        } catch (InterruptedException | IOException e) {
+            throw new InternalOperationException(EM_FILEHANDLER_POOL, e);
+        }
         try {
             FileUtils.allocate(fileChannel, size).get();
+        } catch (IOException | ExecutionException | InterruptedException e) {
+            throw new InternalOperationException(EM_FILE_ALLOCATION, e);
         } finally {
             this.fileHandlerPool.releaseFileChannel(path, 100, TimeUnit.SECONDS); // Todo
         }
     }
 
-    private Optional<Page> getBufferedLastPage() throws IOException, InterruptedException {
+    private Optional<Page> getBufferedLastPage() throws InternalOperationException {
         if (this.lastPageTitle != null){
             return Optional.of(this.pageBuffer.acquire(this.lastPageTitle));
         }
@@ -339,15 +353,19 @@ public class DiskPageDatabaseStorageManager implements DatabaseStorageManager {
         }
 
         synchronized (this){
-            AsynchronousFileChannel fileChannel = fileHandlerPool.getFileChannel(getDBFileName(lastChunk), 100, TimeUnit.SECONDS);// Todo
-            long fileSize = fileChannel.size();
-            long size = fileSize == 0 ? 0 : fileSize - 1;
-            int pageNumber = (int) (size / this.engineConfig.getDbPageSize());
-            fileHandlerPool.releaseFileChannel(getDBFileName(lastChunk), 100, TimeUnit.SECONDS);  // Todo
+            try {
+                AsynchronousFileChannel fileChannel = fileHandlerPool.getFileChannel(getDBFileName(lastChunk), 100, TimeUnit.SECONDS);// Todo
+                long fileSize = fileChannel.size();
+                long size = fileSize == 0 ? 0 : fileSize - 1;
+                int pageNumber = (int) (size / this.engineConfig.getDbPageSize());
+                fileHandlerPool.releaseFileChannel(getDBFileName(lastChunk), 100, TimeUnit.SECONDS);  // Todo
 
-            this.lastPageTitle = new PageBuffer.PageTitle(lastChunk, pageNumber);
+                this.lastPageTitle = new PageBuffer.PageTitle(lastChunk, pageNumber);
 
-            return Optional.of(this.pageBuffer.acquire(this.lastPageTitle));
+                return Optional.of(this.pageBuffer.acquire(this.lastPageTitle));
+            } catch (IOException | InterruptedException e) {
+                throw new InternalOperationException(EM_FILEHANDLER_POOL, e);
+            }
         }
     }
 

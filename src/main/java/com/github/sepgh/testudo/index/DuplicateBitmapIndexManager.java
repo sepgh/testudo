@@ -4,9 +4,7 @@ import com.github.sepgh.testudo.ds.Bitmap;
 import com.github.sepgh.testudo.ds.KeyValue;
 import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.IndexExistsException;
-import com.github.sepgh.testudo.exception.IndexMissingException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
-import com.github.sepgh.testudo.exception.VerificationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.storage.db.DBObject;
@@ -16,11 +14,9 @@ import com.github.sepgh.testudo.utils.LazyFlattenIterator;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import lombok.SneakyThrows;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Number & Comparable<V>> implements DuplicateQueryableIndex<K, V> {
@@ -38,7 +34,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
     }
 
     @Override
-    public boolean addIndex(K identifier, V value) throws InternalOperationException, IOException, ExecutionException, InterruptedException {
+    public boolean addIndex(K identifier, V value) throws InternalOperationException {
         Optional<Pointer> pointerOptional = this.indexManager.getIndex(identifier);
         if (pointerOptional.isPresent()) {
             Pointer pointer = pointerOptional.get();
@@ -56,20 +52,13 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
             if (result) {
                 if (initialSize >= vBitmap.getData().length) {
                     databaseStorageManager.update(pointer, dbObject1 -> {
-                        try {
-                            dbObject1.modifyData(vBitmap.getData());
-                        } catch (VerificationException.InvalidDBObjectWrapper e) {
-                            throw new RuntimeException(e);
-                        }
+                        dbObject1.modifyData(vBitmap.getData());  // Todo
                     });
                 } else {
                     Pointer pointer1 = databaseStorageManager.store(SCHEME_ID, collectionId, 1, vBitmap.getData());
-                    try {
-                        this.indexManager.updateIndex(identifier, pointer1);
-                        databaseStorageManager.remove(pointer);
-                    } catch (IndexMissingException e) {
-                        throw new RuntimeException(e);
-                    }
+                    this.indexManager.addOrUpdateIndex(identifier, pointer1);
+                    databaseStorageManager.remove(pointer);
+
                 }
             }
 
@@ -110,7 +99,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
     }
 
     @Override
-    public boolean removeIndex(K identifier, V value) throws InternalOperationException, IOException, ExecutionException, InterruptedException {
+    public boolean removeIndex(K identifier, V value) throws InternalOperationException {
         Optional<Pointer> pointerOptional = this.indexManager.getIndex(identifier);
         if (pointerOptional.isPresent()) {
             Pointer pointer = pointerOptional.get();
@@ -122,11 +111,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
 
                 if (result) {
                     databaseStorageManager.update(pointer, dbObject1 -> {
-                        try {
-                            dbObject1.modifyData(vBitmap.getData());
-                        } catch (VerificationException.InvalidDBObjectWrapper e) {
-                            throw new RuntimeException(e);
-                        }
+                        dbObject1.modifyData(vBitmap.getData());  // Todo
                     });
                 }
 

@@ -15,16 +15,18 @@ import com.github.sepgh.testudo.serialization.ModelSerializer;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 
 // Todo: verification (read README.md)
 @Getter
 public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> implements CollectionInsertOperation<T> {
+    private static final Logger logger = LoggerFactory.getLogger(DefaultCollectionInsertOperation.class);
+
     private final Scheme scheme;
     private final Scheme.Collection collection;
     private final ReaderWriterLock readerWriterLock;
@@ -43,26 +45,24 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
     }
 
     @Override
-    public <V> void execute(V v) throws SerializationException {
+    public <V> void execute(V v) throws SerializationException, InternalOperationException, DeserializationException {
         ModelSerializer modelSerializer = new ModelSerializer(v);
         this.execute(modelSerializer.serialize());
     }
 
-    protected Pointer storeBytes(byte[] bytes) throws IOException, InterruptedException, ExecutionException {
+    protected Pointer storeBytes(byte[] bytes) throws InternalOperationException {
         return storageManager.store(this.scheme.getId(), this.collection.getId(), scheme.getVersion(), bytes);
     }
 
     // Todo: good idea to have this method as public interface? read README.md
     @Override
-    public void execute(byte[] bytes) {
+    public void execute(byte[] bytes) throws InternalOperationException, DeserializationException {
         try {
             readerWriterLock.getWriteLock().lock();
             // Todo: we better check for unique field values first, before any insertions  read README.md
             Pointer pointer = this.storeBytes(bytes);
             final T key = this.storeClusterIndex(pointer);
             this.storeFieldIndexes(bytes, key, pointer);
-        } catch (IOException | InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);  // Todo
         } finally {
             readerWriterLock.getWriteLock().unlock();
         }
@@ -70,7 +70,7 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
     }
 
     @SuppressWarnings("unchecked")
-    private void storeFieldIndexes(byte[] bytes, T clusterId, Pointer pointer) {
+    private void storeFieldIndexes(byte[] bytes, T clusterId, Pointer pointer) throws InternalOperationException, DeserializationException {
         Bitmap<Integer> nullsBitmap = CollectionSerializationUtil.getNullsBitmap(collection, bytes);
 
         int fieldIndex = -1;
@@ -115,28 +115,26 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
                         );
                     }
                 }
-            } catch (IndexExistsException | InternalOperationException | DeserializationException e) {
+            } catch (InternalOperationException | DeserializationException e) {
                 try {
                     clusterIndexManager.removeIndex(clusterId);
                 } catch (InternalOperationException ex) {
-                    // Todo: log e and ex
-                    throw new RuntimeException("Failed to store index, but also failed to rollback cluster id: " + e.getMessage(), ex);
+                    logger.error("Failed to store index, but also failed to rollback cluster id. Root error: {}, rollback error: {}", e.getMessage(), ex.getMessage());
+                    throw e;
                 }
 
                 try {
                     storageManager.remove(pointer);
-                } catch (IOException | ExecutionException | InterruptedException ep) {
-                    // Todo: log e and ep
+                } catch (InternalOperationException ep) {
+                    logger.error("Failed to store index, but also failed to remove object from storage manager. Root error {}, storage manager removal error: {}", e.getMessage(), ep.getMessage());
                 }
 
-                throw new RuntimeException(e); // Todo
-            } catch (IOException | ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);   // Todo: hopefully these would be handled like above?
+                throw e;
             }
         }
     }
 
-    private T storeClusterIndex(Pointer pointer) {
+    private T storeClusterIndex(Pointer pointer) throws InternalOperationException {
         T key = null;
 
         boolean stored = false;
@@ -146,9 +144,6 @@ public class DefaultCollectionInsertOperation<T extends Number & Comparable<T>> 
                 clusterIndexManager.addIndex(key, pointer);
                 stored = true;
             } catch (IndexExistsException ignored){}
-            catch (InternalOperationException e) {
-                throw new RuntimeException(e); // Todo
-            }
         }
         return key;
     }

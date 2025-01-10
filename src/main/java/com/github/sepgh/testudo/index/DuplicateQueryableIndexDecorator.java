@@ -6,11 +6,9 @@ import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.utils.LockableIterator;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 public class DuplicateQueryableIndexDecorator<K extends Comparable<K>, V extends Number & Comparable<V>> implements DuplicateQueryableIndex<K, V> {
     protected final DuplicateQueryableIndex<K, V> decorated;
@@ -20,7 +18,7 @@ public class DuplicateQueryableIndexDecorator<K extends Comparable<K>, V extends
     }
 
     @Override
-    public boolean addIndex(K identifier, V value) throws InternalOperationException, IOException, ExecutionException, InterruptedException {
+    public boolean addIndex(K identifier, V value) throws InternalOperationException {
         return this.decorated.addIndex(identifier, value);
     }
 
@@ -35,7 +33,7 @@ public class DuplicateQueryableIndexDecorator<K extends Comparable<K>, V extends
     }
 
     @Override
-    public boolean removeIndex(K identifier, V value) throws InternalOperationException, IOException, ExecutionException, InterruptedException {
+    public boolean removeIndex(K identifier, V value) throws InternalOperationException {
         return this.decorated.removeIndex(identifier, value);
     }
 
@@ -70,12 +68,12 @@ public class DuplicateQueryableIndexDecorator<K extends Comparable<K>, V extends
     }
 
     @Override
-    public void addNull(V value) {
+    public void addNull(V value) throws InternalOperationException {
         this.decorated.addNull(value);
     }
 
     @Override
-    public void removeNull(V value) {
+    public void removeNull(V value) throws InternalOperationException {
         this.decorated.removeNull(value);
     }
 
