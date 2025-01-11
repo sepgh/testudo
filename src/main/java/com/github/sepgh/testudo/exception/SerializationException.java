@@ -1,7 +1,7 @@
 package com.github.sepgh.testudo.exception;
 
 public class SerializationException extends BaseSerializationException {
-    private static final String MESSAGE_PREPEND = "Serialization Error";
+    private static final String MESSAGE_PREPEND = "Serialization Error: ";
 
     public SerializationException() {
         super(MESSAGE_PREPEND);

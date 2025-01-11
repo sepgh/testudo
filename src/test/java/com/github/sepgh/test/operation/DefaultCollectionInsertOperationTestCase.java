@@ -173,6 +173,48 @@ public class DefaultCollectionInsertOperationTestCase {
 
 
     @Test
+    public void test_autoIncrement() throws SerializationException, InternalOperationException, DeserializationException {
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
+        IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);
+
+        Scheme scheme = Scheme.builder()
+                .dbName("test")
+                .version(1)
+                .build();
+
+        Scheme.Collection collection = new ModelToCollectionConverter(TestModel.class).toCollection();
+        scheme.getCollections().add(collection);
+
+
+        CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory = new DefaultCollectionIndexProviderSingletonFactory(scheme, engineConfig, indexStorageManagerSingletonFactory, storageManager);
+        ReaderWriterLock readerWriterLock = new ReaderWriterLock();
+        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
+        CollectionSelectOperation<Long> collectionSelectOperation = new DefaultCollectionSelectOperation<>(collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
+
+        TestModel testModel1 = TestModel.builder().age(10L).country("DE").name("John").build();
+        TestModel testModel2 = TestModel.builder().age(20L).country("FR").name("Rose").build();
+
+        testModel1 = collectionInsertOperation.execute(testModel1);
+        Assertions.assertNotNull(testModel1.getId());
+        Assertions.assertEquals(1, testModel1.getId());
+
+        testModel2 = collectionInsertOperation.execute(testModel2);
+        Assertions.assertNotNull(testModel2.getId());
+        Assertions.assertEquals(2, testModel2.getId());
+
+        List<TestModel> idEQ1s = collectionSelectOperation.query(new Query("id", Operation.EQ, 1)).asList(TestModel.class);
+        Assertions.assertEquals(1, idEQ1s.size());
+        Assertions.assertEquals(testModel1, idEQ1s.getFirst());
+
+        List<TestModel> idEQ2s = collectionSelectOperation.query(new Query("id", Operation.EQ, 2)).asList(TestModel.class);
+        Assertions.assertEquals(1, idEQ2s.size());
+        Assertions.assertEquals(testModel2, idEQ2s.getFirst());
+
+    }
+
+
+    @Test
     public void test_nullable() throws SerializationException, InternalOperationException, DeserializationException {
         DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
         DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();

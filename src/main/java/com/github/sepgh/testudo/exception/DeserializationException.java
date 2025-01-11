@@ -1,7 +1,7 @@
 package com.github.sepgh.testudo.exception;
 
 public class DeserializationException extends BaseSerializationException {
-    private static final String MESSAGE_PREPEND = "Deserialization Error";
+    private static final String MESSAGE_PREPEND = "Deserialization Error: ";
 
     public DeserializationException() {
         super(MESSAGE_PREPEND);

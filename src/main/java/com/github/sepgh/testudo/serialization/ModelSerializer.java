@@ -48,7 +48,7 @@ public class ModelSerializer {
             } else {
                 if (field.isNullable()) {
                     nullsBitmap.on(fieldIndex);
-                } else {
+                } else if (!field.isIndexed() || (field.isIndexed() && !field.getIndex().isAutoIncrement())){
                     throw new SerializationException("Field " + field.getName() + " is not nullable");
                 }
             }
