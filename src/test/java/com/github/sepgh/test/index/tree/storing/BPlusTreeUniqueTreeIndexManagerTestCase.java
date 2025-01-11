@@ -36,7 +36,7 @@ import static com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageMa
 public class BPlusTreeUniqueTreeIndexManagerTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
-    private int degree = 4;
+    private final int degree = 4;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -74,7 +74,7 @@ public class BPlusTreeUniqueTreeIndexManagerTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void addIndex() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void addIndex() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
 
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
@@ -96,7 +96,7 @@ public class BPlusTreeUniqueTreeIndexManagerTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void testSingleSplitAddIndex() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void testSingleSplitAddIndex() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         Random random = new Random();
 
         List<Long> testIdentifiers = new ArrayList<>(degree);
@@ -190,7 +190,7 @@ public class BPlusTreeUniqueTreeIndexManagerTestCase {
      */
     @Test
     @Timeout(value = 2)
-    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);

@@ -2,7 +2,9 @@ package com.github.sepgh.test.operation;
 
 import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.EngineConfig;
-import com.github.sepgh.testudo.exception.*;
+import com.github.sepgh.testudo.exception.BaseSerializationException;
+import com.github.sepgh.testudo.exception.IndexExistsException;
+import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.operation.*;
 import com.github.sepgh.testudo.operation.query.Operation;
 import com.github.sepgh.testudo.operation.query.Query;
@@ -87,7 +89,7 @@ public class DefaultCollectionUpdateOperationTestCase {
     }
 
     @Test
-    public void test() throws IOException, BaseSerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void test() throws IOException, BaseSerializationException, ExecutionException, InterruptedException, InternalOperationException {
         DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
         DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
         IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);

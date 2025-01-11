@@ -45,7 +45,7 @@ import static com.github.sepgh.testudo.storage.index.BaseFileIndexStorageManager
 public class IndexBinaryObjectTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
-    private int degree = 4;
+    private final int degree = 4;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -79,7 +79,7 @@ public class IndexBinaryObjectTestCase {
     }
 
     @Test
-    public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void test_IntegerIdentifier() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getStorageManager();
 
         UniqueTreeIndexManager<Integer, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, new IntegerSerializer().getIndexBinaryObjectFactory(TestParams.FAKE_FIELD));
@@ -105,7 +105,7 @@ public class IndexBinaryObjectTestCase {
     }
 
     @Test
-    public void test_CustomBinaryObjectWrapper() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void test_CustomBinaryObjectWrapper() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = new OrganizedFileIndexStorageManager(
                 "Test",
                 new JsonIndexHeaderManager.SingletonFactory(),

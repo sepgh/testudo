@@ -33,7 +33,7 @@ import static com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageMa
 public class CacheBPlusTreeUniqueTreeIndexManagerReadingTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
-    private int degree = 4;
+    private final int degree = 4;
     private Path indexPath;
 
     @BeforeEach
@@ -66,7 +66,7 @@ public class CacheBPlusTreeUniqueTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexSuccessfully_cachedStorage() throws IOException, ExecutionException, InterruptedException, InternalOperationException, IndexExistsException {
+    public void findIndexSuccessfully_cachedStorage() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         IndexStorageManager indexStorageManager = getStorageManager();
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 30);
 
@@ -102,7 +102,7 @@ public class CacheBPlusTreeUniqueTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexFailure_cachedStorage() throws IOException, ExecutionException, InterruptedException, InternalOperationException, IndexExistsException {
+    public void findIndexFailure_cachedStorage() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         IndexStorageManager indexStorageManager = getStorageManager();
         indexStorageManager = new CachedIndexStorageManagerDecorator(indexStorageManager, 12);
 
@@ -126,7 +126,7 @@ public class CacheBPlusTreeUniqueTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexSuccessfully_cachedIndexManager() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void findIndexSuccessfully_cachedIndexManager() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         IndexStorageManager indexStorageManager = getStorageManager();
 
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new CachedUniqueQueryableIndexDecorator<>(
@@ -153,7 +153,7 @@ public class CacheBPlusTreeUniqueTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexFailure_cachedIndexManager() throws IOException, ExecutionException, InterruptedException, InternalOperationException, IndexExistsException {
+    public void findIndexFailure_cachedIndexManager() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         IndexStorageManager indexStorageManager = getStorageManager();
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new CachedUniqueQueryableIndexDecorator<>(
                 new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()),

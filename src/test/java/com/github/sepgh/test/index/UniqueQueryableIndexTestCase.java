@@ -67,7 +67,7 @@ public class UniqueQueryableIndexTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void testGreaterThan_ASC() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void testGreaterThan_ASC() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
 
         UniqueQueryableIndex<Long, Long> uniqueQueryableIndex = new BPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, LONG_INDEX_BINARY_OBJECT_FACTORY.get(), LONG_INDEX_BINARY_OBJECT_FACTORY.get());
@@ -127,7 +127,7 @@ public class UniqueQueryableIndexTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void testGreaterThan_DESC() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void testGreaterThan_DESC() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
 
         UniqueQueryableIndex<Long, Long> uniqueQueryableIndex = new BPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, LONG_INDEX_BINARY_OBJECT_FACTORY.get(), LONG_INDEX_BINARY_OBJECT_FACTORY.get());
@@ -187,7 +187,7 @@ public class UniqueQueryableIndexTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void testLessThan_DESC() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void testLessThan_DESC() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
 
         UniqueQueryableIndex<Long, Long> uniqueQueryableIndex = new BPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, LONG_INDEX_BINARY_OBJECT_FACTORY.get(), LONG_INDEX_BINARY_OBJECT_FACTORY.get());
@@ -247,7 +247,7 @@ public class UniqueQueryableIndexTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void testLessThan_ASC() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void testLessThan_ASC() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         OrganizedFileIndexStorageManager organizedFileIndexStorageManager = getCompactFileIndexStorageManager();
 
         UniqueQueryableIndex<Long, Long> uniqueQueryableIndex = new BPlusTreeUniqueTreeIndexManager<>(1, degree, organizedFileIndexStorageManager, LONG_INDEX_BINARY_OBJECT_FACTORY.get(), LONG_INDEX_BINARY_OBJECT_FACTORY.get());

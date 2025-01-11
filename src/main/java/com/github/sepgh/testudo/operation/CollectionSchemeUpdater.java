@@ -21,8 +21,8 @@ import java.util.concurrent.ExecutionException;
 
 public class CollectionSchemeUpdater {
     private SchemeManager.CollectionFieldsUpdate collectionFieldsUpdate;
-    private DatabaseStorageManager databaseStorageManager;
-    private SchemeManager schemeManager;
+    private final DatabaseStorageManager databaseStorageManager;
+    private final SchemeManager schemeManager;
     private static final int SCHEME_ID = -1;
 
     public CollectionSchemeUpdater(
@@ -143,7 +143,7 @@ public class CollectionSchemeUpdater {
 
 
     @SuppressWarnings("unchecked")
-    private <K extends Comparable<K>, V extends Number & Comparable<V>> void updateIndexes(byte[] obj, V clusterId) throws DeserializationException, IndexExistsException, InternalOperationException, IOException, ExecutionException, InterruptedException {
+    private <K extends Comparable<K>, V extends Number & Comparable<V>> void updateIndexes(byte[] obj, V clusterId) throws DeserializationException, InternalOperationException, IOException, ExecutionException, InterruptedException {
         for (Scheme.Field field : collectionFieldsUpdate.getNewFields()) {
             if (!field.isIndexed()){
                 return;

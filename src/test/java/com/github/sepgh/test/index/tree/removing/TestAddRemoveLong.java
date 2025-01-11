@@ -32,7 +32,7 @@ public class TestAddRemoveLong extends BaseBPlusTreeUniqueTreeIndexManagerRemova
     }
 
     @Test
-    public void test() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void test() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         UniqueTreeIndexManager<Long, Long> indexManager = getIndexManager(indexStorageManager);
 

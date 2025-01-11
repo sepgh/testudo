@@ -29,7 +29,7 @@ public class CompactFileIndexStorageManagerPurgeTestCase extends BaseBPlusTreeUn
     }
 
     @Test
-    public void testPurge() throws IndexExistsException, InternalOperationException {
+    public void testPurge() throws InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
 
         UniqueTreeIndexManager<Long, Long> indexManager = getIndexManager(indexStorageManager);

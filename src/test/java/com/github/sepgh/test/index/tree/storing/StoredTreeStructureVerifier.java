@@ -65,7 +65,7 @@ public class StoredTreeStructureVerifier {
         LeafClusterTreeNode<Long> currentLeaf = (LeafClusterTreeNode<Long>) IndexTreeNodeIO.read(indexStorageManager, table, leftChildInternalNode.getChildPointersList(degree).get(0).getLeft(), nodeFactory, DEFAULT_KV_SIZE);
         List<Long> currentLeafKeys = currentLeaf.getKeyList(degree);
         Assertions.assertEquals(2, currentLeafKeys.size());
-        Assertions.assertEquals(multi * 1, currentLeafKeys.get(0));
+        Assertions.assertEquals(multi, currentLeafKeys.get(0));
         Assertions.assertEquals(multi * 2, currentLeafKeys.get(1));
 
         // 2nd Leaf
@@ -202,7 +202,7 @@ public class StoredTreeStructureVerifier {
         );
         List<Long> currentLeafKeys = currentLeaf.getKeyList(degree);
         Assertions.assertEquals(2, currentLeafKeys.size());
-        Assertions.assertEquals(multi * 1, currentLeafKeys.get(0));
+        Assertions.assertEquals(multi, currentLeafKeys.get(0));
         Assertions.assertEquals(multi * 2, currentLeafKeys.get(1));
 
         // 2nd Leaf

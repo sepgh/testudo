@@ -36,7 +36,7 @@ public class MemorySnapshotIndexIOSessionTestCase {
     private final static KVSize KV_SIZE =  new KVSize(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get().size(), PointerIndexBinaryObject.BYTES);
     private Path dbPath;
     private EngineConfig engineConfig;
-    private int degree = 4;
+    private final int degree = 4;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -74,7 +74,7 @@ public class MemorySnapshotIndexIOSessionTestCase {
 
     @Timeout(2)
     @Test
-    public void testCreateRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, InternalOperationException, IndexExistsException {
+    public void testCreateRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, InternalOperationException {
         
         IndexStorageManager indexStorageManager = getCompactFileIndexStorageManager();
         final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()), KV_SIZE);
@@ -108,7 +108,7 @@ public class MemorySnapshotIndexIOSessionTestCase {
 
     @Timeout(2)
     @Test
-    public void testDeleteRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, InternalOperationException, IndexExistsException {
+    public void testDeleteRollback() throws IOException, ExecutionException, InterruptedException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, InternalOperationException {
 
         IndexStorageManager indexStorageManager = getCompactFileIndexStorageManager();
         final IndexIOSession<Long> indexIOSession = new MemorySnapshotIndexIOSession<>(indexStorageManager, 1, new NodeFactory.ClusterNodeFactory<>(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get()), KV_SIZE);

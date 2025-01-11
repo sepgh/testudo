@@ -79,7 +79,7 @@ public class BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
      *     ├── 011
      *     └── 012
      */
-    public void testRemovingLeftToRight(UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, InternalOperationException, IndexExistsException {
+    public void testRemovingLeftToRight(UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
 
@@ -205,7 +205,7 @@ public class BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(10, root.getKeyList(degree).getFirst(), "" + root.getKeyList(degree));
         Assertions.assertEquals(11, root.getKeyList(degree).getLast(), "" + root.getKeyList(degree));
 
-        leafNodeAtLeft = (LeafClusterTreeNode<Long>) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst(), nodeFactory, DEFAULT_KV_SIZE);
+        leafNodeAtLeft = IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst(), nodeFactory, DEFAULT_KV_SIZE);
         Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree, PointerIndexBinaryObject.BYTES).size());
         Assertions.assertEquals(9, leafNodeAtLeft.getKeyList(degree, PointerIndexBinaryObject.BYTES).getFirst());
 
@@ -217,7 +217,7 @@ public class BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(11, root.getKeyList(degree).getFirst());
 
-        leafNodeAtLeft = (LeafClusterTreeNode<Long>) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst(), nodeFactory, DEFAULT_KV_SIZE);
+        leafNodeAtLeft = IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst(), nodeFactory, DEFAULT_KV_SIZE);
         Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree, PointerIndexBinaryObject.BYTES).size());
         Assertions.assertEquals(10, leafNodeAtLeft.getKeyList(degree, PointerIndexBinaryObject.BYTES).getFirst());
 
@@ -237,7 +237,7 @@ public class BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
         Assertions.assertEquals(1, root.getKeyList(degree).size());
         Assertions.assertEquals(12, root.getKeyList(degree).getFirst());
 
-        leafNodeAtLeft = (LeafClusterTreeNode<Long>) IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst(), nodeFactory, DEFAULT_KV_SIZE);
+        leafNodeAtLeft = IndexTreeNodeIO.read(indexStorageManager, 1, root.getChildrenList().getFirst(), nodeFactory, DEFAULT_KV_SIZE);
         Assertions.assertEquals(1, leafNodeAtLeft.getKeyList(degree, PointerIndexBinaryObject.BYTES).size());
         Assertions.assertEquals(11, leafNodeAtLeft.getKeyList(degree, PointerIndexBinaryObject.BYTES).getFirst());
 
@@ -264,7 +264,7 @@ public class BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
 
     }
 
-    public void testRemovingRightToLeft(UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, InternalOperationException, IndexExistsException {
+    public void testRemovingRightToLeft(UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
         NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
@@ -429,7 +429,7 @@ public class BaseBPlusTreeUniqueTreeIndexManagerRemovalTestCase {
     }
 
 
-    public void testRemovingRoot(UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, InternalOperationException, IndexExistsException {
+    public void testRemovingRoot(UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager, IndexStorageManager indexStorageManager) throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
         NodeFactory<Long> nodeFactory = new NodeFactory.ClusterNodeFactory<>(DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());

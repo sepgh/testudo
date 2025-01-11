@@ -90,7 +90,7 @@ public class CollectionMultiThreadedOperationTestCase {
     // Todo: sometimes delete operation fails :/ multithreading related issue
     //       never fails with degree=100
     @Test
-    public void test() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void test() throws IOException, SerializationException, ExecutionException, InterruptedException, InternalOperationException {
         Scheme scheme = Scheme.builder()
                 .dbName("test")
                 .version(1)

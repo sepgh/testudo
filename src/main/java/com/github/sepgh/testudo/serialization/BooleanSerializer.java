@@ -47,7 +47,7 @@ public class BooleanSerializer implements Serializer<Boolean> {
     @Override
     public byte[] serializeDefault(String defaultValue, Scheme.Meta meta) throws SerializationException {
         if (defaultValue == null) {
-            return serialize((Boolean) null, meta);
+            return serialize(null, meta);
         } else if (defaultValue.equals("true") || defaultValue.equals("T") || defaultValue.equals("1")) {
             return serialize(true, meta);
         } else if (defaultValue.equals("false") || defaultValue.equals("F") || defaultValue.equals("0")) {

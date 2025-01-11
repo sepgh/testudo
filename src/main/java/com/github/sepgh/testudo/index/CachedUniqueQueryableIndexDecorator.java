@@ -42,7 +42,7 @@ public class CachedUniqueQueryableIndexDecorator<K extends Comparable<K>, V> ext
     }
 
     @Override
-    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException, IndexExistsException {
+    public AbstractTreeNode<K> addIndex(K identifier, V value) throws InternalOperationException {
         AbstractTreeNode<K> baseClusterTreeNode = super.addIndex(identifier, value);
         cache.put(new CacheID<>(getIndexId(), identifier), value);
         if (sizeCache.get() > 0)

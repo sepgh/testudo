@@ -27,7 +27,7 @@ public class MemorySnapshotBPlusTreeUniqueTreeIndexManagerRemovalTestCase extend
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         super.testRemovingLeftToRight();
     }
 
@@ -35,14 +35,14 @@ public class MemorySnapshotBPlusTreeUniqueTreeIndexManagerRemovalTestCase extend
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         super.testRemovingRightToLeft();
     }
 
     @Test
     @Timeout(2)
     @Override
-    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         super.testRemovingRoot();
     }
 }

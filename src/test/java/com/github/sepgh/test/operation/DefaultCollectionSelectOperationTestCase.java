@@ -96,7 +96,7 @@ public class DefaultCollectionSelectOperationTestCase {
 
 
     @Test
-    public void test() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, DeserializationException {
+    public void test() throws IOException, SerializationException, ExecutionException, InterruptedException, InternalOperationException, DeserializationException {
         DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
         DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
         IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);
@@ -161,7 +161,7 @@ public class DefaultCollectionSelectOperationTestCase {
     }
 
     @Test
-    public void unorderedData() throws IOException, SerializationException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, DeserializationException {
+    public void unorderedData() throws IOException, SerializationException, ExecutionException, InterruptedException, InternalOperationException, DeserializationException {
         DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
         DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
         IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);

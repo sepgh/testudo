@@ -33,14 +33,14 @@ public class BPlusTreeUniqueTreeIndexManagerRemovalTestCase extends BaseBPlusTre
     }
 
     @Test
-    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void testRemovingLeftToRight() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = getIndexManager(indexStorageManager);
         super.testRemovingLeftToRight(uniqueTreeIndexManager, indexStorageManager);
     }
 
     @Test
-    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void testRemovingRightToLeft() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = getIndexManager(indexStorageManager);
         super.testRemovingRightToLeft(uniqueTreeIndexManager, indexStorageManager);
@@ -48,7 +48,7 @@ public class BPlusTreeUniqueTreeIndexManagerRemovalTestCase extends BaseBPlusTre
 
 
     @Test
-    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void testRemovingRoot() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         IndexStorageManager indexStorageManager = getIndexStorageManager();
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = getIndexManager(indexStorageManager);
         super.testRemovingRoot(uniqueTreeIndexManager, indexStorageManager);

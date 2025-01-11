@@ -27,7 +27,7 @@ import static com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageMa
 public class BPlusTreeUniqueTreeIndexManagerReadingTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
-    private int degree = 4;
+    private final int degree = 4;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -60,7 +60,7 @@ public class BPlusTreeUniqueTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexSuccessfully() throws IOException, ExecutionException, InterruptedException, InternalOperationException, IndexExistsException {
+    public void findIndexSuccessfully() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         OrganizedFileIndexStorageManager indexStorageManager = getStorageManager();
 
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
@@ -75,7 +75,7 @@ public class BPlusTreeUniqueTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void getTableSize() throws IOException, ExecutionException, InterruptedException, InternalOperationException, IndexExistsException {
+    public void getTableSize() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         OrganizedFileIndexStorageManager indexStorageManager = getStorageManager();
 
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
@@ -91,7 +91,7 @@ public class BPlusTreeUniqueTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void findIndexFailure() throws IOException, ExecutionException, InterruptedException, InternalOperationException, IndexExistsException {
+    public void findIndexFailure() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         OrganizedFileIndexStorageManager indexStorageManager = getStorageManager();
 
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());
@@ -107,7 +107,7 @@ public class BPlusTreeUniqueTreeIndexManagerReadingTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void readAndWriteZero() throws IOException, ExecutionException, InterruptedException, InternalOperationException, IndexExistsException {
+    public void readAndWriteZero() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
         OrganizedFileIndexStorageManager indexStorageManager = getStorageManager();
 
         UniqueTreeIndexManager<Long, Pointer> uniqueTreeIndexManager = new ClusterBPlusTreeUniqueTreeIndexManager<>(1, degree, indexStorageManager, DEFAULT_INDEX_BINARY_OBJECT_FACTORY.get());

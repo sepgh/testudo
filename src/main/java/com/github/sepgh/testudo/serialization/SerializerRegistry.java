@@ -7,7 +7,7 @@ import java.util.Optional;
 public class SerializerRegistry {
     private static final SerializerRegistry INSTANCE = new SerializerRegistry();
 
-    private List<Serializer<?>> serializers = new ArrayList<>();
+    private final List<Serializer<?>> serializers = new ArrayList<>();
 
     private SerializerRegistry(){
         this.register(new IntegerSerializer());

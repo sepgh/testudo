@@ -65,7 +65,7 @@ public class QueryTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void simpleCondition() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, DeserializationException {
+    public void simpleCondition() throws IOException, ExecutionException, InterruptedException, InternalOperationException, DeserializationException {
         DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
         DatabaseStorageManager databaseStorageManager = databaseStorageManagerSingletonFactory.getInstance();
 
@@ -112,7 +112,7 @@ public class QueryTestCase {
                         10
                 )
         );
-        List<UnsignedInteger> executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
+        List<UnsignedInteger> executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));
         Assertions.assertTrue(executedResults.isEmpty());   // NO DATA
 
 
@@ -161,7 +161,7 @@ public class QueryTestCase {
                         1
                 )
         );
-        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
+        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));
         Assertions.assertEquals(2, executedResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(3), executedResults.getLast());
@@ -175,7 +175,7 @@ public class QueryTestCase {
                         1
                 )
         );
-        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
+        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));
         Assertions.assertEquals(3, executedResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(1), executedResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.get(1));
@@ -190,7 +190,7 @@ public class QueryTestCase {
                         1
                 )
         );
-        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
+        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));
         Assertions.assertEquals(3, executedResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(1), executedResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.get(1));
@@ -204,7 +204,7 @@ public class QueryTestCase {
                         1
                 )
         );
-        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
+        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));
         Assertions.assertEquals(2, executedResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(1), executedResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.get(1));
@@ -217,14 +217,14 @@ public class QueryTestCase {
                         1
                 )
         );
-        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
+        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));
         Assertions.assertEquals(2, executedResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(1), executedResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.get(1));
 
         // Sort only query
         query = new Query().sort(new SortField("age", Order.ASC));
-        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
+        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));
         Assertions.assertEquals(3, executedResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(1), executedResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.get(1));
@@ -233,7 +233,7 @@ public class QueryTestCase {
 
         // No condition no sort
         query = new Query();
-        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
+        executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));
         Assertions.assertEquals(3, executedResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(1), executedResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.get(1));
@@ -243,7 +243,7 @@ public class QueryTestCase {
 
     @Test
     @Timeout(value = 2)
-    public void simpleCondition_LowCardinality() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException, DeserializationException {
+    public void simpleCondition_LowCardinality() throws IOException, ExecutionException, InterruptedException, InternalOperationException, DeserializationException {
         DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
         DatabaseStorageManager databaseStorageManager = databaseStorageManagerSingletonFactory.getInstance();
 
@@ -323,7 +323,7 @@ public class QueryTestCase {
                         1
                 )
         );
-        List<UnsignedInteger> executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
+        List<UnsignedInteger> executedResults = Lists.newArrayList(query.execute(collectionIndexProvider));
         Assertions.assertEquals(2, executedResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(1), executedResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), executedResults.get(1));
@@ -419,7 +419,7 @@ public class QueryTestCase {
                         2
                 )
         );
-        List<UnsignedInteger> queryResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
+        List<UnsignedInteger> queryResults = Lists.newArrayList(query.execute(collectionIndexProvider));
         Assertions.assertEquals(1, queryResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(3), queryResults.getFirst());
 
@@ -544,7 +544,7 @@ public class QueryTestCase {
                         1
                 )
         );
-        List<UnsignedInteger> queryResults = Lists.newArrayList(query.execute(collectionIndexProvider));;
+        List<UnsignedInteger> queryResults = Lists.newArrayList(query.execute(collectionIndexProvider));
         Assertions.assertEquals(3, queryResults.size());
         Assertions.assertEquals(UnsignedInteger.valueOf(1), queryResults.getFirst());
         Assertions.assertEquals(UnsignedInteger.valueOf(2), queryResults.get(1));

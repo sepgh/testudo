@@ -34,7 +34,7 @@ import static com.github.sepgh.testudo.storage.index.OrganizedFileIndexStorageMa
 public class MultiTableBPlusTreeIndexManagerOrganizedTestCase {
     private Path dbPath;
     private EngineConfig engineConfig;
-    private int degree = 4;
+    private final int degree = 4;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -91,7 +91,7 @@ public class MultiTableBPlusTreeIndexManagerOrganizedTestCase {
      *     └── 012
      */
     @Test
-    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void testMultiSplitAddIndex() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);
@@ -141,7 +141,7 @@ public class MultiTableBPlusTreeIndexManagerOrganizedTestCase {
      *     └── 012
      */
     @Test
-    public void testMultiSplitAddIndex2() throws IOException, ExecutionException, InterruptedException, IndexExistsException, InternalOperationException {
+    public void testMultiSplitAddIndex2() throws IOException, ExecutionException, InterruptedException, InternalOperationException {
 
         List<Long> testIdentifiers = Arrays.asList(1L, 4L, 9L, 6L, 10L, 8L, 3L, 2L, 11L, 5L, 7L, 12L);
         Pointer samplePointer = new Pointer(Pointer.TYPE_DATA, 100, 0);

@@ -133,7 +133,7 @@ public abstract class AbstractTreeNode<K extends Comparable<K>> {
         private final int degree;
         private final int valueSize;
         private int cursor; // Cursor points to current key index, not current byte
-        private boolean hasNext = true;
+        private final boolean hasNext = true;
 
         private TreeNodeKeysIterator(AbstractTreeNode<K> node, int degree, int valueSize) {
             this.node = node;

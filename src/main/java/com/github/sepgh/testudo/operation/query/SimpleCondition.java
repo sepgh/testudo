@@ -9,7 +9,7 @@ import java.util.Iterator;
 public class SimpleCondition<K extends Comparable<K>> implements Condition {
     private final String field;
     private final Operation operation;
-    private K value;
+    private final K value;
 
     public SimpleCondition(String field, Operation operation, K value) {
         Preconditions.checkNotNull(field);
