@@ -63,7 +63,6 @@ public class EngineConfig {
     @Builder.Default
     public RemovedObjectTrackingStrategy removedObjectTrackingStrategy = RemovedObjectTrackingStrategy.IN_MEMORY;
 
-
     public enum RemovedObjectTrackingStrategy {
         IN_MEMORY
     }

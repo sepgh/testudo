@@ -4,6 +4,7 @@ import com.github.sepgh.test.TestParams;
 import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.ds.BinaryList;
+import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.operation.query.Order;
 import com.github.sepgh.testudo.serialization.IntegerSerializer;
@@ -207,7 +208,7 @@ public class BinaryListIteratorTestCase {
         Assertions.assertEquals(3, ascendingBinaryListIterator.next());
         Assertions.assertFalse(ascendingBinaryListIterator.hasNext());
 
-        Assertions.assertThrows(RuntimeException.class, () -> binaryList.addNew(4)); // Todo: change exc
+        Assertions.assertThrows(InternalOperationException.class, () -> binaryList.addNew(4));
 
     }
 }

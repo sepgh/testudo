@@ -2,7 +2,6 @@ package com.github.sepgh.testudo.operation.query;
 
 import com.github.sepgh.testudo.operation.CollectionIndexProvider;
 import com.google.common.base.Preconditions;
-import lombok.SneakyThrows;
 
 import java.util.Iterator;
 
@@ -14,7 +13,6 @@ public class NullCondition<K extends Comparable<K>> implements Condition {
         this.field = field;
     }
 
-    @SneakyThrows   // Todo
     @Override
     public <V extends Number & Comparable<V>> Iterator<V> evaluate(CollectionIndexProvider collectionIndexProvider, Order order) {
         @SuppressWarnings("unchecked")

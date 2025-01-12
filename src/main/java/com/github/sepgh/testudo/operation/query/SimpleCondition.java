@@ -25,7 +25,6 @@ public class SimpleCondition<K extends Comparable<K>> implements Condition {
         this(field, operation, null);
     }
 
-    // Todo: support more operations
     @SneakyThrows
     @Override
     public <V extends Number & Comparable<V>> Iterator<V> evaluate(CollectionIndexProvider collectionIndexProvider, Order order) {

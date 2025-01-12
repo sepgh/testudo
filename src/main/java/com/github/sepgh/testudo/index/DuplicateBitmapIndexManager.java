@@ -45,7 +45,7 @@ public class DuplicateBitmapIndexManager<K extends Comparable<K>, V extends Numb
             Pointer pointer = pointerOptional.get();
             Optional<DBObject> dbObjectOptional = databaseStorageManager.select(pointer);
             if (dbObjectOptional.isEmpty()) {
-                throw new RuntimeException();   // Todo: it was pointing to somewhere without data
+                throw new InternalOperationException("Pointer used for id %s in an index was pointing to none/corrupted data");
             }
 
             DBObject dbObject = dbObjectOptional.get();

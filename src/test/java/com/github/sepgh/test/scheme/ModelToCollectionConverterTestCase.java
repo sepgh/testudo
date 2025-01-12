@@ -82,7 +82,6 @@ public class ModelToCollectionConverterTestCase {
         Assertions.assertTrue(field.isIndexed());
         Assertions.assertTrue(field.getIndex().isLowCardinality());
 
-        // Todo: runtime exception should not get thrown
         Assertions.assertThrows(RuntimeException.class, () -> {
             new ModelToCollectionConverter(TestModel2.class).toCollection();
         });

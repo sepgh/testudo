@@ -17,4 +17,5 @@ public interface FileHandlerPool {
     void releaseFileChannel(String path, long timeout, TimeUnit timeUnit) throws InternalOperationException;
 
     void closeAll(long timeout, TimeUnit timeUnit) throws InternalOperationException;
+    void closeAll() throws InternalOperationException;
 }

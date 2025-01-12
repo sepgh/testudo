@@ -26,7 +26,7 @@ public class SerializerIndexBinaryObjectFactory<T extends Comparable<T>> impleme
         this(serializer, field, null, null);
     }
 
-    @SneakyThrows   // Todo
+    @SneakyThrows // ok
     @Override
     public IndexBinaryObject<T> create(T t) {
         return new SerializerIndexBinaryObject<>(t, serializer)

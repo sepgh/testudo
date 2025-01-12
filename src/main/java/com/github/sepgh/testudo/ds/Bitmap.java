@@ -40,7 +40,7 @@ public class Bitmap<K extends Number> {
             output.on(on);
             return output;
         }
-        throw new UnsupportedOperationException(); // Todo
+        throw new UnsupportedOperationException();
     }
 
     public boolean on(K k) {

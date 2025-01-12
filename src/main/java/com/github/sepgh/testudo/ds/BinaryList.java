@@ -43,7 +43,7 @@ public class BinaryList<V extends Comparable<V>> {
     }
 
     public int getNumberOfElements() {
-        return this.data.length - META_SIZE / valueIndexBinaryObjectFactory.size();
+        return (this.data.length - META_SIZE) / valueIndexBinaryObjectFactory.size();
     }
 
     public int getLastItemIndex(){
@@ -96,7 +96,6 @@ public class BinaryList<V extends Comparable<V>> {
                 );
                 this.data = newData;
             } else {
-                // Todo: throw better exception
                 throw new InternalOperationException("No space left to add item. This will exceed the limit of DB Page size.");
             }
         }

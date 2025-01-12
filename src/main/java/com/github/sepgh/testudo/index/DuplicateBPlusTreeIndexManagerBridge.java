@@ -63,7 +63,7 @@ public class DuplicateBPlusTreeIndexManagerBridge<K extends Comparable<K>, V ext
             Optional<DBObject> dbObjectOptional = databaseStorageManager.select(pointer);
             if (dbObjectOptional.isEmpty()) {
                 logger.error(EM_POINTER_POINTS_TO_NO_DATA, identifier, value);
-                throw new InternalOperationException("%s points to somewhere with no data. Database may be corrupted".formatted(pointer.toString()));   // Todo: it was pointing to somewhere without data
+                throw new InternalOperationException("%s points to somewhere with no data. Database may be corrupted".formatted(pointer.toString()));
             }
             BinaryList<V> binaryList = new BinaryList<>(engineConfig, valueIndexBinaryObjectFactory, dbObjectOptional.get().getData());
 

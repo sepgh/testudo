@@ -11,7 +11,6 @@ import java.util.ListIterator;
 import java.util.Optional;
 
 public interface DuplicateIndexManager<K extends Comparable<K>, V extends Number & Comparable<V>> extends NullableIndex<V> {
-    // Todo: throw signature?
     boolean addIndex(K identifier, V value) throws InternalOperationException, DeserializationException;
     Optional<ListIterator<V>> getIndex(K identifier) throws InternalOperationException;
     Optional<ListIterator<V>> getIndex(K identifier, Order order) throws InternalOperationException;

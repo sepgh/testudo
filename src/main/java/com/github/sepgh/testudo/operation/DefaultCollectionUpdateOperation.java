@@ -194,10 +194,12 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
             if (!field.isIndexed())
                 continue;
 
+            if (!field.getIndex().isUnique())
+                continue;
+
             Object value = updatedCachedFieldsReader.get(field);
             if (oldCachedFieldsReader.get(field).equals(value))
                 continue;
-
 
             UniqueQueryableIndex<K, T> uniqueIndexManager = (UniqueQueryableIndex<K, T>) collectionIndexProvider.getUniqueIndexManager(field);
             Optional<T> optional = uniqueIndexManager.getIndex((K) value);

@@ -12,7 +12,8 @@ import com.github.sepgh.testudo.storage.pool.FileHandlerPoolSingletonFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public abstract class DatabaseContextConfigurator {
     private FileHandlerPoolSingletonFactory fileHandlerPoolSingletonFactory;
@@ -23,6 +24,7 @@ public abstract class DatabaseContextConfigurator {
     private CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory;
     private Scheme scheme;
     private DatabaseContext databaseContext;
+    private ExecutorService executorService;
 
     public EngineConfig engineConfig() {
         return EngineConfig.builder().build();
@@ -33,6 +35,17 @@ public abstract class DatabaseContextConfigurator {
             this.engineConfig = engineConfig();
         }
         return engineConfig;
+    }
+
+    protected ExecutorService threadPool() {
+        return Executors.newFixedThreadPool(getEngineConfig().getFileHandlerPoolThreads());
+    }
+
+    public ExecutorService getThreadPool() {
+        if (executorService == null) {
+            executorService = threadPool();
+        }
+        return executorService;
     }
 
     public abstract Scheme scheme();
@@ -56,7 +69,7 @@ public abstract class DatabaseContextConfigurator {
     }
 
     protected FileHandlerPoolSingletonFactory fileHandlerPoolFactory() {
-        return new FileHandlerPoolSingletonFactory.DefaultFileHandlerPoolSingletonFactory(getEngineConfig());
+        return new FileHandlerPoolSingletonFactory.DefaultFileHandlerPoolSingletonFactory(getEngineConfig(), getThreadPool());
     }
 
     public FileHandlerPoolSingletonFactory getFileHandlerPoolFactory() {
@@ -137,8 +150,7 @@ public abstract class DatabaseContextConfigurator {
         @Override
         public CollectionOperation getOperation(String collection) {
             return collectionOperationFactory(
-                    // Todo: err instead of orElse
-                    getScheme().getCollection(collection).orElse(null)
+                    getScheme().getCollection(collection).orElseThrow(IllegalArgumentException::new)
             ).create();
         }
 
@@ -148,7 +160,8 @@ public abstract class DatabaseContextConfigurator {
                 ReaderWriterLockPool.getInstance().getReaderWriterLock(getScheme(), collection).getWriteLock().lock();
             }
             try {
-                getFileHandlerPoolFactory().getInstance().closeAll(1, TimeUnit.DAYS);  // Todo
+                getFileHandlerPoolFactory().getInstance().closeAll();
+                getThreadPool().shutdownNow();
             } catch (InternalOperationException e) {
                 logger.error("failed to close file handler instance", e);
             }

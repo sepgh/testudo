@@ -49,7 +49,7 @@ public class ModelToCollectionConverter {
                 .findFirst();
 
         if (collectionOptional.isEmpty()) {
-            // Todo: err
+            throw new IllegalStateException("No collection annotation found");
         }
 
         Collection collection = (Collection) collectionOptional.get();

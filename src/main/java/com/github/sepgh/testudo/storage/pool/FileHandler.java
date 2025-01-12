@@ -58,13 +58,17 @@ public class FileHandler {
         }
     }
 
-    public void close(long timeout, TimeUnit timeUnit) throws InternalOperationException {
+    private void close(boolean limitedWait, long timeout, TimeUnit timeUnit) throws InternalOperationException {
         this.closed = Boolean.TRUE;
         synchronized (this){
             try {
                 while (usageCount > 0){
                     try {
-                        wait(timeUnit.toMillis(timeout));
+                        if (limitedWait){
+                            wait(timeUnit.toMillis(timeout));
+                        } else {
+                            wait();
+                        }
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         throw new InternalOperationException(ErrorMessage.EM_FILEHANDLER_CLOSE, e);
@@ -78,12 +82,15 @@ public class FileHandler {
                     logger.error("Failed to close file channel", e);
                 }
             }
-
-
-            if (executor != null) {
-                executor.shutdownNow();
-            }
         }
+    }
+
+    public void close() throws InternalOperationException {
+        this.close(false, 0, null);
+    }
+
+    public void close(long timeout, TimeUnit timeUnit) throws InternalOperationException {
+        this.close(true, timeout, timeUnit);
     }
 
     public static class SingletonFileHandlerFactory implements FileHandlerFactory {

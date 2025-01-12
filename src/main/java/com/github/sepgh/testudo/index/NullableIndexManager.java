@@ -68,14 +68,14 @@ public class NullableIndexManager<V extends Number & Comparable<V>> {
                         IndexHeaderManager.Location.fromPointer(storedPointer)
                 );
             } catch (IOException e) {
-                throw new InternalOperationException(EM_INDEX_HEADER_MANAGEMENT, e); // Todo
+                throw new InternalOperationException(EM_INDEX_HEADER_MANAGEMENT, e);
             }
 
             if (pointer != null) {
                 try {
                     this.storageManager.remove(pointer);
                 } catch (InternalOperationException ignored) {
-                    // ignoring errors, remove failure is not important in this case (todo: good idea?)
+                    // ignoring errors, remove failure is not important in this case
                 }
             }
         } else {
@@ -107,12 +107,12 @@ public class NullableIndexManager<V extends Number & Comparable<V>> {
                         IndexHeaderManager.Location.fromPointer(storedPointer)
                 );
             } catch (IOException e) {
-                throw new InternalOperationException(EM_INDEX_HEADER_MANAGEMENT, e); // Todo
+                throw new InternalOperationException(EM_INDEX_HEADER_MANAGEMENT, e);
             } finally {
                 try {
                     this.storageManager.remove(pointer);
                 } catch (InternalOperationException ignored) {
-                    // ignoring errors, remove failure is not important in this case (todo: good idea?)
+                    // ignoring errors, remove failure is not important in this case
                 }
             }
         } else {

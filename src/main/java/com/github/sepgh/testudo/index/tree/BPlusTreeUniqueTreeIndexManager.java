@@ -19,6 +19,7 @@ import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.session.ImmediateCommitIndexIOSession;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSessionFactory;
+import com.github.sepgh.testudo.utils.BinaryUtils;
 import com.github.sepgh.testudo.utils.IteratorUtils;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import com.google.common.base.Preconditions;
@@ -88,14 +89,20 @@ public class BPlusTreeUniqueTreeIndexManager<K extends Comparable<K>, V> extends
         return node;
     }
 
-    @Override  // Todo: use BinarySearch
+    @Override
     public Optional<V> getIndex(K identifier) throws InternalOperationException {
         IndexIOSession<K> indexIOSession = this.indexIOSessionFactory.create(indexStorageManager, indexId, nodeFactory, kvSize);
         AbstractLeafTreeNode<K, V> baseTreeNode = BPlusTreeUtils.getResponsibleNode(indexStorageManager, getRoot(indexIOSession), identifier, indexId, degree, nodeFactory);
-        for (KeyValue<K, V> entry : baseTreeNode.getKeyValueList(degree)) {
-            if (entry.key().equals(identifier)){
-                return Optional.of(entry.value());
-            }
+
+        List<KeyValue<K, V>> keyValueList = baseTreeNode.getKeyValueList(degree);
+
+        int index = Collections.binarySearch(
+                keyValueList,
+                new KeyValue<>(identifier, null) // Create a temporary KeyValue with the search key
+        );
+
+        if (index >= 0) {
+            return Optional.of(keyValueList.get(index).value());
         }
 
         return Optional.empty();

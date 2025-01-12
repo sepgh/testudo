@@ -93,7 +93,7 @@ public class DBObject {
 
     public void modifyData(byte[] value) throws InvalidDBObjectWrapper {
         if (value.length > DBObject.getWrappedSize(value.length)) {
-            throw new InvalidDBObjectWrapper("Can't extend DBObject size. Create a new one."); // Todo
+            throw new InvalidDBObjectWrapper("Can't extend DBObject size. Create a new one.");
         }
 
         this.setSize(value.length);

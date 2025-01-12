@@ -119,7 +119,7 @@ public class BPlusTreeIndexDeleteOperation<K extends Comparable<K>, V> {
         }
 
 
-        int nodeKeySize = internalTreeNode.getKeyList(degree).size();  // Todo: replace getList() with keyList var?
+        int nodeKeySize = internalTreeNode.getKeyList(degree).size();  // shouldn't replace getList() with keyList var, since list has changed in binary format
         // Check if node is underflowed
         if (nodeKeySize < minKeys && !internalTreeNode.isRoot()){
             InternalTreeNode<K> parent = (InternalTreeNode<K>) path.get(nodeIndex + 1);

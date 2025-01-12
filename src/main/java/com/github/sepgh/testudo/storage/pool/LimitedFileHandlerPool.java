@@ -79,4 +79,20 @@ public class LimitedFileHandlerPool implements FileHandlerPool {
         }
     }
 
+    @Override
+    public void closeAll() throws InternalOperationException {
+        AtomicReference<InternalOperationException> exception = new AtomicReference<>();
+        fileHandlers.forEach((s, fileHandler) -> {
+            try {
+                fileHandler.close();
+            } catch (InternalOperationException e) {
+                exception.set(e);
+            }
+        });
+
+        if (exception.get() != null) {
+            throw exception.get();
+        }
+    }
+
 }
