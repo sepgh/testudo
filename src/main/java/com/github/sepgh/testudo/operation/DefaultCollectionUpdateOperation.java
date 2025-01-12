@@ -2,9 +2,7 @@ package com.github.sepgh.testudo.operation;
 
 import com.github.sepgh.testudo.ds.Bitmap;
 import com.github.sepgh.testudo.ds.Pointer;
-import com.github.sepgh.testudo.exception.BaseSerializationException;
-import com.github.sepgh.testudo.exception.DeserializationException;
-import com.github.sepgh.testudo.exception.InternalOperationException;
+import com.github.sepgh.testudo.exception.*;
 import com.github.sepgh.testudo.functional.CheckedFunction;
 import com.github.sepgh.testudo.index.DuplicateQueryableIndex;
 import com.github.sepgh.testudo.index.UniqueQueryableIndex;
@@ -16,6 +14,7 @@ import com.github.sepgh.testudo.serialization.ModelDeserializer;
 import com.github.sepgh.testudo.serialization.ModelSerializer;
 import com.github.sepgh.testudo.storage.db.DBObject;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
+import com.github.sepgh.testudo.utils.CachedFieldValueReader;
 import com.github.sepgh.testudo.utils.ReaderWriterLock;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -113,18 +112,19 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
 
     @SuppressWarnings("unchecked")
     private <F extends Comparable<F>> void update(Pointer pointer, byte[] update, byte[] old, T clusterId) throws DeserializationException, InternalOperationException {
-        // Todo: if a field has been updated, we better first check if its unique, and it already existed or not.  read README.md
-
-        this.storageManager.update(pointer, update);
+        CachedFieldValueReader updatedCachedFieldsReader = new CachedFieldValueReader(collection, update);
+        CachedFieldValueReader oldCachedFieldsReader = new CachedFieldValueReader(collection, old);
 
         Bitmap<Integer> newNulls = CollectionSerializationUtil.getNullsBitmap(collection, update);
         Bitmap<Integer> oldNulls = CollectionSerializationUtil.getNullsBitmap(collection, old);
 
-        int fieldIndex = -1;
-        List<Scheme.Field> fields = collection.getFields();
-        fields.sort(Comparator.comparingInt(Scheme.Field::getId));
+        this.verify(oldCachedFieldsReader, updatedCachedFieldsReader, oldNulls, newNulls);
 
-        for (Scheme.Field field : fields) {
+        this.storageManager.update(pointer, update);
+
+        int fieldIndex = -1;
+
+        for (Scheme.Field field : collection.getSortedFields()) {
             fieldIndex++;
 
             if (!field.isIndexed())
@@ -150,10 +150,9 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
             }
 
             if (field.getIndex().isPrimary() && newNulls.isOn(fieldIndex)){
-                // Todo: raise error: primary field cant be null
+                throw new VerificationException("The %s field is a primary index and cant be null".formatted(field.getName()));
             }
 
-            // Todo: primary fields cant get updated. Verify this at a valid point
             if (field.getIndex().isUnique()) {
                 UniqueQueryableIndex<F, T> uniqueIndexManager = (UniqueQueryableIndex<F, T>) collectionIndexProvider.getUniqueIndexManager(field);
                 if (oldNulls.isOn(fieldIndex) && !newNulls.isOn(fieldIndex)) {
@@ -183,8 +182,35 @@ public class DefaultCollectionUpdateOperation<T extends Number & Comparable<T>> 
 
     }
 
+    @SuppressWarnings("unchecked")
+    private <K extends Comparable<K>> void verify(CachedFieldValueReader oldCachedFieldsReader, CachedFieldValueReader updatedCachedFieldsReader, Bitmap<Integer> oldNulls, Bitmap<Integer> newNulls) throws DeserializationException, InternalOperationException {
+        int index = -1;
+        for (Scheme.Field field : collection.getSortedFields()) {
+            index++;
+
+            if (newNulls.isOn(index))
+                continue;
+
+            if (!field.isIndexed())
+                continue;
+
+            Object value = updatedCachedFieldsReader.get(field);
+            if (oldCachedFieldsReader.get(field).equals(value))
+                continue;
+
+
+            UniqueQueryableIndex<K, T> uniqueIndexManager = (UniqueQueryableIndex<K, T>) collectionIndexProvider.getUniqueIndexManager(field);
+            Optional<T> optional = uniqueIndexManager.getIndex((K) value);
+
+            if (optional.isPresent()) {
+                throw new IndexExistsException("An index for field %s with value %s already exists".formatted(field.getName(), value));
+            }
+
+        }
+    }
+
     @Override
-    public <M> long execute(Consumer<M> mConsumer, Class<M> mClass) throws InternalOperationException, BaseSerializationException {
+    public <M> long execute(Class<M> mClass, Consumer<M> mConsumer) throws InternalOperationException, BaseSerializationException {
         ModelDeserializer<M> modelDeserializer = new ModelDeserializer<>(mClass);
         ModelSerializer modelSerializer = new ModelSerializer();
 

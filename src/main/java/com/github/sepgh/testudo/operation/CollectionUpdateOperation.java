@@ -9,6 +9,6 @@ import java.util.function.Consumer;
 public interface CollectionUpdateOperation<T extends Number & Comparable<T>> {
     CollectionUpdateOperation<T> query(Query query);
     Query getQuery();
-    <M> long execute(Consumer<M> mConsumer, Class<M> mClass) throws InternalOperationException, BaseSerializationException;
+    <M> long execute(Class<M> mClass, Consumer<M> mConsumer) throws InternalOperationException, BaseSerializationException;
     long execute(Consumer<byte[]> byteArrayConsumer) throws InternalOperationException, BaseSerializationException;
 }

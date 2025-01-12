@@ -105,9 +105,9 @@ public class DatabaseContextConfiguratorTestCase {
         Assertions.assertEquals(1L, list.size());
         Assertions.assertEquals(sample, list.getFirst());
 
-        long updateCount = collectionOperation.update().query(query).execute(model -> {
+        long updateCount = collectionOperation.update().query(query).execute(TestModel.class, model -> {
             model.setCountry("FR");
-        }, TestModel.class);
+        });
         Assertions.assertEquals(1L, updateCount);
 
         query = new Query("country_code", Operation.EQ, "FR");

@@ -143,9 +143,9 @@ public class DefaultCollectionUpdateOperationTestCase {
 
         CollectionUpdateOperation<Long> collectionUpdateOperation = new DefaultCollectionUpdateOperation<>(collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
         collectionUpdateOperation.query(query);
-        long updates = collectionUpdateOperation.execute((testModel) -> {
+        long updates = collectionUpdateOperation.execute(TestModel.class, (testModel) -> {
             testModel.setAge(testModel.getAge() + 100);
-        }, TestModel.class);
+        });
 
         Assertions.assertEquals(3, updates);
 
@@ -153,9 +153,9 @@ public class DefaultCollectionUpdateOperationTestCase {
         long ageCount = collectionSelectOperation.query(query).count();
         Assertions.assertEquals(ageCount, 3L);
 
-        collectionUpdateOperation.query(new Query()).execute((testModel) -> {
+        collectionUpdateOperation.query(new Query()).execute(TestModel.class, (testModel) -> {
             testModel.setCountry("FR");
-        }, TestModel.class);
+        });
 
         query = new Query().where(new SimpleCondition<>("country_code", Operation.EQ, "FR"));
         long countryCount = collectionSelectOperation.query(query).count();
@@ -163,6 +163,48 @@ public class DefaultCollectionUpdateOperationTestCase {
 
         long deleted = collectionDeleteOperation.execute();
         Assertions.assertEquals(4, deleted);
+    }
+
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Collection(id=1)
+    public static class UniqueModel {
+        @Field(id=1)
+        @Index(unique = true)
+        private Integer uq;
+    }
+
+    @Test
+    public void testUniqueUpdate() throws BaseSerializationException, InternalOperationException {
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
+        IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);
+        CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory = new DefaultCollectionIndexProviderSingletonFactory(scheme, engineConfig, indexStorageManagerSingletonFactory, storageManager);
+
+        Scheme scheme = Scheme.builder()
+                .dbName("test")
+                .version(1)
+                .build();
+        Scheme.Collection collection = new ModelToCollectionConverter(UniqueModel.class).toCollection();
+        scheme.getCollections().add(collection);
+
+        UniqueModel model1 = new UniqueModel(1);
+        UniqueModel model2 = new UniqueModel(2);
+        ReaderWriterLock readerWriterLock = new ReaderWriterLock();
+
+        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
+        CollectionUpdateOperation<Long> collectionUpdateOperation = new DefaultCollectionUpdateOperation<>(collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
+
+        collectionInsertOperation.execute(model1);
+        collectionInsertOperation.execute(model2);
+
+        Assertions.assertThrowsExactly(IndexExistsException.class, () -> {
+            collectionUpdateOperation.query(new Query("uq", Operation.EQ, 2)).execute(UniqueModel.class, uniqueModel -> {
+                uniqueModel.setUq(1);
+            });
+        });
     }
 
     @Test
@@ -195,9 +237,9 @@ public class DefaultCollectionUpdateOperationTestCase {
         long count = collectionSelectOperation.query(new Query().where("country_code", Operation.IS_NULL)).count();
         Assertions.assertEquals(2L, count);
 
-        long updated = collectionUpdateOperation.query(new Query().where("country_code", Operation.IS_NULL)).execute((testModel) -> {
+        long updated = collectionUpdateOperation.query(new Query().where("country_code", Operation.IS_NULL)).execute(TestModel.class, (testModel) -> {
             testModel.setCountry("FR");
-        }, TestModel.class);
+        });
         Assertions.assertEquals(2L, updated);
 
         count = collectionSelectOperation.query(new Query().where("country_code", Operation.EQ, "FR")).count();
@@ -207,14 +249,14 @@ public class DefaultCollectionUpdateOperationTestCase {
         Assertions.assertEquals(0L, count);
 
         // Nothing really gets updated
-        updated = collectionUpdateOperation.query(new Query().where("country_code", Operation.EQ, "FR")).execute((testModel) -> {
+        updated = collectionUpdateOperation.query(new Query().where("country_code", Operation.EQ, "FR")).execute(TestModel.class, (testModel) -> {
             testModel.setCountry("FR");
-        }, TestModel.class);
+        });
         Assertions.assertEquals(0L, updated);
 
-        updated = collectionUpdateOperation.query(new Query().where("country_code", Operation.EQ, "FR")).execute((testModel) -> {
+        updated = collectionUpdateOperation.query(new Query().where("country_code", Operation.EQ, "FR")).execute(TestModel.class, (testModel) -> {
             testModel.setCountry(null);
-        }, TestModel.class);
+        });
         Assertions.assertEquals(2L, updated);
     }
 
