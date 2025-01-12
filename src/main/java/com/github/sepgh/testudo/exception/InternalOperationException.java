@@ -1,18 +1,18 @@
 package com.github.sepgh.testudo.exception;
 
 public class InternalOperationException extends Exception {
-    private static final String MESSAGE_PREPEND = "Testudo core error";
+    private static final String PREFIX = "Testudo core error: ";
 
     public InternalOperationException() {
-        super(MESSAGE_PREPEND);
+        super(PREFIX);
     }
 
     public InternalOperationException(String message) {
-        super(MESSAGE_PREPEND + message);
+        super(PREFIX + message);
     }
 
     public InternalOperationException(String message, Throwable cause) {
-        super(MESSAGE_PREPEND + message, cause);
+        super(PREFIX + message, cause);
     }
 
     public InternalOperationException(Throwable cause) {
@@ -20,6 +20,6 @@ public class InternalOperationException extends Exception {
     }
 
     public InternalOperationException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(MESSAGE_PREPEND + message, cause, enableSuppression, writableStackTrace);
+        super(PREFIX + message, cause, enableSuppression, writableStackTrace);
     }
 }

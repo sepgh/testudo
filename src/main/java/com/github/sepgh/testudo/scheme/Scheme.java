@@ -6,10 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Data
 @Builder
@@ -50,6 +47,12 @@ public class Scheme {
 
         public Optional<Field> getPrimaryField(){
             return fields.stream().filter(field -> field.index != null && field.index.isPrimary()).findFirst();
+        }
+
+        public List<Field> getSortedFields(){
+            List<Field> fields = this.getFields();
+            fields.sort(Comparator.comparingInt(Scheme.Field::getId));
+            return fields;
         }
     }
 

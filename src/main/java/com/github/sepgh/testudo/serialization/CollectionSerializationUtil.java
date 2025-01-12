@@ -19,6 +19,11 @@ public class CollectionSerializationUtil {
         return new Bitmap<>(Integer.class, nulls);
     }
 
+    public static void setNullsBitmap(Scheme.Collection collection, byte[] bytes, byte[] bitmapBytes) {
+        int nullsIndex = CollectionSerializationUtil.getSizeOfCollection(collection) - 1;
+        System.arraycopy(bitmapBytes, 0, bytes, nullsIndex, bitmapBytes.length);
+    }
+
     public static boolean areTypesCompatible(String t1, String t2) {
         Serializer<?> serializer = SerializerRegistry.getInstance().getSerializer(t1);
         assert serializer != null;

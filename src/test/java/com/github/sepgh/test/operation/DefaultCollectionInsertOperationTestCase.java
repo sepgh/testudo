@@ -15,6 +15,7 @@ import com.github.sepgh.testudo.scheme.Scheme;
 import com.github.sepgh.testudo.scheme.annotation.Collection;
 import com.github.sepgh.testudo.scheme.annotation.Field;
 import com.github.sepgh.testudo.scheme.annotation.Index;
+import com.github.sepgh.testudo.serialization.ModelSerializer;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManager;
 import com.github.sepgh.testudo.storage.db.DatabaseStorageManagerSingletonFactory;
 import com.github.sepgh.testudo.storage.index.DefaultIndexStorageManagerSingletonFactory;
@@ -255,11 +256,49 @@ public class DefaultCollectionInsertOperationTestCase {
         Assertions.assertEquals(m2, nullCountries.getFirst());
         Assertions.assertNull(m2.country);
 
-
         List<NullableTestModel> nullAges = collectionSelectOperation.query(new Query("age", Operation.IS_NULL)).asList(NullableTestModel.class);
         Assertions.assertEquals(1, nullAges.size());
         Assertions.assertEquals(m1, nullAges.getFirst());
         Assertions.assertNull(m1.age);
+    }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Data
+    @Collection(id = 1)
+    public static class UniqueModel {
+        @Field(id=1)
+        @Index(unique=true)
+        private Integer uq;
+    }
+
+    @Test
+    public void failUnique() throws SerializationException, InternalOperationException, DeserializationException {
+        DatabaseStorageManagerSingletonFactory databaseStorageManagerSingletonFactory = getDatabaseStorageManagerFactory();
+        DatabaseStorageManager storageManager = databaseStorageManagerSingletonFactory.getInstance();
+        IndexStorageManagerSingletonFactory indexStorageManagerSingletonFactory = new DefaultIndexStorageManagerSingletonFactory(this.engineConfig, new JsonIndexHeaderManager.SingletonFactory(), fileHandlerPoolSingletonFactory, databaseStorageManagerSingletonFactory);
+
+        Scheme scheme = Scheme.builder()
+                .dbName("test")
+                .version(1)
+                .build();
+
+        Scheme.Collection collection = new ModelToCollectionConverter(UniqueModel.class).toCollection();
+        scheme.getCollections().add(collection);
+
+
+        CollectionIndexProviderSingletonFactory collectionIndexProviderSingletonFactory = new DefaultCollectionIndexProviderSingletonFactory(scheme, engineConfig, indexStorageManagerSingletonFactory, storageManager);
+        ReaderWriterLock readerWriterLock = new ReaderWriterLock();
+        CollectionInsertOperation<Long> collectionInsertOperation = new DefaultCollectionInsertOperation<>(scheme, collection, readerWriterLock, collectionIndexProviderSingletonFactory.getInstance(collection), storageManager);
+
+        UniqueModel model1 = new UniqueModel(1);
+        UniqueModel model2 = new UniqueModel(1);
+
+        collectionInsertOperation.execute(new ModelSerializer(model1).serialize());
+        Assertions.assertThrowsExactly(IndexExistsException.class, () -> {
+            collectionInsertOperation.execute(new ModelSerializer(model2).serialize());
+        });
+
     }
 
 }
