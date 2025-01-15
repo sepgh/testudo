@@ -4,7 +4,6 @@ import com.github.sepgh.test.utils.FileUtils;
 import com.github.sepgh.testudo.context.EngineConfig;
 import com.github.sepgh.testudo.ds.Pointer;
 import com.github.sepgh.testudo.exception.DeserializationException;
-import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.index.DuplicateQueryableIndex;

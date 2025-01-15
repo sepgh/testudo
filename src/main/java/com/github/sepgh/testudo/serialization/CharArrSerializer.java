@@ -6,7 +6,6 @@ import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.scheme.Scheme;
-import com.google.common.hash.HashCode;
 import com.google.common.primitives.Ints;
 
 import java.io.UnsupportedEncodingException;

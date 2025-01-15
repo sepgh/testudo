@@ -1,7 +1,6 @@
 package com.github.sepgh.test.index;
 
 import com.github.sepgh.testudo.context.EngineConfig;
-import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.UniqueQueryableIndex;
 import com.github.sepgh.testudo.index.tree.BPlusTreeUniqueTreeIndexManager;

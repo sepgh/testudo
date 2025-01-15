@@ -19,7 +19,6 @@ import com.github.sepgh.testudo.storage.index.IndexStorageManager;
 import com.github.sepgh.testudo.storage.index.session.ImmediateCommitIndexIOSession;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSession;
 import com.github.sepgh.testudo.storage.index.session.IndexIOSessionFactory;
-import com.github.sepgh.testudo.utils.BinaryUtils;
 import com.github.sepgh.testudo.utils.IteratorUtils;
 import com.github.sepgh.testudo.utils.LockableIterator;
 import com.google.common.base.Preconditions;

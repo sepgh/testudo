@@ -2,7 +2,6 @@ package com.github.sepgh.testudo.index;
 
 import com.github.sepgh.testudo.ds.CacheID;
 import com.github.sepgh.testudo.exception.DeserializationException;
-import com.github.sepgh.testudo.exception.IndexExistsException;
 import com.github.sepgh.testudo.exception.InternalOperationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.index.tree.node.AbstractTreeNode;

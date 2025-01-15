@@ -2,7 +2,10 @@ package com.github.sepgh.testudo.operation;
 
 import com.github.sepgh.testudo.ds.KeyValue;
 import com.github.sepgh.testudo.ds.Pointer;
-import com.github.sepgh.testudo.exception.*;
+import com.github.sepgh.testudo.exception.DeserializationException;
+import com.github.sepgh.testudo.exception.InternalOperationException;
+import com.github.sepgh.testudo.exception.InvalidDBObjectWrapper;
+import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.index.DuplicateIndexManager;
 import com.github.sepgh.testudo.index.UniqueTreeIndexManager;
 import com.github.sepgh.testudo.operation.query.Order;
