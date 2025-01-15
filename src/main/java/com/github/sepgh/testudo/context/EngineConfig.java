@@ -1,6 +1,5 @@
 package com.github.sepgh.testudo.context;
 
-
 import com.github.sepgh.testudo.serialization.FieldType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,17 +46,13 @@ public class EngineConfig {
     @Builder.Default
     private String baseDBPath = "/temp";
     @Builder.Default
-    private OperationMode operationMode = OperationMode.ASYNC;
-    @Builder.Default
     private int dbPageSize = 64000;  // Page size in bytes
     @Builder.Default
     private int dbPageBufferSize = 100;
     @Builder.Default
     private long dbPageMaxFileSize = UNLIMITED_FILE_SIZE;
     @Builder.Default
-    private boolean supportZeroInClusterKeys = false;
-    @Builder.Default
-    private ClusterKeyType clusterKeyType = ClusterKeyType.ULONG;
+    private ClusterKeyType clusterKeyType = ClusterKeyType.INT;
     @Builder.Default
     private int IMROTMinLengthToSplit = Integer.MAX_VALUE;
     @Builder.Default
@@ -74,10 +69,6 @@ public class EngineConfig {
         private final String fieldType;
     }
 
-    public enum OperationMode {
-        ASYNC, SYNC
-    }
-
     public enum FileHandlerStrategy {
         LIMITED, UNLIMITED
     }
@@ -88,18 +79,6 @@ public class EngineConfig {
 
     public enum IndexStorageManagerStrategy {
         ORGANIZED, COMPACT, PAGE_BUFFER
-    }
-
-    public static class Default {
-        public static final int DEFAULT_BTREE_NODE_DEGREE = 4;
-        public static final int DEFAULT_BTREE_GROWTH_NODE_ALLOCATION_COUNT = 50;
-
-        public static EngineConfig getDefault(){
-            return EngineConfig.builder()
-                    .bTreeDegree(DEFAULT_BTREE_NODE_DEGREE)
-                    .bTreeGrowthNodeAllocationCount(DEFAULT_BTREE_GROWTH_NODE_ALLOCATION_COUNT)
-                    .build();
-        }
     }
 
 }

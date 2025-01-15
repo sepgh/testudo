@@ -161,11 +161,11 @@ public abstract class DatabaseContextConfigurator {
             }
             try {
                 getFileHandlerPoolFactory().getInstance().closeAll();
-                getThreadPool().shutdownNow();
             } catch (InternalOperationException e) {
                 logger.error("failed to close file handler instance", e);
             }
             getDatabaseStorageManagerFactory().getInstance().close();
+            getThreadPool().shutdownNow();
         }
     }
 
