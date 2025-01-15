@@ -88,8 +88,8 @@ public class ModelSerializerTestCase {
         System.arraycopy(serialized, 24, age, 0, 8);
         Assertions.assertEquals(model.getAge(), Longs.fromByteArray(age));
 
-        byte[] countryCode = new byte[CharArrSerializer.MAX_LENGTH];
-        System.arraycopy(serialized, 24 + 8, countryCode, 0, CharArrSerializer.MAX_LENGTH);
+        byte[] countryCode = new byte[CharArrSerializer.MAX_LENGTH - CharArrSerializer.META_BYTES];
+        System.arraycopy(serialized, 24 + 8, countryCode, 0, countryCode.length);
         String deserializedCountryCode = new CharArrSerializer().deserialize(countryCode, Scheme.Meta.builder().maxLength(20).charset(StandardCharsets.UTF_8.name()).build());
         Assertions.assertEquals(model.getCountry(), deserializedCountryCode);
 

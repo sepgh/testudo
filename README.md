@@ -78,6 +78,8 @@ Later, I understood more about BTree and B+Tree from ["B Trees and B+ Trees. How
   - Note: lambdas are going crazy at this point. Use this strategy: https://stackoverflow.com/questions/18198176
 - [X] Shutdown mechanism (gracefully)
 - [ ] Logging
+  - [X] Error logging for ignored or automatically handled exceptions
+  - [ ] Info and Debug logging
 - [ ] Performance and Overall Improvements Ideas
   - Update process can be distributed into multiple threads for the `databaseStorage.update()` part
   - There are a bunch of places that we can benefit from Binary Search that have Todos on them.

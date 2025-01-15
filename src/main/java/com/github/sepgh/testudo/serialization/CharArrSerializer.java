@@ -6,6 +6,8 @@ import com.github.sepgh.testudo.exception.SerializationException;
 import com.github.sepgh.testudo.index.data.IndexBinaryObject;
 import com.github.sepgh.testudo.index.data.IndexBinaryObjectFactory;
 import com.github.sepgh.testudo.scheme.Scheme;
+import com.google.common.hash.HashCode;
+import com.google.common.primitives.Ints;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -13,7 +15,9 @@ import java.util.List;
 
 public class CharArrSerializer implements Serializer<String> {
     public static final String TYPE_NAME = FieldType.CHAR.getName();
-    public static int MAX_LENGTH = 512;
+    public static int MAX_LENGTH = 2048;
+    public static final int META_SIZE_BYTES = Integer.BYTES;
+    public static final int META_BYTES = META_SIZE_BYTES;
 
     @Override
     public Class<String> getType() {
@@ -32,7 +36,7 @@ public class CharArrSerializer implements Serializer<String> {
 
     @Override
     public int maxSize() {
-        return MAX_LENGTH;
+        return MAX_LENGTH - META_BYTES;
     }
 
     @Override
@@ -52,7 +56,13 @@ public class CharArrSerializer implements Serializer<String> {
                 throw new SerializationException("String (as bytes) is longer than max size defined in meta: " + meta.getMaxLength() + ", length: " + bytes.length);
             }
 
-            return bytes;
+
+            byte[] output = new byte[bytes.length + META_BYTES];
+            // Flagging the byte[] with its size
+            System.arraycopy(Ints.toByteArray(bytes.length), 0, output, 0, Integer.BYTES);
+            System.arraycopy(bytes, 0, output, META_SIZE_BYTES, bytes.length);
+
+            return output;
         } catch (UnsupportedEncodingException e) {
             throw new SerializationException(e);
         }
@@ -64,17 +74,23 @@ public class CharArrSerializer implements Serializer<String> {
             throw new DeserializationException("String too long for deserialization. length: " + bytes.length);
         }
 
+        /*
         // We'd want to remove the ending segment from where null bytes begin
-        // Todo:  use 2 crystal balls algo?
+        // T-o-d-o:  use 2 crystal balls algo?
         int firstNullByte = bytes.length;
         for (int i = 0; i < bytes.length; i++) {
             if (bytes[i] == '\0') {
                 firstNullByte = i;
                 break;
             }
-        }
+        }*/
+
+
+        byte[] size = new byte[META_SIZE_BYTES];
+        System.arraycopy(bytes, 0, size, 0, META_SIZE_BYTES);
+
         try {
-            return new String(bytes, 0, firstNullByte, meta.getCharset());
+            return new String(bytes, META_BYTES, Ints.fromByteArray(size), meta.getCharset());
         } catch (UnsupportedEncodingException e) {
             throw new DeserializationException(e);
         }
@@ -83,7 +99,7 @@ public class CharArrSerializer implements Serializer<String> {
     @Override
     public int getSize(Scheme.Meta meta) {
         if (meta.getMaxLength() == -1)
-            return MAX_LENGTH;
+            return maxSize();
         return meta.getMaxLength();
     }
 
