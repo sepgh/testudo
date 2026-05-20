@@ -6,7 +6,7 @@ import java.lang.foreign.ValueLayout;
 import java.math.BigInteger;
 import java.nio.ByteOrder;
 
-public class BigIntegerView extends AbstractView<BigInteger> {
+public class BigIntegerView extends AbstractView<BigInteger> implements Comparable<BigInteger> {
     private static final ValueLayout.OfLong LAYOUT =
             ValueLayout.JAVA_LONG_UNALIGNED
                     .withOrder(ByteOrder.BIG_ENDIAN);
@@ -34,6 +34,8 @@ public class BigIntegerView extends AbstractView<BigInteger> {
 
     @Override
     public int compareTo(BigInteger o) {
-        return get().compareTo(o);
+        long stored = segment.get(LAYOUT, offset);
+        long encoded = o.longValue() ^ Long.MIN_VALUE;
+        return Long.compareUnsigned(stored, encoded);
     }
 }

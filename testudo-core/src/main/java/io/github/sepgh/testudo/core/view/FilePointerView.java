@@ -6,7 +6,7 @@ import io.github.sepgh.testudo.core.model.FilePointer;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 
-public class FilePointerView extends AbstractView<FilePointer> {
+public class FilePointerView extends AbstractView<FilePointer> implements Comparable<FilePointer> {
     private static final ValueLayout.OfInt LAYOUT =
             ValueLayout.JAVA_INT_UNALIGNED
                     .withOrder(ByteOrder.BIG_ENDIAN);
@@ -64,6 +64,12 @@ public class FilePointerView extends AbstractView<FilePointer> {
 
     @Override
     public int compareTo(FilePointer o) {
-        return get().compareTo(o);
+        int storedPage = segment.get(LAYOUT, offset + PAGE_OFFSET);
+        int encodedPage = o.page() ^ Integer.MIN_VALUE;
+        int pageCmp = Integer.compareUnsigned(storedPage, encodedPage);
+        if (pageCmp != 0) return pageCmp;
+        int storedSlot = segment.get(LAYOUT, offset + SLOT_OFFSET);
+        int encodedSlot = o.slot() ^ Integer.MIN_VALUE;
+        return Integer.compareUnsigned(storedSlot, encodedSlot);
     }
 }

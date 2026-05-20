@@ -5,7 +5,7 @@ import io.github.sepgh.testudo.core.Page;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 
-public class CharView extends AbstractView<Character> {
+public class CharView extends AbstractView<Character> implements Comparable<Character> {
     private static final ValueLayout.OfShort LAYOUT =
             ValueLayout.JAVA_SHORT_UNALIGNED
                     .withOrder(ByteOrder.BIG_ENDIAN);
@@ -31,6 +31,8 @@ public class CharView extends AbstractView<Character> {
 
     @Override
     public int compareTo(Character o) {
-        return Character.compare(get(), o);
+        int stored = Short.toUnsignedInt(segment.get(LAYOUT, offset));
+        int encoded = (int) o.charValue();
+        return Integer.compare(stored, encoded);
     }
 }

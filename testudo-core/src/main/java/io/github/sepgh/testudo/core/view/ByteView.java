@@ -4,7 +4,7 @@ import io.github.sepgh.testudo.core.Page;
 
 import java.lang.foreign.ValueLayout;
 
-public class ByteView extends AbstractView<Byte> {
+public class ByteView extends AbstractView<Byte> implements Comparable<Byte> {
     private static final ValueLayout.OfByte LAYOUT =
             ValueLayout.JAVA_BYTE;
 
@@ -31,6 +31,8 @@ public class ByteView extends AbstractView<Byte> {
 
     @Override
     public int compareTo(Byte o) {
-        return Byte.compare(get(), o);
+        byte stored = segment.get(LAYOUT, offset);
+        byte encoded = (byte) (o ^ Byte.MIN_VALUE);
+        return Byte.compareUnsigned(stored, encoded);
     }
 }

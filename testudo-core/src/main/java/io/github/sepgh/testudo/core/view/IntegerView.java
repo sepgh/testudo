@@ -5,7 +5,7 @@ import io.github.sepgh.testudo.core.Page;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 
-public class IntegerView extends AbstractView<Integer> {
+public class IntegerView extends AbstractView<Integer> implements Comparable<Integer> {
     private static final ValueLayout.OfInt LAYOUT =
             ValueLayout.JAVA_INT_UNALIGNED
                     .withOrder(ByteOrder.BIG_ENDIAN);
@@ -33,6 +33,8 @@ public class IntegerView extends AbstractView<Integer> {
 
     @Override
     public int compareTo(Integer o) {
-        return Integer.compare(get(), o);
+        int stored = segment.get(LAYOUT, offset);
+        int encoded = o ^ Integer.MIN_VALUE;
+        return Integer.compareUnsigned(stored, encoded);
     }
 }

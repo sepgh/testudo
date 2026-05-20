@@ -7,7 +7,7 @@ import java.lang.foreign.ValueLayout;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-public class StringView extends AbstractView<String> {
+public class StringView extends AbstractView<String> implements Comparable<String> {
     public static final int DEFAULT_MAX_SIZE = 256;
     public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
@@ -56,6 +56,14 @@ public class StringView extends AbstractView<String> {
 
     @Override
     public int compareTo(String o) {
-        return get().compareTo(o);
+        byte[] oBytes = o.getBytes(charset);
+        int oLen = Math.min(oBytes.length, maxSize);
+        for (int i = 0; i < maxSize; i++) {
+            byte stored = segment.get(ValueLayout.JAVA_BYTE, offset + i);
+            byte other = (i < oLen) ? oBytes[i] : (byte) 0;
+            int cmp = Byte.compareUnsigned(stored, other);
+            if (cmp != 0) return cmp;
+        }
+        return 0;
     }
 }
