@@ -2,7 +2,6 @@ package io.github.sepgh.testudo.core.view;
 
 import io.github.sepgh.testudo.core.Page;
 
-import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.time.Instant;

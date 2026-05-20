@@ -2,7 +2,6 @@ package io.github.sepgh.testudo.core.view;
 
 import io.github.sepgh.testudo.core.Page;
 
-import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
 public class ByteView extends AbstractView<Byte> {
